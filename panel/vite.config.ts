@@ -7,12 +7,14 @@ export default defineConfig({
   build: {
     outDir: '../media',
     emptyOutDir: false,
+    cssCodeSplit: false,
     rollupOptions: {
       input: './src/main.tsx',
       output: {
         entryFileNames: 'webview.js',
         assetFileNames: 'webview.[ext]',
         format: 'iife',
+        manualChunks: undefined,
       },
     },
   },

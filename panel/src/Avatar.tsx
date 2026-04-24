@@ -193,7 +193,7 @@ export const Avatar: React.FC<AvatarProps> = ({ email, author, size = 24, classN
     .toUpperCase()
     .slice(0, 2)
 
-  const gravatarUrl = getGravatarUrl(email, size)
+  const gravatarUrl = getGravatarUrl(email, size * 2)
 
   // Create inline styles for size (more reliable than Tailwind classes)
   const sizeStyle = {

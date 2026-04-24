@@ -8,10 +8,13 @@ interface CommitItemProps {
 
 export const CommitItem: React.FC<CommitItemProps> = ({ commit }) => {
   return (
-    <section className="flex items-center justify-between gap-3 px-3 py-1">
-      <h3 className="line-clamp-1 grow truncate text-base font-medium">{commit.message}</h3>
+    <section className="flex items-center justify-between gap-2 px-2 py-0.5">
+      <h3 className="line-clamp-1 grow truncate text-xs font-medium tracking-tight">{commit.message}</h3>
 
-      <time className="line-clamp-1 min-w-fit truncate text-xs opacity-60" dateTime={commit.date.split('T')[0]}>
+      <time
+        className="line-clamp-1 min-w-fit truncate text-xs tracking-tight opacity-60"
+        dateTime={commit.date.split('T')[0]}
+      >
         {new Date(commit.date).toLocaleDateString('en-CA', {
           year: 'numeric',
           month: 'short',
@@ -20,7 +23,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit }) => {
       </time>
 
       <time
-        className="line-clamp-1 min-w-fit truncate text-xs opacity-60"
+        className="line-clamp-1 min-w-fit truncate text-xs tracking-tight opacity-60"
         dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
       >
         {new Date(commit.date).toLocaleTimeString([], {
@@ -30,7 +33,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit }) => {
         })}
       </time>
 
-      <Avatar email={commit.email} author={commit.author} size={24} />
+      <Avatar email={commit.email} author={commit.author} size={20} />
     </section>
   )
 }
