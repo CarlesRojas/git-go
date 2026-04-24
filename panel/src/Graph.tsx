@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react'
-import { CommitItem } from './components/CommitItem'
-import { useGitCommits, useGitBranches } from './hooks/useGitQueries'
+import React, { useState } from 'react'
 import type { GitBranch } from '../../src/gitService'
+import { CommitItem } from './components/CommitItem'
+import { useGitCommits } from './hooks/useGitQueries'
 
 interface GraphProps {
   selectedBranches: GitBranch[]
@@ -10,38 +10,12 @@ interface GraphProps {
 export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
 
-  // Get all branches to convert base names to actual branch names
-  const { data: branches = [] } = useGitBranches()
-
-  // Convert selected branches to actual git branch names for the query
-  const actualBranchNames = useMemo(() => {
-    if (selectedBranches.length === 0) return undefined
-
-    const actualNames: string[] = []
-    selectedBranches.forEach(selectedBranch => {
-      // Add the selected branch name directly
-      actualNames.push(selectedBranch.name)
-
-      // If it's a local branch, also look for matching remote branches
-      if (!selectedBranch.remote) {
-        const matchingRemotes = branches.filter(branch => {
-          return branch.cleanName === selectedBranch.cleanName && branch.remote
-        })
-
-        matchingRemotes.forEach(remoteBranch => {
-          actualNames.push(remoteBranch.name)
-        })
-      }
-    })
-
-    return actualNames.length > 0 ? actualNames : undefined
-  }, [selectedBranches, branches])
-
-  const { data: commits = [], isLoading: loading, error } = useGitCommits(actualBranchNames)
+  const { data: commits = [], isLoading: loading, error } = useGitCommits(selectedBranches)
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-8">
@@ -68,6 +42,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
           commit={commit}
           isExpanded={expandedCommitHash === commit.hash}
           onToggle={() => toggleCommit(commit.hash)}
+          selectedBranches={selectedBranches}
         />
       ))}
     </main>

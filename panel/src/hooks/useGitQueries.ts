@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { GitCommit, GitBranch } from '../../../src/gitService'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { GitBranch, GitCommit } from '../../../src/gitService'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -23,7 +23,7 @@ const getVSCodeApi = (): VSCodeApi => {
 // Query keys
 export const queryKeys = {
   branches: ['git', 'branches'] as const,
-  commits: (branches?: string[]) => ['git', 'commits', { branches }] as const,
+  commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
 }
 
 // Custom hook for fetching branches
@@ -62,7 +62,9 @@ export const useGitBranches = () => {
 }
 
 // Custom hook for fetching commits
-export const useGitCommits = (branches?: string[]) => {
+export const useGitCommits = (branches?: GitBranch[]) => {
+  const branchNames = branches?.map(b => b.name)
+
   return useQuery({
     queryKey: queryKeys.commits(branches),
     queryFn: (): Promise<GitCommit[]> => {
@@ -84,7 +86,7 @@ export const useGitCommits = (branches?: string[]) => {
         window.addEventListener('message', messageHandler)
         vscode.postMessage({
           type: 'getGitCommits',
-          branches: branches && branches.length > 0 ? branches : undefined,
+          branches: branchNames && branchNames.length > 0 ? branchNames : undefined,
         })
 
         // Cleanup timeout to prevent memory leaks

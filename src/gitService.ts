@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import * as vscode from 'vscode';
 
 export interface GitCommit {
     hash: string;
@@ -14,6 +14,7 @@ export interface GitCommit {
 export interface GitBranch {
     name: string;
     cleanName: string;
+    hash: string;
     current: boolean;
     remote: boolean;
 }
@@ -179,9 +180,9 @@ export class GitService {
             const gitExecutable = await this.findGitExecutable();
             log(`Using git executable: ${gitExecutable.path}`);
 
-            // Get all branches (local and remote)
+            // Get all branches with their commit hashes
             const branchOutput = await this.spawnGit(
-                [gitExecutable.path, 'branch', '-a', '--format=%(refname:short),%(HEAD)'],
+                [gitExecutable.path, 'branch', '-a', '--format=%(refname:short),%(HEAD),%(objectname)'],
                 workspacePath
             );
 
@@ -189,8 +190,8 @@ export class GitService {
             const lines = branchOutput.split(EOL_REGEX).filter((line: string) => line.trim());
 
             for (const line of lines) {
-                const [name, isHead] = line.split(',');
-                if (name && name.trim()) {
+                const [name, isHead, hash] = line.split(',');
+                if (name && name.trim() && hash && hash.trim()) {
                     const branchName = name.trim();
 
                     // Skip the bare remote name (e.g., "origin" without a branch)
@@ -201,6 +202,7 @@ export class GitService {
                     branches.push({
                         name: branchName,
                         cleanName: this.sanitizeBranchName(branchName),
+                        hash: hash.trim(),
                         current: isHead?.trim() === '*',
                         remote: branchName.includes('/')
                     });
