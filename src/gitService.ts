@@ -3,6 +3,7 @@ import * as cp from 'child_process';
 
 export interface GitCommit {
     hash: string;
+    graph: string;
     author: string;
     email: string;
     date: string;
@@ -184,9 +185,16 @@ export class GitService {
                     continue;
                 }
 
-                const [hash, author, email, date, message, refs] = parts;
+                const [rawHash, author, email, date, message, refs] = parts;
+
+                // Split at last space - left is graph, right is hash
+                const lastSpaceIndex = rawHash.lastIndexOf(' ');
+                const graph = lastSpaceIndex >= 0 ? rawHash.substring(0, lastSpaceIndex) : '';
+                const cleanHash = lastSpaceIndex >= 0 ? rawHash.substring(lastSpaceIndex + 1).trim() : rawHash.trim();
+
                 const commit: GitCommit = {
-                    hash: hash?.trim() || '',
+                    hash: cleanHash,
+                    graph: graph,
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',

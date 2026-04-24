@@ -16,6 +16,11 @@ export const Graph: React.FC = () => {
   const [commits, setCommits] = useState<GitCommit[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
+
+  const toggleCommit = (commitHash: string) => {
+    setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
+  }
 
   useEffect(() => {
     const vscode = window.acquireVsCodeApi()
@@ -71,9 +76,14 @@ export const Graph: React.FC = () => {
   }
 
   return (
-    <main className="flex flex-col overflow-y-auto p-3">
+    <main className="flex flex-col overflow-y-auto">
       {commits.map(commit => (
-        <CommitItem key={commit.hash} commit={commit} />
+        <CommitItem
+          key={commit.hash}
+          commit={commit}
+          isExpanded={expandedCommitHash === commit.hash}
+          onToggle={() => toggleCommit(commit.hash)}
+        />
       ))}
     </main>
   )
