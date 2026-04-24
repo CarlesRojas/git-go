@@ -83,7 +83,7 @@ function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, style
 		Use a content security policy to only allow loading styles from our extension directory,
 		and only allow scripts that have a specific nonce.
 	-->
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; font-src data:; img-src data:;">
+\t<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; font-src data:; img-src data: https://secure.gravatar.com https://*.gravatar.com;">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="${styleUri}" rel="stylesheet">
 	<title>Git Go Graph</title>

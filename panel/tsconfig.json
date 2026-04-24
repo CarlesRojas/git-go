@@ -14,7 +14,9 @@
     "noImplicitOverride": true,
     "useDefineForClassFields": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["../src"]
 }

@@ -1,54 +1,38 @@
 import React from 'react'
-import Gravatar from 'react-gravatar'
 import type { GitCommit } from '../../src/gitService'
+import { Avatar } from './Avatar'
 
 interface CommitItemProps {
   commit: GitCommit
 }
 
 export const CommitItem: React.FC<CommitItemProps> = ({ commit }) => {
-  const authorInitials = commit.author
-    .split(' ')
-    .map(name => name.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-
   return (
-    <section className="flex items-center justify-between gap-4 p-3">
-      <div className="flex min-w-0 grow items-center gap-3">
+    <section className="flex items-center justify-between gap-3 px-3 py-1">
+      <div className="line-clamp-1 flex min-w-0 grow items-center gap-3 text-ellipsis">
         <h3 className="truncate text-base font-medium">{commit.message}</h3>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3">
-        <time className="text-sm opacity-60" dateTime={commit.date.split('T')[0]}>
-          {new Date(commit.date).toLocaleDateString('en-CA', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })}
-        </time>
+      <time className="min-w-fit text-xs text-nowrap opacity-60" dateTime={commit.date.split('T')[0]}>
+        {new Date(commit.date).toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        })}
+      </time>
 
-        <time className="text-sm opacity-60" dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
-          {new Date(commit.date).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })}
-        </time>
+      <time
+        className="min-w-fit text-xs text-nowrap opacity-60"
+        dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
+      >
+        {new Date(commit.date).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })}
+      </time>
 
-        <div className="flex items-center gap-2">
-          <Gravatar
-            email={commit.email}
-            size={24}
-            default="identicon"
-            className="h-6 w-6 rounded-full"
-            alt={commit.author}
-          />
-
-          <span className="text-sm opacity-80">{commit.author}</span>
-        </div>
-      </div>
+      <Avatar email={commit.email} author={commit.author} size={24} />
     </section>
   )
 }

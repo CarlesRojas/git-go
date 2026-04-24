@@ -4,10 +4,12 @@ import { Graph } from './Graph'
 export const App: React.FC = () => {
   return (
     <div
-      className="flex min-h-screen min-w-screen flex-col"
+      className="flex min-h-screen min-w-screen flex-col font-medium"
       style={{
         backgroundColor: 'var(--vscode-editor-background)',
         color: 'var(--vscode-editor-foreground)',
+        fontFamily:
+          '"Monaspace Neon", "JetBrains Mono", "JetBrainsMono Nerd Font", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace',
       }}
     >
       <header
@@ -19,7 +21,7 @@ export const App: React.FC = () => {
         <h1 className="text-xl font-bold">GitGo Git Graph</h1>
       </header>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex flex-col overflow-y-auto">
         <Graph />
       </main>
     </div>

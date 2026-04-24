@@ -49,7 +49,7 @@ export class GitService {
         try {
             const version = await this.spawnGit([executablePath, '--version'], process.cwd());
             const versionMatch = version.match(/git version (.+)/);
-            if (versionMatch) {
+            if (versionMatch && versionMatch[1]) {
                 this.cachedGitExecutable = {
                     path: executablePath,
                     version: versionMatch[1].trim()
@@ -62,7 +62,7 @@ export class GitService {
                 try {
                     const version = await this.spawnGit(['git', '--version'], process.cwd());
                     const versionMatch = version.match(/git version (.+)/);
-                    if (versionMatch) {
+                    if (versionMatch && versionMatch[1]) {
                         this.cachedGitExecutable = {
                             path: 'git',
                             version: versionMatch[1].trim()
@@ -83,6 +83,11 @@ export class GitService {
      */
     private spawnGit(args: string[], cwd: string): Promise<string> {
         return new Promise((resolve, reject) => {
+            if (!args.length || !args[0]) {
+                reject(new Error('No command provided'));
+                return;
+            }
+
             const gitProcess = cp.spawn(args[0], args.slice(1), {
                 cwd: cwd,
                 stdio: ['ignore', 'pipe', 'pipe']
@@ -91,15 +96,15 @@ export class GitService {
             let stdout = '';
             let stderr = '';
 
-            gitProcess.stdout?.on('data', (data) => {
+            gitProcess.stdout?.on('data', (data: Buffer) => {
                 stdout += data.toString();
             });
 
-            gitProcess.stderr?.on('data', (data) => {
+            gitProcess.stderr?.on('data', (data: Buffer) => {
                 stderr += data.toString();
             });
 
-            gitProcess.on('close', (code) => {
+            gitProcess.on('close', (code: number | null) => {
                 if (code === 0) {
                     resolve(stdout);
                 } else {
@@ -107,7 +112,7 @@ export class GitService {
                 }
             });
 
-            gitProcess.on('error', (error) => {
+            gitProcess.on('error', (error: Error) => {
                 reject(error);
             });
         });
@@ -180,14 +185,19 @@ export class GitService {
                 }
 
                 const [hash, author, email, date, message, refs] = parts;
-                commits.push({
+                const commit: GitCommit = {
                     hash: hash?.trim() || '',
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',
-                    message: message?.trim() || '',
-                    refs: refs?.trim() || undefined
-                });
+                    message: message?.trim() || ''
+                };
+
+                if (refs?.trim()) {
+                    commit.refs = refs.trim();
+                }
+
+                commits.push(commit);
             }
 
             log(`Parsed ${commits.length} commits`);
