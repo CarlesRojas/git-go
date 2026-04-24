@@ -62,7 +62,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
           .map(([baseName, { local, remote }]) => (
             <div
               key={baseName}
-              className="flex min-w-fit items-center gap-1 border border-(--vscode-badge-background) bg-(--vscode-badge-background) px-2 py-0.5 text-xs font-medium text-(--vscode-badge-foreground)"
+              className="flex min-w-fit items-center gap-1 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)"
             >
               {getBranchIcons(local, remote, local?.current ?? remote?.current ?? false)}
               <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>

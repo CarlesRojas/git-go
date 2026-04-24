@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { cn } from '../utils/cn'
 
 interface Toast {
@@ -74,7 +74,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
               <FontAwesomeIcon
                 icon={toast.icon}
                 className={cn(
-                  'size-4 max-h-4 min-h-4 text-neutral-500/90',
+                  'size-4 max-h-4 min-h-4 text-(--vscode-editor-foreground)/50',
                   toast.type === 'success' && 'text-green-500/90',
                   toast.type === 'error' && 'text-red-500/90',
                   toast.type === 'warning' && 'text-amber-500/90',

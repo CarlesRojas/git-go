@@ -1,8 +1,8 @@
-import * as React from 'react'
+import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as Popover from '@radix-ui/react-popover'
 import { Command } from 'cmdk'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import * as React from 'react'
 import { cn } from '../utils/cn'
 
 interface ComboboxProps {
@@ -50,7 +50,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
       const item = items.find(item => item.value === value[0])
       return item?.label || value[0]
     }
-    return `${value.length} branches selected`
+    return `${value.length} branches`
   }, [value, items, placeholder])
 
   return (
@@ -60,7 +60,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-9 w-full items-center justify-between border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-sm focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+            'border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-9 w-full items-center justify-between border bg-transparent px-3 py-2 text-xs whitespace-nowrap shadow-sm focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
             className,
           )}
           style={{
@@ -69,13 +69,14 @@ export const Combobox: React.FC<ComboboxProps> = ({
             color: 'var(--vscode-input-foreground)',
           }}
         >
-          <span className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faCodeBranch} className="h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex flex-row items-center gap-2">
+            <FontAwesomeIcon icon={faCodeBranch} className="h-3 w-3 shrink-0 opacity-60" />
             {displayText}
-          </span>
+          </div>
+
           <FontAwesomeIcon
             icon={faChevronDown}
-            className={cn('h-4 w-4 shrink-0 opacity-50 transition-transform', open && 'rotate-180')}
+            className={cn('h-3 w-3 shrink-0 opacity-50 transition-transform', open && 'rotate-180')}
           />
         </button>
       </Popover.Trigger>
@@ -92,14 +93,14 @@ export const Combobox: React.FC<ComboboxProps> = ({
             placeholder="Search branches..."
             value={search}
             onValueChange={setSearch}
-            className="placeholder:text-muted-foreground flex h-10 w-full rounded-md border-none bg-transparent py-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="placeholder:text-muted-foreground flex h-10 w-full rounded-md border-none bg-transparent py-3 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-50"
             style={{
               backgroundColor: 'var(--vscode-input-background)',
               color: 'var(--vscode-input-foreground)',
             }}
           />
           <Command.List className="max-h-50 overflow-y-auto">
-            <Command.Empty className="py-6 text-center text-sm">No branches found.</Command.Empty>
+            <Command.Empty className="py-6 text-center text-xs">No branches found.</Command.Empty>
             <Command.Group>
               {filteredItems.map(item => (
                 <Command.Item
@@ -107,7 +108,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
                   value={item.value}
                   onSelect={() => handleSelect(item.value)}
                   className={cn(
-                    'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none',
+                    'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-xs outline-none select-none',
                     'hover:bg-accent hover:text-accent-foreground',
                   )}
                   style={{
@@ -123,7 +124,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
                     {item.icon}
                     <span>{item.label}</span>
                   </div>
-                  {value.includes(item.value) && <FontAwesomeIcon icon={faCheck} className="h-4 w-4" />}
+                  {value.includes(item.value) && <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />}
                 </Command.Item>
               ))}
             </Command.Group>

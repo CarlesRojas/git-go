@@ -82,7 +82,7 @@ export const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchesChange
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium opacity-75">Branches:</span>
+      <span className="text-xs font-medium opacity-75">Branches:</span>
 
       <Combobox
         value={Array.from(new Set(selectedBranches.map(b => b.cleanName)))}
