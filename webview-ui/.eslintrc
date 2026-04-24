@@ -1,0 +1,8 @@
+{
+  "extends": ["plugin:tailwindcss/recommended"],
+  "rules": {
+    "tailwindcss/classnames-order": "warn",
+    "tailwindcss/no-contradicting-classnames": "error",
+    "tailwindcss/whitespace": "warn",
+  },
+}

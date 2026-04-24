@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.css')
 		);
 
-		panel.webview.html = getWebviewContent(scriptUri, styleUri);
+		panel.webview.html = getWebviewContent(panel.webview, scriptUri, styleUri);
 	});
 	context.subscriptions.push(disposable);
 
@@ -39,21 +39,37 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(statusBarItem);
 }
 
-function getWebviewContent(scriptUri: vscode.Uri, styleUri: vscode.Uri): string {
+function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, styleUri: vscode.Uri): string {
+	// Use a nonce to only allow specific scripts to be run.
+	const nonce = getNonce();
+
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${styleUri} 'unsafe-inline'; script-src ${scriptUri} 'unsafe-inline' 'unsafe-eval'; font-src data:; img-src data:;">
+	<!--
+		Use a content security policy to only allow loading styles from our extension directory,
+		and only allow scripts that have a specific nonce.
+	-->
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; font-src data:; img-src data:;">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="${styleUri}" rel="stylesheet">
 	<title>Git Go Graph</title>
 </head>
 <body>
 	<div id="root"></div>
-	<script src="${scriptUri}"></script>
+	<script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
+}
+
+function getNonce() {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
 }
 
 // This method is called when your extension is deactivated

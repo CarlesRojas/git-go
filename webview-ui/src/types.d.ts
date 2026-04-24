@@ -1,0 +1,1 @@
+declare module '*.css' {\n  const content: string;\n  export default content;\n}\n\ndeclare module '*.scss' {\n  const content: string;\n  export default content;\n}\n
