@@ -13,6 +13,7 @@ export interface GitCommit {
 
 export interface GitBranch {
     name: string;
+    cleanName: string;
     current: boolean;
     remote: boolean;
 }
@@ -126,6 +127,21 @@ export class GitService {
     }
 
     /**
+     * Sanitize branch name by removing refs and remote prefixes
+     */
+    private sanitizeBranchName(branchName: string): string {
+        let cleanName = branchName;
+
+        // Remove refs prefixes
+        cleanName = cleanName.replace(/^refs\/(heads|remotes)\//, '');
+
+        // Remove remote name prefix (origin/, upstream/, etc.)
+        cleanName = cleanName.replace(/^[^/]+\//, '');
+
+        return cleanName;
+    }
+
+    /**
      * Check if the current workspace is a git repository
      */
     public async isGitRepository(): Promise<boolean> {
@@ -184,6 +200,7 @@ export class GitService {
 
                     branches.push({
                         name: branchName,
+                        cleanName: this.sanitizeBranchName(branchName),
                         current: isHead?.trim() === '*',
                         remote: branchName.includes('/')
                     });

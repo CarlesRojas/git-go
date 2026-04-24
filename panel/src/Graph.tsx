@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import { CommitItem } from './components/CommitItem'
 import { useGitCommits, useGitBranches } from './hooks/useGitQueries'
+import type { GitBranch } from '../../src/gitService'
 
 interface GraphProps {
-  selectedBranches: string[]
+  selectedBranches: GitBranch[]
 }
 
 export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
@@ -12,29 +13,25 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   // Get all branches to convert base names to actual branch names
   const { data: branches = [] } = useGitBranches()
 
-  // Convert selected branch names to actual git branch names
+  // Convert selected branches to actual git branch names for the query
   const actualBranchNames = useMemo(() => {
     if (selectedBranches.length === 0) return undefined
 
     const actualNames: string[] = []
-    selectedBranches.forEach(branchName => {
-      // Check if this is already a full branch name (remote-only branches)
-      const exactMatch = branches.find(branch => branch.name === branchName)
-      if (exactMatch) {
-        actualNames.push(branchName)
-        return
+    selectedBranches.forEach(selectedBranch => {
+      // Add the selected branch name directly
+      actualNames.push(selectedBranch.name)
+
+      // If it's a local branch, also look for matching remote branches
+      if (!selectedBranch.remote) {
+        const matchingRemotes = branches.filter(branch => {
+          return branch.cleanName === selectedBranch.cleanName && branch.remote
+        })
+
+        matchingRemotes.forEach(remoteBranch => {
+          actualNames.push(remoteBranch.name)
+        })
       }
-
-      // Otherwise, find matching branches by base name (local branches or local+remote)
-      const matchingBranches = branches.filter(branch => {
-        const branchBaseName = branch.remote ? branch.name.replace(/^[^/]+\//, '') : branch.name
-        return branchBaseName === branchName
-      })
-
-      // Add all matching branch names
-      matchingBranches.forEach(branch => {
-        actualNames.push(branch.name)
-      })
     })
 
     return actualNames.length > 0 ? actualNames : undefined

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Graph } from './Graph'
 import { ToastProvider } from './contexts/ToastContext'
 import { BranchSelector } from './components/BranchSelector'
+import type { GitBranch } from '../../src/gitService'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -15,7 +16,7 @@ const queryClient = new QueryClient({
 })
 
 export const App: React.FC = () => {
-  const [selectedBranches, setSelectedBranches] = useState<string[]>([])
+  const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
 
   return (
     <QueryClientProvider client={queryClient}>
