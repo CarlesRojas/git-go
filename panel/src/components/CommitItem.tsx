@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import type { GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
 import { cn } from '../utils/cn'
@@ -24,6 +24,26 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
     handleMouseDown,
     containerRef,
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
+
+  const branches = useMemo(() => {
+    // Parse refs (only shows for branch tips)
+    if (!commit.refs) return []
+
+    const parsedBranches = commit.refs
+      .split(', ')
+      .map(ref => ref.trim())
+      .filter(ref => {
+        // Filter out HEAD references and other non-branch refs
+        return ref && !ref.includes('HEAD') && !ref.includes('->') && !ref.startsWith('tag:')
+      })
+      .map(ref => {
+        // Clean up branch names (remove remote prefix and refs/heads/, refs/remotes/)
+        return ref.replace(/^refs\/(heads|remotes)\//, '').replace(/^origin\//, '')
+      })
+      .filter((branch, index, arr) => arr.indexOf(branch) === index) // Remove duplicates
+
+    return parsedBranches
+  }, [commit.refs])
 
   const copyText = (text: string, label: string) => {
     copy(text)
@@ -53,6 +73,15 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
         )}
         onClick={onToggle}
       >
+        {branches.map((branch, index) => (
+          <span
+            key={index}
+            className="min-w-fit border border-(--vscode-badge-background) bg-(--vscode-badge-background) px-2 py-0.5 text-xs font-medium text-(--vscode-badge-foreground)"
+          >
+            {branch}
+          </span>
+        ))}
+
         <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
 
         <time
