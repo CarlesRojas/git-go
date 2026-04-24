@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react'
-
-interface GitCommit {
-  hash: string
-  author: string
-  date: string
-  message: string
-  refs?: string
-}
+import { CommitItem } from './CommitItem'
+import type { GitCommit } from '../../src/gitService'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -77,45 +71,9 @@ export const Graph: React.FC = () => {
   }
 
   return (
-    <div className="w-full p-4">
+    <div className="flex flex-col p-4">
       {commits.map(commit => (
-        <div
-          key={commit.hash}
-          className="border-opacity-20 flex items-start gap-4 rounded-lg border p-4"
-          style={{
-            backgroundColor: 'var(--vscode-list-inactiveSelectionBackground, rgba(255,255,255,0.04))',
-            borderColor: 'var(--vscode-widget-border, rgba(255,255,255,0.1))',
-          }}
-        >
-          <div
-            className="mt-2 h-3 w-3 shrink-0 rounded-full"
-            style={{ backgroundColor: 'var(--vscode-gitDecoration-addedResourceForeground, #4caf50)' }}
-          />
-
-          <div className="min-w-0 grow">
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-sm text-gray-400">{commit.hash.substring(0, 8)}</span>
-              {commit.refs && (
-                <span
-                  className="rounded px-2 py-1 text-xs font-medium"
-                  style={{
-                    backgroundColor: 'var(--vscode-badge-background)',
-                    color: 'var(--vscode-badge-foreground)',
-                  }}
-                >
-                  {commit.refs}
-                </span>
-              )}
-            </div>
-
-            <p className="font-medium">{commit.message}</p>
-
-            <div className="flex items-center gap-4 text-sm text-gray-400">
-              <span>{commit.author}</span>
-              <span>{new Date(commit.date).toLocaleDateString()}</span>
-            </div>
-          </div>
-        </div>
+        <CommitItem key={commit.hash} commit={commit} />
       ))}
     </div>
   )

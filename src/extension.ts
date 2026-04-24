@@ -6,89 +6,76 @@ import { GitService } from './gitService';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	const outputChannel = vscode.window.createOutputChannel('Git Go');
-	context.subscriptions.push(outputChannel);
+    const outputChannel = vscode.window.createOutputChannel('Git Go');
+    context.subscriptions.push(outputChannel);
 
-	const log = (message: string) => {
-		const timestamp = new Date().toISOString();
-		outputChannel.appendLine(`[${timestamp}] ${message}`);
-	};
+    const log = (message: string) => {
+        const timestamp = new Date().toISOString();
+        outputChannel.appendLine(`[${timestamp}] ${message}`);
+    };
 
-	log('Starting Git Go extension...');
+    log('Starting Git Go extension...');
 
-	// Register the command to open the Git Graph webview
-	const disposable = vscode.commands.registerCommand('git-go.openGitGraph', () => {
-		log('Opening Git Graph webview');
-		const panel = vscode.window.createWebviewPanel(
-			'gitGoGraph',
-			'Git Go Graph',
-			vscode.ViewColumn.One,
-			{
-				enableScripts: true,
-				localResourceRoots: [
-					vscode.Uri.joinPath(context.extensionUri, 'media')
-				]
-			}
-		);
+    // Register the command to open the Git Graph webview
+    const disposable = vscode.commands.registerCommand('git-go.openGitGraph', () => {
+        log('Opening Git Graph webview');
+        const panel = vscode.window.createWebviewPanel('gitGoGraph', 'Git Go Graph', vscode.ViewColumn.One, {
+            enableScripts: true,
+            localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
+        });
 
-		const scriptUri = panel.webview.asWebviewUri(
-			vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.js')
-		);
-		const styleUri = panel.webview.asWebviewUri(
-			vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.css')
-		);
+        const scriptUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.js'));
+        const styleUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.css'));
 
-		// Handle messages from the webview
-		panel.webview.onDidReceiveMessage(
-			async message => {
-				log(`Received message from webview: ${message.type}`);
-				switch (message.type) {
-					case 'getGitCommits':
-						try {
-							const gitService = GitService.getInstance();
-							const commits = await gitService.getGitCommits(log);
-							log(`Successfully retrieved ${commits.length} commits`);
-							panel.webview.postMessage({
-								type: 'gitCommits',
-								commits: commits
-							});
-						} catch (error) {
-							const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-							log(`Error getting git commits: ${errorMessage}`);
-							panel.webview.postMessage({
-								type: 'gitError',
-								error: errorMessage
-							});
-						}
-						break;
-				}
-			},
-			undefined,
-			context.subscriptions
-		);
+        // Handle messages from the webview
+        panel.webview.onDidReceiveMessage(
+            async (message) => {
+                log(`Received message from webview: ${message.type}`);
+                switch (message.type) {
+                    case 'getGitCommits':
+                        try {
+                            const gitService = GitService.getInstance();
+                            const commits = await gitService.getGitCommits(log);
+                            log(`Successfully retrieved ${commits.length} commits`);
+                            panel.webview.postMessage({
+                                type: 'gitCommits',
+                                commits: commits
+                            });
+                        } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                            log(`Error getting git commits: ${errorMessage}`);
+                            panel.webview.postMessage({
+                                type: 'gitError',
+                                error: errorMessage
+                            });
+                        }
+                        break;
+                }
+            },
+            undefined,
+            context.subscriptions
+        );
 
-		panel.webview.html = getWebviewContent(panel.webview, scriptUri, styleUri);
-	});
-	context.subscriptions.push(disposable);
+        panel.webview.html = getWebviewContent(panel.webview, scriptUri, styleUri);
+    });
+    context.subscriptions.push(disposable);
 
-	// Add a status bar button
-	const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-	statusBarItem.text = '$(git-branch) Git Go';
-	statusBarItem.command = 'git-go.openGitGraph';
-	statusBarItem.tooltip = 'Open Git Go Graph';
-	statusBarItem.show();
-	context.subscriptions.push(statusBarItem);
+    // Add a status bar button
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.text = '$(git-branch) Git Go';
+    statusBarItem.command = 'git-go.openGitGraph';
+    statusBarItem.tooltip = 'Open Git Go Graph';
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
 
-	log('Git Go extension activated successfully');
+    log('Git Go extension activated successfully');
 }
 
-
-
 function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, styleUri: vscode.Uri): string {
-	// Use a nonce to only allow specific scripts to be run.
-	const nonce = getNonce();
+    // Use a nonce to only allow specific scripts to be run.
+    const nonce = getNonce();
 
-	return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -109,12 +96,12 @@ function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, style
 }
 
 function getNonce() {
-	let text = '';
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
 }
 
 // This method is called when your extension is deactivated

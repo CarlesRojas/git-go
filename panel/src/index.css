@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-
 @layer base {
   * {
     @apply m-0 box-border touch-none p-0 antialiased outline-none! select-none!;

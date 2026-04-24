@@ -29,8 +29,9 @@
         "dev": "pnpm run build && code ."
     },
     "devDependencies": {
-        "@types/vscode": "^1.116.0",
         "@types/node": "22.x",
-        "typescript": "^6.0.3"
+        "@types/vscode": "^1.116.0",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.59.0"
     }
 }
