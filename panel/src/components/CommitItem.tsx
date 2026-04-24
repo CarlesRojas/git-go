@@ -5,7 +5,9 @@ import type { GitBranch, GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
 import { useToast } from '../contexts/ToastContext'
 import { useResizable } from '../hooks/useResizable'
+import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
+import { groupBranches } from '../utils/groupBranches'
 
 interface CommitItemProps {
   commit: GitCommit
@@ -24,6 +26,8 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
     handleMouseDown,
     containerRef,
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
+
+  const groupedBranches = groupBranches(selectedBranches, false)
 
   const copyText = (text: string, label: string) => {
     copy(text)
@@ -53,15 +57,16 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
         )}
         onClick={onToggle}
       >
-        {selectedBranches
-          .filter(branch => branch.hash === commit.hash)
-          .map((branch, index) => (
-            <span
-              key={index}
-              className="min-w-fit border border-(--vscode-badge-background) bg-(--vscode-badge-background) px-2 py-0.5 text-xs font-medium text-(--vscode-badge-foreground)"
+        {Object.entries(groupedBranches)
+          .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
+          .map(([baseName, { local, remote }]) => (
+            <div
+              key={baseName}
+              className="flex min-w-fit items-center gap-1 border border-(--vscode-badge-background) bg-(--vscode-badge-background) px-2 py-0.5 text-xs font-medium text-(--vscode-badge-foreground)"
             >
-              {branch.cleanName}
-            </span>
+              {getBranchIcons(local, remote, local?.current ?? remote?.current ?? false)}
+              <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
+            </div>
           ))}
 
         <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
