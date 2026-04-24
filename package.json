@@ -1,0 +1,34 @@
+{
+  "name": "git-go",
+  "displayName": "git-go",
+  "description": "A VS Code extension that adds a status bar button to open a React+Tailwind git graph webview.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.116.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "git-go.openGitGraph",
+        "title": "Git Go - Open Graph"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.116.0",
+    "@types/node": "22.x",
+    "typescript": "^5.9.3"
+  }
+}
