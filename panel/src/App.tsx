@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Graph } from './Graph'
-import { ToastProvider } from './contexts/ToastContext'
-import { BranchSelector } from './components/BranchSelector'
+import React, { useState } from 'react'
 import type { GitBranch } from '../../src/gitService'
+import { Graph } from './Graph'
+import { BranchSelector } from './components/BranchSelector'
+import { ToastProvider } from './contexts/ToastContext'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -28,7 +28,7 @@ export const App: React.FC = () => {
         }}
       >
         <ToastProvider>
-          <div className="sticky top-0 z-10 border-b border-(--vscode-panel-border) bg-(--vscode-editor-background) px-4 py-3">
+          <div className="sticky top-0 z-10 border-b border-(--vscode-panel-border) bg-(--vscode-editor-background) px-6 py-1">
             <BranchSelector onBranchesChange={setSelectedBranches} />
           </div>
 

@@ -22,6 +22,15 @@ export const Combobox: React.FC<ComboboxProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState('')
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 0)
+    }
+  }, [open])
 
   const handleSelect = React.useCallback(
     (selectedValue: string) => {
@@ -60,7 +69,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-9 w-full items-center justify-between border bg-transparent px-3 py-2 text-xs whitespace-nowrap shadow-sm focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+            'border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-7 w-64 items-center justify-between gap-2 border bg-transparent px-3 py-1 text-xs whitespace-nowrap shadow-sm focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
             className,
           )}
           style={{
@@ -69,9 +78,9 @@ export const Combobox: React.FC<ComboboxProps> = ({
             color: 'var(--vscode-input-foreground)',
           }}
         >
-          <div className="flex flex-row items-center gap-2">
+          <div className="flex min-w-0 flex-row items-center gap-2">
             <FontAwesomeIcon icon={faCodeBranch} className="h-3 w-3 shrink-0 opacity-60" />
-            {displayText}
+            <span className="truncate">{displayText}</span>
           </div>
 
           <FontAwesomeIcon
@@ -80,6 +89,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
           />
         </button>
       </Popover.Trigger>
+
       <Popover.Content
         className="w-(--radix-popover-trigger-width) p-0"
         style={{
@@ -90,15 +100,17 @@ export const Combobox: React.FC<ComboboxProps> = ({
       >
         <Command className="border-border overflow-hidden rounded-md border">
           <Command.Input
+            ref={inputRef}
             placeholder="Search branches..."
             value={search}
             onValueChange={setSearch}
-            className="placeholder:text-muted-foreground flex h-10 w-full rounded-md border-none bg-transparent py-3 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="placeholder:text-muted-foreground flex h-8 w-full rounded-md border-none bg-transparent py-2 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-50"
             style={{
               backgroundColor: 'var(--vscode-input-background)',
               color: 'var(--vscode-input-foreground)',
             }}
           />
+
           <Command.List className="max-h-50 overflow-y-auto">
             <Command.Empty className="py-6 text-center text-xs">No branches found.</Command.Empty>
             <Command.Group>
@@ -108,7 +120,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
                   value={item.value}
                   onSelect={() => handleSelect(item.value)}
                   className={cn(
-                    'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-xs outline-none select-none',
+                    'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none select-none',
                     'hover:bg-accent hover:text-accent-foreground',
                   )}
                   style={{
@@ -120,11 +132,12 @@ export const Combobox: React.FC<ComboboxProps> = ({
                       : 'var(--vscode-dropdown-foreground)',
                   }}
                 >
-                  <div className="flex flex-1 items-center gap-2">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
                     {item.icon}
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </div>
-                  {value.includes(item.value) && <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />}
+
+                  {value.includes(item.value) && <FontAwesomeIcon icon={faCheck} className="h-3 w-3 min-w-3" />}
                 </Command.Item>
               ))}
             </Command.Group>

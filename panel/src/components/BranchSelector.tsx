@@ -89,7 +89,6 @@ export const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchesChange
         onValueChange={handleBranchChange}
         placeholder="Select branches to view..."
         items={branchItems}
-        className="min-w-50"
       />
     </div>
   )
