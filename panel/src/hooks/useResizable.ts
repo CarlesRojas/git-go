@@ -6,7 +6,7 @@ interface UseResizableOptions {
   minHeight?: number
 }
 
-export function useResizable({ initialHeight = 120, minHeight = 120 }: UseResizableOptions) {
+export function useResizable({ initialHeight = 164, minHeight = 164 }: UseResizableOptions) {
   const [height, setHeight] = useState(initialHeight)
   const [isDragging, setIsDragging] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -38,7 +38,6 @@ export function useResizable({ initialHeight = 120, minHeight = 120 }: UseResiza
 
   useEventListener('mousemove', handleMouseMove)
   useEventListener('mouseup', handleMouseUp)
-  useEventListener('mouseleave', handleMouseUp)
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {

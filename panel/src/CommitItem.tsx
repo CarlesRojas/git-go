@@ -17,10 +17,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
     isDragging,
     handleMouseDown,
     containerRef,
-  } = useResizable({
-    minHeight: Math.max(window.innerHeight * 0.5, 150),
-    initialHeight: Math.max(window.innerHeight * 0.5, 150),
-  })
+  } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
 
   useEffect(() => {
     if (isExpanded && sectionRef.current) {
@@ -103,7 +100,22 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
 
             <div className="flex gap-2">
               <span className="opacity-50">Date:</span>
-              <span>{new Date(commit.date).toLocaleString()}</span>
+
+              <span>
+                {new Date(commit.date).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}
+              </span>
+
+              <span>
+                {new Date(commit.date).toLocaleDateString('en-CA', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
             </div>
 
             {commit.refs && (
