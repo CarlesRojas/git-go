@@ -1,54 +1,50 @@
-import React, { useEffect, useState } from 'react'
-import { CommitItem } from './CommitItem'
-import type { GitCommit } from '../../src/gitService'
+import React, { useState, useMemo } from 'react'
+import { CommitItem } from './components/CommitItem'
+import { useGitCommits, useGitBranches } from './hooks/useGitQueries'
 
-interface VSCodeApi {
-  postMessage(message: any): void
+interface GraphProps {
+  selectedBranches: string[]
 }
 
-declare global {
-  interface Window {
-    acquireVsCodeApi(): VSCodeApi
-  }
-}
-
-export const Graph: React.FC = () => {
-  const [commits, setCommits] = useState<GitCommit[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
+
+  // Get all branches to convert base names to actual branch names
+  const { data: branches = [] } = useGitBranches()
+
+  // Convert selected branch names to actual git branch names
+  const actualBranchNames = useMemo(() => {
+    if (selectedBranches.length === 0) return undefined
+
+    const actualNames: string[] = []
+    selectedBranches.forEach(branchName => {
+      // Check if this is already a full branch name (remote-only branches)
+      const exactMatch = branches.find(branch => branch.name === branchName)
+      if (exactMatch) {
+        actualNames.push(branchName)
+        return
+      }
+
+      // Otherwise, find matching branches by base name (local branches or local+remote)
+      const matchingBranches = branches.filter(branch => {
+        const branchBaseName = branch.remote ? branch.name.replace(/^[^/]+\//, '') : branch.name
+        return branchBaseName === branchName
+      })
+
+      // Add all matching branch names
+      matchingBranches.forEach(branch => {
+        actualNames.push(branch.name)
+      })
+    })
+
+    return actualNames.length > 0 ? actualNames : undefined
+  }, [selectedBranches, branches])
+
+  const { data: commits = [], isLoading: loading, error } = useGitCommits(actualBranchNames)
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
-
-  useEffect(() => {
-    const vscode = window.acquireVsCodeApi()
-
-    const messageHandler = (event: MessageEvent) => {
-      const message = event.data
-
-      switch (message.type) {
-        case 'gitCommits':
-          setCommits(message.commits)
-          setLoading(false)
-          break
-        case 'gitError':
-          setError(message.error)
-          setLoading(false)
-          break
-      }
-    }
-
-    window.addEventListener('message', messageHandler)
-
-    vscode.postMessage({ type: 'getGitCommits' })
-
-    return () => {
-      window.removeEventListener('message', messageHandler)
-    }
-  }, [])
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-8">
@@ -62,15 +58,7 @@ export const Graph: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-red-400">
         <p>Error loading git history:</p>
-        <p className="font-mono text-sm">{error}</p>
-      </div>
-    )
-  }
-
-  if (commits.length === 0) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <p className="text-center text-gray-400">No commits found in this repository.</p>
+        <p className="font-mono text-sm">{error.message}</p>
       </div>
     )
   }

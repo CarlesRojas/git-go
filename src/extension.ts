@@ -35,7 +35,8 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'getGitCommits':
                         try {
                             const gitService = GitService.getInstance();
-                            const commits = await gitService.getGitCommits(log);
+                            const branches = message.branches || undefined;
+                            const commits = await gitService.getGitCommits(log, branches);
                             log(`Successfully retrieved ${commits.length} commits`);
                             panel.webview.postMessage({
                                 type: 'gitCommits',
@@ -44,6 +45,24 @@ export function activate(context: vscode.ExtensionContext) {
                         } catch (error) {
                             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
                             log(`Error getting git commits: ${errorMessage}`);
+                            panel.webview.postMessage({
+                                type: 'gitError',
+                                error: errorMessage
+                            });
+                        }
+                        break;
+                    case 'getGitBranches':
+                        try {
+                            const gitService = GitService.getInstance();
+                            const branches = await gitService.getGitBranches(log);
+                            log(`Successfully retrieved ${branches.length} branches`);
+                            panel.webview.postMessage({
+                                type: 'gitBranches',
+                                branches: branches
+                            });
+                        } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                            log(`Error getting git branches: ${errorMessage}`);
                             panel.webview.postMessage({
                                 type: 'gitError',
                                 error: errorMessage

@@ -11,6 +11,12 @@ export interface GitCommit {
     refs?: string;
 }
 
+export interface GitBranch {
+    name: string;
+    current: boolean;
+    remote: boolean;
+}
+
 export interface GitExecutable {
     path: string;
     version: string;
@@ -137,9 +143,65 @@ export class GitService {
     }
 
     /**
-     * Get git commits from the current workspace
+     * Get all git branches from the current workspace
      */
-    public async getGitCommits(log: (message: string) => void): Promise<GitCommit[]> {
+    public async getGitBranches(log: (message: string) => void): Promise<GitBranch[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            throw new Error('No workspace folder found');
+        }
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        log(`Getting git branches from: ${workspacePath}`);
+
+        // Check if it's a git repository
+        if (!(await this.isGitRepository())) {
+            throw new Error('Not a git repository');
+        }
+
+        try {
+            const gitExecutable = await this.findGitExecutable();
+            log(`Using git executable: ${gitExecutable.path}`);
+
+            // Get all branches (local and remote)
+            const branchOutput = await this.spawnGit(
+                [gitExecutable.path, 'branch', '-a', '--format=%(refname:short),%(HEAD)'],
+                workspacePath
+            );
+
+            const branches: GitBranch[] = [];
+            const lines = branchOutput.split(EOL_REGEX).filter((line: string) => line.trim());
+
+            for (const line of lines) {
+                const [name, isHead] = line.split(',');
+                if (name && name.trim()) {
+                    const branchName = name.trim();
+
+                    // Skip the bare remote name (e.g., "origin" without a branch)
+                    if (branchName === 'origin' || branchName === 'upstream') {
+                        continue;
+                    }
+
+                    branches.push({
+                        name: branchName,
+                        current: isHead?.trim() === '*',
+                        remote: branchName.includes('/')
+                    });
+                }
+            }
+
+            log(`Found ${branches.length} branches`);
+            return branches;
+        } catch (error) {
+            log(`Error getting git branches: ${error}`);
+            throw new Error(`Failed to get git branches: ${error}`);
+        }
+    }
+
+    /**
+     * Get git commits from the current workspace with branch filtering
+     */
+    public async getGitCommits(log: (message: string) => void, branches?: string[]): Promise<GitCommit[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             throw new Error('No workspace folder found');
@@ -165,15 +227,37 @@ export class GitService {
                 '%ae', // Author email
                 '%ai', // Author date (ISO format)
                 '%s', // Subject
-                '%D' // Refs
+                '%D' // Refs (only shows for branch tips and tags)
             ].join(GIT_LOG_SEPARATOR);
 
             log(`Executing git log command with format`);
-            const gitLog = await this.spawnGit(
-                [gitExecutable.path, 'log', '--all', '--graph', `--pretty=format:${format}`, '-n', '100', '--'],
-                workspacePath
-            );
+            const gitArgs = [
+                gitExecutable.path,
+                '-c',
+                'log.showSignature=false',
+                'log',
+                '--max-count=100',
+                `--pretty=format:${format}`,
+                '--date-order',
+                '--graph',
+                '--decorate=full'
+            ];
 
+            // Add branch filtering if specified, otherwise use --branches --tags --remotes
+            if (branches && branches.length > 0) {
+                // Add specific branches directly
+                gitArgs.push(...branches);
+                log(`Filtering commits for branches: ${branches.join(', ')}`);
+            } else {
+                // Add flags for all branches, tags, and remotes
+                gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
+                log('Showing commits from all branches');
+            }
+
+            // Always end with --
+            gitArgs.push('--');
+
+            const gitLog = await this.spawnGit(gitArgs, workspacePath);
             const lines = gitLog.split(EOL_REGEX).filter((line: string) => line.trim());
 
             const commits: GitCommit[] = [];
@@ -186,6 +270,12 @@ export class GitService {
                 }
 
                 const [rawHash, author, email, date, message, refs] = parts;
+
+                // Ensure rawHash exists
+                if (!rawHash) {
+                    log(`Skipping line with missing hash: ${line}`);
+                    continue;
+                }
 
                 // Split at last space - left is graph, right is hash
                 const lastSpaceIndex = rawHash.lastIndexOf(' ');

@@ -1,19 +1,12 @@
-import React, { useEffect, useRef, useMemo } from 'react'
-import type { GitCommit } from '../../src/gitService'
-import { Avatar } from './Avatar'
-import { cn } from './utils/cn'
-import { useResizable } from './hooks/useResizable'
+import React, { useEffect, useRef } from 'react'
+import type { GitCommit } from '../../../src/gitService'
+import { Avatar } from '../Avatar'
+import { cn } from '../utils/cn'
+import { useResizable } from '../hooks/useResizable'
 import { useCopyToClipboard } from 'usehooks-ts'
-import { useToast } from './contexts/ToastContext'
+import { useToast } from '../contexts/ToastContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
-
-// Extend Window interface for debugging
-declare global {
-  interface Window {
-    hasShownRefAlert?: boolean
-  }
-}
 
 interface CommitItemProps {
   commit: GitCommit
@@ -31,24 +24,6 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
     handleMouseDown,
     containerRef,
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
-
-  const branches = useMemo(() => {
-    // Parse refs (only shows for branch tips)
-    console.log(commit.refs)
-    if (!commit.refs) return []
-
-    const parsedBranches = commit.refs.split(', ').map(ref => ref.trim())
-    // .filter(ref => {
-    //   // Filter out HEAD references and other non-branch refs
-    //   return ref && !ref.includes('HEAD') && !ref.includes('->') && !ref.startsWith('tag:')
-    // })
-    // .map(ref => {
-    //   // Clean up branch names (remove remote prefix and refs/heads/, refs/remotes/)
-    //   return ref.replace(/^(refs\/)?(heads|remotes)\//, '').replace(/^[^/]+\//, '')
-    // })
-
-    return parsedBranches
-  }, [commit.refs])
 
   const copyText = (text: string, label: string) => {
     copy(text)
@@ -78,15 +53,6 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
         )}
         onClick={onToggle}
       >
-        {branches.map((branch, index) => (
-          <span
-            key={index}
-            className="min-w-fit border border-(--vscode-badge-background) bg-(--vscode-badge-background) px-2 py-0.5 text-xs font-medium text-(--vscode-badge-foreground)"
-          >
-            {branch}
-          </span>
-        ))}
-
         <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
 
         <time
