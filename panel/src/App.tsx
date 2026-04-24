@@ -1,5 +1,6 @@
 import React from 'react'
 import { Graph } from './Graph'
+import { ToastProvider } from './contexts/ToastContext'
 
 export const App: React.FC = () => {
   return (
@@ -12,7 +13,9 @@ export const App: React.FC = () => {
           '"Monaspace Neon", "JetBrains Mono", "JetBrainsMono Nerd Font", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace',
       }}
     >
-      <Graph />
+      <ToastProvider>
+        <Graph />
+      </ToastProvider>
     </div>
   )
 }

@@ -3,6 +3,10 @@ import type { GitCommit } from '../../src/gitService'
 import { Avatar } from './Avatar'
 import { cn } from './utils/cn'
 import { useResizable } from './hooks/useResizable'
+import { useCopyToClipboard } from 'usehooks-ts'
+import { useToast } from './contexts/ToastContext'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheck, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 
 interface CommitItemProps {
   commit: GitCommit
@@ -12,12 +16,19 @@ interface CommitItemProps {
 
 export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onToggle }) => {
   const sectionRef = useRef<HTMLElement>(null)
+  const [, copy] = useCopyToClipboard()
+  const { showToast } = useToast()
   const {
     height: panelHeight,
     isDragging,
     handleMouseDown,
     containerRef,
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
+
+  const copyText = (text: string, label: string) => {
+    copy(text)
+    showToast({ text: `${label} copied to clipboard`, icon: faCheckCircle, type: 'info' })
+  }
 
   useEffect(() => {
     if (isExpanded && sectionRef.current) {
@@ -42,7 +53,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
         )}
         onClick={onToggle}
       >
-        <h3 className="line-clamp-1 grow truncate text-sm font-semibold tracking-tighter">{commit.message}</h3>
+        <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
 
         <time
           className="line-clamp-1 min-w-fit truncate text-xs font-medium tracking-tighter opacity-50"
@@ -79,24 +90,9 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
             {commit.graph && (
               <div className="flex gap-2">
                 <span className="opacity-50">Branch Graph:</span>
-                <code>{commit.graph}</code>
+                <code className="px-1">{commit.graph}</code>
               </div>
             )}
-
-            <div className="flex gap-2">
-              <span className="opacity-50">Hash:</span>
-              <code> {commit.hash} </code>
-            </div>
-
-            <div className="flex gap-2">
-              <span className="opacity-50">Author:</span>
-              <span>{commit.author}</span>
-            </div>
-
-            <div className="flex gap-2">
-              <span className="opacity-50">Email:</span>
-              <span>{commit.email}</span>
-            </div>
 
             <div className="flex gap-2">
               <span className="opacity-50">Date:</span>
@@ -118,16 +114,56 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               </span>
             </div>
 
+            <div className="flex gap-2">
+              <span className="opacity-50">Hash:</span>
+              <code
+                className="cursor-pointer px-1 transition-opacity hover:opacity-75"
+                onClick={() => copyText(commit.hash, 'Hash')}
+              >
+                {commit.hash}
+              </code>
+            </div>
+
+            <div className="flex gap-2">
+              <span className="opacity-50">Author:</span>
+              <span
+                className="cursor-pointer transition-opacity hover:opacity-75"
+                onClick={() => copyText(commit.author, 'Author')}
+              >
+                {commit.author}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <span className="opacity-50">Email:</span>
+              <span
+                className="cursor-pointer transition-opacity hover:opacity-75"
+                onClick={() => copyText(commit.email, 'Email')}
+              >
+                {commit.email}
+              </span>
+            </div>
+
             {commit.refs && (
               <div className="flex gap-2">
                 <span className="opacity-50">Refs:</span>
-                <span>{commit.refs}</span>
+                <span
+                  className="cursor-pointer transition-opacity hover:opacity-75"
+                  onClick={() => copyText(commit.refs!, 'Refs')}
+                >
+                  {commit.refs}
+                </span>
               </div>
             )}
 
-            <div className="flex flex-col">
+            <div className="flex gap-2">
               <span className="opacity-50">Message:</span>
-              <p className="whitespace-pre-wrap">{commit.message}</p>
+              <span
+                className="cursor-pointer whitespace-pre-wrap transition-opacity hover:opacity-75"
+                onClick={() => copyText(commit.message, 'Message')}
+              >
+                {commit.message}
+              </span>
             </div>
           </div>
 
