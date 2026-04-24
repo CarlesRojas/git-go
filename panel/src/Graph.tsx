@@ -71,10 +71,10 @@ export const Graph: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col p-4">
+    <main className="flex flex-col overflow-y-auto p-3">
       {commits.map(commit => (
         <CommitItem key={commit.hash} commit={commit} />
       ))}
-    </div>
+    </main>
   )
 }

@@ -8,11 +8,11 @@ interface CommitItemProps {
 
 export const CommitItem: React.FC<CommitItemProps> = ({ commit }) => {
   return (
-    <section className="flex items-center justify-between gap-2 px-2 py-0.5">
-      <h3 className="line-clamp-1 grow truncate text-xs font-medium tracking-tight">{commit.message}</h3>
+    <section className="flex h-6 max-h-6 min-h-6 items-center justify-between gap-2 px-2 py-0.5">
+      <h3 className="line-clamp-1 grow truncate text-sm font-semibold tracking-tighter">{commit.message}</h3>
 
       <time
-        className="line-clamp-1 min-w-fit truncate text-xs tracking-tight opacity-60"
+        className="line-clamp-1 min-w-fit truncate text-sm font-medium tracking-tighter opacity-50"
         dateTime={commit.date.split('T')[0]}
       >
         {new Date(commit.date).toLocaleDateString('en-CA', {
@@ -23,7 +23,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit }) => {
       </time>
 
       <time
-        className="line-clamp-1 min-w-fit truncate text-xs tracking-tight opacity-60"
+        className="line-clamp-1 min-w-fit truncate text-sm font-medium tracking-tighter opacity-50"
         dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
       >
         {new Date(commit.date).toLocaleTimeString([], {
