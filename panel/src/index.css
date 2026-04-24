@@ -1,6 +1,18 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-primary: #3b82f6;
-  --color-secondary: #6366f1;
+
+@layer base {
+  * {
+    @apply m-0 box-border touch-none p-0 antialiased outline-none! select-none!;
+  }
+
+  img,
+  video,
+  svg {
+    @apply block;
+  }
+
+  a {
+    @apply no-underline;
+  }
 }

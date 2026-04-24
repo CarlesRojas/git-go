@@ -22,9 +22,11 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "pnpm run compile",
+        "vscode:prepublish": "pnpm run build",
+        "build": "pnpm run compile && cd panel && pnpm run build",
         "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./"
+        "watch": "tsc -watch -p ./",
+        "dev": "pnpm run build && code ."
     },
     "devDependencies": {
         "@types/vscode": "^1.116.0",
