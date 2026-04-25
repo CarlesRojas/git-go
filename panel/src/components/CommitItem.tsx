@@ -52,7 +52,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
     <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
       <button
         className={cn(
-          'flex min-h-6 w-full cursor-pointer items-center justify-between gap-2 px-6 text-left transition-colors hover:bg-(--vscode-editor-foreground)/10',
+          'flex min-h-6 w-full cursor-pointer items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-(--vscode-editor-foreground)/10',
           isExpanded && 'bg-(--vscode-editor-foreground)/10',
         )}
         onClick={onToggle}
@@ -99,7 +99,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
       {isExpanded && (
         <div
           ref={containerRef}
-          className="relative mb-3 overflow-auto bg-(--vscode-editor-foreground)/3 px-6 py-3"
+          className="relative mb-3 overflow-auto bg-(--vscode-editor-foreground)/3 px-4 py-3"
           style={{ height: `${panelHeight}px` }}
         >
           <div className="flex flex-col gap-1 text-xs font-medium">

@@ -1,6 +1,7 @@
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
 import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useRef } from 'react'
 import { cn } from '../utils/cn'
 import { Input } from './Input'
 
@@ -17,7 +18,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       className={cn(
         [
           // Layout & Structure
-          'flex h-7 w-48 items-center justify-between gap-2',
+          'flex h-7 w-52 items-center justify-between gap-2',
           // Spacing
           'px-2.5',
           // Typography
@@ -100,8 +101,8 @@ function ComboboxContent({
               // Layout & Structure
               'relative overflow-hidden',
               // Sizing
-              'max-h-(--available-height) w-(--anchor-width) max-w-(--available-width)',
-              'min-w-[calc(var(--anchor-width)+--spacing(7))]',
+              'max-h-(--available-height) w-[calc(var(--anchor-width)+1px)]',
+              'max-w-[calc(var(--anchor-width)+1px)] min-w-[calc(var(--anchor-width)+1px)]',
               // Transform Origin
               'origin-(--transform-origin)',
               // Colors & Background
@@ -221,7 +222,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
           // Layout & Structure
           'hidden w-full',
           // Spacing
-          'px-1.5 py-1',
+          'px-2.5 py-2',
           // Typography
           'text-xs text-(--vscode-editor-foreground)/50',
           // Group States
@@ -243,6 +244,10 @@ function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.
   )
 }
 
+function useComboboxAnchor() {
+  return useRef<HTMLDivElement | null>(null)
+}
+
 export {
   Combobox,
   ComboboxCollection,
@@ -256,4 +261,5 @@ export {
   ComboboxSeparator,
   ComboboxTrigger,
   ComboboxValue,
+  useComboboxAnchor,
 }

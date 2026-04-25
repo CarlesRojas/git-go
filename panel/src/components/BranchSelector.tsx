@@ -32,8 +32,10 @@ interface BrancItem {
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], isLoading: loading, error } = useGitBranches()
+
   const [inputValue, setInputValue] = useState('')
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
+
   const groupedBranches = groupBranches(branches)
 
   const setDefaultBranches = useCallback(() => {
@@ -135,7 +137,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
         </ComboboxTrigger>
 
         <ComboboxContent>
-          <ComboboxInput onClear={() => setInputValue('')} />
+          <ComboboxInput onClear={() => setInputValue('')} placeholder="Search..." />
           <ComboboxSeparator className="my-0" />
 
           <ComboboxEmpty>No branches found.</ComboboxEmpty>

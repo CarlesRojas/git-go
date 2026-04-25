@@ -34,17 +34,13 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     )
   }
 
-  return (
-    <main className="my-3 flex flex-col overflow-y-auto">
-      {commits.map(commit => (
-        <CommitItem
-          key={commit.hash}
-          commit={commit}
-          isExpanded={expandedCommitHash === commit.hash}
-          onToggle={() => toggleCommit(commit.hash)}
-          selectedBranches={selectedBranches}
-        />
-      ))}
-    </main>
-  )
+  return commits.map(commit => (
+    <CommitItem
+      key={commit.hash}
+      commit={commit}
+      isExpanded={expandedCommitHash === commit.hash}
+      onToggle={() => toggleCommit(commit.hash)}
+      selectedBranches={selectedBranches}
+    />
+  ))
 }

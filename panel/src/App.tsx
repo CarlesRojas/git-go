@@ -4,6 +4,7 @@ import type { GitBranch } from '../../src/gitService'
 import { Graph } from './Graph'
 import { BranchSelector } from './components/BranchSelector'
 import { ToastProvider } from './contexts/ToastContext'
+import { cn } from './utils/cn'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -21,18 +22,41 @@ export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <div
-        className="flex min-h-screen min-w-screen flex-col bg-(--vscode-editor-background) leading-relaxed font-medium text-(--vscode-editor-foreground) selection:bg-(--vscode-editor-selectionBackground) selection:text-(--vscode-editor-selectionForeground)"
+        className={cn([
+          // Layout & Structure
+          'flex max-h-screen min-h-screen max-w-screen min-w-screen flex-col',
+          // Typography
+          'leading-relaxed font-medium text-(--vscode-editor-foreground)',
+          // Colors & Background
+          'bg-(--vscode-editor-background)',
+          // Selection States
+          'selection:bg-(--vscode-editor-selectionBackground)',
+          'selection:text-(--vscode-editor-selectionForeground)',
+        ])}
         style={{
           fontFamily:
             '"Monaspace Neon", "JetBrains Mono", "JetBrainsMono Nerd Font", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace',
         }}
       >
         <ToastProvider>
-          <div className="sticky top-0 z-10 border-b border-(--vscode-panel-border) bg-(--vscode-editor-background) px-6 py-1">
+          <div
+            className={cn([
+              // Position & Layout
+              'flex h-9 max-h-9 min-h-9 w-full items-center',
+              // Colors & Background
+              'bg-(--vscode-editor-background)',
+              // Borders
+              'border-b border-(--vscode-editor-foreground)/15',
+              // Spacing
+              'px-4',
+            ])}
+          >
             <BranchSelector onBranchesChange={setSelectedBranches} />
           </div>
 
-          <Graph selectedBranches={selectedBranches} />
+          <main className="flex h-[calc(100vh-2.25rem)] max-h-[calc(100vh-2.25rem)] min-h-[calc(100vh-2.25rem)] flex-col overflow-y-auto py-3">
+            <Graph selectedBranches={selectedBranches} />
+          </main>
         </ToastProvider>
       </div>
     </QueryClientProvider>
