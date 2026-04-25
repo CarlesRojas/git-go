@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 export interface GitCommit {
     hash: string;
     parents: string[];
-    graph: string;
     author: string;
     email: string;
     date: string;
@@ -269,7 +268,6 @@ export class GitService {
                     email,
                     date,
                     message: message,
-                    graph: '* ',
                     refs: `Stash ${index}`,
                     tags: [],
                     isStash: true
@@ -334,7 +332,6 @@ export class GitService {
                 `--skip=${skip}`,
                 `--pretty=format:${format}`,
                 '--date-order',
-                '--graph',
                 '--decorate=full'
             ];
 
@@ -373,23 +370,17 @@ export class GitService {
                     continue;
                 }
 
-                const [rawHash, parentHashes, author, email, date, message, refs] = parts;
+                const [hash, parentHashes, author, email, date, message, refs] = parts;
 
-                // Ensure rawHash exists
-                if (!rawHash) {
+                // Ensure hash exists
+                if (!hash?.trim()) {
                     log(`Skipping line with missing hash: ${line}`);
                     continue;
                 }
 
-                // Split at last space - left is graph, right is hash
-                const lastSpaceIndex = rawHash.lastIndexOf(' ');
-                const graph = lastSpaceIndex >= 0 ? rawHash.substring(0, lastSpaceIndex) : '';
-                const cleanHash = lastSpaceIndex >= 0 ? rawHash.substring(lastSpaceIndex + 1).trim() : rawHash.trim();
-
                 const commit: GitCommit = {
-                    hash: cleanHash,
+                    hash: hash.trim(),
                     parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
-                    graph: graph,
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',
@@ -409,8 +400,6 @@ export class GitService {
 
                 commits.push(commit);
             }
-
-            let oldestCommitDate: Date | null = commits.length > 0 ? new Date(commits[commits.length - 1].date) : null;
 
             log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
             return { commits, hasMore };

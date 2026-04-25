@@ -16,7 +16,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteGitCommits(
     selectedBranches,
-    50,
+    10,
   )
 
   const { data: stashesByParent } = useGitStashes()
