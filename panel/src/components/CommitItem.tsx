@@ -149,7 +149,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               </span>
             </div>
 
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <span className="opacity-50">Hash:</span>
               <code
                 className="cursor-pointer px-1 transition-opacity hover:opacity-75"
@@ -157,7 +157,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               >
                 {commit.hash}
               </code>
-            </div>
+            </div> */}
 
             <div className="flex gap-2">
               <span className="opacity-50">Author:</span>
@@ -179,7 +179,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               </span>
             </div>
 
-            {commit.refs && (
+            {/* {commit.refs && (
               <div className="flex gap-2">
                 <span className="opacity-50">Refs:</span>
                 <span
@@ -189,7 +189,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
                   {commit.refs}
                 </span>
               </div>
-            )}
+            )} */}
 
             <div className="flex gap-2">
               <span className="opacity-50">Message:</span>
