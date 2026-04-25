@@ -1,6 +1,6 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
@@ -26,18 +26,11 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     },
   })
 
-  // Flatten the pages into a single array of commits
   const commits = data?.pages.flatMap(page => page.commits) ?? []
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
-
-  const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (isLoading) {
     return (
