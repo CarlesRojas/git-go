@@ -9,6 +9,6 @@ const config = {
   arrowParens: 'avoid',
   plugins: ['prettier-plugin-tailwindcss'],
   tailwindFunctions: ['cva', 'cn'],
-};
+}
 
-module.exports = config;
+module.exports = config

@@ -24,7 +24,7 @@ export default [
                 }
             ],
 
-            curly: ['warn', 'multi-line'],
+            curly: 'off',
             eqeqeq: 'warn',
             'no-throw-literal': 'warn',
             semi: ['warn', 'never']

@@ -1,6 +1,6 @@
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { FC, ReactNode, useMemo, useState } from 'react'
+import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { GitBranch } from '../../../src/gitService'
 import { useGitBranches } from '../hooks/useGitQueries'
 import { getBranchIcons } from '../utils/branchIcons'
@@ -24,64 +24,47 @@ interface BranchSelectorProps {
   onBranchesChange: (branches: GitBranch[]) => void
 }
 
+interface BrancItem {
+  value: string
+  label: string
+  icon: ReactNode
+}
+
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], isLoading: loading, error } = useGitBranches()
   const [inputValue, setInputValue] = useState('')
-  // const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
-
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([])
   const groupedBranches = groupBranches(branches)
 
-  // useEffect(() => {
-  //   if (branches.length > 0 && selectedBranches.length === 0) {
-  //     const autoSelected: GitBranch[] = []
-  //     const currentBranch = branches.find(b => b.current && !b.remote)
-  //     const mainBranch = branches.find(b => (b.cleanName === 'main' || b.cleanName === 'master') && !b.remote)
+  const setDefaultBranches = useCallback(() => {
+    const isMain = (name: string) => name === 'main' || name === 'master'
 
-  //     const addBranchGroup = (branchName: string) => {
-  //       const groupedBranch = groupedBranches[branchName]
-  //       if (groupedBranch) {
-  //         if (groupedBranch.local) autoSelected.push(groupedBranch.local)
-  //         if (groupedBranch.remote) autoSelected.push(groupedBranch.remote)
-  //       }
-  //     }
+    const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
+    const mainBranch = branches.filter(b => isMain(b.cleanName))
 
-  //     if (currentBranch) addBranchGroup(currentBranch.cleanName)
-  //     if (mainBranch && mainBranch.cleanName !== currentBranch?.cleanName) addBranchGroup(mainBranch.cleanName)
+    setSelectedBranches([...currentBranch.map(b => b.cleanName), ...mainBranch.map(b => b.cleanName)])
+    onBranchesChange([...currentBranch, ...mainBranch])
+  }, [branches, onBranchesChange])
 
-  //     setSelectedBranches(autoSelected)
-  //     onBranchesChange(autoSelected)
-  //   }
-  // }, [branches, selectedBranches.length, onBranchesChange])
+  useEffect(() => {
+    if (branches.length > 0 && selectedBranches.length === 0) setDefaultBranches()
+  }, [{ branches, selectedBranches, setDefaultBranches }])
 
-  const handleBranchToggle = (branchName: string) => {
-    // const selectedNames = Array.from(new Set(selectedBranches.map(b => b.cleanName)))
-    // const isSelected = selectedNames.includes(branchName)
-    // let newBranchNames: string[]
-    // if (isSelected) newBranchNames = selectedNames.filter(name => name !== branchName)
-    // else newBranchNames = [...selectedNames, branchName]
-    // const newBranches: GitBranch[] = []
-    // newBranchNames.forEach(name => {
-    //   const groupedBranch = groupedBranches[name]
-    //   if (groupedBranch) {
-    //     if (groupedBranch.local) newBranches.push(groupedBranch.local)
-    //     if (groupedBranch.remote) newBranches.push(groupedBranch.remote)
-    //   }
-    // })
-    // setSelectedBranches(newBranches)
-    // onBranchesChange(newBranches)
+  const handleValueChange = (selected: string[]) => {
+    setSelectedBranches(selected)
+    onBranchesChange(branches.filter(branch => selected.includes(branch.cleanName)))
   }
 
-  // const displayText = useMemo(() => {
-  //   const selectedNames = Array.from(new Set(selectedBranches.map(b => b.cleanName)))
-  //   if (selectedNames.length === 0) return 'Select branches to view...'
-  //   if (selectedNames.length === 1) return selectedNames[0]
-  //   return `${selectedNames.length} branches`
-  // }, [selectedBranches])
+  const displayText = useMemo(() => {
+    if (selectedBranches.length === 0) return 'Select branches...'
+    if (selectedBranches.length === 1) return selectedBranches[0]
+    return `${selectedBranches.length} branches`
+  }, [selectedBranches])
 
   const branchGroups = useMemo(() => {
     try {
-      const localBranches: { value: string; label: string; icon: ReactNode }[] = []
-      const remoteBranches: { value: string; label: string; icon: ReactNode }[] = []
+      const localBranches: BrancItem[] = []
+      const remoteBranches: BrancItem[] = []
 
       Object.entries(groupedBranches).forEach(([baseName, { local, remote }]) => {
         const item = {
@@ -98,6 +81,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       if (localBranches.length > 0) {
         groups.push({ value: 'Local', items: localBranches.sort((a, b) => a.label.localeCompare(b.label)) })
       }
+
       if (remoteBranches.length > 0) {
         groups.push({ value: 'Remote', items: remoteBranches.sort((a, b) => a.label.localeCompare(b.label)) })
       }
@@ -135,17 +119,18 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
         multiple
         items={branchGroups}
         inputValue={inputValue}
-        onInputValueChange={(value, { reason, trigger, event }) => {
-          console.log('REASON', reason, trigger, event)
+        onInputValueChange={(value, { reason }) => {
           if (reason !== 'input-clear') setInputValue(value)
         }}
         onOpenChange={open => {
           if (!open) setInputValue('')
         }}
+        onValueChange={handleValueChange}
+        value={selectedBranches}
       >
         <ComboboxTrigger>
           <ComboboxValue>
-            <span className="truncate">{/* displayText */} Select branches...</span>
+            <span className="truncate">{displayText}</span>
           </ComboboxValue>
         </ComboboxTrigger>
 
@@ -161,7 +146,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
                 <ComboboxCollection>
                   {item => (
-                    <ComboboxItem key={item.value} value={item.value} onSelect={() => handleBranchToggle(item.value)}>
+                    <ComboboxItem key={item.value} value={item.value}>
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         {item.icon}
                         <span className="truncate">{item.label}</span>
