@@ -4,6 +4,7 @@ import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { GitBranch } from '../../../src/gitService'
 import { useGitBranches } from '../hooks/useGitQueries'
 import { getBranchIcons } from '../utils/branchIcons'
+import { cn } from '../utils/cn'
 import { groupBranches } from '../utils/groupBranches'
 import {
   Combobox,
@@ -31,7 +32,7 @@ interface BrancItem {
 }
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
-  const { data: branches = [], isLoading: loading, error } = useGitBranches()
+  const { data: branches = [], ...branchesQuery } = useGitBranches()
 
   const [inputValue, setInputValue] = useState('')
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
@@ -95,75 +96,73 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
   }, [groupedBranches])
 
-  if (loading) {
+  if (branchesQuery.isLoading) {
     return (
-      <div className="flex h-9 items-center gap-2 px-3 py-2 text-sm opacity-50">
-        <FontAwesomeIcon icon={faCodeBranch} className="h-4 w-4 animate-pulse" />
-        <span>Loading branches...</span>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-9 items-center gap-2 px-3 py-2 text-sm text-red-400">
-        <FontAwesomeIcon icon={faCodeBranch} className="h-4 w-4" />
-        <span>Error loading branches</span>
+      <div
+        className={cn(
+          'flex h-7 w-52 gap-2',
+          'px-2.5',
+          'text-xs whitespace-nowrap text-(--vscode-input-foreground)',
+          'bg-(--vscode-input-foreground)/5',
+          'border border-(--vscode-editor-foreground)/15',
+          'animate-pulse',
+        )}
+      >
+        <div className="flex min-w-0 flex-row items-center gap-2">
+          <FontAwesomeIcon icon={faCodeBranch} className="size-2.5 text-(--vscode-editor-foreground)/70" />
+          Loading branches...
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-medium opacity-75">Branches:</span>
+    <Combobox
+      multiple
+      items={branchGroups}
+      inputValue={inputValue}
+      onInputValueChange={(value, { reason }) => {
+        if (reason !== 'input-clear') setInputValue(value)
+      }}
+      onOpenChange={open => {
+        if (!open) setInputValue('')
+      }}
+      onValueChange={handleValueChange}
+      value={selectedBranches}
+    >
+      <ComboboxTrigger>
+        <ComboboxValue>
+          <span className="truncate">{displayText}</span>
+        </ComboboxValue>
+      </ComboboxTrigger>
 
-      <Combobox
-        multiple
-        items={branchGroups}
-        inputValue={inputValue}
-        onInputValueChange={(value, { reason }) => {
-          if (reason !== 'input-clear') setInputValue(value)
-        }}
-        onOpenChange={open => {
-          if (!open) setInputValue('')
-        }}
-        onValueChange={handleValueChange}
-        value={selectedBranches}
-      >
-        <ComboboxTrigger>
-          <ComboboxValue>
-            <span className="truncate">{displayText}</span>
-          </ComboboxValue>
-        </ComboboxTrigger>
+      <ComboboxContent>
+        <ComboboxInput onClear={() => setInputValue('')} placeholder="Search..." />
+        <ComboboxSeparator className="my-0" />
 
-        <ComboboxContent>
-          <ComboboxInput onClear={() => setInputValue('')} placeholder="Search..." />
-          <ComboboxSeparator className="my-0" />
+        <ComboboxEmpty>No branches found.</ComboboxEmpty>
 
-          <ComboboxEmpty>No branches found.</ComboboxEmpty>
+        <ComboboxList>
+          {(group, index) => (
+            <ComboboxGroup key={group.value} items={group.items}>
+              <ComboboxLabel>{group.value}</ComboboxLabel>
 
-          <ComboboxList>
-            {(group, index) => (
-              <ComboboxGroup key={group.value} items={group.items}>
-                <ComboboxLabel>{group.value}</ComboboxLabel>
+              <ComboboxCollection>
+                {item => (
+                  <ComboboxItem key={item.value} value={item.value}>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      {item.icon}
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                  </ComboboxItem>
+                )}
+              </ComboboxCollection>
 
-                <ComboboxCollection>
-                  {item => (
-                    <ComboboxItem key={item.value} value={item.value}>
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        {item.icon}
-                        <span className="truncate">{item.label}</span>
-                      </div>
-                    </ComboboxItem>
-                  )}
-                </ComboboxCollection>
-
-                {index < branchGroups.length - 1 && <ComboboxSeparator />}
-              </ComboboxGroup>
-            )}
-          </ComboboxList>
-        </ComboboxContent>
-      </Combobox>
-    </div>
+              {index < branchGroups.length - 1 && <ComboboxSeparator />}
+            </ComboboxGroup>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   )
 }

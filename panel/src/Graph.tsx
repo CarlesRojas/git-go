@@ -1,3 +1,5 @@
+import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useState } from 'react'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
@@ -18,18 +20,18 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 p-8">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-current"></div>
-        <p>Loading git history...</p>
+      <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
+        <FontAwesomeIcon icon={faCircleNotch} className="size-4 animate-spin" />
+        <p className="text-xs">Loading git history...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-red-400">
-        <p>Error loading git history:</p>
-        <p className="font-mono text-sm">{error.message}</p>
+      <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
+        <FontAwesomeIcon icon={faTimesCircle} className="size-4 text-(--vscode-errorForeground)" />
+        <p className="text-xs text-(--vscode-errorForeground)">Error loading git history</p>
       </div>
     )
   }

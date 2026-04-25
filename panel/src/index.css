@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+@layer components {
+  .graph-h {
+    @apply h-[calc(100vh-2.25rem)] max-h-[calc(100vh-2.25rem)] min-h-[calc(100vh-2.25rem)];
+  }
+}
+
 @layer base {
   * {
     @apply m-0 box-border touch-none p-0 antialiased outline-none! select-none!;
