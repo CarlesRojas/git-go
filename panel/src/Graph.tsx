@@ -70,10 +70,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
       ))}
 
       {hasNextPage && !isFetchingNextPage && (
-        <div ref={loadMoreRef} className="flex w-full items-center justify-center gap-2 opacity-80">
-          <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
-          <span className="text-xs">Loading more commits...</span>
-        </div>
+        <div ref={loadMoreRef} className="flex h-8 min-h-8 w-full items-center justify-center gap-2 opacity-80" />
       )}
     </>
   )
