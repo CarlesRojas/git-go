@@ -9,6 +9,7 @@ export interface GitCommit {
     date: string;
     message: string;
     refs?: string;
+    isStash?: boolean;
 }
 
 export interface GitBranch {
@@ -218,6 +219,104 @@ export class GitService {
     }
 
     /**
+     * Get git stashes filtered by date range and branch reachability
+     */
+    public async getGitStashesByDateRange(
+        log: (message: string) => void,
+        branches?: string[],
+        sinceDate?: Date | null
+    ): Promise<GitCommit[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            throw new Error('No workspace folder found');
+        }
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+
+        try {
+            const gitExecutable = await this.findGitExecutable();
+
+            const gitArgs = [gitExecutable.path, 'reflog', '--format=%gd|%H|%gD|%an|%ae|%ai|%s', 'refs/stash'];
+
+            if (sinceDate) {
+                gitArgs.push(`--since=${sinceDate.toISOString()}`);
+                log(`Filtering stashes since: ${sinceDate.toISOString()}`);
+            }
+
+            gitArgs.push('--');
+
+            const stashList = await this.spawnGit(gitArgs, workspacePath);
+            const stashes: GitCommit[] = [];
+
+            if (!stashList.trim()) {
+                log('No stashes found for date range');
+                return stashes;
+            }
+
+            const lines = stashList.split(EOL_REGEX).filter((line) => line.trim());
+
+            // Parse all stashes first (common logic)
+            for (const line of lines) {
+                const parts = line.split('|');
+                if (parts.length < 7) continue;
+
+                const [stashRef, hash, stashDesc, author, email, date, message] = parts;
+                if (!stashRef || !hash || !author || !email || !date || !message) continue;
+
+                const indexMatch = stashRef.match(/stash@\{(\d+)\}/) || null;
+                const index = indexMatch && indexMatch[1] ? parseInt(indexMatch[1], 10) : 0;
+
+                const stashCommit: GitCommit = {
+                    hash,
+                    author,
+                    email,
+                    date,
+                    message: message,
+                    graph: '* ',
+                    refs: `Stash ${index}`,
+                    isStash: true
+                };
+
+                stashes.push(stashCommit);
+            }
+
+            // If no branch filtering needed, return all stashes
+            if (!branches || branches.length === 0) {
+                log(`Found ${stashes.length} stashes (git-filtered by date, no branch filtering)`);
+                return stashes;
+            }
+
+            // Filter by branch ancestry
+            const filteredStashes: GitCommit[] = [];
+            for (const stash of stashes) {
+                try {
+                    // Get the base hash (first parent of stash commit)
+                    const baseHash = (
+                        await this.spawnGit([gitExecutable.path, 'rev-parse', `${stash.hash}^1`], workspacePath)
+                    ).trim();
+
+                    // Check if base hash is reachable from any selected branch
+                    await this.spawnGit(
+                        [gitExecutable.path, 'merge-base', '--is-ancestor', baseHash, ...branches],
+                        workspacePath
+                    );
+
+                    filteredStashes.push(stash);
+                } catch (error) {
+                    // Skip stashes that aren't reachable from selected branches
+                    continue;
+                }
+            }
+
+            log(`Found ${filteredStashes.length} stashes (git-filtered by date and branch ancestry)`);
+            return filteredStashes;
+        } catch (error) {
+            log(`Error getting git stashes: ${error}`);
+            throw new Error(`Failed to get git stashes: ${error}`);
+        }
+    }
+
+    /**
      * Get git commits from the current workspace with branch filtering and pagination
      */
     public async getGitCommits(
@@ -330,8 +429,17 @@ export class GitService {
                 commits.push(commit);
             }
 
-            log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
-            return { commits, hasMore };
+            let oldestCommitDate: Date | null = commits.length > 0 ? new Date(commits[commits.length - 1].date) : null;
+
+            const stashes = await this.getGitStashesByDateRange(log, branches, oldestCommitDate);
+            log(`Found ${stashes.length} stashes for this date range`);
+
+            const allCommits = [...stashes, ...commits].sort((a, b) => {
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
+
+            log(`Parsed ${commits.length} commits and ${stashes.length} stashes (hasMore: ${hasMore})`);
+            return { commits: allCommits, hasMore };
         } catch (error) {
             log(`Error getting git commits: ${error}`);
             throw new Error(`Failed to get git commits: ${error}`);

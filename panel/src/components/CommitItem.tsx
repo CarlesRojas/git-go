@@ -1,4 +1,5 @@
-import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
+import { faCheckCircle, faInbox } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useEffect, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
@@ -68,6 +69,12 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
             </div>
           ))}
+
+        {commit.isStash && (
+          <div className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)">
+            <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-fuchsia-500" />
+          </div>
+        )}
 
         <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
 
