@@ -1,4 +1,4 @@
-import { faCheckCircle, faInbox } from '@fortawesome/free-solid-svg-icons'
+import { faCheckCircle, faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useEffect, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
@@ -72,10 +72,21 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
 
         {commit.isStash && (
           <div className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)">
-            <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-fuchsia-500" />
+            <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
             <span>{commit.refs}</span>
           </div>
         )}
+
+        {commit.tags.length > 0 &&
+          commit.tags.map(tag => (
+            <div
+              key={tag}
+              className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)"
+            >
+              <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
+              <span>{tag}</span>
+            </div>
+          ))}
 
         <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
 

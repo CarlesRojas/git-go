@@ -10,6 +10,7 @@ export interface GitCommit {
     date: string;
     message: string;
     refs?: string;
+    tags: string[];
     isStash?: boolean;
 }
 
@@ -270,6 +271,7 @@ export class GitService {
                     message: message,
                     graph: '* ',
                     refs: `Stash ${index}`,
+                    tags: [],
                     isStash: true
                 };
 
@@ -389,11 +391,18 @@ export class GitService {
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',
-                    message: message?.trim() || ''
+                    message: message?.trim() || '',
+                    tags: []
                 };
 
                 if (refs?.trim()) {
                     commit.refs = refs.trim();
+
+                    // Parse tags from refs string (e.g., "refs/heads/main, refs/tags/v1.0.0, refs/remotes/origin/main")
+                    const tagMatches = refs.match(/refs\/tags\/([^,\s]+)/g);
+                    if (tagMatches) {
+                        commit.tags = tagMatches.map((match) => match.replace('refs/tags/', ''));
+                    }
                 }
 
                 commits.push(commit);
