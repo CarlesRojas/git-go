@@ -199,9 +199,8 @@ export class GitService {
     }
 
     /**
-     * Get the set of hashes reachable from refs/stash (the stash commit itself
-     * plus its index-state and untracked-files parents). These are used to mark
-     * commits returned by git log as stashes.
+     * Returns a map of stash commit hash → stash ref name (e.g. "stash@{0}").
+     * Only top-level stash commits are included (not their index/untracked parents).
      */
     private async getStashHashes(workspacePath: string, gitPath: string): Promise<Map<string, string>> {
         const stashMap = new Map<string, string>();
@@ -216,16 +215,20 @@ export class GitService {
             for (const line of lines) {
                 const [hash, ref] = line.split('|');
                 if (hash?.trim() && ref?.trim()) {
-                    stashMap.set(hash.trim(), ref.trim()); // e.g. "abc123" → "stash@{0}"
+                    stashMap.set(hash.trim(), ref.trim());
                 }
             }
         } catch {
-            // No stashes
+            // No stashes — refs/stash doesn't exist
         }
 
         return stashMap;
     }
 
+    /**
+     * Returns all stash commit hashes to pass as explicit refs to git log,
+     * ensuring every stash appears in the log output regardless of reachability.
+     */
     private async getAllStashRefs(workspacePath: string, gitPath: string): Promise<string[]> {
         try {
             const output = await this.spawnGit([gitPath, 'stash', 'list', '--format=%H'], workspacePath);
@@ -239,8 +242,64 @@ export class GitService {
     }
 
     /**
+     * Reorders commits so each stash sits directly before its parent commit
+     * (the commit it was stashed on top of), regardless of timestamp ordering.
+     *
+     * A stash's first parent is always the commit it was created on.
+     * Stashes whose parent isn't in the current page are appended at the end.
+     */
+    private reorderStashes(log: (message: string) => void, commits: GitCommit[]): GitCommit[] {
+        try {
+            const stashes: GitCommit[] = commits.filter((c) => c.isStash);
+            const regular: GitCommit[] = commits.filter((c) => !c.isStash);
+
+            if (stashes.length === 0) return commits;
+
+            // Build hash → index lookup for regular commits
+            const regularIndexByHash = new Map<string, number>();
+            for (let i = 0; i < regular.length; i++) {
+                regularIndexByHash.set(regular[i]!.hash, i);
+            }
+
+            // Map each stash to its insertion index (just before its first parent)
+            const insertions: Array<{ atIndex: number; stash: GitCommit }> = stashes.map((stash) => {
+                const parentHash = stash.parents[0];
+                const atIndex = parentHash ? (regularIndexByHash.get(parentHash) ?? regular.length) : regular.length;
+                return { atIndex, stash };
+            });
+
+            // Sort by insertion index; stashes targeting the same parent keep
+            // their original order (stash@{0} before stash@{1} = newer first)
+            insertions.sort((a, b) => a.atIndex - b.atIndex);
+
+            // Interleave stashes into the regular commits array
+            const result: GitCommit[] = [];
+            let cursor = 0;
+
+            for (const { atIndex, stash } of insertions) {
+                while (cursor < atIndex) {
+                    result.push(regular[cursor]!);
+                    cursor++;
+                }
+                result.push(stash);
+            }
+
+            while (cursor < regular.length) {
+                result.push(regular[cursor]!);
+                cursor++;
+            }
+
+            return result;
+        } catch (error) {
+            log(`Error reordering stashes: ${error}`);
+            // In case of any unexpected issues, return the original order
+            return commits;
+        }
+    }
+
+    /**
      * Get git commits from the current workspace with branch filtering, pagination,
-     * and stashes included inline (sorted by date alongside regular commits).
+     * and stashes included inline positioned directly before their parent commit.
      */
     public async getGitCommits(
         log: (message: string) => void,
@@ -261,7 +320,6 @@ export class GitService {
             const gitExecutable = await this.findGitExecutable();
             log(`Using git executable: ${gitExecutable.path} (version: ${gitExecutable.version})`);
 
-            // Fetch stash hashes so we can mark commits accordingly
             const stashMap = await this.getStashHashes(workspacePath, gitExecutable.path);
             log(`Stash map: ${JSON.stringify([...stashMap.entries()])}`);
 
@@ -282,7 +340,7 @@ export class GitService {
                 '-c',
                 'log.showSignature=false',
                 'log',
-                `--max-count=${maxCount + 1}`, // Fetch one extra to detect hasMore
+                `--max-count=${maxCount + 1}`,
                 `--skip=${skip}`,
                 `--pretty=format:${format}`,
                 '--date-order',
@@ -362,7 +420,7 @@ export class GitService {
                     commitRefs = cleaned || undefined;
                 }
 
-                const commit: GitCommit = {
+                commits.push({
                     hash: trimmedHash,
                     parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
                     author: author?.trim() || '',
@@ -372,13 +430,13 @@ export class GitService {
                     tags,
                     isStash: !!stashRef,
                     refs: commitRefs
-                };
-
-                commits.push(commit);
+                });
             }
 
-            log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
-            return { commits, hasMore };
+            const reordered = this.reorderStashes(log, commits);
+
+            log(`Parsed ${reordered.length} commits (hasMore: ${hasMore})`);
+            return { commits: reordered, hasMore };
         } catch (error) {
             log(`Error getting git commits: ${error}`);
             throw new Error(`Failed to get git commits: ${error}`);

@@ -253,13 +253,22 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
   }
 
   let i = 0
+  console.log('GraphLayoutGenerator: starting layout for', vertices.length, 'vertices')
+  let iterations = 0
+
   while (i < vertices.length) {
+    if (iterations++ > vertices.length * vertices.length) {
+      console.error('GraphLayoutGenerator: infinite loop at index', i, 'vertex:', vertices[i])
+      break
+    }
+
     if (vertices[i]!.getNextParent() !== null || vertices[i]!.isNotOnBranch()) {
       determinePath(i)
     } else {
       i++
     }
   }
+  console.log('GraphLayoutGenerator: layout complete')
 
   // Build output
   const commitLayouts: CommitLayout[] = vertices.map((v, idx) => ({

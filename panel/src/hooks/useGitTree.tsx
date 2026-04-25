@@ -54,6 +54,7 @@ export function useGitTree(commits: GitCommit[]): {
   treeWidth: number
 } {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
+  console.log(layout)
 
   const treeWidth = useMemo(() => {
     let maxCol = 0
