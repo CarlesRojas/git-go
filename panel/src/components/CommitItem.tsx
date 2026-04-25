@@ -60,46 +60,114 @@ export const CommitItem: React.FC<CommitItemProps> = ({
     <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
       <button
         className={cn(
-          'flex h-6 max-h-6 min-h-6 w-full cursor-pointer items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-(--vscode-editor-foreground)/10',
+          // Layout & sizing
+          'flex h-6 max-h-6 min-h-6 w-full',
+          // Spacing
+          'gap-2 pr-2',
+          // Typography
+          'text-left',
+          // Alignment
+          'items-center justify-between',
+          // Interactive
+          'cursor-pointer transition-colors hover:bg-(--vscode-editor-foreground)/10',
+          // State
           isExpanded && 'bg-(--vscode-editor-foreground)/10',
         )}
-        style={{ paddingLeft: `${treeWidth + 16}px` }}
+        style={{ paddingLeft: `${treeWidth + 8}px` }}
         onClick={onToggle}
       >
-        {Object.entries(groupedBranches)
-          .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
-          .map(([baseName, { local, remote }]) => (
+        <div
+          className={cn(
+            // Layout & sizing
+            'flex h-full grow overflow-hidden',
+            // Spacing
+            'gap-2 pr-2',
+            // Typography
+            'text-left',
+            // Alignment
+            'items-center justify-between',
+          )}
+        >
+          {Object.entries(groupedBranches)
+            .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
+            .map(([baseName, { local, remote }]) => (
+              <div
+                key={baseName}
+                className={
+                  // Layout & sizing
+                  'flex min-w-fit items-center ' +
+                  // Spacing
+                  'gap-2 px-2 py-0.5 ' +
+                  // Typography
+                  'text-xs font-medium ' +
+                  // Colors
+                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)'
+                }
+              >
+                {getBranchIcons(local, remote, local?.current ?? remote?.current ?? false)}
+                <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
+              </div>
+            ))}
+
+          {commit.isStash && (
             <div
-              key={baseName}
-              className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)"
+              className={
+                // Layout & sizing
+                'flex min-w-fit items-center ' +
+                // Spacing
+                'gap-2 px-2 py-0.5 ' +
+                // Typography
+                'text-xs font-medium ' +
+                // Colors
+                'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)'
+              }
             >
-              {getBranchIcons(local, remote, local?.current ?? remote?.current ?? false)}
-              <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
+              <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
+              <span>{commit.refs}</span>
             </div>
-          ))}
+          )}
 
-        {commit.isStash && (
-          <div className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)">
-            <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
-            <span>{commit.refs}</span>
-          </div>
-        )}
+          {commit.tags.length > 0 &&
+            commit.tags.map(tag => (
+              <div
+                key={tag}
+                className={
+                  // Layout & sizing
+                  'flex min-w-fit items-center ' +
+                  // Spacing
+                  'gap-2 px-2 py-0.5 ' +
+                  // Typography
+                  'text-xs font-medium ' +
+                  // Colors
+                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)'
+                }
+              >
+                <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
+                <span>{tag}</span>
+              </div>
+            ))}
 
-        {commit.tags.length > 0 &&
-          commit.tags.map(tag => (
-            <div
-              key={tag}
-              className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)"
-            >
-              <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
-              <span>{tag}</span>
-            </div>
-          ))}
-
-        <h3 className="line-clamp-1 grow truncate text-xs font-semibold tracking-tighter">{commit.message}</h3>
+          <h3
+            className={
+              // Layout
+              'grow ' +
+              // Typography
+              'line-clamp-1 truncate text-xs font-semibold tracking-tighter'
+            }
+          >
+            {commit.message}
+          </h3>
+        </div>
 
         <time
-          className="line-clamp-1 min-w-fit truncate text-xs font-medium tracking-tighter opacity-50"
+          className={
+            // Layout & sizing
+            'min-w-fit ' +
+            // Typography
+            'line-clamp-1 truncate text-xs font-medium tracking-tighter ' +
+            // Appearance
+            'opacity-50'
+          }
           dateTime={commit.date.split('T')[0]}
         >
           {new Date(commit.date).toLocaleDateString('en-CA', {
@@ -110,7 +178,14 @@ export const CommitItem: React.FC<CommitItemProps> = ({
         </time>
 
         <time
-          className="line-clamp-1 min-w-fit truncate text-xs font-medium tracking-tighter opacity-50"
+          className={
+            // Layout & sizing
+            'min-w-fit ' +
+            // Typography
+            'line-clamp-1 truncate text-xs font-medium tracking-tighter ' +
+            // Appearance
+            'opacity-50'
+          }
           dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
         >
           {new Date(commit.date).toLocaleTimeString([], {
@@ -126,10 +201,26 @@ export const CommitItem: React.FC<CommitItemProps> = ({
       {isExpanded && (
         <div
           ref={containerRef}
-          className="relative mb-3 overflow-auto bg-(--vscode-editor-foreground)/3 px-4 py-3"
-          style={{ height: `${panelHeight}px`, paddingLeft: `${treeWidth + 16}px` }}
+          className={
+            // Layout
+            'relative overflow-auto ' +
+            // Spacing
+            'mb-3 py-3 pr-2 ' +
+            // Colors
+            'bg-(--vscode-editor-foreground)/3'
+          }
+          style={{ height: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
         >
-          <div className="flex flex-col gap-1 text-xs font-medium">
+          <div
+            className={
+              // Layout
+              'flex flex-col ' +
+              // Spacing
+              'gap-1 ' +
+              // Typography
+              'text-xs font-medium'
+            }
+          >
             {/*
             <div className="flex gap-2">
               <span className="opacity-50">Date:</span>
@@ -154,7 +245,12 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             <div className="flex gap-2">
               <span className="opacity-50">Hash:</span>
               <code
-                className="cursor-pointer px-1 transition-opacity hover:opacity-75"
+                className={
+                  // Spacing
+                  'px-1 ' +
+                  // Interactive
+                  'cursor-pointer transition-opacity hover:opacity-75'
+                }
                 onClick={() => copyText(commit.hash, 'Hash')}
               >
                 {commit.hash}
@@ -164,13 +260,19 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             <div className="flex gap-2">
               <span className="opacity-50">Author:</span>
               <span
-                className="cursor-pointer transition-opacity hover:opacity-75"
+                className={
+                  // Interactive
+                  'cursor-pointer transition-opacity hover:opacity-75'
+                }
                 onClick={() => copyText(commit.author, 'Author')}
               >
                 {commit.author}
               </span>
               <span
-                className="cursor-pointer transition-opacity hover:opacity-75"
+                className={
+                  // Interactive
+                  'cursor-pointer transition-opacity hover:opacity-75'
+                }
                 onClick={() => copyText(commit.email, 'Email')}
               >
                 ({commit.email})
@@ -192,7 +294,12 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             <div className="flex gap-2">
               <span className="opacity-50">Message:</span>
               <span
-                className="cursor-pointer whitespace-pre-wrap transition-opacity hover:opacity-75"
+                className={
+                  // Typography
+                  'whitespace-pre-wrap ' +
+                  // Interactive
+                  'cursor-pointer transition-opacity hover:opacity-75'
+                }
                 onClick={() => copyText(commit.message, 'Message')}
               >
                 {commit.message}
@@ -202,7 +309,13 @@ export const CommitItem: React.FC<CommitItemProps> = ({
 
           <div
             className={cn(
-              'absolute right-0 bottom-0 left-0 h-1 border-b border-(--vscode-editor-foreground)/15 bg-transparent transition-colors hover:bg-(--vscode-editor-foreground)/20',
+              // Position & sizing
+              'absolute right-0 bottom-0 left-0 h-1',
+              // Colors & borders
+              'border-b border-(--vscode-editor-foreground)/15 bg-transparent',
+              // Interactive
+              'transition-colors hover:bg-(--vscode-editor-foreground)/20',
+              // State
               isDragging && 'bg-(--vscode-editor-foreground)/30',
             )}
             style={{ cursor: isDragging ? 'ns-resize' : 'ns-resize' }}

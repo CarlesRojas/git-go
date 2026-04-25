@@ -277,6 +277,7 @@ export class GitService {
 
             if (branches && branches.length > 0) {
                 gitArgs.push(...branches);
+                gitArgs.push('HEAD');
                 log(`Filtering commits for branches: ${branches.join(', ')}`);
             } else {
                 gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
