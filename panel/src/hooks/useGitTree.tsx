@@ -64,24 +64,48 @@ interface GitTreeComponentProps {
   columnWidth: number
 }
 
+const BRANCH_COLORS = [
+  '#06b6d4', // cyan-500
+  // '#3b82f6', // blue-500
+  // '#8b5cf6', // violet-500
+  '#ec4899', // pink-500
+  // '#f43f5e', // rose-500
+  // '#84cc16', // lime-500
+  '#10b981', // emerald-500
+  // '#14b8a6', // teal-500
+  // '#6366f1', // indigo-500
+  '#a855f7', // purple-500
+  // '#d946ef', // fuchsia-500
+  // '#ef4444', // red-500
+  '#f97316', // orange-500
+  // '#eab308', // yellow-500
+  // '#22c55e', // green-500
+]
+
+// Get color for column index (loops through color array)
+const getColumnColor = (columnIndex: number): string => {
+  return BRANCH_COLORS[columnIndex % BRANCH_COLORS.length]!
+}
+
 // SVG Components
-const CirclePoint: FC<{ x: number; y: number }> = ({ x, y }) => (
+const CirclePoint: FC<{ x: number; y: number; color: string }> = ({ x, y, color }) => (
   <circle
     cx={x + 8} // Center in the column (w-4 = 16px, so center at 8px)
     cy={y + 12} // Center vertically in the h-6 row (24px, so center at 12px)
-    r={3}
-    fill="white"
+    r={4}
+    fill={color}
   />
 )
 
-const VerticalLine: FC<{ x: number; y: number }> = ({ x, y }) => (
+const VerticalLine: FC<{ x: number; y: number; color: string }> = ({ x, y, color }) => (
   <line
     x1={x + 8} // Center in the column
     y1={y}
     x2={x + 8}
     y2={y + 24} // Full height of h-6 row
-    stroke="white"
-    strokeWidth={1}
+    stroke={color}
+    opacity={0.5}
+    strokeWidth={2}
   />
 )
 
@@ -97,11 +121,12 @@ const GitTreeComponent: FC<GitTreeComponentProps> = ({ treeRows, treeWidth, colu
 
           return row.segments.map((segment, columnIndex) => {
             const x = columnIndex * columnWidth
+            const color = getColumnColor(columnIndex)
 
             if (segment === '*') {
-              return <CirclePoint key={`${row.hash}-${columnIndex}-point`} x={x} y={y} />
+              return <CirclePoint key={`${row.hash}-${columnIndex}-point`} x={x} y={y} color={color} />
             } else if (segment === '|') {
-              return <VerticalLine key={`${row.hash}-${columnIndex}-line`} x={x} y={y} />
+              return <VerticalLine key={`${row.hash}-${columnIndex}-line`} x={x} y={y} color={color} />
             }
 
             return null
