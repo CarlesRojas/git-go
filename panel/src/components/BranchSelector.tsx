@@ -44,11 +44,14 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const setDefaultBranches = useCallback(() => {
     const isMain = (name: string) => name === 'main' || name === 'master'
 
-    const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
-    const mainBranch = branches.filter(b => isMain(b.cleanName))
+    // const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
+    // const mainBranch = branches.filter(b => isMain(b.cleanName))
 
-    setSelectedBranches([...currentBranch.map(b => b.cleanName), ...mainBranch.map(b => b.cleanName)])
-    onBranchesChange([...currentBranch, ...mainBranch])
+    // setSelectedBranches([...currentBranch.map(b => b.cleanName), ...mainBranch.map(b => b.cleanName)])
+    // onBranchesChange([...currentBranch, ...mainBranch])
+
+    setSelectedBranches([...branches.map(b => b.cleanName)])
+    onBranchesChange([...branches])
   }, [branches, onBranchesChange])
 
   useEffect(() => {
