@@ -30,7 +30,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   const commits = data?.pages.flatMap(page => page.commits) ?? []
 
-  const { treeComponent, paddingLeft } = useGitTree(commits)
+  const { treeComponent, treeWidth } = useGitTree(commits)
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
@@ -58,7 +58,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     <Fragment>
       {commits.length > 0 && treeComponent}
 
-      <div className="flex w-full flex-col py-3" style={{ paddingLeft }}>
+      <div className="flex w-full flex-col py-3">
         {commits.map(commit => (
           <Fragment key={commit.hash}>
             {stashesByParent?.get(commit.hash)?.map(stash => (
@@ -68,6 +68,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
                 isExpanded={expandedCommitHash === stash.hash}
                 onToggle={() => toggleCommit(stash.hash)}
                 selectedBranches={selectedBranches}
+                treeWidth={treeWidth}
               />
             ))}
 
@@ -76,6 +77,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
               isExpanded={expandedCommitHash === commit.hash}
               onToggle={() => toggleCommit(commit.hash)}
               selectedBranches={selectedBranches}
+              treeWidth={treeWidth}
             />
           </Fragment>
         ))}

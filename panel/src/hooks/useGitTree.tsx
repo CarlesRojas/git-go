@@ -1,12 +1,8 @@
-import React from 'react'
+import { FC, ReactElement, useMemo } from 'react'
 import type { GitCommit } from '../../../src/gitService'
 
-export interface GitTreeData {
-  /** Component to render the git tree visualization */
-  treeComponent: React.ReactElement
-  /** Left padding needed for each commit item to accommodate tree space */
-  paddingLeft: number
-  /** Width of the tree area in pixels */
+export interface GitTreeResponse {
+  treeComponent: ReactElement
   treeWidth: number
 }
 
@@ -17,6 +13,10 @@ export interface GitTreeRow {
   commitIndex: number
   /** The commit hash for this row */
   hash: string
+  /** Parsed graph segments (split by spaces) */
+  segments: string[]
+  /** Maximum number of columns needed */
+  columnCount: number
 }
 
 /**
@@ -24,63 +24,90 @@ export interface GitTreeRow {
  * @param commits Array of git commits with graph data
  * @returns Tree component and layout information
  */
-export const useGitTree = (commits: GitCommit[]): GitTreeData => {
-  const treeRows: GitTreeRow[] = React.useMemo(() => {
-    return commits.map((commit, index) => ({
-      content: commit.graph || '*', // Fallback to simple * if no graph
-      commitIndex: index,
-      hash: commit.hash,
+export const useGitTree = (commits: GitCommit[]): GitTreeResponse => {
+  const treeRows: GitTreeRow[] = useMemo(() => {
+    const parsedCommits = commits.map((commit, index) => {
+      const content = commit.graph || '*'
+      const segments = content.split(' ')
+      return {
+        content,
+        commitIndex: index,
+        hash: commit.hash,
+        segments,
+      }
+    })
+
+    const maxColumns = Math.max(...parsedCommits.map(commit => commit.segments.length), 1)
+
+    return parsedCommits.map(commit => ({
+      ...commit,
+      columnCount: maxColumns,
     }))
   }, [commits])
 
-  // Calculate the maximum width needed for the tree
-  const maxWidth = React.useMemo(() => {
-    return Math.max(
-      ...treeRows.map(row => row.content.length),
-      1, // Minimum width of 1 character
-    )
-  }, [treeRows])
+  const maxColumns = treeRows[0]?.columnCount || 1
 
-  // Convert character width to pixels (approximate monospace font width)
-  const charWidth = 8 // pixels per character
-  const treeWidth = maxWidth * charWidth + 16 // Add some padding
-  const paddingLeft = treeWidth // Same as tree width
+  const columnWidth = 16 // pixels per column (w-4)
+  const treeWidth = maxColumns * columnWidth
 
-  const treeComponent = React.useMemo(
-    () => <GitTreeComponent treeRows={treeRows} treeWidth={treeWidth} charWidth={charWidth} />,
-    [treeRows, treeWidth, charWidth],
+  const treeComponent = useMemo(
+    () => <GitTreeComponent treeRows={treeRows} treeWidth={treeWidth} columnWidth={columnWidth} />,
+    [treeRows, treeWidth, columnWidth],
   )
 
-  return {
-    treeComponent,
-    paddingLeft,
-    treeWidth,
-  }
+  return { treeComponent, treeWidth }
 }
 
 interface GitTreeComponentProps {
   treeRows: GitTreeRow[]
   treeWidth: number
-  charWidth: number
+  columnWidth: number
 }
+
+// SVG Components
+const CirclePoint: FC<{ x: number; y: number }> = ({ x, y }) => (
+  <circle
+    cx={x + 8} // Center in the column (w-4 = 16px, so center at 8px)
+    cy={y + 12} // Center vertically in the h-6 row (24px, so center at 12px)
+    r={3}
+    fill="white"
+  />
+)
+
+const VerticalLine: FC<{ x: number; y: number }> = ({ x, y }) => (
+  <line
+    x1={x + 8} // Center in the column
+    y1={y}
+    x2={x + 8}
+    y2={y + 24} // Full height of h-6 row
+    stroke="white"
+    strokeWidth={1}
+  />
+)
 
 /**
  * Component that renders the git tree visualization
  */
-const GitTreeComponent: React.FC<GitTreeComponentProps> = ({ treeRows, treeWidth, charWidth }) => {
+const GitTreeComponent: FC<GitTreeComponentProps> = ({ treeRows, treeWidth, columnWidth }) => {
   return (
-    <div
-      className="absolute top-0 left-0 z-10 h-fit py-3 text-xs leading-tight opacity-60"
-      style={{ width: treeWidth }}
-    >
-      {treeRows.map((row, index) => (
-        <div
-          key={`${row.hash}-${index}`}
-          className="flex h-6 max-h-6 min-h-6 items-center whitespace-pre text-(--vscode-editor-foreground)"
-        >
-          <span className="tracking-wide">{row.content}</span>
-        </div>
-      ))}
+    <div className="pointer-events-none absolute top-0 left-0 z-10 h-fit py-3" style={{ width: treeWidth }}>
+      <svg width={treeWidth} height={treeRows.length * 24}>
+        {treeRows.map((row, rowIndex) => {
+          const y = rowIndex * 24 // Each row is h-6 (24px)
+
+          return row.segments.map((segment, columnIndex) => {
+            const x = columnIndex * columnWidth
+
+            if (segment === '*') {
+              return <CirclePoint key={`${row.hash}-${columnIndex}-point`} x={x} y={y} />
+            } else if (segment === '|') {
+              return <VerticalLine key={`${row.hash}-${columnIndex}-line`} x={x} y={y} />
+            }
+
+            return null
+          })
+        })}
+      </svg>
     </div>
   )
 }

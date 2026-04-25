@@ -15,9 +15,16 @@ interface CommitItemProps {
   isExpanded: boolean
   onToggle: () => void
   selectedBranches: GitBranch[]
+  treeWidth: number
 }
 
-export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onToggle, selectedBranches }) => {
+export const CommitItem: React.FC<CommitItemProps> = ({
+  commit,
+  isExpanded,
+  onToggle,
+  selectedBranches,
+  treeWidth,
+}) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
@@ -56,6 +63,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
           'flex h-6 max-h-6 min-h-6 w-full cursor-pointer items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-(--vscode-editor-foreground)/10',
           isExpanded && 'bg-(--vscode-editor-foreground)/10',
         )}
+        style={{ paddingLeft: `${treeWidth + 16}px` }}
         onClick={onToggle}
       >
         {Object.entries(groupedBranches)
@@ -119,7 +127,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
         <div
           ref={containerRef}
           className="relative mb-3 overflow-auto bg-(--vscode-editor-foreground)/3 px-4 py-3"
-          style={{ height: `${panelHeight}px` }}
+          style={{ height: `${panelHeight}px`, paddingLeft: `${treeWidth + 16}px` }}
         >
           <div className="flex flex-col gap-1 text-xs font-medium">
             {commit.graph && (
