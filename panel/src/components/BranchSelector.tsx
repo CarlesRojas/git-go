@@ -7,19 +7,17 @@ import { getBranchIcons } from '../utils/branchIcons'
 import { groupBranches } from '../utils/groupBranches'
 import {
   Combobox,
-  ComboboxChips,
-  ComboboxChipsInput,
   ComboboxCollection,
   ComboboxContent,
   ComboboxEmpty,
   ComboboxGroup,
+  ComboboxInput,
   ComboboxItem,
   ComboboxLabel,
   ComboboxList,
   ComboboxSeparator,
   ComboboxTrigger,
   ComboboxValue,
-  useComboboxAnchor,
 } from './Combobox'
 
 interface BranchSelectorProps {
@@ -27,8 +25,6 @@ interface BranchSelectorProps {
 }
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
-  const anchor = useComboboxAnchor()
-
   const { data: branches = [], isLoading: loading, error } = useGitBranches()
   const [inputValue, setInputValue] = useState('')
   // const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
@@ -131,47 +127,30 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     )
   }
 
-  //     <ComboboxTrigger>
-  //   <ComboboxValue>
-  //     <span className="truncate">{/* displayText */} Select...</span>
-  //   </ComboboxValue>
-  // </ComboboxTrigger>
-
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs font-medium opacity-75">Branches:</span>
 
       <Combobox
         multiple
-        autoHighlight
         items={branchGroups}
+        inputValue={inputValue}
+        onInputValueChange={(value, { reason, trigger, event }) => {
+          console.log('REASON', reason, trigger, event)
+          if (reason !== 'input-clear') setInputValue(value)
+        }}
         onOpenChange={open => {
           if (!open) setInputValue('')
         }}
       >
-        {/* <ComboboxChips ref={anchor} className="w-full max-w-xs">
-          <ComboboxValue>
-            {values => (
-              <Fragment>
-                {values.map((value: string) => (
-                  <ComboboxChip key={value}>{value}</ComboboxChip>
-                ))}
-
-                <ComboboxChipsInput />
-              </Fragment>
-            )}
-          </ComboboxValue>
-        </ComboboxChips> */}
         <ComboboxTrigger>
           <ComboboxValue>
-            <span className="truncate">{/* displayText */} Select...</span>
+            <span className="truncate">{/* displayText */} Select branches...</span>
           </ComboboxValue>
         </ComboboxTrigger>
 
-        <ComboboxContent anchor={anchor}>
-          <ComboboxChips ref={anchor} className="w-full max-w-xs">
-            <ComboboxChipsInput />
-          </ComboboxChips>
+        <ComboboxContent>
+          <ComboboxInput onClear={() => setInputValue('')} />
 
           <ComboboxEmpty>No branches found.</ComboboxEmpty>
 

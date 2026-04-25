@@ -10,7 +10,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "useDefineForClassFields": true,
     "allowImportingTsExtensions": true,

@@ -3,6 +3,7 @@ import { faCheck, faChevronDown, faCodeBranch, faTimes } from '@fortawesome/free
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { ComponentPropsWithRef, useRef } from 'react'
 import { cn } from '../utils/cn'
+import { Input } from './Input'
 
 const Combobox = ComboboxPrimitive.Root
 
@@ -15,7 +16,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
       className={cn(
-        'flex h-7 w-48 items-center justify-between gap-2 border border-(--vscode-editor-foreground)/10 bg-(--vscode-input-background) text-xs whitespace-nowrap text-(--vscode-input-foreground)',
+        'flex h-7 w-48 items-center justify-between gap-2 border border-(--vscode-editor-foreground)/10 bg-(--vscode-input-background) px-2.5 text-xs whitespace-nowrap text-(--vscode-input-foreground)',
         className,
       )}
       {...props}
@@ -33,14 +34,24 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
   )
 }
 
-function ComboboxInput({ className, children, disabled = false, ...props }: ComboboxPrimitive.Input.Props & {}) {
+function ComboboxInput({
+  className,
+  children,
+  disabled = false,
+  showTrigger = true,
+  onClear,
+  ...props
+}: ComboboxPrimitive.Input.Props & {
+  showTrigger?: boolean
+  onClear?: () => void
+}) {
   return (
     <ComboboxPrimitive.Input
+      render={<Input disabled={disabled} onClear={onClear} />}
       className={cn(
-        'flex h-8 w-full border-none bg-(--vscode-input-background) px-3 text-xs text-(--vscode-input-foreground) placeholder:text-(--vscode-input-placeholderForeground)/70 disabled:cursor-not-allowed disabled:opacity-50',
+        'flex h-8 w-full border-none bg-(--vscode-input-background) px-2.5 text-xs text-(--vscode-input-foreground) placeholder:text-(--vscode-input-placeholderForeground)/70 disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
-      placeholder={props.placeholder}
       {...props}
     />
   )
@@ -99,7 +110,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        'not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground relative flex w-full cursor-default items-center gap-2 py-1 pr-8 pl-1.5 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-(--vscode-list-hoverBackground) data-highlighted:text-(--vscode-list-hoverForeground) [&_svg]:pointer-events-none [&_svg]:shrink-0',
+        'not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground relative flex w-full cursor-default items-center gap-2 py-1 pr-8 pl-1.5 text-xs outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-(--vscode-list-hoverBackground) data-highlighted:text-(--vscode-list-hoverForeground) [&_svg]:pointer-events-none [&_svg]:shrink-0',
         className,
       )}
       {...props}
@@ -124,7 +135,7 @@ function ComboboxLabel({ className, ...props }: ComboboxPrimitive.GroupLabel.Pro
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
-      className={cn('px-2 py-1.5 text-xs text-(--vscode-editor-foreground)/70', className)}
+      className={cn('px-2.5 py-1.5 text-xs text-(--vscode-editor-foreground)/70', className)}
       {...props}
     />
   )
@@ -139,7 +150,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
       className={cn(
-        'text-muted-foreground hidden w-full justify-center py-2 text-center text-sm group-data-empty/combobox-content:flex',
+        'hidden w-full px-2.5 py-2 text-xs text-(--vscode-editor-foreground)/50 group-data-empty/combobox-content:flex',
         className,
       )}
       {...props}
@@ -164,7 +175,7 @@ function ComboboxChips({
     <ComboboxPrimitive.Chips
       data-slot="combobox-chips"
       className={cn(
-        'flex min-h-8 flex-wrap items-center gap-1 border border-(--vscode-editor-foreground)/10 bg-transparent bg-clip-padding px-2.5 py-1 text-sm transition-colors has-data-[slot=combobox-chip]:px-1',
+        'flex min-h-8 flex-wrap items-center gap-1 border border-(--vscode-editor-foreground)/10 bg-transparent bg-clip-padding px-2.5 py-1 text-xs transition-colors has-data-[slot=combobox-chip]:px-1',
         className,
       )}
       {...props}
