@@ -11,7 +11,7 @@ export const getBranchIcons = (local: GitBranch | null, remote: GitBranch | null
 
   if (remote)
     icons.push(
-      <FontAwesomeIcon key="remote" icon={faCircleDot} className="h-3 w-3 text-(--vscode-editor-foreground)/50" />,
+      <FontAwesomeIcon key="remote" icon={faCircleDot} className="h-3 w-3 text-(--vscode-editor-foreground)/60" />,
     )
 
   return <div className="flex items-center gap-1">{icons}</div>

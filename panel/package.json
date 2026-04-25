@@ -9,6 +9,7 @@
     "format": "prettier --write . && tsc --noEmit --project ./tsconfig.json && eslint --fix"
   },
   "dependencies": {
+    "@base-ui/react": "^1.4.1",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/monaspace-neon": "^5.2.5",
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
