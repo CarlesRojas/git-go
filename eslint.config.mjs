@@ -2,7 +2,7 @@ import typescriptEslint from 'typescript-eslint';
 
 export default [
     {
-        files: ['**/*.ts']
+        files: ['**/*.ts', '**/*.tsx']
     },
     {
         plugins: {
@@ -24,7 +24,7 @@ export default [
                 }
             ],
 
-            curly: 'warn',
+            curly: ['warn', 'multi-line'],
             eqeqeq: 'warn',
             'no-throw-literal': 'warn',
             semi: ['warn', 'never']

@@ -35,7 +35,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   }
 
   return (
-    <main className="flex flex-col overflow-y-auto">
+    <main className="my-3 flex flex-col overflow-y-auto">
       {commits.map(commit => (
         <CommitItem
           key={commit.hash}

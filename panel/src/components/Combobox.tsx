@@ -69,14 +69,9 @@ export const Combobox: React.FC<ComboboxProps> = ({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-7 w-64 items-center justify-between gap-2 border bg-transparent px-3 py-1 text-xs whitespace-nowrap shadow-sm focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+            'border-input ring-offset-background focus:ring-ring flex h-7 w-64 items-center justify-between gap-2 border border-(--vscode-editor-foreground)/10 bg-(--vscode-input-background) px-3 py-1 text-xs whitespace-nowrap text-(--vscode-input-foreground) shadow-sm placeholder:text-(--vscode-input-placeholderForeground) focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
             className,
           )}
-          style={{
-            backgroundColor: 'var(--vscode-input-background)',
-            borderColor: 'var(--vscode-input-border)',
-            color: 'var(--vscode-input-foreground)',
-          }}
         >
           <div className="flex min-w-0 flex-row items-center gap-2">
             <FontAwesomeIcon icon={faCodeBranch} className="h-3 w-3 shrink-0 opacity-60" />
@@ -90,25 +85,14 @@ export const Combobox: React.FC<ComboboxProps> = ({
         </button>
       </Popover.Trigger>
 
-      <Popover.Content
-        className="w-(--radix-popover-trigger-width) p-0"
-        style={{
-          backgroundColor: 'var(--vscode-dropdown-background)',
-          borderColor: 'var(--vscode-dropdown-border)',
-          boxShadow: 'var(--vscode-widget-shadow)',
-        }}
-      >
-        <Command className="border-border overflow-hidden rounded-md border">
+      <Popover.Content className="w-(--radix-popover-trigger-width) border-(--vscode-editor-foreground)/10 bg-(--vscode-dropdown-background) p-0 shadow-(--vscode-widget-shadow)">
+        <Command className="overflow-hidden border border-(--vscode-editor-foreground)/10">
           <Command.Input
             ref={inputRef}
             placeholder="Search branches..."
             value={search}
             onValueChange={setSearch}
-            className="placeholder:text-muted-foreground flex h-8 w-full rounded-md border-none bg-transparent py-2 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            style={{
-              backgroundColor: 'var(--vscode-input-background)',
-              color: 'var(--vscode-input-foreground)',
-            }}
+            className="flex h-8 w-full border-none bg-(--vscode-input-background) px-2 py-2 text-xs text-(--vscode-input-foreground) outline-none placeholder:text-(--vscode-input-placeholderForeground)/70 disabled:cursor-not-allowed disabled:opacity-50"
           />
 
           <Command.List className="max-h-50 overflow-y-auto">
@@ -120,17 +104,12 @@ export const Combobox: React.FC<ComboboxProps> = ({
                   value={item.value}
                   onSelect={() => handleSelect(item.value)}
                   className={cn(
-                    'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none select-none',
-                    'hover:bg-accent hover:text-accent-foreground',
+                    'relative flex cursor-default items-center gap-2 px-3 py-1.5 text-xs outline-none select-none data-[selected=true]:bg-(--vscode-list-hoverBackground) data-[selected=true]:text-(--vscode-list-hoverForeground)',
+                    'hover:bg-(--vscode-list-hoverBackground) hover:text-(--vscode-list-hoverForeground)',
+                    value.includes(item.value)
+                      ? 'bg-(--vscode-list-activeSelectionBackground) text-(--vscode-list-activeSelectionForeground)'
+                      : 'bg-transparent text-(--vscode-dropdown-foreground)',
                   )}
-                  style={{
-                    backgroundColor: value.includes(item.value)
-                      ? 'var(--vscode-list-activeSelectionBackground)'
-                      : 'transparent',
-                    color: value.includes(item.value)
-                      ? 'var(--vscode-list-activeSelectionForeground)'
-                      : 'var(--vscode-dropdown-foreground)',
-                  }}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     {item.icon}
