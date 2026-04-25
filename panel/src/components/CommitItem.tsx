@@ -223,9 +223,18 @@ export const CommitItem: React.FC<CommitItemProps> = ({
               'text-xs font-medium',
             )}
           >
-            {/*
-            <div className="flex gap-2">
+            {/*<div className="flex gap-2">
               <span className="opacity-50">Date:</span>
+              <span
+                className={cn(
+                  // Interactive
+                  'cursor-pointer transition-opacity hover:opacity-75',
+                )}
+                onClick={() => copyText(new Date(commit.date).getTime().toString(), 'Milliseconds')}
+              >
+                {new Date(commit.date).getTime()}ms
+              </span>
+
 
               <span>
                 {new Date(commit.date).toLocaleTimeString([], {
@@ -242,7 +251,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({
                   day: 'numeric',
                 })}
               </span>
-            </div> */}
+            </div>*/}
 
             <div className="flex gap-2">
               <span className="opacity-50">Hash:</span>
@@ -281,7 +290,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({
               </span>
             </div>
 
-            {/* {commit.refs && (
+            {commit.refs && (
               <div className="flex gap-2">
                 <span className="opacity-50">Refs:</span>
                 <span
@@ -291,7 +300,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({
                   {commit.refs}
                 </span>
               </div>
-            )} */}
+            )}
 
             <div className="flex gap-2">
               <span className="opacity-50">Message:</span>
