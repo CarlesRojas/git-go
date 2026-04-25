@@ -53,7 +53,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
     <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
       <button
         className={cn(
-          'flex min-h-6 w-full cursor-pointer items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-(--vscode-editor-foreground)/10',
+          'flex h-6 max-h-6 min-h-6 w-full cursor-pointer items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-(--vscode-editor-foreground)/10',
           isExpanded && 'bg-(--vscode-editor-foreground)/10',
         )}
         onClick={onToggle}

@@ -5,6 +5,7 @@ import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
 import { useGitStashes, useInfiniteGitCommits } from './hooks/useGitQueries'
+import { useGitTree } from './hooks/useGitTree'
 
 interface GraphProps {
   selectedBranches: GitBranch[]
@@ -29,6 +30,8 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   const commits = data?.pages.flatMap(page => page.commits) ?? []
 
+  const { treeComponent, paddingLeft } = useGitTree(commits)
+
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
@@ -52,31 +55,35 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   }
 
   return (
-    <>
-      {commits.map(commit => (
-        <Fragment key={commit.hash}>
-          {stashesByParent?.get(commit.hash)?.map(stash => (
+    <Fragment>
+      {commits.length > 0 && treeComponent}
+
+      <div className="flex w-full flex-col py-3" style={{ paddingLeft }}>
+        {commits.map(commit => (
+          <Fragment key={commit.hash}>
+            {stashesByParent?.get(commit.hash)?.map(stash => (
+              <CommitItem
+                key={stash.hash}
+                commit={stash}
+                isExpanded={expandedCommitHash === stash.hash}
+                onToggle={() => toggleCommit(stash.hash)}
+                selectedBranches={selectedBranches}
+              />
+            ))}
+
             <CommitItem
-              key={stash.hash}
-              commit={stash}
-              isExpanded={expandedCommitHash === stash.hash}
-              onToggle={() => toggleCommit(stash.hash)}
+              commit={commit}
+              isExpanded={expandedCommitHash === commit.hash}
+              onToggle={() => toggleCommit(commit.hash)}
               selectedBranches={selectedBranches}
             />
-          ))}
+          </Fragment>
+        ))}
 
-          <CommitItem
-            commit={commit}
-            isExpanded={expandedCommitHash === commit.hash}
-            onToggle={() => toggleCommit(commit.hash)}
-            selectedBranches={selectedBranches}
-          />
-        </Fragment>
-      ))}
-
-      {hasNextPage && !isFetchingNextPage && (
-        <div ref={loadMoreRef} className="flex h-8 min-h-8 w-full items-center justify-center gap-2 opacity-80" />
-      )}
-    </>
+        {hasNextPage && !isFetchingNextPage && (
+          <div ref={loadMoreRef} className="flex h-8 min-h-8 w-full items-center justify-center gap-2 opacity-80" />
+        )}
+      </div>
+    </Fragment>
   )
 }

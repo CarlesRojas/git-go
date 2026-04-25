@@ -54,7 +54,7 @@ export const App: React.FC = () => {
             <BranchSelector onBranchesChange={setSelectedBranches} />
           </div>
 
-          <main className="graph-h relative flex flex-col overflow-y-auto py-3">
+          <main className="graph-h relative flex flex-col overflow-y-auto">
             <Graph selectedBranches={selectedBranches} />
           </main>
         </ToastProvider>
