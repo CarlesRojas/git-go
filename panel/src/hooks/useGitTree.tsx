@@ -1,4 +1,4 @@
-import { FC, ReactElement, useMemo } from 'react'
+import { FC, Fragment, ReactElement, useMemo } from 'react'
 import type { GitCommit } from '../../../src/gitService'
 
 export interface GitTreeResponse {
@@ -95,16 +95,27 @@ const CirclePoint: FC<{ x: number; y: number; color: string }> = ({ x, y, color 
     r={5}
     fill={color}
     stroke="var(--vscode-editor-background)"
-    strokeWidth={1}
+    strokeWidth={2}
   />
 )
 
-const VerticalLine: FC<{ x: number; y: number; color: string }> = ({ x, y, color }) => (
+const VerticalLine: FC<{ x: number; y: number; color: string; extraHalf?: boolean }> = ({ x, y, color, extraHalf }) => (
   <line
     x1={x + 8} // Center in the column
     y1={y}
     x2={x + 8}
-    y2={y + 24} // Full height of h-6 row
+    y2={y + (extraHalf ? 36 : 24)} // Full height of h-6 row or half extra
+    stroke={color}
+    strokeWidth={2.5}
+  />
+)
+
+const ConnectingLine: FC<{ x: number; y: number; color: string }> = ({ x, y, color }) => (
+  <line
+    x1={x + 8} // Center in the column
+    y1={y + 12} // Start from center of current commit point
+    x2={x + 8}
+    y2={y + 36} // Go down to the next row center
     stroke={color}
     strokeWidth={2.5}
   />
@@ -119,16 +130,31 @@ const GitTreeComponent: FC<GitTreeComponentProps> = ({ treeRows, treeWidth, colu
       <svg width={treeWidth} height={treeRows.length * 24}>
         {treeRows.map((row, rowIndex) => {
           const y = rowIndex * 24 // Each row is h-6 (24px)
+          const nextRow = treeRows[rowIndex + 1] // Get the next row for connection checking
 
           return row.segments.map((segment, columnIndex) => {
             const x = columnIndex * columnWidth
             const color = getColumnColor(columnIndex)
 
-            if (segment === '*') {
-              return <CirclePoint key={`${row.hash}-${columnIndex}-point`} x={x} y={y} color={color} />
-            } else if (segment === '|') {
-              return <VerticalLine key={`${row.hash}-${columnIndex}-line`} x={x} y={y} color={color} />
-            }
+            if (segment === '|')
+              return (
+                <VerticalLine
+                  key={`${row.hash}-${columnIndex}-line`}
+                  x={x}
+                  y={y}
+                  color={color}
+                  extraHalf={!!nextRow && !!nextRow.segments[columnIndex]}
+                />
+              )
+
+            if (segment === '*')
+              return (
+                <Fragment key={`${row.hash}-${columnIndex}`}>
+                  {nextRow && nextRow.segments[columnIndex] && <ConnectingLine x={x} y={y} color={color} />}
+
+                  <CirclePoint x={x} y={y} color={color} />
+                </Fragment>
+              )
 
             return null
           })

@@ -282,7 +282,7 @@ export class GitService {
             return stashes;
         } catch (error) {
             log(`Error getting git stashes: ${error}`);
-            throw new Error(`Failed to get git stashes: ${error}`);
+            return [];
         }
     }
 
@@ -365,6 +365,8 @@ export class GitService {
             }
 
             for (const line of lines) {
+                if (!line.includes(GIT_LOG_SEPARATOR)) continue;
+
                 const parts = line.split(GIT_LOG_SEPARATOR);
                 if (parts.length < 6) {
                     log(`Skipping malformed line: ${line}`);

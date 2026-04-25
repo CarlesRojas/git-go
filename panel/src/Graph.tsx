@@ -61,7 +61,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
       <div className="flex w-full flex-col py-3">
         {commits.map(commit => (
           <Fragment key={commit.hash}>
-            {stashesByParent?.get(commit.hash)?.map(stash => (
+            {/* {stashesByParent?.get(commit.hash)?.map(stash => (
               <CommitItem
                 key={stash.hash}
                 commit={stash}
@@ -70,7 +70,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
                 selectedBranches={selectedBranches}
                 treeWidth={treeWidth}
               />
-            ))}
+            ))} */}
 
             <CommitItem
               commit={commit}
