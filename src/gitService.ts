@@ -218,9 +218,14 @@ export class GitService {
     }
 
     /**
-     * Get git commits from the current workspace with branch filtering
+     * Get git commits from the current workspace with branch filtering and pagination
      */
-    public async getGitCommits(log: (message: string) => void, branches?: string[]): Promise<GitCommit[]> {
+    public async getGitCommits(
+        log: (message: string) => void,
+        branches?: string[],
+        maxCount: number = 100,
+        skip: number = 0
+    ): Promise<{ commits: GitCommit[]; hasMore: boolean; total?: number }> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             throw new Error('No workspace folder found');
@@ -249,13 +254,14 @@ export class GitService {
                 '%D' // Refs (only shows for branch tips and tags)
             ].join(GIT_LOG_SEPARATOR);
 
-            log(`Executing git log command with format`);
+            log(`Executing git log command with format (maxCount: ${maxCount}, skip: ${skip})`);
             const gitArgs = [
                 gitExecutable.path,
                 '-c',
                 'log.showSignature=false',
                 'log',
-                '--max-count=100',
+                `--max-count=${maxCount + 1}`, // Fetch one extra to check if more are available
+                `--skip=${skip}`,
                 `--pretty=format:${format}`,
                 '--date-order',
                 '--graph',
@@ -277,9 +283,16 @@ export class GitService {
             gitArgs.push('--');
 
             const gitLog = await this.spawnGit(gitArgs, workspacePath);
-            const lines = gitLog.split(EOL_REGEX).filter((line: string) => line.trim());
+            let lines = gitLog.split(EOL_REGEX).filter((line: string) => line.trim());
 
             const commits: GitCommit[] = [];
+            let hasMore = false;
+
+            // Check if we got more commits than requested (indicating more are available)
+            if (lines.length > maxCount) {
+                hasMore = true;
+                lines = lines.slice(0, maxCount); // Remove the extra commit
+            }
 
             for (const line of lines) {
                 const parts = line.split(GIT_LOG_SEPARATOR);
@@ -317,8 +330,8 @@ export class GitService {
                 commits.push(commit);
             }
 
-            log(`Parsed ${commits.length} commits`);
-            return commits;
+            log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
+            return { commits, hasMore };
         } catch (error) {
             log(`Error getting git commits: ${error}`);
             throw new Error(`Failed to get git commits: ${error}`);

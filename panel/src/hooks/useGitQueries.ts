@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
 
 interface VSCodeApi {
@@ -13,7 +13,7 @@ declare global {
 
 let vscodeApi: VSCodeApi | null = null
 
-const getVSCodeApi = (): VSCodeApi => {
+export const getVSCodeApi = (): VSCodeApi => {
   if (!vscodeApi) {
     vscodeApi = window.acquireVsCodeApi()
   }
@@ -24,6 +24,8 @@ const getVSCodeApi = (): VSCodeApi => {
 export const queryKeys = {
   branches: ['git', 'branches'] as const,
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
+  infiniteCommits: (branches?: GitBranch[]) =>
+    ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
 }
 
 // Custom hook for fetching branches
@@ -95,6 +97,57 @@ export const useGitCommits = (branches?: GitBranch[]) => {
           reject(new Error('Timeout: Failed to fetch commits'))
         }, 15000)
       })
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+// Custom hook for fetching commits with infinite loading
+export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number = 100) => {
+  const branchNames = branches?.map(b => b.name)
+
+  return useInfiniteQuery({
+    queryKey: queryKeys.infiniteCommits(branches),
+    queryFn: ({ pageParam = 0 }): Promise<{ commits: GitCommit[]; hasMore: boolean; skip: number }> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitCommits') {
+            window.removeEventListener('message', messageHandler)
+            resolve({
+              commits: message.commits,
+              hasMore: message.hasMore,
+              skip: message.skip,
+            })
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'getGitCommits',
+          branches: branchNames && branchNames.length > 0 ? branchNames : undefined,
+          maxCount: maxCount,
+          skip: pageParam,
+        })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch commits'))
+        }, 15000)
+      })
+    },
+    initialPageParam: 0,
+    getNextPageParam: lastPage => {
+      // If hasMore is true, return the next skip value
+      return lastPage.hasMore ? lastPage.skip + lastPage.commits.length : undefined
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes

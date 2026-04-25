@@ -36,11 +36,16 @@ export function activate(context: vscode.ExtensionContext) {
                         try {
                             const gitService = GitService.getInstance();
                             const branches = message.branches || undefined;
-                            const commits = await gitService.getGitCommits(log, branches);
-                            log(`Successfully retrieved ${commits.length} commits`);
+                            const maxCount = message.maxCount || 100;
+                            const skip = message.skip || 0;
+                            const result = await gitService.getGitCommits(log, branches, maxCount, skip);
+                            log(`Successfully retrieved ${result.commits.length} commits (hasMore: ${result.hasMore})`);
                             panel.webview.postMessage({
                                 type: 'gitCommits',
-                                commits: commits
+                                commits: result.commits,
+                                hasMore: result.hasMore,
+                                skip: skip,
+                                maxCount: maxCount
                             });
                         } catch (error) {
                             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
