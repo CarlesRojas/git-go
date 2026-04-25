@@ -73,6 +73,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
         {commit.isStash && (
           <div className="flex min-w-fit items-center gap-2 bg-(--vscode-editor-foreground)/20 px-2 py-0.5 text-xs font-medium text-(--vscode-editor-foreground)">
             <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-fuchsia-500" />
+            <span>{commit.refs}</span>
           </div>
         )}
 

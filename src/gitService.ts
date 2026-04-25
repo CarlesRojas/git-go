@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 
 export interface GitCommit {
     hash: string;
+    parents: string[];
     graph: string;
     author: string;
     email: string;
@@ -219,13 +220,9 @@ export class GitService {
     }
 
     /**
-     * Get git stashes filtered by date range and branch reachability
+     * Get git stashes filtered by branch reachability
      */
-    public async getGitStashesByDateRange(
-        log: (message: string) => void,
-        branches?: string[],
-        sinceDate?: Date | null
-    ): Promise<GitCommit[]> {
+    public async getGitStashes(log: (message: string) => void, branches?: string[]): Promise<GitCommit[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             throw new Error('No workspace folder found');
@@ -236,12 +233,7 @@ export class GitService {
         try {
             const gitExecutable = await this.findGitExecutable();
 
-            const gitArgs = [gitExecutable.path, 'reflog', '--format=%gd|%H|%gD|%an|%ae|%ai|%s', 'refs/stash'];
-
-            if (sinceDate) {
-                gitArgs.push(`--since=${sinceDate.toISOString()}`);
-                log(`Filtering stashes since: ${sinceDate.toISOString()}`);
-            }
+            const gitArgs = [gitExecutable.path, 'reflog', '--format=%gd|%H|%P|%gD|%an|%ae|%ai|%s', 'refs/stash'];
 
             gitArgs.push('--');
 
@@ -249,7 +241,7 @@ export class GitService {
             const stashes: GitCommit[] = [];
 
             if (!stashList.trim()) {
-                log('No stashes found for date range');
+                log('No stashes found');
                 return stashes;
             }
 
@@ -258,16 +250,20 @@ export class GitService {
             // Parse all stashes first (common logic)
             for (const line of lines) {
                 const parts = line.split('|');
-                if (parts.length < 7) continue;
+                if (parts.length < 8) continue;
 
-                const [stashRef, hash, stashDesc, author, email, date, message] = parts;
+                const [stashRef, hash, parentHashes, stashDesc, author, email, date, message] = parts;
                 if (!stashRef || !hash || !author || !email || !date || !message) continue;
 
                 const indexMatch = stashRef.match(/stash@\{(\d+)\}/) || null;
                 const index = indexMatch && indexMatch[1] ? parseInt(indexMatch[1], 10) : 0;
 
+                // Parse parent hashes directly from reflog output
+                const parents = parentHashes?.trim() ? parentHashes.trim().split(' ') : [];
+
                 const stashCommit: GitCommit = {
                     hash,
+                    parents,
                     author,
                     email,
                     date,
@@ -282,7 +278,7 @@ export class GitService {
 
             // If no branch filtering needed, return all stashes
             if (!branches || branches.length === 0) {
-                log(`Found ${stashes.length} stashes (git-filtered by date, no branch filtering)`);
+                log(`Found ${stashes.length} stashes (no branch filtering)`);
                 return stashes;
             }
 
@@ -308,7 +304,7 @@ export class GitService {
                 }
             }
 
-            log(`Found ${filteredStashes.length} stashes (git-filtered by date and branch ancestry)`);
+            log(`Found ${filteredStashes.length} stashes (branch ancestry filtered)`);
             return filteredStashes;
         } catch (error) {
             log(`Error getting git stashes: ${error}`);
@@ -346,6 +342,7 @@ export class GitService {
             // Use format similar to vscode-git-graph with separator
             const format = [
                 '%H', // Hash
+                '%P', // Parent hashes (space-separated)
                 '%an', // Author name
                 '%ae', // Author email
                 '%ai', // Author date (ISO format)
@@ -395,12 +392,12 @@ export class GitService {
 
             for (const line of lines) {
                 const parts = line.split(GIT_LOG_SEPARATOR);
-                if (parts.length < 5) {
+                if (parts.length < 6) {
                     log(`Skipping malformed line: ${line}`);
                     continue;
                 }
 
-                const [rawHash, author, email, date, message, refs] = parts;
+                const [rawHash, parentHashes, author, email, date, message, refs] = parts;
 
                 // Ensure rawHash exists
                 if (!rawHash) {
@@ -415,6 +412,7 @@ export class GitService {
 
                 const commit: GitCommit = {
                     hash: cleanHash,
+                    parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
                     graph: graph,
                     author: author?.trim() || '',
                     email: email?.trim() || '',
@@ -431,12 +429,36 @@ export class GitService {
 
             let oldestCommitDate: Date | null = commits.length > 0 ? new Date(commits[commits.length - 1].date) : null;
 
-            const stashes = await this.getGitStashesByDateRange(log, branches, oldestCommitDate);
-            log(`Found ${stashes.length} stashes for this date range`);
+            // Get all stashes - no date filtering to ensure stashes appear on correct pagination pages
+            const stashes = await this.getGitStashes(log, branches);
+            log(`Found ${stashes.length} total stashes`);
 
-            const allCommits = [...stashes, ...commits].sort((a, b) => {
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-            });
+            // Insert stashes before their first parent commit
+            const allCommits: GitCommit[] = [];
+            const stashByParent = new Map<string, GitCommit[]>();
+
+            // Group stashes by their first parent hash
+            for (const stash of stashes) {
+                if (stash.parents.length > 0) {
+                    const parentHash = stash.parents[0];
+                    if (!stashByParent.has(parentHash)) {
+                        stashByParent.set(parentHash, []);
+                    }
+                    stashByParent.get(parentHash)!.push(stash);
+                }
+            }
+
+            // Insert commits and their associated stashes in chronological order
+            for (const commit of commits) {
+                const relatedStashes = stashByParent.get(commit.hash);
+
+                if (relatedStashes) {
+                    relatedStashes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    allCommits.push(...relatedStashes);
+                }
+
+                allCommits.push(commit);
+            }
 
             log(`Parsed ${commits.length} commits and ${stashes.length} stashes (hasMore: ${hasMore})`);
             return { commits: allCommits, hasMore };
