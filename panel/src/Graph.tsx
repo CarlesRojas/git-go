@@ -12,13 +12,13 @@ interface GraphProps {
 export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
 
-  const { data: commits = [], isLoading: loading, error } = useGitCommits(selectedBranches)
+  const { data: commits = [], ...commitsQuery } = useGitCommits(selectedBranches)
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
 
-  if (loading) {
+  if (commitsQuery.isLoading) {
     return (
       <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
         <FontAwesomeIcon icon={faCircleNotch} className="size-4 animate-spin" />
@@ -27,7 +27,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     )
   }
 
-  if (error) {
+  if (commitsQuery.isError) {
     return (
       <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
         <FontAwesomeIcon icon={faTimesCircle} className="size-4 text-(--vscode-errorForeground)" />
