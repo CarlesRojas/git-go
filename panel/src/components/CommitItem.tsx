@@ -122,13 +122,14 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
           style={{ height: `${panelHeight}px` }}
         >
           <div className="flex flex-col gap-1 text-xs font-medium">
-            {commit.graph && (
+            {/* {commit.graph && (
               <div className="flex gap-2">
                 <span className="opacity-50">Branch Graph:</span>
                 <code className="px-1">{commit.graph}</code>
               </div>
-            )}
+            )} */}
 
+            {/*
             <div className="flex gap-2">
               <span className="opacity-50">Date:</span>
 
@@ -147,9 +148,9 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
                   day: 'numeric',
                 })}
               </span>
-            </div>
+            </div> */}
 
-            {/* <div className="flex gap-2">
+            <div className="flex gap-2">
               <span className="opacity-50">Hash:</span>
               <code
                 className="cursor-pointer px-1 transition-opacity hover:opacity-75"
@@ -157,7 +158,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               >
                 {commit.hash}
               </code>
-            </div> */}
+            </div>
 
             <div className="flex gap-2">
               <span className="opacity-50">Author:</span>
@@ -167,15 +168,11 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
               >
                 {commit.author}
               </span>
-            </div>
-
-            <div className="flex gap-2">
-              <span className="opacity-50">Email:</span>
               <span
                 className="cursor-pointer transition-opacity hover:opacity-75"
                 onClick={() => copyText(commit.email, 'Email')}
               >
-                {commit.email}
+                ({commit.email})
               </span>
             </div>
 
