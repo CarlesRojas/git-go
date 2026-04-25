@@ -73,24 +73,6 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
-                        case 'getGitStashes':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const stashes = await gitService.getGitStashes(log);
-                                log(`Successfully retrieved ${stashes.length} stashes`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitStashes',
-                                    stashes: stashes
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting git stashes: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
                         case 'getGitBranches':
                             try {
                                 const gitService = GitService.getInstance();

@@ -4,7 +4,7 @@ import React, { Fragment, useState } from 'react'
 import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
-import { useGitStashes, useInfiniteGitCommits } from './hooks/useGitQueries'
+import { useInfiniteGitCommits } from './hooks/useGitQueries'
 import { useGitTree } from './hooks/useGitTree'
 
 interface GraphProps {
@@ -18,8 +18,6 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     selectedBranches,
     10,
   )
-
-  const { data: stashesByParent } = useGitStashes()
 
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
@@ -60,26 +58,14 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
       <div className="flex w-full flex-col py-3">
         {commits.map(commit => (
-          <Fragment key={commit.hash}>
-            {/* {stashesByParent?.get(commit.hash)?.map(stash => (
-              <CommitItem
-                key={stash.hash}
-                commit={stash}
-                isExpanded={expandedCommitHash === stash.hash}
-                onToggle={() => toggleCommit(stash.hash)}
-                selectedBranches={selectedBranches}
-                treeWidth={treeWidth}
-              />
-            ))} */}
-
-            <CommitItem
-              commit={commit}
-              isExpanded={expandedCommitHash === commit.hash}
-              onToggle={() => toggleCommit(commit.hash)}
-              selectedBranches={selectedBranches}
-              treeWidth={treeWidth}
-            />
-          </Fragment>
+          <CommitItem
+            key={commit.hash}
+            commit={commit}
+            isExpanded={expandedCommitHash === commit.hash}
+            onToggle={() => toggleCommit(commit.hash)}
+            selectedBranches={selectedBranches}
+            treeWidth={treeWidth}
+          />
         ))}
 
         {hasNextPage && !isFetchingNextPage && (

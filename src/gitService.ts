@@ -46,15 +46,12 @@ export class GitService {
      * Find and validate a Git executable
      */
     public async findGitExecutable(): Promise<GitExecutable> {
-        // Return cached executable if available
         if (this.cachedGitExecutable) {
             return this.cachedGitExecutable;
         }
 
-        // Try to use git from VS Code's configuration first
         const gitConfig = vscode.workspace.getConfiguration('git');
         const gitPath = gitConfig.get<string>('path');
-
         let executablePath = gitPath || 'git';
 
         try {
@@ -68,7 +65,6 @@ export class GitService {
                 return this.cachedGitExecutable;
             }
         } catch (error) {
-            // Fallback to system git if configured path fails
             if (gitPath) {
                 try {
                     const version = await this.spawnGit(['git', '--version'], process.cwd());
@@ -134,13 +130,8 @@ export class GitService {
      */
     private sanitizeBranchName(branchName: string): string {
         let cleanName = branchName;
-
-        // Remove refs prefixes
         cleanName = cleanName.replace(/^refs\/(heads|remotes)\//, '');
-
-        // Remove remote name prefix (origin/, upstream/, etc.)
         cleanName = cleanName.replace(/^[^/]+\//, '');
-
         return cleanName;
     }
 
@@ -149,9 +140,7 @@ export class GitService {
      */
     public async isGitRepository(): Promise<boolean> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) {
-            return false;
-        }
+        if (!workspaceFolder) return false;
 
         try {
             await this.spawnGit(['git', 'rev-parse', '--git-dir'], workspaceFolder.uri.fsPath);
@@ -166,23 +155,17 @@ export class GitService {
      */
     public async getGitBranches(log: (message: string) => void): Promise<GitBranch[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) {
-            throw new Error('No workspace folder found');
-        }
+        if (!workspaceFolder) throw new Error('No workspace folder found');
 
         const workspacePath = workspaceFolder.uri.fsPath;
         log(`Getting git branches from: ${workspacePath}`);
 
-        // Check if it's a git repository
-        if (!(await this.isGitRepository())) {
-            throw new Error('Not a git repository');
-        }
+        if (!(await this.isGitRepository())) throw new Error('Not a git repository');
 
         try {
             const gitExecutable = await this.findGitExecutable();
             log(`Using git executable: ${gitExecutable.path}`);
 
-            // Get all branches with their commit hashes
             const branchOutput = await this.spawnGit(
                 [gitExecutable.path, 'branch', '-a', '--format=%(refname:short),%(HEAD),%(objectname)'],
                 workspacePath
@@ -195,11 +178,7 @@ export class GitService {
                 const [name, isHead, hash] = line.split(',');
                 if (name && name.trim() && hash && hash.trim()) {
                     const branchName = name.trim();
-
-                    // Skip the bare remote name (e.g., "origin" without a branch)
-                    if (branchName === 'origin' || branchName === 'upstream') {
-                        continue;
-                    }
+                    if (branchName === 'origin' || branchName === 'upstream') continue;
 
                     branches.push({
                         name: branchName,
@@ -220,72 +199,34 @@ export class GitService {
     }
 
     /**
-     * Get git stashes
+     * Get the set of hashes reachable from refs/stash (the stash commit itself
+     * plus its index-state and untracked-files parents). These are used to mark
+     * commits returned by git log as stashes.
      */
-    public async getGitStashes(log: (message: string) => void): Promise<GitCommit[]> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) {
-            throw new Error('No workspace folder found');
-        }
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+    private async getStashHashes(workspacePath: string, gitPath: string): Promise<Set<string>> {
+        const stashHashes = new Set<string>();
 
         try {
-            const gitExecutable = await this.findGitExecutable();
+            // refs/stash reflog gives us every stash entry's hash
+            const reflogOutput = await this.spawnGit(
+                [gitPath, 'reflog', '--format=%H', 'refs/stash', '--'],
+                workspacePath
+            );
 
-            const gitArgs = [gitExecutable.path, 'reflog', '--format=%gd|%H|%P|%gD|%an|%ae|%ai|%s', 'refs/stash'];
-
-            gitArgs.push('--');
-
-            const stashList = await this.spawnGit(gitArgs, workspacePath);
-            const stashes: GitCommit[] = [];
-
-            if (!stashList.trim()) {
-                log('No stashes found');
-                return stashes;
+            const hashes = reflogOutput.split(EOL_REGEX).filter((l) => l.trim());
+            for (const hash of hashes) {
+                stashHashes.add(hash.trim());
             }
-
-            const lines = stashList.split(EOL_REGEX).filter((line) => line.trim());
-
-            // Parse all stashes first (common logic)
-            for (const line of lines) {
-                const parts = line.split('|');
-                if (parts.length < 8) continue;
-
-                const [stashRef, hash, parentHashes, stashDesc, author, email, date, message] = parts;
-                if (!stashRef || !hash || !author || !email || !date || !message) continue;
-
-                const indexMatch = stashRef.match(/stash@\{(\d+)\}/) || null;
-                const index = indexMatch && indexMatch[1] ? parseInt(indexMatch[1], 10) : 0;
-
-                // Parse parent hashes directly from reflog output
-                const parents = parentHashes?.trim() ? parentHashes.trim().split(' ') : [];
-
-                const stashCommit: GitCommit = {
-                    hash,
-                    parents,
-                    author,
-                    email,
-                    date,
-                    message: message,
-                    refs: `Stash ${index}`,
-                    tags: [],
-                    isStash: true
-                };
-
-                stashes.push(stashCommit);
-            }
-
-            log(`Found ${stashes.length} stashes`);
-            return stashes;
-        } catch (error) {
-            log(`Error getting git stashes: ${error}`);
-            return [];
+        } catch {
+            // No stashes — refs/stash doesn't exist, that's fine
         }
+
+        return stashHashes;
     }
 
     /**
-     * Get git commits from the current workspace with branch filtering and pagination
+     * Get git commits from the current workspace with branch filtering, pagination,
+     * and stashes included inline (sorted by date alongside regular commits).
      */
     public async getGitCommits(
         log: (message: string) => void,
@@ -294,24 +235,22 @@ export class GitService {
         skip: number = 0
     ): Promise<{ commits: GitCommit[]; hasMore: boolean; total?: number }> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) {
-            throw new Error('No workspace folder found');
-        }
+        if (!workspaceFolder) throw new Error('No workspace folder found');
 
         const workspacePath = workspaceFolder.uri.fsPath;
         log(`Getting git commits from: ${workspacePath}`);
 
-        // Check if it's a git repository
-        if (!(await this.isGitRepository())) {
-            throw new Error('Not a git repository');
-        }
+        if (!(await this.isGitRepository())) throw new Error('Not a git repository');
         log('Confirmed git repository');
 
         try {
             const gitExecutable = await this.findGitExecutable();
             log(`Using git executable: ${gitExecutable.path} (version: ${gitExecutable.version})`);
 
-            // Use format similar to vscode-git-graph with separator
+            // Fetch stash hashes so we can mark commits accordingly
+            const stashHashes = await this.getStashHashes(workspacePath, gitExecutable.path);
+            log(`Found ${stashHashes.size} stash commit(s)`);
+
             const format = [
                 '%H', // Hash
                 '%P', // Parent hashes (space-separated)
@@ -319,47 +258,54 @@ export class GitService {
                 '%ae', // Author email
                 '%ai', // Author date (ISO format)
                 '%s', // Subject
-                '%D' // Refs (only shows for branch tips and tags)
+                '%D' // Refs
             ].join(GIT_LOG_SEPARATOR);
 
-            log(`Executing git log command with format (maxCount: ${maxCount}, skip: ${skip})`);
+            log(`Executing git log command (maxCount: ${maxCount}, skip: ${skip})`);
+
             const gitArgs = [
                 gitExecutable.path,
                 '-c',
                 'log.showSignature=false',
                 'log',
-                `--max-count=${maxCount + 1}`, // Fetch one extra to check if more are available
+                `--max-count=${maxCount + 1}`, // Fetch one extra to detect hasMore
                 `--skip=${skip}`,
                 `--pretty=format:${format}`,
                 '--date-order',
                 '--decorate=full'
             ];
 
-            // Add branch filtering if specified, otherwise use --branches --tags --remotes
             if (branches && branches.length > 0) {
-                // Add specific branches directly
                 gitArgs.push(...branches);
                 log(`Filtering commits for branches: ${branches.join(', ')}`);
             } else {
-                // Add flags for all branches, tags, and remotes
                 gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
                 log('Showing commits from all branches');
             }
 
-            // Always end with --
+            // Always include stashes regardless of branch filter
+            gitArgs.push('refs/stash');
+
             gitArgs.push('--');
 
-            const gitLog = await this.spawnGit(gitArgs, workspacePath);
+            const gitLog = await this.spawnGit(gitArgs, workspacePath).catch((err) => {
+                // refs/stash may not exist in repos with no stashes — retry without it
+                if (String(err).includes('refs/stash')) {
+                    const argsWithoutStash = gitArgs.filter((a) => a !== 'refs/stash');
+                    return this.spawnGit(argsWithoutStash, workspacePath);
+                }
+                throw err;
+            });
+
             let lines = gitLog.split(EOL_REGEX).filter((line: string) => line.trim());
 
-            const commits: GitCommit[] = [];
             let hasMore = false;
-
-            // Check if we got more commits than requested (indicating more are available)
             if (lines.length > maxCount) {
                 hasMore = true;
-                lines = lines.slice(0, maxCount); // Remove the extra commit
+                lines = lines.slice(0, maxCount);
             }
+
+            const commits: GitCommit[] = [];
 
             for (const line of lines) {
                 if (!line.includes(GIT_LOG_SEPARATOR)) continue;
@@ -372,26 +318,27 @@ export class GitService {
 
                 const [hash, parentHashes, author, email, date, message, refs] = parts;
 
-                // Ensure hash exists
                 if (!hash?.trim()) {
                     log(`Skipping line with missing hash: ${line}`);
                     continue;
                 }
 
+                const trimmedHash = hash.trim();
+
                 const commit: GitCommit = {
-                    hash: hash.trim(),
+                    hash: trimmedHash,
                     parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',
                     message: message?.trim() || '',
-                    tags: []
+                    tags: [],
+                    isStash: stashHashes.has(trimmedHash)
                 };
 
                 if (refs?.trim()) {
                     commit.refs = refs.trim();
 
-                    // Parse tags from refs string (e.g., "refs/heads/main, refs/tags/v1.0.0, refs/remotes/origin/main")
                     const tagMatches = refs.match(/refs\/tags\/([^,\s]+)/g);
                     if (tagMatches) {
                         commit.tags = tagMatches.map((match) => match.replace('refs/tags/', ''));
