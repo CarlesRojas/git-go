@@ -60,6 +60,12 @@ export function useGitTree(commits: GitCommit[]): {
     for (const c of layout.commits) {
       if (c.column > maxCol) maxCol = c.column
     }
+    for (const b of layout.branches) {
+      for (const seg of b.segments) {
+        if (seg.p1.x > maxCol) maxCol = seg.p1.x
+        if (seg.p2.x > maxCol) maxCol = seg.p2.x
+      }
+    }
     return (maxCol + 1) * COL_WIDTH
   }, [layout])
 
