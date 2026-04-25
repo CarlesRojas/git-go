@@ -17,6 +17,8 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       data-slot="combobox-trigger"
       className={cn(
         [
+          // Group
+          'group',
           // Layout & Structure
           'flex h-7 w-52 items-center justify-between gap-2',
           // Spacing
@@ -33,12 +35,12 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       {...props}
     >
       <div className="flex min-w-0 flex-row items-center gap-2">
-        <FontAwesomeIcon icon={faCodeBranch} className="size-2 opacity-60" />
+        <FontAwesomeIcon icon={faCodeBranch} className="size-2.5 text-(--vscode-editor-foreground)/70" />
         {children}
       </div>
 
       <FontAwesomeIcon
-        className="pointer-events-none size-2 opacity-50 transition-transform data-[state=open]:rotate-180"
+        className="pointer-events-none size-2.5 opacity-50 transition-transform group-data-popup-open:rotate-180"
         icon={faChevronDown}
       />
     </ComboboxPrimitive.Trigger>
