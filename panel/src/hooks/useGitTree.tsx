@@ -65,20 +65,20 @@ interface GitTreeComponentProps {
 }
 
 const BRANCH_COLORS = [
-  '#06b6d4', // cyan-500
-  // '#3b82f6', // blue-500
+  // '#06b6d4', // cyan-500
+  '#3b82f6', // blue-500
   // '#8b5cf6', // violet-500
   '#ec4899', // pink-500
   // '#f43f5e', // rose-500
-  // '#84cc16', // lime-500
-  '#10b981', // emerald-500
-  // '#14b8a6', // teal-500
+  '#84cc16', // lime-500
+  // '#10b981', // emerald-500
+  '#14b8a6', // teal-500
   // '#6366f1', // indigo-500
   '#a855f7', // purple-500
   // '#d946ef', // fuchsia-500
-  // '#ef4444', // red-500
-  '#f97316', // orange-500
-  // '#eab308', // yellow-500
+  '#ef4444', // red-500
+  // '#f97316', // orange-500
+  '#eab308', // yellow-500
   // '#22c55e', // green-500
 ]
 
@@ -92,8 +92,10 @@ const CirclePoint: FC<{ x: number; y: number; color: string }> = ({ x, y, color 
   <circle
     cx={x + 8} // Center in the column (w-4 = 16px, so center at 8px)
     cy={y + 12} // Center vertically in the h-6 row (24px, so center at 12px)
-    r={4}
+    r={5}
     fill={color}
+    stroke="var(--vscode-editor-background)"
+    strokeWidth={1}
   />
 )
 
@@ -104,8 +106,7 @@ const VerticalLine: FC<{ x: number; y: number; color: string }> = ({ x, y, color
     x2={x + 8}
     y2={y + 24} // Full height of h-6 row
     stroke={color}
-    opacity={0.5}
-    strokeWidth={2}
+    strokeWidth={2.5}
   />
 )
 
