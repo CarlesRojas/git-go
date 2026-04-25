@@ -31,7 +31,7 @@ interface BrancItem {
   icon: ReactNode
 }
 
-const LIMIT = 8
+const LIMIT = 100
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], ...branchesQuery } = useGitBranches()
