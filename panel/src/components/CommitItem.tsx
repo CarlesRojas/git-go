@@ -61,7 +61,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({
       <button
         className={cn(
           // Layout & sizing
-          'flex h-6 max-h-6 min-h-6 w-full',
+          'group/commit flex h-6 max-h-6 min-h-6 w-full',
           // Spacing
           'gap-2 pr-2',
           // Typography
@@ -79,13 +79,15 @@ export const CommitItem: React.FC<CommitItemProps> = ({
         <div
           className={cn(
             // Layout & sizing
-            'flex h-full grow overflow-hidden',
+            'relative flex h-full grow overflow-hidden',
             // Spacing
-            'gap-2 pr-2',
+            'gap-2',
             // Typography
             'text-left',
             // Alignment
             'items-center justify-between',
+            // Mask effect
+            'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
           )}
         >
           {Object.entries(groupedBranches)
@@ -93,16 +95,16 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             .map(([baseName, { local, remote }]) => (
               <div
                 key={baseName}
-                className={
+                className={cn(
                   // Layout & sizing
-                  'flex min-w-fit items-center ' +
+                  'flex min-w-fit items-center',
                   // Spacing
-                  'gap-2 px-2 py-0.5 ' +
+                  'gap-2 px-2 py-0.5',
                   // Typography
-                  'text-xs font-medium ' +
+                  'text-xs font-medium',
                   // Colors
-                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)'
-                }
+                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
+                )}
               >
                 {getBranchIcons(local, remote, local?.current ?? remote?.current ?? false)}
                 <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
@@ -111,16 +113,16 @@ export const CommitItem: React.FC<CommitItemProps> = ({
 
           {commit.isStash && (
             <div
-              className={
+              className={cn(
                 // Layout & sizing
-                'flex min-w-fit items-center ' +
+                'flex min-w-fit items-center',
                 // Spacing
-                'gap-2 px-2 py-0.5 ' +
+                'gap-2 px-2 py-0.5',
                 // Typography
-                'text-xs font-medium ' +
+                'text-xs font-medium',
                 // Colors
-                'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)'
-              }
+                'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
+              )}
             >
               <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
               <span>{commit.refs}</span>
@@ -131,16 +133,16 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             commit.tags.map(tag => (
               <div
                 key={tag}
-                className={
+                className={cn(
                   // Layout & sizing
-                  'flex min-w-fit items-center ' +
+                  'flex min-w-fit items-center',
                   // Spacing
-                  'gap-2 px-2 py-0.5 ' +
+                  'gap-2 px-2 py-0.5',
                   // Typography
-                  'text-xs font-medium ' +
+                  'text-xs font-medium',
                   // Colors
-                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)'
-                }
+                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
+                )}
               >
                 <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
                 <span>{tag}</span>
@@ -148,26 +150,26 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             ))}
 
           <h3
-            className={
+            className={cn(
               // Layout
-              'grow ' +
+              'grow',
               // Typography
-              'line-clamp-1 truncate text-xs font-semibold tracking-tighter'
-            }
+              'line-clamp-1 truncate text-xs font-semibold tracking-tighter',
+            )}
           >
             {commit.message}
           </h3>
         </div>
 
         <time
-          className={
+          className={cn(
             // Layout & sizing
-            'min-w-fit ' +
+            'min-w-fit',
             // Typography
-            'line-clamp-1 truncate text-xs font-medium tracking-tighter ' +
+            'line-clamp-1 truncate text-xs font-medium tracking-tighter',
             // Appearance
-            'opacity-50'
-          }
+            'opacity-50',
+          )}
           dateTime={commit.date.split('T')[0]}
         >
           {new Date(commit.date).toLocaleDateString('en-CA', {
@@ -178,14 +180,14 @@ export const CommitItem: React.FC<CommitItemProps> = ({
         </time>
 
         <time
-          className={
+          className={cn(
             // Layout & sizing
-            'min-w-fit ' +
+            'min-w-fit',
             // Typography
-            'line-clamp-1 truncate text-xs font-medium tracking-tighter ' +
+            'line-clamp-1 truncate text-xs font-medium tracking-tighter',
             // Appearance
-            'opacity-50'
-          }
+            'opacity-50',
+          )}
           dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
         >
           {new Date(commit.date).toLocaleTimeString([], {
@@ -201,25 +203,25 @@ export const CommitItem: React.FC<CommitItemProps> = ({
       {isExpanded && (
         <div
           ref={containerRef}
-          className={
+          className={cn(
             // Layout
-            'relative overflow-auto ' +
+            'relative overflow-auto',
             // Spacing
-            'mb-3 py-3 pr-2 ' +
+            'mb-3 py-3 pr-2',
             // Colors
-            'bg-(--vscode-editor-foreground)/3'
-          }
+            'bg-(--vscode-editor-foreground)/3',
+          )}
           style={{ height: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
         >
           <div
-            className={
+            className={cn(
               // Layout
-              'flex flex-col ' +
+              'relative flex flex-col',
               // Spacing
-              'gap-1 ' +
+              'gap-1',
               // Typography
-              'text-xs font-medium'
-            }
+              'text-xs font-medium',
+            )}
           >
             {/*
             <div className="flex gap-2">
@@ -245,12 +247,12 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             <div className="flex gap-2">
               <span className="opacity-50">Hash:</span>
               <code
-                className={
+                className={cn(
                   // Spacing
-                  'px-1 ' +
+                  'px-1',
                   // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75'
-                }
+                  'cursor-pointer transition-opacity hover:opacity-75',
+                )}
                 onClick={() => copyText(commit.hash, 'Hash')}
               >
                 {commit.hash}
@@ -260,19 +262,19 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             <div className="flex gap-2">
               <span className="opacity-50">Author:</span>
               <span
-                className={
+                className={cn(
                   // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75'
-                }
+                  'cursor-pointer transition-opacity hover:opacity-75',
+                )}
                 onClick={() => copyText(commit.author, 'Author')}
               >
                 {commit.author}
               </span>
               <span
-                className={
+                className={cn(
                   // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75'
-                }
+                  'cursor-pointer transition-opacity hover:opacity-75',
+                )}
                 onClick={() => copyText(commit.email, 'Email')}
               >
                 ({commit.email})
@@ -294,12 +296,12 @@ export const CommitItem: React.FC<CommitItemProps> = ({
             <div className="flex gap-2">
               <span className="opacity-50">Message:</span>
               <span
-                className={
+                className={cn(
                   // Typography
-                  'whitespace-pre-wrap ' +
+                  'whitespace-pre-wrap',
                   // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75'
-                }
+                  'cursor-pointer transition-opacity hover:opacity-75',
+                )}
                 onClick={() => copyText(commit.message, 'Message')}
               >
                 {commit.message}
