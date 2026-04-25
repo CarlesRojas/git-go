@@ -1,114 +1,280 @@
-import { GitCommit } from '../../../src/gitService'
+import type { GitCommit } from '../../../src/gitService'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Point {
+  readonly x: number // column index
+  readonly y: number // row index
+}
+
+interface Segment {
+  readonly p1: Point
+  readonly p2: Point
+  /** TRUE => transition happens near p2 (branch peeling off downward)
+   *  FALSE => transition happens near p1 (branch merging back upward) */
+  readonly lockedFirst: boolean
+}
+
+interface UnavailablePoint {
+  readonly connectsTo: GraphVertex | null
+  readonly branch: GraphBranch
+}
+
+// ─── GraphBranch ─────────────────────────────────────────────────────────────
+
+export class GraphBranch {
+  public readonly colorIndex: number
+  public segments: Segment[] = []
+  public end: number = 0
+
+  constructor(colorIndex: number) {
+    this.colorIndex = colorIndex
+  }
+
+  addSegment(p1: Point, p2: Point, lockedFirst: boolean) {
+    this.segments.push({ p1, p2, lockedFirst })
+  }
+}
+
+// ─── GraphVertex ──────────────────────────────────────────────────────────────
+
+class GraphVertex {
+  public readonly row: number
+  public readonly isStash: boolean
+  private x: number = 0
+  private nextX: number = 0
+  private branch: GraphBranch | null = null
+  private parents: GraphVertex[] = []
+  private nextParentIdx: number = 0
+  private connections: (UnavailablePoint | undefined)[] = []
+
+  constructor(row: number, isStash: boolean) {
+    this.row = row
+    this.isStash = isStash
+  }
+
+  // Parents
+  addParent(v: GraphVertex) {
+    this.parents.push(v)
+  }
+  getNextParent(): GraphVertex | null {
+    return this.nextParentIdx < this.parents.length ? this.parents[this.nextParentIdx]! : null
+  }
+  registerParentProcessed() {
+    this.nextParentIdx++
+  }
+  isMerge() {
+    return this.parents.length > 1
+  }
+
+  // Branch placement
+  addToBranch(branch: GraphBranch, x: number) {
+    if (this.branch === null) {
+      this.branch = branch
+      this.x = x
+    }
+  }
+  isNotOnBranch() {
+    return this.branch === null
+  }
+  isOnBranch(branch: GraphBranch) {
+    return this.branch === branch
+  }
+  getBranch() {
+    return this.branch
+  }
+  getColorIndex() {
+    return this.branch?.colorIndex ?? 0
+  }
+
+  // Points
+  getPoint(): Point {
+    return { x: this.x, y: this.row }
+  }
+  getNextPoint(): Point {
+    return { x: this.nextX, y: this.row }
+  }
+
+  getPointConnectingTo(target: GraphVertex | null, branch: GraphBranch): Point | null {
+    for (let i = 0; i < this.connections.length; i++) {
+      const c = this.connections[i]
+      if (c && c.connectsTo === target && c.branch === branch) {
+        return { x: i, y: this.row }
+      }
+    }
+    return null
+  }
+
+  registerUnavailablePoint(x: number, connectsTo: GraphVertex | null, branch: GraphBranch) {
+    if (x === this.nextX) {
+      this.nextX = x + 1
+      this.connections[x] = { connectsTo, branch }
+    }
+  }
+}
+
+// ─── Public output types ──────────────────────────────────────────────────────
 
 export interface CommitLayout {
   commit: GitCommit
   row: number
+  /** column index (x position) */
   column: number
-  /**
-   * Edges to draw in the gap BELOW this row (between row and row+1).
-   * Each edge goes from (fromColumn at this row) to (toColumn at next row).
-   *
-   * colorIndex: the column index whose color should be used for this edge.
-   * For straight/passing-through edges: colorIndex = fromColumn (the lane's own color).
-   * For merge-parent edges (branch opening): colorIndex = toColumn (the new lane's color).
-   * For merge-converging edges (branch closing left): colorIndex = toColumn (the target lane).
-   */
-  edges: LayoutEdge[]
+  colorIndex: number
+  isMerge: boolean
+  isStash: boolean
 }
 
-export interface LayoutEdge {
-  fromColumn: number
-  toColumn: number
+export interface BranchPath {
   colorIndex: number
+  segments: Segment[]
 }
+
+export interface GraphLayout {
+  commits: CommitLayout[]
+  branches: BranchPath[]
+}
+
+// ─── NULL sentinel ────────────────────────────────────────────────────────────
+
+const NULL_VERTEX = new GraphVertex(-1, false)
+
+// ─── Main layout function ─────────────────────────────────────────────────────
 
 /**
- * Pure function. Commits must be newest-first.
+ * Port of vscode-git-graph's Graph class layout algorithm.
+ * Commits must be newest-first.
  */
-export function computeGraphLayout(commits: GitCommit[]): CommitLayout[] {
-  // lanes[i] = SHA we expect to arrive at lane i on the next row, or null if free
-  const lanes: (string | null)[] = []
-  const result: CommitLayout[] = []
+export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
+  if (commits.length === 0) return { commits: [], branches: [] }
 
-  const allocateLane = (sha: string): number => {
-    const free = lanes.indexOf(null)
-    if (free !== -1) {
-      lanes[free] = sha
-      return free
-    }
-    lanes.push(sha)
-    return lanes.length - 1
-  }
+  // Build vertex list
+  const vertices: GraphVertex[] = commits.map((c, i) => new GraphVertex(i, !!c.isStash))
 
-  const trimLanes = () => {
-    while (lanes.length > 0 && lanes[lanes.length - 1] === null) lanes.pop()
-  }
+  // Build lookup and parent links
+  const lookup: Record<string, number> = {}
+  commits.forEach((c, i) => {
+    lookup[c.hash] = i
+  })
 
-  for (let row = 0; row < commits.length; row++) {
-    const commit = commits[row]
-    if (!commit) continue
-
-    // 1. Find this commit's column
-    let column = lanes.indexOf(commit.hash)
-    if (column === -1) column = allocateLane(commit.hash)
-
-    // 2. Snapshot lanes BEFORE mutation
-    const before = lanes.slice()
-
-    // 3. Update lanes for the next row
-    const [firstParent, ...mergeParents] = commit.parents
-    lanes[column] = firstParent ?? null
-
-    // Allocate/find lanes for merge parents
-    const mergeTargetCols: number[] = []
-    for (const sha of mergeParents) {
-      const existing = lanes.indexOf(sha)
-      if (existing !== -1) {
-        mergeTargetCols.push(existing)
+  for (let i = 0; i < commits.length; i++) {
+    for (const parentHash of commits[i]!.parents) {
+      if (typeof lookup[parentHash] === 'number') {
+        vertices[i]!.addParent(vertices[lookup[parentHash]]!)
       } else {
-        mergeTargetCols.push(allocateLane(sha))
+        vertices[i]!.addParent(NULL_VERTEX)
       }
     }
-
-    trimLanes()
-
-    // 4. Build edges
-    const edges: LayoutEdge[] = []
-    const after = lanes.slice()
-    const claimedAfterCols = new Set<number>()
-
-    for (let i = 0; i < before.length; i++) {
-      const sha = before[i]
-      if (sha === null || sha === undefined) continue
-
-      if (sha === commit.hash) {
-        // This commit's own lane
-        if (firstParent) {
-          // Straight down — keep same color as this lane
-          edges.push({ fromColumn: column, toColumn: column, colorIndex: column })
-          claimedAfterCols.add(column)
-        }
-
-        // Merge parent edges — branch opening diagonals
-        for (const targetCol of mergeTargetCols) {
-          if (!claimedAfterCols.has(targetCol)) {
-            // Use the target column's color (the new branch's color)
-            edges.push({ fromColumn: column, toColumn: targetCol, colorIndex: targetCol })
-            claimedAfterCols.add(targetCol)
-          }
-        }
-      } else {
-        // Passing-through lane
-        const nextIdx = after.indexOf(sha)
-        if (nextIdx !== -1 && !claimedAfterCols.has(nextIdx)) {
-          edges.push({ fromColumn: i, toColumn: nextIdx, colorIndex: i })
-          claimedAfterCols.add(nextIdx)
-        }
-      }
-    }
-
-    result.push({ commit, row, column, edges })
   }
 
-  return result
+  // Run layout
+  const branches: GraphBranch[] = []
+  const availableColors: number[] = []
+
+  const getAvailableColor = (startAt: number): number => {
+    for (let i = 0; i < availableColors.length; i++) {
+      if (startAt > availableColors[i]!) return i
+    }
+    availableColors.push(0)
+    return availableColors.length - 1
+  }
+
+  const determinePath = (startAt: number) => {
+    let i = startAt
+    let vertex = vertices[i]!
+    let parentVertex = vertex.getNextParent()
+    let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint()
+
+    if (
+      parentVertex !== null &&
+      parentVertex !== NULL_VERTEX &&
+      vertex.isMerge() &&
+      !vertex.isNotOnBranch() &&
+      !parentVertex.isNotOnBranch()
+    ) {
+      // Merge between two vertices already on branches — draw connecting line
+      let foundPointToParent = false
+      const parentBranch = parentVertex.getBranch()!
+
+      for (i = startAt + 1; i < vertices.length; i++) {
+        const curVertex = vertices[i]!
+        let curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch)
+        if (curPoint !== null) {
+          foundPointToParent = true
+        } else {
+          curPoint = curVertex.getNextPoint()
+        }
+
+        const lockedFirst = !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true
+
+        parentBranch.addSegment(lastPoint, curPoint, lockedFirst)
+        curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch)
+        lastPoint = curPoint
+
+        if (foundPointToParent) {
+          vertex.registerParentProcessed()
+          break
+        }
+      }
+    } else {
+      // Normal branch
+      const branch = new GraphBranch(getAvailableColor(startAt))
+      vertex.addToBranch(branch, lastPoint.x)
+      vertex.registerUnavailablePoint(lastPoint.x, vertex, branch)
+
+      for (i = startAt + 1; i < vertices.length; i++) {
+        const curVertex = vertices[i]!
+        const curPoint =
+          parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint()
+
+        branch.addSegment(lastPoint, curPoint, lastPoint.x < curPoint.x)
+        curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch)
+        lastPoint = curPoint
+
+        if (parentVertex === curVertex) {
+          vertex.registerParentProcessed()
+          const parentAlreadyOnBranch = !parentVertex.isNotOnBranch()
+          parentVertex.addToBranch(branch, curPoint.x)
+          vertex = parentVertex
+          parentVertex = vertex.getNextParent()
+
+          if (parentVertex === null || parentAlreadyOnBranch) break
+        }
+      }
+
+      if (i === vertices.length && parentVertex !== null && parentVertex === NULL_VERTEX) {
+        vertex.registerParentProcessed()
+      }
+
+      branch.end = i
+      branches.push(branch)
+      availableColors[branch.colorIndex] = i
+    }
+  }
+
+  let i = 0
+  while (i < vertices.length) {
+    if (vertices[i]!.getNextParent() !== null || vertices[i]!.isNotOnBranch()) {
+      determinePath(i)
+    } else {
+      i++
+    }
+  }
+
+  // Build output
+  const commitLayouts: CommitLayout[] = vertices.map((v, idx) => ({
+    commit: commits[idx]!,
+    row: idx,
+    column: v.getPoint().x,
+    colorIndex: v.getColorIndex(),
+    isMerge: v.isMerge(),
+    isStash: v.isStash,
+  }))
+
+  const branchPaths: BranchPath[] = branches.map(b => ({
+    colorIndex: b.colorIndex,
+    segments: b.segments,
+  }))
+
+  return { commits: commitLayouts, branches: branchPaths }
 }

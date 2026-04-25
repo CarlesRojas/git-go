@@ -17,103 +17,104 @@ const BRANCH_COLORS = [
 
 const ROW_HEIGHT = 24
 const COL_WIDTH = 16
-const DOT_RADIUS = 3
-const MERGE_DOT_RADIUS = 4
+const DOT_RADIUS = 4
 const LINE_WIDTH = 1.5
 
+// d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
+const CURVE_D = ROW_HEIGHT * 0.8
+
 const getColor = (index: number) => BRANCH_COLORS[index % BRANCH_COLORS.length]
-const cx = (col: number) => col * COL_WIDTH + COL_WIDTH / 2
-const cy = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
+const px = (col: number) => col * COL_WIDTH + COL_WIDTH / 2
+const py = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
 
 /**
- * Build an SVG path for an edge from (x1,y1) to (x2,y2).
+ * Builds the SVG path for a segment.
+ * Exact port of vscode-git-graph's draw() method curve logic:
  *
- * Curve style matches the reference images:
- * - If straight (same column): simple vertical line
- * - If diagonal going RIGHT (new branch opening below): go straight down most
- *   of the gap, then curve right at the bottom — like a branch peeling off
- * - If diagonal going LEFT (branch merging back): curve left immediately at
- *   the top, then go straight down — like a branch converging
+ *   Straight:  L x2,y2
+ *   lockedFirst=true  (transition near p2, branch peeling off):
+ *     C x1,(y1+d) x2,(y2-d) x2,y2
+ *   lockedFirst=false (transition near p1, branch merging in):
+ *     C x1,(y1+d) x2,(y2-d) x2,y2   ← same bezier, different visual because
+ *                                        p1 and p2 are swapped in meaning
+ *
+ * The original code uses a single cubic bezier for both cases:
+ *   curPath += 'C' + x1 + ',' + (y1+d) + ' ' + x2 + ',' + (y2-d) + ' ' + x2 + ',' + y2
  */
-function edgePath(x1: number, y1: number, x2: number, y2: number): string {
-  if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`
-
-  const curveSize = Math.min(ROW_HEIGHT * 0.6, Math.abs(x2 - x1))
-
-  if (x2 > x1) {
-    // Going right → branch peeling off downward
-    // Straight down, then curve right at the bottom
-    return `M ${x1} ${y1} L ${x1} ${y2 - curveSize} Q ${x1} ${y2} ${x1 + curveSize} ${y2} L ${x2} ${y2}`
-  } else {
-    // Going left → branch merging back
-    // Curve left immediately at the top, then straight down
-    return `M ${x1} ${y1} L ${x2 + curveSize} ${y1} Q ${x2} ${y1} ${x2} ${y1 + curveSize} L ${x2} ${y2}`
+function segmentPath(x1: number, y1: number, x2: number, y2: number, lockedFirst: boolean): string {
+  if (x1 === x2) {
+    return `M${x1},${y1}L${x2},${y2}`
   }
+  // Cubic bezier — control points hug the source/target vertically
+  return `M${x1},${y1}C${x1},${(y1 + CURVE_D).toFixed(1)} ${x2},${(y2 - CURVE_D).toFixed(1)} ${x2},${y2}`
 }
 
 export function useGitTree(commits: GitCommit[]): {
   treeComponent: React.ReactNode
   treeWidth: number
 } {
-  const layouts = useMemo(() => computeGraphLayout(commits), [commits])
+  const layout = useMemo(() => computeGraphLayout(commits), [commits])
 
-  const treeWidth = useMemo(() => (layouts.reduce((max, l) => Math.max(max, l.column), 0) + 1) * COL_WIDTH, [layouts])
+  const treeWidth = useMemo(() => {
+    let maxCol = 0
+    for (const c of layout.commits) {
+      if (c.column > maxCol) maxCol = c.column
+    }
+    return (maxCol + 1) * COL_WIDTH
+  }, [layout])
 
   const svgHeight = commits.length * ROW_HEIGHT
 
   const treeComponent = (
     <div className="pointer-events-none absolute top-0 left-0 z-10 h-fit py-3" style={{ width: treeWidth }}>
       <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
-        {/* Edges — drawn below dots */}
+        {/* Branch lines — drawn first, under dots */}
         <g>
-          {layouts.map(layout =>
-            layout.edges.map((edge, i) => {
-              const x1 = cx(edge.fromColumn)
-              const x2 = cx(edge.toColumn)
-              const y1 = cy(layout.row)
-              const y2 = cy(layout.row + 1)
-              const color = getColor(edge.colorIndex)
-              const d = edgePath(x1, y1, x2, y2)
-
-              return (
-                <path
-                  key={`${layout.commit.hash}-e${i}`}
-                  d={d}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={LINE_WIDTH}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )
-            }),
-          )}
+          {layout.branches.map((branch, bi) => {
+            const color = getColor(branch.colorIndex)
+            // Merge consecutive straight segments into one path (perf + visual)
+            let d = ''
+            for (const seg of branch.segments) {
+              const x1 = px(seg.p1.x)
+              const y1 = py(seg.p1.y)
+              const x2 = px(seg.p2.x)
+              const y2 = py(seg.p2.y)
+              d += segmentPath(x1, y1, x2, y2, seg.lockedFirst)
+            }
+            if (!d) return null
+            return (
+              <path
+                key={`branch-${bi}`}
+                d={d}
+                fill="none"
+                stroke={color}
+                strokeWidth={LINE_WIDTH}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )
+          })}
         </g>
 
-        {/* Dots — on top of edges */}
+        {/* Commit dots — drawn on top */}
         <g>
-          {layouts.map(layout => {
-            const isMerge = layout.commit.parents.length > 1
-            const dotCx = cx(layout.column)
-            const dotCy = cy(layout.row)
-            const color = getColor(layout.column)
+          {layout.commits.map(c => {
+            const dotX = px(c.column)
+            const dotY = py(c.row)
+            const color = getColor(c.colorIndex)
 
-            return (
-              <g key={layout.commit.hash}>
-                {isMerge && (
-                  <circle
-                    cx={dotCx}
-                    cy={dotCy}
-                    r={MERGE_DOT_RADIUS + 1.5}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={1}
-                    opacity={0.5}
-                  />
-                )}
-                <circle cx={dotCx} cy={dotCy} r={isMerge ? MERGE_DOT_RADIUS : DOT_RADIUS} fill={color} />
-              </g>
-            )
+            if (c.isStash) {
+              // Stash: outer ring + inner dot (matches vscode-git-graph stashOuter/stashInner)
+              return (
+                <g key={c.commit.hash}>
+                  <circle cx={dotX} cy={dotY} r={DOT_RADIUS + 0.5} fill="none" stroke={color} strokeWidth={1.5} />
+                  <circle cx={dotX} cy={dotY} r={2} fill={color} />
+                </g>
+              )
+            }
+
+            // Normal commit dot
+            return <circle key={c.commit.hash} cx={dotX} cy={dotY} r={DOT_RADIUS} fill={color} />
           })}
         </g>
       </svg>
