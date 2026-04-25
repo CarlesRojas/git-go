@@ -15,7 +15,7 @@ const inputVariants = cva([
   // Colors & Background
   'bg-(--vscode-input-background)',
   // Borders
-  'border border-(--vscode-editor-foreground)/10',
+  'border border-(--vscode-editor-foreground)/15',
   // Interactions
   'transition-colors',
   // Placeholder

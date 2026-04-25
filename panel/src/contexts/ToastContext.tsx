@@ -65,7 +65,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       {toast && (
         <div
           className={cn(
-            'fixed top-2 right-2 z-50 flex max-w-3xl items-center gap-3 border border-(--vscode-editor-foreground)/10 bg-(--vscode-editor-foreground)/5 p-2.5 text-sm backdrop-blur-md transition-all duration-300',
+            'fixed top-2 right-2 z-50 flex max-w-3xl items-center gap-3 border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-foreground)/5 p-2.5 text-sm backdrop-blur-md transition-all duration-300',
             toast.className,
           )}
         >

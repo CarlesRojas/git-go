@@ -167,7 +167,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
           // Typography
           'text-xs',
           // Interactive States
-          'data-highlighted:bg-(--vscode-editor-foreground)/10',
+          'data-highlighted:bg-(--vscode-editor-foreground)/15! data-selected:bg-(--vscode-editor-foreground)/7',
           // Disabled States
           'data-disabled:pointer-events-none data-disabled:opacity-50',
           // Icon Styles
@@ -181,7 +181,10 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
       <ComboboxPrimitive.ItemIndicator
         render={
           <span className="pointer-events-none absolute right-2 flex size-3 items-center justify-center">
-            <FontAwesomeIcon icon={faCheck} className="pointer-events-none size-3" />
+            <FontAwesomeIcon
+              icon={faCheck}
+              className="pointer-events-none size-3 text-(--vscode-editor-foreground)/70"
+            />
           </span>
         }
       />

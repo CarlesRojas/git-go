@@ -119,6 +119,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   return (
     <Combobox
       multiple
+      autoHighlight
       items={branchGroups}
       inputValue={inputValue}
       onInputValueChange={(value, { reason }) => {

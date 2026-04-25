@@ -185,7 +185,7 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
 
           <div
             className={cn(
-              'absolute right-0 bottom-0 left-0 h-1 border-b border-(--vscode-editor-foreground)/10 bg-transparent transition-colors hover:bg-(--vscode-editor-foreground)/20',
+              'absolute right-0 bottom-0 left-0 h-1 border-b border-(--vscode-editor-foreground)/15 bg-transparent transition-colors hover:bg-(--vscode-editor-foreground)/20',
               isDragging && 'bg-(--vscode-editor-foreground)/30',
             )}
             style={{ cursor: isDragging ? 'ns-resize' : 'ns-resize' }}
