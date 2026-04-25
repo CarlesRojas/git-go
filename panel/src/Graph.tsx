@@ -1,10 +1,10 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useState } from 'react'
+import React, { Fragment, useState } from 'react'
 import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
-import { useInfiniteGitCommits } from './hooks/useGitQueries'
+import { useGitStashes, useInfiniteGitCommits } from './hooks/useGitQueries'
 
 interface GraphProps {
   selectedBranches: GitBranch[]
@@ -18,10 +18,11 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     50,
   )
 
+  const { data: stashesByParent } = useGitStashes()
+
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
     onChange: isIntersecting => {
-      console.log('Is Intersecting', isIntersecting)
       if (isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage()
     },
   })
@@ -53,13 +54,24 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   return (
     <>
       {commits.map(commit => (
-        <CommitItem
-          key={commit.hash}
-          commit={commit}
-          isExpanded={expandedCommitHash === commit.hash}
-          onToggle={() => toggleCommit(commit.hash)}
-          selectedBranches={selectedBranches}
-        />
+        <Fragment key={commit.hash}>
+          {stashesByParent?.get(commit.hash)?.map(stash => (
+            <CommitItem
+              key={stash.hash}
+              commit={stash}
+              isExpanded={expandedCommitHash === stash.hash}
+              onToggle={() => toggleCommit(stash.hash)}
+              selectedBranches={selectedBranches}
+            />
+          ))}
+
+          <CommitItem
+            commit={commit}
+            isExpanded={expandedCommitHash === commit.hash}
+            onToggle={() => toggleCommit(commit.hash)}
+            selectedBranches={selectedBranches}
+          />
+        </Fragment>
       ))}
 
       {hasNextPage && !isFetchingNextPage && (

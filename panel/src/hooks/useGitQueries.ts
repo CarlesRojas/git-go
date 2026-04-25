@@ -24,6 +24,7 @@ export const getVSCodeApi = (): VSCodeApi => {
 export const queryKeys = {
   branches: ['git', 'branches'] as const,
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
+  stashes: ['git', 'stashes'] as const,
   infiniteCommits: (branches?: GitBranch[]) =>
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
 }
@@ -95,6 +96,60 @@ export const useGitCommits = (branches?: GitBranch[]) => {
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to fetch commits'))
+        }, 15000)
+      })
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+// Custom hook for fetching stashes
+export const useGitStashes = () => {
+  return useQuery({
+    queryKey: queryKeys.stashes,
+    queryFn: (): Promise<Map<string, GitCommit[]>> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitStashes') {
+            window.removeEventListener('message', messageHandler)
+
+            const stashesByParent = new Map<string, GitCommit[]>()
+
+            for (const stash of message.stashes) {
+              if (stash.parents.length > 0) {
+                const parentHash = stash.parents[0]
+                if (!stashesByParent.has(parentHash)) {
+                  stashesByParent.set(parentHash, [])
+                }
+                stashesByParent.get(parentHash)!.push(stash)
+              }
+            }
+
+            for (const stashGroup of stashesByParent.values()) {
+              stashGroup.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            }
+
+            resolve(stashesByParent)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'getGitStashes',
+        })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch stashes'))
         }, 15000)
       })
     },

@@ -220,9 +220,9 @@ export class GitService {
     }
 
     /**
-     * Get git stashes filtered by branch reachability
+     * Get git stashes
      */
-    public async getGitStashes(log: (message: string) => void, branches?: string[]): Promise<GitCommit[]> {
+    public async getGitStashes(log: (message: string) => void): Promise<GitCommit[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             throw new Error('No workspace folder found');
@@ -276,36 +276,8 @@ export class GitService {
                 stashes.push(stashCommit);
             }
 
-            // If no branch filtering needed, return all stashes
-            if (!branches || branches.length === 0) {
-                log(`Found ${stashes.length} stashes (no branch filtering)`);
-                return stashes;
-            }
-
-            // Filter by branch ancestry
-            const filteredStashes: GitCommit[] = [];
-            for (const stash of stashes) {
-                try {
-                    // Get the base hash (first parent of stash commit)
-                    const baseHash = (
-                        await this.spawnGit([gitExecutable.path, 'rev-parse', `${stash.hash}^1`], workspacePath)
-                    ).trim();
-
-                    // Check if base hash is reachable from any selected branch
-                    await this.spawnGit(
-                        [gitExecutable.path, 'merge-base', '--is-ancestor', baseHash, ...branches],
-                        workspacePath
-                    );
-
-                    filteredStashes.push(stash);
-                } catch (error) {
-                    // Skip stashes that aren't reachable from selected branches
-                    continue;
-                }
-            }
-
-            log(`Found ${filteredStashes.length} stashes (branch ancestry filtered)`);
-            return filteredStashes;
+            log(`Found ${stashes.length} stashes`);
+            return stashes;
         } catch (error) {
             log(`Error getting git stashes: ${error}`);
             throw new Error(`Failed to get git stashes: ${error}`);
@@ -429,39 +401,8 @@ export class GitService {
 
             let oldestCommitDate: Date | null = commits.length > 0 ? new Date(commits[commits.length - 1].date) : null;
 
-            // Get all stashes - no date filtering to ensure stashes appear on correct pagination pages
-            const stashes = await this.getGitStashes(log, branches);
-            log(`Found ${stashes.length} total stashes`);
-
-            // Insert stashes before their first parent commit
-            const allCommits: GitCommit[] = [];
-            const stashByParent = new Map<string, GitCommit[]>();
-
-            // Group stashes by their first parent hash
-            for (const stash of stashes) {
-                if (stash.parents.length > 0) {
-                    const parentHash = stash.parents[0];
-                    if (!stashByParent.has(parentHash)) {
-                        stashByParent.set(parentHash, []);
-                    }
-                    stashByParent.get(parentHash)!.push(stash);
-                }
-            }
-
-            // Insert commits and their associated stashes in chronological order
-            for (const commit of commits) {
-                const relatedStashes = stashByParent.get(commit.hash);
-
-                if (relatedStashes) {
-                    relatedStashes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                    allCommits.push(...relatedStashes);
-                }
-
-                allCommits.push(commit);
-            }
-
-            log(`Parsed ${commits.length} commits and ${stashes.length} stashes (hasMore: ${hasMore})`);
-            return { commits: allCommits, hasMore };
+            log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
+            return { commits, hasMore };
         } catch (error) {
             log(`Error getting git commits: ${error}`);
             throw new Error(`Failed to get git commits: ${error}`);
