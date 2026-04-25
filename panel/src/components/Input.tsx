@@ -7,11 +7,11 @@ import { Button } from './Button'
 
 const inputVariants = cva([
   // Layout & Structure
-  'flex h-9 w-full',
+  'flex h-7 w-full',
   // Spacing
-  'px-3 py-1',
+  'px-2.5',
   // Typography
-  'text-sm text-(--vscode-input-foreground)',
+  'text-xs text-(--vscode-input-foreground)',
   // Colors & Background
   'bg-(--vscode-input-background)',
   // Borders
@@ -34,7 +34,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type 
   if (onClear) {
     return (
       <div className="relative">
-        <input type={type} className={cn(inputVariants({ className }), 'pr-10.5')} ref={ref} {...props} />
+        <input type={type} className={cn(inputVariants({ className }), 'pr-9')} ref={ref} {...props} />
 
         {hasValue && (
           <Button

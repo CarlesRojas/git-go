@@ -9,7 +9,7 @@ export const getBranchIcons = (local: GitBranch | null, remote: GitBranch | null
 
   if (local)
     icons.push(
-      <FontAwesomeIcon key="local" icon={faCodeBranch} className="size-3 text-(--vscode-editor-foreground)/60" />,
+      <FontAwesomeIcon key="local" icon={faCodeBranch} className="size-3 text-(--vscode-editor-foreground)/70" />,
     )
 
   if (remote) icons.push(<FontAwesomeIcon key="remote" icon={faCloud} className="size-3 text-blue-500" />)

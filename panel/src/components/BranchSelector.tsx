@@ -136,6 +136,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
         <ComboboxContent>
           <ComboboxInput onClear={() => setInputValue('')} />
+          <ComboboxSeparator className="my-0" />
 
           <ComboboxEmpty>No branches found.</ComboboxEmpty>
 
