@@ -122,12 +122,17 @@ export const CommitItem: React.FC<CommitItemProps> = ({ commit, isExpanded, onTo
           style={{ height: `${panelHeight}px` }}
         >
           <div className="flex flex-col gap-1 text-xs font-medium">
-            {/* {commit.graph && (
+            {commit.graph && (
               <div className="flex gap-2">
                 <span className="opacity-50">Branch Graph:</span>
-                <code className="px-1">{commit.graph}</code>
+                <code
+                  className="cursor-pointer px-1 transition-opacity hover:opacity-75"
+                  onClick={() => copyText(commit.graph, 'Graph')}
+                >
+                  {commit.graph}
+                </code>
               </div>
-            )} */}
+            )}
 
             {/*
             <div className="flex gap-2">
