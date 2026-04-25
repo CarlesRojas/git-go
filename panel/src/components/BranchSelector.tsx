@@ -31,6 +31,8 @@ interface BrancItem {
   icon: ReactNode
 }
 
+const LIMIT = 8
+
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], ...branchesQuery } = useGitBranches()
 
@@ -59,10 +61,11 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   }
 
   const displayText = useMemo(() => {
-    if (selectedBranches.length === 0) return 'Select branches...'
-    if (selectedBranches.length === 1) return selectedBranches[0]
-    return `${selectedBranches.length} branches`
-  }, [selectedBranches])
+    const grouped = Object.values(groupBranches(branches.filter(b => selectedBranches.includes(b.cleanName))))
+    if (grouped.length === 0) return 'Select branches...'
+    if (grouped.length === 1) return grouped[0]!.local?.cleanName ?? grouped[0]!.remote?.cleanName ?? ''
+    return `${grouped.length} branches`
+  }, [branches, selectedBranches])
 
   const branchGroups = useMemo(() => {
     try {
@@ -91,7 +94,6 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
       return groups
     } catch (error) {
-      console.log(error)
       return []
     }
   }, [groupedBranches])
@@ -120,6 +122,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     <Combobox
       multiple
       autoHighlight
+      limit={LIMIT}
       items={branchGroups}
       inputValue={inputValue}
       onInputValueChange={(value, { reason }) => {
@@ -159,7 +162,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
                 )}
               </ComboboxCollection>
 
-              {index < branchGroups.length - 1 && <ComboboxSeparator />}
+              {group.value === 'Local' && index < branchGroups.length - 1 && <ComboboxSeparator />}
             </ComboboxGroup>
           )}
         </ComboboxList>

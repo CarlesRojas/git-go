@@ -20,7 +20,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
           // Group
           'group',
           // Layout & Structure
-          'flex h-7 w-52 items-center justify-between gap-2',
+          'flex h-7 w-64 items-center justify-between gap-2',
           // Spacing
           'px-2.5',
           // Typography
