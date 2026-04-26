@@ -108,7 +108,7 @@ export const useGitCommits = (branches?: GitBranch[]) => {
 }
 
 // Custom hook for fetching commits with infinite loading
-export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number = 100) => {
+export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number = 200) => {
   const branchNames = branches?.map(b => b.name)
 
   return useInfiniteQuery({
