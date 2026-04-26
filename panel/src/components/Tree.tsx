@@ -1,4 +1,4 @@
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
 import { cva } from 'class-variance-authority'
@@ -16,6 +16,7 @@ import {
 } from 'react'
 import { GitFileChange } from '../../../src/gitService'
 import { cn } from '../utils/cn'
+import { Button } from './Button'
 
 const treeVariants = cva(
   'group before:bg-accent/70 before:absolute before:left-0 before:-z-10 before:h-[2rem] before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100',
@@ -34,11 +35,14 @@ interface TreeDataItem {
   children?: TreeDataItem[]
   actions?: ReactNode
   onClick?: () => void
+  onOpenDiff?: () => void
+  onOpenFile?: () => void
   draggable?: boolean
   droppable?: boolean
   disabled?: boolean
   className?: string
   fileChange?: GitFileChange
+  filePath?: string
 }
 
 type TreeRenderItemParams = {
@@ -431,7 +435,7 @@ const TreeLeaf = forwardRef<
       <div
         ref={ref}
         className={cn(
-          'flex h-5 max-h-5 min-h-5 cursor-pointer items-center pl-1 text-left',
+          'flex h-5 max-h-5 min-h-5 w-fit cursor-pointer items-center pl-1 text-left',
           treeVariants(),
           className,
           isSelected && selectedTreeVariants(),
@@ -442,7 +446,12 @@ const TreeLeaf = forwardRef<
         onClick={() => {
           if (item.disabled) return
           handleSelectChange(item)
-          item.onClick?.()
+          // Open git diff when clicking on a leaf node with file changes
+          if (item.fileChange && item.onOpenDiff) {
+            item.onOpenDiff()
+          } else {
+            item.onClick?.()
+          }
         }}
         draggable={!!item.draggable && !item.disabled}
         onDragStart={onDragStart}
@@ -466,26 +475,41 @@ const TreeLeaf = forwardRef<
           <>
             <TreeIcon item={item} isSelected={isSelected} default={defaultLeafIcon} />
 
-            <span className="grow truncate text-xs">
+            <span className="line-clamp-1 w-fit truncate text-xs">
               {item.name}{' '}
-              <span className="text-(--vscode-editor-foreground) opacity-60">
-                (
-                {item.fileChange && item.fileChange.additions > 0 && (
-                  <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
-                    +{item.fileChange.additions}
-                  </span>
-                )}
-                {item.fileChange && item.fileChange.additions && item.fileChange && item.fileChange.deletions
-                  ? ' '
-                  : ''}
-                {item.fileChange && item.fileChange.deletions > 0 && (
-                  <span className="text-(--vscode-gitDecoration-deletedResourceForeground)">
-                    -{item.fileChange.deletions}
-                  </span>
-                )}
-                )
-              </span>
+              {item.fileChange && (
+                <span className="text-(--vscode-editor-foreground) opacity-60">
+                  (
+                  {item.fileChange.additions > 0 && (
+                    <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
+                      +{item.fileChange.additions}
+                    </span>
+                  )}
+                  {item.fileChange.additions && item.fileChange.deletions ? ' ' : ''}
+                  {item.fileChange.deletions > 0 && (
+                    <span className="text-(--vscode-gitDecoration-deletedResourceForeground)">
+                      -{item.fileChange.deletions}
+                    </span>
+                  )}
+                  )
+                </span>
+              )}
             </span>
+
+            {item.fileChange && !!item.onOpenFile && (
+              <Button
+                variant="ghost"
+                size="iconSmall"
+                className="ml-2 opacity-0 transition-opacity duration-300 group-hover:opacity-80"
+                onClick={e => {
+                  e.stopPropagation()
+                  item.onOpenFile?.()
+                }}
+                title="Open file directly"
+              >
+                <FontAwesomeIcon icon={faExternalLinkAlt} className="h-3 w-3" />
+              </Button>
+            )}
 
             <TreeActions isSelected={isSelected && !item.disabled}>{item.actions}</TreeActions>
           </>

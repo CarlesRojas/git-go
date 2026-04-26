@@ -40,7 +40,11 @@ export const CommitItem: FC<CommitItemProps> = ({
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
 
-  const fileTree = useGitCommitFiles(commit.hash, isExpanded)
+  const fileTree = useGitCommitFiles({
+    commitHash: commit.hash,
+    isRootCommit: commit.parents.length === 0,
+    enabled: isExpanded,
+  })
 
   const {
     height: panelHeight,

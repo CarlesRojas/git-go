@@ -9,7 +9,7 @@ const buttonVariants = cva(
     // Typography
     'text-xs font-medium whitespace-nowrap',
     // Interactions
-    'transition-colors',
+    'cursor-pointer transition-colors',
     // Disabled States
     'disabled:pointer-events-none disabled:opacity-50',
   ],
@@ -25,6 +25,7 @@ const buttonVariants = cva(
       size: {
         default: 'h-7 px-3',
         icon: 'h-7 w-7',
+        iconSmall: 'h-5 w-5',
       },
     },
     defaultVariants: {

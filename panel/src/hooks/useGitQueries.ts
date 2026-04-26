@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { GitBranch, GitCommit } from '../../../src/gitService'
+import type { GitBranch, GitCommit, GitFileChange } from '../../../src/gitService'
 import { TreeDataItem } from '../components/Tree'
 import { buildFileTree } from '../utils/buildFileTree'
 
@@ -158,8 +158,13 @@ export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number =
   })
 }
 
-// Custom hook for fetching commit files
-export const useGitCommitFiles = (commitHash: string, enabled: boolean = true) => {
+interface GitCommitFilesProps {
+  commitHash: string
+  isRootCommit?: boolean
+  enabled?: boolean
+}
+
+export const useGitCommitFiles = ({ commitHash, isRootCommit = false, enabled = true }: GitCommitFilesProps) => {
   return useQuery({
     queryKey: queryKeys.commitFiles(commitHash),
     queryFn: (): Promise<TreeDataItem[]> => {
@@ -171,7 +176,7 @@ export const useGitCommitFiles = (commitHash: string, enabled: boolean = true) =
 
           if (message.type === 'gitCommitFiles') {
             window.removeEventListener('message', messageHandler)
-            resolve(buildFileTree(message.files))
+            resolve(buildFileTree(message.files, commitHash, isRootCommit))
           } else if (message.type === 'gitError') {
             window.removeEventListener('message', messageHandler)
             reject(new Error(message.error))
@@ -205,5 +210,18 @@ export const useRefreshGitData = () => {
     mutationFn: async () => {
       await queryClient.invalidateQueries({ queryKey: ['git'] })
     },
+  })
+}
+
+export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean): void => {
+  const vscode = getVSCodeApi()
+
+  vscode.postMessage({
+    type: 'openFile',
+    filePath: file.path,
+    oldPath: file.oldPath,
+    status: file.status,
+    commitHash,
+    isRootCommit: isRootCommit ?? false,
   })
 }

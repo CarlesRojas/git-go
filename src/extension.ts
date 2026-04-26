@@ -116,6 +116,107 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'openFile':
+                            try {
+                                const filePath = message.filePath;
+                                const fileName = filePath.split('/').pop() || filePath;
+                                const oldPath = message.oldPath;
+                                const status = message.status;
+                                const commitHash = message.commitHash;
+                                const isRootCommit = message.isRootCommit ?? false;
+
+                                if (!filePath) throw new Error('File path is required');
+
+                                const workspaceFolders = vscode.workspace.workspaceFolders;
+                                if (!workspaceFolders || workspaceFolders.length === 0)
+                                    throw new Error('No workspace folder found');
+
+                                const workspaceUri = workspaceFolders[0].uri;
+                                const fileUri = vscode.Uri.joinPath(workspaceUri, filePath);
+
+                                if (commitHash) {
+                                    if (status === 'D') {
+                                        const prevGitUri = vscode.Uri.from({
+                                            scheme: 'git',
+                                            path: fileUri.path,
+                                            query: JSON.stringify({ ref: `${commitHash}^`, path: fileUri.path })
+                                        });
+
+                                        await vscode.commands.executeCommand(
+                                            'vscode.diff',
+                                            prevGitUri,
+                                            vscode.Uri.parse('untitled:empty'),
+                                            `${fileName} (deleted in ${commitHash.substring(0, 7)})`
+                                        );
+                                    } else if (status === 'A') {
+                                        const gitUri = vscode.Uri.from({
+                                            scheme: 'git',
+                                            path: fileUri.path,
+                                            query: JSON.stringify({ ref: commitHash, path: fileUri.path })
+                                        });
+
+                                        await vscode.commands.executeCommand(
+                                            'vscode.diff',
+                                            vscode.Uri.parse('untitled:empty'),
+                                            gitUri,
+                                            `${fileName} (added in ${commitHash.substring(0, 7)})`
+                                        );
+                                    } else if ((status === 'R' || status === 'C') && oldPath) {
+                                        const oldFileUri = vscode.Uri.joinPath(workspaceUri, oldPath);
+
+                                        const prevGitUri = vscode.Uri.from({
+                                            scheme: 'git',
+                                            path: oldFileUri.path,
+                                            query: JSON.stringify({ ref: `${commitHash}^`, path: oldFileUri.path })
+                                        });
+
+                                        const gitUri = vscode.Uri.from({
+                                            scheme: 'git',
+                                            path: fileUri.path,
+                                            query: JSON.stringify({ ref: commitHash, path: fileUri.path })
+                                        });
+
+                                        const label =
+                                            status === 'R'
+                                                ? `${fileName} (${commitHash.substring(0, 7)})`
+                                                : `${fileName} (copied from ${oldPath} in ${commitHash.substring(0, 7)})`;
+
+                                        await vscode.commands.executeCommand('vscode.diff', prevGitUri, gitUri, label);
+                                    } else {
+                                        const prevGitUri = isRootCommit
+                                            ? vscode.Uri.parse('untitled:empty')
+                                            : vscode.Uri.from({
+                                                  scheme: 'git',
+                                                  path: fileUri.path,
+                                                  query: JSON.stringify({ ref: `${commitHash}^`, path: fileUri.path })
+                                              });
+
+                                        const gitUri = vscode.Uri.from({
+                                            scheme: 'git',
+                                            path: fileUri.path,
+                                            query: JSON.stringify({ ref: commitHash, path: fileUri.path })
+                                        });
+
+                                        await vscode.commands.executeCommand(
+                                            'vscode.diff',
+                                            prevGitUri,
+                                            gitUri,
+                                            `${fileName} (${commitHash.substring(0, 7)})`
+                                        );
+                                    }
+
+                                    log(`Opened diff for ${fileName} [${status}] at ${commitHash.substring(0, 7)}`);
+                                } else {
+                                    const document = await vscode.workspace.openTextDocument(fileUri);
+                                    await vscode.window.showTextDocument(document);
+                                    log(`Opened file: ${fileName}`);
+                                }
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error opening file: ${errorMessage}`);
+                                vscode.window.showErrorMessage(`Failed to open file: ${errorMessage}`);
+                            }
+                            break;
                     }
                 },
                 undefined,

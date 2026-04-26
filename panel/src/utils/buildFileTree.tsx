@@ -1,5 +1,6 @@
 import type { GitFileChange } from '../../../src/gitService'
 import { TreeDataItem } from '../components/Tree'
+import { openFile } from '../hooks/useGitQueries'
 
 const STATUS_LABELS: Record<string, string> = {
   A: 'Added',
@@ -10,7 +11,7 @@ const STATUS_LABELS: Record<string, string> = {
   T: 'Type changed',
 }
 
-export function buildFileTree(files: GitFileChange[]): TreeDataItem[] {
+export function buildFileTree(files: GitFileChange[], commitHash?: string, isRootCommit?: boolean): TreeDataItem[] {
   const root: Record<string, any> = {}
 
   for (const file of files) {
@@ -52,6 +53,9 @@ export function buildFileTree(files: GitFileChange[]): TreeDataItem[] {
           name: file.oldPath ? `${name} ← ${file.oldPath.split('/').pop()}` : name,
           className: statusClass(file.status),
           fileChange: file,
+          filePath: file.path,
+          onOpenDiff: commitHash ? () => openFile(file, commitHash, isRootCommit) : undefined,
+          onOpenFile: () => (!['D'].includes(file.status) ? openFile(file, undefined, isRootCommit) : undefined),
         })
       } else {
         items.push({
