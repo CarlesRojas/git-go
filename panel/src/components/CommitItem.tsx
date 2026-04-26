@@ -68,7 +68,7 @@ export const CommitItem: FC<CommitItemProps> = ({
       <button
         className={cn(
           // Layout & sizing
-          'group/commit flex h-6 max-h-6 min-h-6 w-full',
+          'group/commit relative flex h-6 max-h-6 min-h-6 w-full',
           // Spacing
           'pr-2',
           // Interactive
@@ -81,6 +81,25 @@ export const CommitItem: FC<CommitItemProps> = ({
         onMouseEnter={() => onCommitHover(commit.hash, row)}
         onMouseLeave={() => onCommitHover(null, null)}
       >
+        {layout.isHead && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 -z-20 opacity-10"
+              style={{ backgroundColor: getColor(layout.colorIndex) }}
+            />
+
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
+              style={{ backgroundColor: getColor(layout.colorIndex) }}
+            />
+
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
+              style={{ backgroundColor: getColor(layout.colorIndex) }}
+            />
+          </>
+        )}
+
         <div
           className={cn(
             // Layout & sizing
