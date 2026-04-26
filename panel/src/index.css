@@ -21,4 +21,8 @@
   a {
     @apply no-underline;
   }
+
+  .scaled {
+    @apply scale-125 stroke-(--vscode-editor-foreground)/10;
+  }
 }

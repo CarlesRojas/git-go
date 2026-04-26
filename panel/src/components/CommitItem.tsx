@@ -1,6 +1,6 @@
 import { faCheckCircle, faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useEffect, useRef } from 'react'
+import { FC, useEffect, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
@@ -16,14 +16,16 @@ interface CommitItemProps {
   onToggle: () => void
   selectedBranches: GitBranch[]
   treeWidth: number
+  onCommitHover: (hash: string | null) => void
 }
 
-export const CommitItem: React.FC<CommitItemProps> = ({
+export const CommitItem: FC<CommitItemProps> = ({
   commit,
   isExpanded,
   onToggle,
   selectedBranches,
   treeWidth,
+  onCommitHover,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
@@ -75,6 +77,8 @@ export const CommitItem: React.FC<CommitItemProps> = ({
         )}
         style={{ paddingLeft: `${treeWidth + 8}px` }}
         onClick={onToggle}
+        onMouseEnter={() => onCommitHover(commit.hash)}
+        onMouseLeave={() => onCommitHover(null)}
       >
         <div
           className={cn(

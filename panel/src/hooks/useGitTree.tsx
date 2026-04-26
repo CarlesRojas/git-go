@@ -126,6 +126,8 @@ export function useGitTree(commits: GitCommit[]): {
                   fill={color}
                   stroke="var(--vscode-editor-background)"
                   strokeWidth={LINE_WIDTH}
+                  data-hash={c.commit.hash}
+                  className="origin-center transition-[scale] transform-fill"
                 />
               )
             }
@@ -140,6 +142,8 @@ export function useGitTree(commits: GitCommit[]): {
                   fill="var(--vscode-editor-background)"
                   stroke={color}
                   strokeWidth={LINE_WIDTH}
+                  data-hash={c.commit.hash}
+                  className="origin-center transition-[scale] transform-fill"
                 />
               )
 
@@ -152,6 +156,8 @@ export function useGitTree(commits: GitCommit[]): {
                 fill={color}
                 stroke="var(--vscode-editor-background)"
                 strokeWidth={LINE_WIDTH}
+                data-hash={c.commit.hash}
+                className="origin-center transition-[scale] transform-fill"
               />
             )
           })}

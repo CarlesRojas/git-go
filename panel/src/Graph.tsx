@@ -1,6 +1,6 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { Fragment, useState } from 'react'
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
@@ -34,6 +34,28 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
 
+  const hoveredCircleRef = useRef<Element | null>(null)
+  const onCommitHover = useCallback((hash: string | null) => {
+    if (hoveredCircleRef.current) {
+      hoveredCircleRef.current.classList.remove('scaled')
+      hoveredCircleRef.current = null
+    }
+
+    if (hash) {
+      const el = document.querySelector(`[data-hash="${hash}"]`)
+      if (el) {
+        el.classList.add('scaled')
+        hoveredCircleRef.current = el
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (hoveredCircleRef.current) hoveredCircleRef.current.classList.remove('scaled')
+    }
+  }, [])
+
   if (isLoading) {
     return (
       <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
@@ -65,6 +87,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
             onToggle={() => toggleCommit(commit.hash)}
             selectedBranches={selectedBranches}
             treeWidth={treeWidth}
+            onCommitHover={onCommitHover}
           />
         ))}
 
