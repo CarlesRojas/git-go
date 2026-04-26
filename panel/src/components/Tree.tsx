@@ -106,29 +106,41 @@ const TreeView = forwardRef<HTMLDivElement, TreeProps>(
     )
 
     const expandedItemIds = useMemo(() => {
-      if (!initialSelectedItemId) {
-        return [] as string[]
-      }
-
       const ids: string[] = []
 
-      function walkTreeItems(items: TreeDataItem[] | TreeDataItem, targetId: string) {
+      function walkTreeItems(items: TreeDataItem[] | TreeDataItem, targetId?: string) {
         if (Array.isArray(items)) {
           for (let i = 0; i < items.length; i++) {
-            ids.push(items[i]!.id)
-            if (walkTreeItems(items[i]!, targetId) && !expandAll) {
-              return true
+            const item = items[i]!
+            if (expandAll && item.children) {
+              ids.push(item.id)
+            } else if (!expandAll && targetId) {
+              ids.push(item.id)
+              if (walkTreeItems(item, targetId)) {
+                return true
+              }
+              ids.pop()
             }
-            if (!expandAll) ids.pop()
+            if (item.children) {
+              walkTreeItems(item.children, targetId)
+            }
           }
-        } else if (!expandAll && items.id === targetId) {
+        } else if (!expandAll && targetId && items.id === targetId) {
           return true
         } else if (items.children) {
+          if (expandAll) {
+            ids.push(items.id)
+          }
           return walkTreeItems(items.children, targetId)
         }
       }
 
-      walkTreeItems(data, initialSelectedItemId)
+      if (expandAll) {
+        walkTreeItems(data)
+      } else if (initialSelectedItemId) {
+        walkTreeItems(data, initialSelectedItemId)
+      }
+
       return ids
     }, [data, expandAll, initialSelectedItemId])
 
@@ -456,7 +468,7 @@ const TreeLeaf = forwardRef<
 
             <span className="grow truncate text-xs">
               {item.name}{' '}
-              <span className="text-(--vscode-editor-foreground) opacity-50">
+              <span className="text-(--vscode-editor-foreground) opacity-60">
                 (
                 {item.fileChange && item.fileChange.additions > 0 && (
                   <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
