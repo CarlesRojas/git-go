@@ -24,11 +24,13 @@ interface UnavailablePoint {
 
 export class GraphBranch {
   public readonly colorIndex: number
+  public readonly isStash: boolean
   public segments: Segment[] = []
   public end: number = 0
 
-  constructor(colorIndex: number) {
+  constructor(colorIndex: number, isStash: boolean) {
     this.colorIndex = colorIndex
+    this.isStash = isStash
   }
 
   addSegment(p1: Point, p2: Point, lockedFirst: boolean) {
@@ -130,6 +132,7 @@ export interface CommitLayout {
 
 export interface BranchPath {
   colorIndex: number
+  isStash: boolean
   segments: Segment[]
 }
 
@@ -140,7 +143,7 @@ export interface GraphLayout {
 
 // ─── NULL sentinel ────────────────────────────────────────────────────────────
 
-const NULL_VERTEX = new GraphVertex(-1, false)
+const NULL_VERTEX = new GraphVertex(-1, false, false)
 
 // ─── Main layout function ─────────────────────────────────────────────────────
 
@@ -221,7 +224,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
       }
     } else {
       // Normal branch
-      const branch = new GraphBranch(getAvailableColor(startAt))
+      const branch = new GraphBranch(getAvailableColor(startAt), vertex.isStash)
       vertex.addToBranch(branch, lastPoint.x)
       vertex.registerUnavailablePoint(lastPoint.x, vertex, branch)
 
@@ -277,6 +280,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
 
   const branchPaths: BranchPath[] = branches.map(b => ({
     colorIndex: b.colorIndex,
+    isStash: b.isStash,
     segments: b.segments,
   }))
 

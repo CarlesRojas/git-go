@@ -28,7 +28,7 @@ export const App: React.FC = () => {
           // Typography
           'leading-relaxed font-medium text-(--vscode-editor-foreground)',
           // Colors & Background
-          'bg-(--vscode-editor-background)',
+          // 'bg-(--vscode-editor-background)',
           // Selection States
           'selection:bg-(--vscode-editor-selectionBackground)',
           'selection:text-(--vscode-editor-selectionForeground)',

@@ -13,15 +13,18 @@ const BRANCH_COLORS = [
   '#eab308', // yellow-500
 ]
 
+const STASH_COLOR = '#737373' // neutral-500
+
 const ROW_HEIGHT = 24
 const COL_WIDTH = 16
-const DOT_RADIUS = 6
+const DOT_RADIUS = 5.5
 const LINE_WIDTH = 2
 
 // d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
 const CURVE_D = ROW_HEIGHT * 0.8
 
-const getColor = (index: number) => BRANCH_COLORS[index % BRANCH_COLORS.length]
+const getColor = (index: number, isStash?: boolean) =>
+  isStash ? STASH_COLOR : BRANCH_COLORS[index % BRANCH_COLORS.length]
 const px = (col: number) => col * COL_WIDTH + COL_WIDTH / 2
 const py = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
 
@@ -75,7 +78,7 @@ export function useGitTree(commits: GitCommit[]): {
         {/* Branch lines — drawn first, under dots */}
         <g>
           {layout.branches.map((branch, bi) => {
-            const color = getColor(branch.colorIndex)
+            const color = getColor(branch.colorIndex, branch.isStash)
             // Merge consecutive straight segments into one path (perf + visual)
             let d = ''
             for (const seg of branch.segments) {
@@ -95,6 +98,7 @@ export function useGitTree(commits: GitCommit[]): {
                 strokeWidth={LINE_WIDTH}
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                opacity={0.75}
               />
             )
           })}
@@ -105,7 +109,7 @@ export function useGitTree(commits: GitCommit[]): {
           {layout.commits.map(c => {
             const dotX = px(c.column)
             const dotY = py(c.row)
-            const color = getColor(c.colorIndex)
+            const color = getColor(c.colorIndex, c.isStash)
 
             if (c.isStash) {
               const squareSize = DOT_RADIUS * 2
