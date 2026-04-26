@@ -35,12 +35,12 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       {...props}
     >
       <div className="flex min-w-0 flex-row items-center gap-2">
-        <FontAwesomeIcon icon={faCodeBranch} className="size-2.5 text-(--vscode-editor-foreground)/70" />
+        <FontAwesomeIcon icon={faCodeBranch} className="size-2.5 min-w-2.5 text-(--vscode-editor-foreground)/70" />
         {children}
       </div>
 
       <FontAwesomeIcon
-        className="pointer-events-none size-2.5 opacity-50 transition-transform group-data-popup-open:rotate-180"
+        className="pointer-events-none size-2.5 min-w-2.5 opacity-50 transition-transform group-data-popup-open:rotate-180"
         icon={faChevronDown}
       />
     </ComboboxPrimitive.Trigger>

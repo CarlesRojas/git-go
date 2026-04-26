@@ -74,7 +74,8 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const displayText = useMemo(() => {
     const grouped = Object.values(groupBranches(branches.filter(b => selectedBranches.includes(b.cleanName))))
     if (grouped.length === 0) return 'Select branches...'
-    if (grouped.length === 1) return grouped[0]!.local?.cleanName ?? grouped[0]!.remotes[0]?.cleanName ?? ''
+    if (grouped.length < 4) return grouped.map(g => g.local?.cleanName ?? g.remotes[0]?.cleanName ?? '').join(', ')
+
     return `${grouped.length} branches`
   }, [branches, selectedBranches])
 
