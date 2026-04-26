@@ -27,6 +27,6 @@
   }
 
   .dimmed {
-    @apply opacity-30;
+    @apply opacity-20;
   }
 }
