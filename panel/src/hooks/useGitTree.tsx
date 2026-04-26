@@ -22,47 +22,50 @@ export const COL_WIDTH = 16 // If this changes, change the mask calc below too s
 const DOT_RADIUS = 5
 const LINE_WIDTH = 2
 
-// d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
-const CURVE_D = ROW_HEIGHT * 0.8
-
 export const getColor = (index: number, isStash?: boolean) =>
   isStash ? STASH_COLOR : BRANCH_COLORS[index % BRANCH_COLORS.length]
+
 const px = (col: number) => col * COL_WIDTH + COL_WIDTH / 2
-const py = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
 
 /**
  * Builds the SVG path for a segment.
- * Exact port of vscode-git-graph's draw() method curve logic:
- *
- *   Straight:  L x2,y2
- *   lockedFirst=true  (transition near p2, branch peeling off):
- *     C x1,(y1+d) x2,(y2-d) x2,y2
- *   lockedFirst=false (transition near p1, branch merging in):
- *     C x1,(y1+d) x2,(y2-d) x2,y2   ← same bezier, different visual because
- *                                        p1 and p2 are swapped in meaning
- *
- * The original code uses a single cubic bezier for both cases:
- *   curPath += 'C' + x1 + ',' + (y1+d) + ' ' + x2 + ',' + (y2-d) + ' ' + x2 + ',' + y2
+ * Curve size is proportional to the actual gap between the two points,
+ * so it adapts when a row is expanded.
  */
-function segmentPath(x1: number, y1: number, x2: number, y2: number, lockedFirst: boolean): string {
+function segmentPath(x1: number, y1: number, x2: number, y2: number): string {
   if (x1 === x2) {
     return `M${x1},${y1}L${x2},${y2}`
   }
-  // Cubic bezier — control points hug the source/target vertically
-  return `M${x1},${y1}C${x1},${(y1 + CURVE_D).toFixed(1)} ${x2},${(y2 - CURVE_D).toFixed(1)} ${x2},${y2}`
+  const d = (y2 - y1) * 0.8
+  return `M${x1},${y1}C${x1},${(y1 + d).toFixed(1)} ${x2},${(y2 - d).toFixed(1)} ${x2},${y2}`
 }
 
-export function useGitTree(commits: GitCommit[]): {
+export interface ExpandedRow {
+  row: number
+  extraHeight: number
+}
+
+export function useGitTree(
+  commits: GitCommit[],
+  expandedRow?: ExpandedRow,
+): {
   treeComponent: React.ReactNode
   treeWidth: number
   rows: CommitLayout[]
 } {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
-  console.log(
-    'branches:',
-    layout.branches.length,
-    layout.branches.map(b => b.segments.length),
-  )
+
+  // Y coordinate function that accounts for expanded row
+  const getY = useMemo(() => {
+    if (!expandedRow) return (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
+
+    const { row: expandedIdx, extraHeight } = expandedRow
+    return (row: number) => {
+      const baseY = row * ROW_HEIGHT + ROW_HEIGHT / 2
+      if (row <= expandedIdx) return baseY
+      return baseY + extraHeight
+    }
+  }, [expandedRow])
 
   const treeWidth = useMemo(() => {
     let maxCol = 0
@@ -82,7 +85,7 @@ export function useGitTree(commits: GitCommit[]): {
   const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH)
   const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
-  const svgHeight = commits.length * ROW_HEIGHT
+  const svgHeight = commits.length * ROW_HEIGHT + (expandedRow?.extraHeight ?? 0)
 
   const treeComponent = (
     <div
@@ -101,7 +104,7 @@ export function useGitTree(commits: GitCommit[]): {
               if (c.column > maxVisibleCol) return null
 
               const dotX = px(c.column)
-              const dotY = py(c.row)
+              const dotY = getY(c.row)
 
               if (c.isStash) {
                 const squareSize = DOT_RADIUS * 2 + LINE_WIDTH * 3
@@ -145,10 +148,10 @@ export function useGitTree(commits: GitCommit[]): {
             for (const seg of branch.segments) {
               if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
               const x1 = px(seg.p1.x)
-              const y1 = py(seg.p1.y)
+              const y1 = getY(seg.p1.y)
               const x2 = px(seg.p2.x)
-              const y2 = py(seg.p2.y)
-              d += segmentPath(x1, y1, x2, y2, seg.lockedFirst)
+              const y2 = getY(seg.p2.y)
+              d += segmentPath(x1, y1, x2, y2)
             }
             if (!d) return null
             return (
@@ -174,7 +177,7 @@ export function useGitTree(commits: GitCommit[]): {
             if (c.column > maxVisibleCol) return null
 
             const dotX = px(c.column)
-            const dotY = py(c.row)
+            const dotY = getY(c.row)
             const color = getColor(c.colorIndex, c.isStash)
 
             if (c.isStash) {

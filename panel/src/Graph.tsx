@@ -1,6 +1,6 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { Fragment, useState } from 'react'
+import React, { Fragment, useMemo, useState } from 'react'
 import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
@@ -14,6 +14,7 @@ interface GraphProps {
 
 export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
+  const [panelHeight, setPanelHeight] = useState<number>(0)
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteGitCommits(selectedBranches)
@@ -26,8 +27,14 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   })
 
   const commits = data?.pages.flatMap(page => page.commits) ?? []
+  const expandedRow = useMemo(() => {
+    if (!expandedCommitHash || panelHeight === 0) return undefined
+    const idx = commits.findIndex(c => c.hash === expandedCommitHash)
+    if (idx === -1) return undefined
+    return { row: idx, extraHeight: panelHeight }
+  }, [expandedCommitHash, commits, panelHeight])
 
-  const { treeComponent, treeWidth, rows } = useGitTree(commits)
+  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
@@ -69,6 +76,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
             onCommitHover={onCommitHover}
             row={row}
             layout={rows.find(c => c.commit.hash === commit.hash)!}
+            setPanelHeight={setPanelHeight}
           />
         ))}
 
