@@ -27,6 +27,7 @@ export class GraphBranch {
   public readonly isStash: boolean
   public segments: Segment[] = []
   public end: number = 0
+  public hashes: Set<number> = new Set()
 
   constructor(colorIndex: number, isStash: boolean) {
     this.colorIndex = colorIndex
@@ -134,6 +135,7 @@ export interface BranchPath {
   colorIndex: number
   isStash: boolean
   segments: Segment[]
+  commitRows: number[]
 }
 
 export interface GraphLayout {
@@ -226,6 +228,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
       // Normal branch
       const branch = new GraphBranch(getAvailableColor(startAt), vertex.isStash)
       vertex.addToBranch(branch, lastPoint.x)
+      branch.hashes.add(startAt)
       vertex.registerUnavailablePoint(lastPoint.x, vertex, branch)
 
       for (i = startAt + 1; i < vertices.length; i++) {
@@ -239,6 +242,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
 
         if (parentVertex === curVertex) {
           vertex.registerParentProcessed()
+          branch.hashes.add(i)
           const parentAlreadyOnBranch = !parentVertex.isNotOnBranch()
           parentVertex.addToBranch(branch, curPoint.x)
           vertex = parentVertex
@@ -282,6 +286,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
     colorIndex: b.colorIndex,
     isStash: b.isStash,
     segments: b.segments,
+    commitRows: [...b.hashes],
   }))
 
   return { commits: commitLayouts, branches: branchPaths }

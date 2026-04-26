@@ -16,7 +16,8 @@ interface CommitItemProps {
   onToggle: () => void
   selectedBranches: GitBranch[]
   treeWidth: number
-  onCommitHover: (hash: string | null) => void
+  onCommitHover: (hash: string | null, row: number | null) => void
+  row: number
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -26,6 +27,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   selectedBranches,
   treeWidth,
   onCommitHover,
+  row,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
@@ -77,8 +79,8 @@ export const CommitItem: FC<CommitItemProps> = ({
         )}
         style={{ paddingLeft: `${treeWidth + 8}px` }}
         onClick={onToggle}
-        onMouseEnter={() => onCommitHover(commit.hash)}
-        onMouseLeave={() => onCommitHover(null)}
+        onMouseEnter={() => onCommitHover(commit.hash, row)}
+        onMouseLeave={() => onCommitHover(null, null)}
       >
         <div
           className={cn(

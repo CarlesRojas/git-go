@@ -140,6 +140,8 @@ export function useGitTree(commits: GitCommit[]): {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 opacity={0.7}
+                data-rows={branch.commitRows.join(',')}
+                className="transition-opacity"
               />
             )
           })}

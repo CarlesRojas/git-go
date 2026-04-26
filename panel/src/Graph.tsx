@@ -1,9 +1,10 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import React, { Fragment, useState } from 'react'
 import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
+import { useCommitHighlight } from './hooks/useCommitHighlight'
 import { useInfiniteGitCommits } from './hooks/useGitQueries'
 import { useGitTree } from './hooks/useGitTree'
 
@@ -34,26 +35,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
 
-  const hoveredCircleRefs = useRef<Element[]>([])
-  const onCommitHover = useCallback((hash: string | null) => {
-    hoveredCircleRefs.current.forEach(el => el.classList.remove('highlighted'))
-    hoveredCircleRefs.current = []
-
-    if (hash) {
-      const elements = document.querySelectorAll(`[data-hash="${hash}"]`)
-      elements.forEach(el => {
-        el.classList.add('highlighted')
-        hoveredCircleRefs.current.push(el)
-      })
-    }
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      hoveredCircleRefs.current.forEach(el => el.classList.remove('highlighted'))
-      hoveredCircleRefs.current = []
-    }
-  }, [])
+  const { onCommitHover } = useCommitHighlight()
 
   if (isLoading) {
     return (
@@ -78,7 +60,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
       {commits.length > 0 && treeComponent}
 
       <div className="flex w-full flex-col py-3">
-        {commits.map(commit => (
+        {commits.map((commit, row) => (
           <CommitItem
             key={commit.hash}
             commit={commit}
@@ -87,6 +69,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
             selectedBranches={selectedBranches}
             treeWidth={treeWidth}
             onCommitHover={onCommitHover}
+            row={row}
           />
         ))}
 

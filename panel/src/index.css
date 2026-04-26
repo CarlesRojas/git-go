@@ -25,4 +25,8 @@
   .highlighted {
     @apply scale-125 stroke-(--vscode-editor-foreground)/10;
   }
+
+  .dimmed {
+    @apply opacity-30;
+  }
 }
