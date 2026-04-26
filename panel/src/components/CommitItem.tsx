@@ -4,12 +4,14 @@ import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
 import { useToast } from '../contexts/ToastContext'
+import { useGitCommitFiles } from '../hooks/useGitQueries'
 import { ExpandedRow, getColor } from '../hooks/useGitTree'
 import { useResizable } from '../hooks/useResizable'
 import { cn } from '../utils/cn'
 import { CommitLayout } from '../utils/GraphLayoutGenerator'
 import { groupBranches } from '../utils/groupBranches'
 import BranchPill from './BranchPill'
+import { TreeView } from './Tree'
 
 interface CommitItemProps {
   commit: GitCommit
@@ -37,6 +39,8 @@ export const CommitItem: FC<CommitItemProps> = ({
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
+
+  const fileTree = useGitCommitFiles(commit.hash, isExpanded)
 
   const {
     height: panelHeight,
@@ -397,6 +401,8 @@ export const CommitItem: FC<CommitItemProps> = ({
               </span>
             </div>
           </div>
+
+          {fileTree.data && <TreeView data={fileTree.data} />}
 
           <div
             className={cn(

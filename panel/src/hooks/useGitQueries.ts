@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
+import { TreeDataItem } from '../components/Tree'
+import { buildFileTree } from '../utils/buildFileTree'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -24,6 +26,7 @@ export const getVSCodeApi = (): VSCodeApi => {
 export const queryKeys = {
   branches: ['git', 'branches'] as const,
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
+  commitFiles: (commitHash: string) => ['git', 'commit-files', { commitHash }] as const,
   stashes: ['git', 'stashes'] as const,
   infiniteCommits: (branches?: GitBranch[]) =>
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
@@ -152,6 +155,45 @@ export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number =
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     enabled: branches && branches.length > 0,
+  })
+}
+
+// Custom hook for fetching commit files
+export const useGitCommitFiles = (commitHash: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: queryKeys.commitFiles(commitHash),
+    queryFn: (): Promise<TreeDataItem[]> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitCommitFiles') {
+            window.removeEventListener('message', messageHandler)
+            resolve(buildFileTree(message.files))
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'getCommitFiles',
+          commitHash: commitHash,
+        })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch commit files'))
+        }, 10000)
+      })
+    },
+    enabled: !!commitHash && enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   })
 }
 

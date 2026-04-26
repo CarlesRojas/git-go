@@ -91,6 +91,31 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'getCommitFiles':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const commitHash = message.commitHash;
+                                if (!commitHash) {
+                                    throw new Error('Commit hash is required');
+                                }
+                                const files = await gitService.getCommitFiles(log, commitHash);
+                                log(
+                                    `Successfully retrieved ${files.length} files for commit ${commitHash.substring(0, 7)}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitCommitFiles',
+                                    files: files,
+                                    commitHash: commitHash
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting commit files: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                     }
                 },
                 undefined,

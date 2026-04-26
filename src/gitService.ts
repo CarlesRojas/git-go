@@ -28,6 +28,12 @@ export interface GitExecutable {
     version: string;
 }
 
+export interface GitFileChange {
+    path: string;
+    status: 'A' | 'M' | 'D' | 'R' | 'C' | 'T';
+    oldPath?: string; // only for renames (R) and copies (C)
+}
+
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 const EOL_REGEX = /\r\n|\r|\n/g;
 
@@ -415,6 +421,66 @@ export class GitService {
         } catch (error) {
             log(`Error getting git commits: ${error}`);
             throw new Error(`Failed to get git commits: ${error}`);
+        }
+    }
+
+    /**
+     * Get the list of files changed in a specific commit.
+     * Uses git diff-tree for regular commits and git diff for root commits.
+     */
+    public async getCommitFiles(log: (message: string) => void, commitHash: string): Promise<GitFileChange[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            // diff-tree doesn't work for root commits (no parent), so handle that case
+            const output = await this.spawnGit(
+                [
+                    gitExecutable.path,
+                    'diff-tree',
+                    '--no-commit-id',
+                    '--name-status',
+                    '-r',
+                    '-M', // detect renames
+                    '--root', // handle root commits (shows as diff against empty tree)
+                    commitHash
+                ],
+                workspacePath
+            );
+
+            const files: GitFileChange[] = [];
+            const lines = output.split(EOL_REGEX).filter((l) => l.trim());
+
+            for (const line of lines) {
+                const parts = line.split('\t');
+                if (parts.length < 2) continue;
+
+                const statusRaw = parts[0]!.trim();
+                const status = statusRaw[0] as GitFileChange['status'];
+
+                if (status === 'R' || status === 'C') {
+                    // Rename/copy: status\toldPath\tnewPath
+                    files.push({
+                        path: parts[2]?.trim() || '',
+                        status,
+                        oldPath: parts[1]?.trim() || ''
+                    });
+                } else {
+                    files.push({
+                        path: parts[1]?.trim() || '',
+                        status
+                    });
+                }
+            }
+
+            log(`Found ${files.length} changed files for commit ${commitHash.substring(0, 7)}`);
+            return files;
+        } catch (error) {
+            log(`Error getting commit files: ${error}`);
+            throw new Error(`Failed to get commit files: ${error}`);
         }
     }
 
