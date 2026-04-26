@@ -51,7 +51,7 @@ export const CommitItem: FC<CommitItemProps> = ({
     isDragging,
     handleMouseDown,
     containerRef,
-  } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
+  } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.4, 164) })
 
   useEffect(() => {
     if (isExpanded && panelHeight > 0) setExpandedRow?.({ row, extraHeight: panelHeight })
