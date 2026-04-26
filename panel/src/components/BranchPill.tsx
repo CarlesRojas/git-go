@@ -58,7 +58,7 @@ const BranchPill: React.FC<Props> = ({ branch, baseName, layout }) => {
         }}
       >
         <div className="flex h-full w-fit min-w-fit items-center px-1.5">
-          <span className={cn('leading-tight')}>
+          <span className="line-clamp-1 leading-tight text-nowrap">
             {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
           </span>
         </div>
@@ -71,7 +71,7 @@ const BranchPill: React.FC<Props> = ({ branch, baseName, layout }) => {
               key={`remote-${i}-${remote}`}
               className="flex h-full w-fit min-w-fit items-center border-l border-(--vscode-editor-foreground)/15 px-1.5"
             >
-              <span className="leading-tight opacity-60">{remote}</span>
+              <span className="line-clamp-1 leading-tight text-nowrap opacity-60">{remote}</span>
             </div>
           ))}
       </div>

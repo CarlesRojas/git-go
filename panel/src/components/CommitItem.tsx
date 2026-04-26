@@ -63,6 +63,8 @@ export const CommitItem: FC<CommitItemProps> = ({
     }
   }, [isExpanded])
 
+  const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
+
   return (
     <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
       <button
@@ -180,7 +182,7 @@ export const CommitItem: FC<CommitItemProps> = ({
                 // Layout
                 'grow pl-1',
                 // Typography
-                'line-clamp-1 truncate text-xs font-semibold',
+                'line-clamp-1 truncate text-xs leading-tight font-semibold',
                 // State
                 layout?.isMerge && 'opacity-50',
               )}
@@ -190,19 +192,34 @@ export const CommitItem: FC<CommitItemProps> = ({
             </h3>
           </div>
 
+          <span
+            className={cn(
+              // Layout & sizing
+              'min-w-fit',
+              // Typography
+              'line-clamp-1 truncate text-xs leading-tight font-medium',
+              // Appearance
+              'opacity-50',
+            )}
+          >
+            {commit.author}
+          </span>
+
+          <Avatar email={commit.email} author={commit.author} size={20} />
+
           <time
             className={cn(
               // Layout & sizing
               'min-w-fit',
               // Typography
-              'line-clamp-1 truncate text-xs font-medium',
+              'line-clamp-1 truncate text-xs leading-tight font-medium',
               // Appearance
               'opacity-50',
             )}
             dateTime={commit.date.split('T')[0]}
           >
             {new Date(commit.date).toLocaleDateString('en-CA', {
-              year: 'numeric',
+              year: isFromThisYear ? undefined : 'numeric',
               month: 'short',
               day: 'numeric',
             })}
@@ -213,7 +230,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               // Layout & sizing
               'min-w-fit',
               // Typography
-              'line-clamp-1 truncate text-xs font-medium',
+              'line-clamp-1 truncate text-xs leading-tight font-medium',
               // Appearance
               'opacity-50',
             )}
@@ -225,8 +242,6 @@ export const CommitItem: FC<CommitItemProps> = ({
               hour12: false,
             })}
           </time>
-
-          <Avatar email={commit.email} author={commit.author} size={20} />
         </div>
       </button>
 
