@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import type { GitCommit } from '../../../src/gitService'
-import { computeGraphLayout } from '../utils/GraphLayoutGenerator'
+import { CommitLayout, computeGraphLayout } from '../utils/GraphLayoutGenerator'
 
 const BRANCH_COLORS = [
   '#3b82f6', // blue-500
@@ -53,6 +53,7 @@ function segmentPath(x1: number, y1: number, x2: number, y2: number, lockedFirst
 export function useGitTree(commits: GitCommit[]): {
   treeComponent: React.ReactNode
   treeWidth: number
+  rows: CommitLayout[]
 } {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
 
@@ -208,5 +209,5 @@ export function useGitTree(commits: GitCommit[]): {
     </div>
   )
 
-  return { treeComponent, treeWidth }
+  return { treeComponent, treeWidth, rows: layout.commits }
 }

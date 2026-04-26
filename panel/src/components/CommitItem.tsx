@@ -8,6 +8,7 @@ import { useToast } from '../contexts/ToastContext'
 import { useResizable } from '../hooks/useResizable'
 import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
+import { CommitLayout } from '../utils/GraphLayoutGenerator'
 import { groupBranches } from '../utils/groupBranches'
 
 interface CommitItemProps {
@@ -18,6 +19,7 @@ interface CommitItemProps {
   treeWidth: number
   onCommitHover: (hash: string | null, row: number | null) => void
   row: number
+  layout: CommitLayout | undefined
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -28,6 +30,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   treeWidth,
   onCommitHover,
   row,
+  layout,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
@@ -161,6 +164,8 @@ export const CommitItem: FC<CommitItemProps> = ({
               'grow',
               // Typography
               'line-clamp-1 truncate text-xs font-semibold tracking-tighter',
+              // State
+              layout?.isMerge && 'opacity-50',
             )}
           >
             {commit.message}

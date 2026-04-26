@@ -29,7 +29,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   const commits = data?.pages.flatMap(page => page.commits) ?? []
 
-  const { treeComponent, treeWidth } = useGitTree(commits)
+  const { treeComponent, treeWidth, rows } = useGitTree(commits)
 
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
@@ -70,6 +70,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
             treeWidth={treeWidth}
             onCommitHover={onCommitHover}
             row={row}
+            layout={rows.find(c => c.commit.hash === commit.hash)}
           />
         ))}
 
