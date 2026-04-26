@@ -79,7 +79,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
         const item = {
           value: baseName,
           label: baseName,
-          icon: getBranchIcons(local, remote, local?.current ?? remote?.current ?? false),
+          icon: getBranchIcons({ local, remote, isCurrent: local?.current ?? remote?.current }),
         }
 
         if (local) localBranches.push(item)

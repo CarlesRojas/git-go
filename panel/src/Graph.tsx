@@ -70,7 +70,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
             treeWidth={treeWidth}
             onCommitHover={onCommitHover}
             row={row}
-            layout={rows.find(c => c.commit.hash === commit.hash)}
+            layout={rows.find(c => c.commit.hash === commit.hash)!}
           />
         ))}
 

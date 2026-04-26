@@ -7,10 +7,10 @@ import { Avatar } from '../Avatar'
 import { useToast } from '../contexts/ToastContext'
 import { getColor } from '../hooks/useGitTree'
 import { useResizable } from '../hooks/useResizable'
-import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
 import { CommitLayout } from '../utils/GraphLayoutGenerator'
 import { groupBranches } from '../utils/groupBranches'
+import BranchPill from './BranchPill'
 
 interface CommitItemProps {
   commit: GitCommit
@@ -20,7 +20,7 @@ interface CommitItemProps {
   treeWidth: number
   onCommitHover: (hash: string | null, row: number | null) => void
   row: number
-  layout: CommitLayout | undefined
+  layout: CommitLayout
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -102,7 +102,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               // Layout & sizing
               'relative flex h-full grow overflow-hidden',
               // Spacing
-              'gap-2',
+              'gap-1',
               // Typography
               'text-left',
               // Alignment
@@ -114,22 +114,7 @@ export const CommitItem: FC<CommitItemProps> = ({
             {Object.entries(groupedBranches)
               .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
               .map(([baseName, { local, remote }]) => (
-                <div
-                  key={baseName}
-                  className={cn(
-                    // Layout & sizing
-                    'flex min-w-fit items-center',
-                    // Spacing
-                    'gap-2 px-2 py-0.5',
-                    // Typography
-                    'text-xs font-medium',
-                    // Colors
-                    'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
-                  )}
-                >
-                  {getBranchIcons(local, remote, false)}
-                  <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
-                </div>
+                <BranchPill key={baseName} branch={{ local, remote }} baseName={baseName} layout={layout} />
               ))}
 
             {commit.isStash && (
@@ -173,9 +158,9 @@ export const CommitItem: FC<CommitItemProps> = ({
             <h3
               className={cn(
                 // Layout
-                'grow',
+                'grow pl-1',
                 // Typography
-                'line-clamp-1 truncate text-xs font-semibold tracking-tighter',
+                'line-clamp-1 truncate text-xs font-semibold',
                 // State
                 layout?.isMerge && 'opacity-50',
               )}
@@ -190,7 +175,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               // Layout & sizing
               'min-w-fit',
               // Typography
-              'line-clamp-1 truncate text-xs font-medium tracking-tighter',
+              'line-clamp-1 truncate text-xs font-medium',
               // Appearance
               'opacity-50',
             )}
@@ -208,7 +193,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               // Layout & sizing
               'min-w-fit',
               // Typography
-              'line-clamp-1 truncate text-xs font-medium tracking-tighter',
+              'line-clamp-1 truncate text-xs font-medium',
               // Appearance
               'opacity-50',
             )}
