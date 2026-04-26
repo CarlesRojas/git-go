@@ -70,13 +70,9 @@ export const CommitItem: FC<CommitItemProps> = ({
           // Layout & sizing
           'group/commit flex h-6 max-h-6 min-h-6 w-full',
           // Spacing
-          'gap-2 pr-2',
-          // Typography
-          'text-left',
-          // Alignment
-          'items-center justify-between',
+          'pr-2',
           // Interactive
-          'cursor-pointer transition-colors hover:bg-(--vscode-editor-foreground)/10',
+          'cursor-pointer hover:bg-(--vscode-editor-foreground)/10',
           // State
           isExpanded && 'bg-(--vscode-editor-foreground)/10',
         )}
@@ -88,127 +84,145 @@ export const CommitItem: FC<CommitItemProps> = ({
         <div
           className={cn(
             // Layout & sizing
-            'relative flex h-full grow overflow-hidden',
+            'flex size-full',
             // Spacing
-            'gap-2',
+            'gap-2 pr-2',
             // Typography
             'text-left',
             // Alignment
             'items-center justify-between',
-            // Mask effect
-            'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
+            // Interactive
+            'transition-opacity duration-500',
           )}
+          data-commit-row={row}
         >
-          {Object.entries(groupedBranches)
-            .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
-            .map(([baseName, { local, remote }]) => (
-              <div
-                key={baseName}
-                className={cn(
-                  // Layout & sizing
-                  'flex min-w-fit items-center',
-                  // Spacing
-                  'gap-2 px-2 py-0.5',
-                  // Typography
-                  'text-xs font-medium',
-                  // Colors
-                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
-                )}
-              >
-                {getBranchIcons(local, remote, local?.current ?? remote?.current ?? false)}
-                <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
-              </div>
-            ))}
-
-          {commit.isStash && (
-            <div
-              className={cn(
-                // Layout & sizing
-                'flex min-w-fit items-center',
-                // Spacing
-                'gap-2 px-2 py-0.5',
-                // Typography
-                'text-xs font-medium',
-                // Colors
-                'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
-              )}
-            >
-              <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
-              <span>{commit.refs}</span>
-            </div>
-          )}
-
-          {commit.tags.length > 0 &&
-            commit.tags.map(tag => (
-              <div
-                key={tag}
-                className={cn(
-                  // Layout & sizing
-                  'flex min-w-fit items-center',
-                  // Spacing
-                  'gap-2 px-2 py-0.5',
-                  // Typography
-                  'text-xs font-medium',
-                  // Colors
-                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
-                )}
-              >
-                <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
-                <span>{tag}</span>
-              </div>
-            ))}
-
-          <h3
+          <div
             className={cn(
-              // Layout
-              'grow',
+              // Layout & sizing
+              'relative flex h-full grow overflow-hidden',
+              // Spacing
+              'gap-2',
               // Typography
-              'line-clamp-1 truncate text-xs font-semibold tracking-tighter',
-              // State
-              layout?.isMerge && 'opacity-50',
+              'text-left',
+              // Alignment
+              'items-center justify-between',
+              // Mask effect
+              'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
             )}
           >
-            {commit.message}
-          </h3>
+            {layout?.isHead && getBranchIcons(null, null, true)}
+
+            {Object.entries(groupedBranches)
+              .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
+              .map(([baseName, { local, remote }]) => (
+                <div
+                  key={baseName}
+                  className={cn(
+                    // Layout & sizing
+                    'flex min-w-fit items-center',
+                    // Spacing
+                    'gap-2 px-2 py-0.5',
+                    // Typography
+                    'text-xs font-medium',
+                    // Colors
+                    'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
+                  )}
+                >
+                  {getBranchIcons(local, remote, false)}
+                  <span>{local?.cleanName ?? remote?.cleanName ?? baseName}</span>
+                </div>
+              ))}
+
+            {commit.isStash && (
+              <div
+                className={cn(
+                  // Layout & sizing
+                  'flex min-w-fit items-center',
+                  // Spacing
+                  'gap-2 px-2 py-0.5',
+                  // Typography
+                  'text-xs font-medium',
+                  // Colors
+                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
+                )}
+              >
+                <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
+                <span>{commit.refs}</span>
+              </div>
+            )}
+
+            {commit.tags.length > 0 &&
+              commit.tags.map(tag => (
+                <div
+                  key={tag}
+                  className={cn(
+                    // Layout & sizing
+                    'flex min-w-fit items-center',
+                    // Spacing
+                    'gap-2 px-2 py-0.5',
+                    // Typography
+                    'text-xs font-medium',
+                    // Colors
+                    'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
+                  )}
+                >
+                  <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
+                  <span>{tag}</span>
+                </div>
+              ))}
+
+            <h3
+              className={cn(
+                // Layout
+                'grow',
+                // Typography
+                'line-clamp-1 truncate text-xs font-semibold tracking-tighter',
+                // State
+                layout?.isMerge && 'opacity-50',
+              )}
+            >
+              {commit.message}
+            </h3>
+          </div>
+
+          <time
+            className={cn(
+              // Layout & sizing
+              'min-w-fit',
+              // Typography
+              'line-clamp-1 truncate text-xs font-medium tracking-tighter',
+              // Appearance
+              'opacity-50',
+            )}
+            dateTime={commit.date.split('T')[0]}
+          >
+            {new Date(commit.date).toLocaleDateString('en-CA', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </time>
+
+          <time
+            className={cn(
+              // Layout & sizing
+              'min-w-fit',
+              // Typography
+              'line-clamp-1 truncate text-xs font-medium tracking-tighter',
+              // Appearance
+              'opacity-50',
+            )}
+            dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
+          >
+            {new Date(commit.date).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })}
+          </time>
+
+          <Avatar email={commit.email} author={commit.author} size={20} />
         </div>
-
-        <time
-          className={cn(
-            // Layout & sizing
-            'min-w-fit',
-            // Typography
-            'line-clamp-1 truncate text-xs font-medium tracking-tighter',
-            // Appearance
-            'opacity-50',
-          )}
-          dateTime={commit.date.split('T')[0]}
-        >
-          {new Date(commit.date).toLocaleDateString('en-CA', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })}
-        </time>
-
-        <time
-          className={cn(
-            // Layout & sizing
-            'min-w-fit',
-            // Typography
-            'line-clamp-1 truncate text-xs font-medium tracking-tighter',
-            // Appearance
-            'opacity-50',
-          )}
-          dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
-        >
-          {new Date(commit.date).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })}
-        </time>
-
-        <Avatar email={commit.email} author={commit.author} size={20} />
       </button>
 
       {isExpanded && (
@@ -221,7 +235,10 @@ export const CommitItem: FC<CommitItemProps> = ({
             'mb-3 py-3 pr-2',
             // Colors
             'bg-(--vscode-editor-foreground)/3',
+            // Interactive
+            'transition-opacity duration-500',
           )}
+          data-commit-row={row}
           style={{ height: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
         >
           <div

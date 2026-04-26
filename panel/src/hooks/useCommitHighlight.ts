@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 export function useCommitHighlight() {
-  const hoveredCircleRefs = useRef<Element[]>([])
-  const hoveredPathsRef = useRef<Element[]>([])
+  const highlightedRefs = useRef<Element[]>([])
+  const dimmedElementsRef = useRef<Element[]>([])
   const dimTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const cleanup = () => {
-    hoveredCircleRefs.current.forEach(el => el.classList.remove('highlighted'))
-    hoveredCircleRefs.current = []
+    highlightedRefs.current.forEach(el => el.classList.remove('highlighted'))
+    highlightedRefs.current = []
 
-    hoveredPathsRef.current.forEach(el => el.classList.remove('dimmed'))
-    hoveredPathsRef.current = []
+    dimmedElementsRef.current.forEach(el => el.classList.remove('dimmed'))
+    dimmedElementsRef.current = []
 
     if (dimTimeoutRef.current) {
       clearTimeout(dimTimeoutRef.current)
@@ -25,7 +25,7 @@ export function useCommitHighlight() {
       const elements = document.querySelectorAll(`[data-hash="${hash}"]`)
       elements.forEach(el => {
         el.classList.add('highlighted')
-        hoveredCircleRefs.current.push(el)
+        highlightedRefs.current.push(el)
       })
 
       dimTimeoutRef.current = setTimeout(() => {
@@ -38,7 +38,7 @@ export function useCommitHighlight() {
             rows.forEach(r => activeRows.add(r))
           } else {
             path.classList.add('dimmed')
-            hoveredPathsRef.current.push(path)
+            dimmedElementsRef.current.push(path)
           }
         })
 
@@ -48,7 +48,16 @@ export function useCommitHighlight() {
           const dotRow = dot.getAttribute('data-row')
           if (dotRow && !activeRows.has(dotRow)) {
             dot.classList.add('dimmed')
-            hoveredPathsRef.current.push(dot)
+            dimmedElementsRef.current.push(dot)
+          }
+        })
+
+        const allCommitRows = document.querySelectorAll('[data-commit-row]')
+        allCommitRows.forEach(el => {
+          const r = el.getAttribute('data-commit-row')
+          if (r && !activeRows.has(r)) {
+            el.classList.add('dimmed')
+            dimmedElementsRef.current.push(el)
           }
         })
 

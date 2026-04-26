@@ -23,7 +23,7 @@
   }
 
   .highlighted {
-    @apply scale-125 stroke-(--vscode-editor-foreground)/10;
+    @apply scale-125;
   }
 
   .dimmed {

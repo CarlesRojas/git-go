@@ -23,7 +23,7 @@ const LINE_WIDTH = 2
 // d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
 const CURVE_D = ROW_HEIGHT * 0.8
 
-const getColor = (index: number, isStash?: boolean) =>
+export const getColor = (index: number, isStash?: boolean) =>
   isStash ? STASH_COLOR : BRANCH_COLORS[index % BRANCH_COLORS.length]
 const px = (col: number) => col * COL_WIDTH + COL_WIDTH / 2
 const py = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
@@ -85,7 +85,7 @@ export function useGitTree(commits: GitCommit[]): {
               const dotY = py(c.row)
 
               if (c.isStash) {
-                const squareSize = (DOT_RADIUS + LINE_WIDTH) * 2
+                const squareSize = DOT_RADIUS * 2 + LINE_WIDTH * 3
                 const halfSize = squareSize / 2
                 return (
                   <rect
@@ -97,8 +97,8 @@ export function useGitTree(commits: GitCommit[]): {
                     rx={squareSize * 0.3}
                     ry={squareSize * 0.3}
                     fill="black"
-                    data-hash={c.commit.hash}
-                    className="origin-center transition-[scale] transform-fill"
+                    // data-hash={c.commit.hash}
+                    // className="origin-center transition-[scale] transform-fill"
                   />
                 )
               }
@@ -108,10 +108,10 @@ export function useGitTree(commits: GitCommit[]): {
                   key={`mask-${c.commit.hash}`}
                   cx={dotX}
                   cy={dotY}
-                  r={DOT_RADIUS + LINE_WIDTH}
+                  r={DOT_RADIUS + LINE_WIDTH * 1.5}
                   fill="black"
-                  data-hash={c.commit.hash}
-                  className="origin-center transition-[scale] transform-fill"
+                  // data-hash={c.commit.hash}
+                  // className="origin-center transition-[scale] transform-fill"
                 />
               )
             })}
@@ -142,7 +142,7 @@ export function useGitTree(commits: GitCommit[]): {
                 strokeLinejoin="round"
                 opacity={0.7}
                 data-rows={branch.commitRows.join(',')}
-                className="transition-opacity"
+                className="transition-opacity duration-500"
               />
             )
           })}
@@ -170,7 +170,7 @@ export function useGitTree(commits: GitCommit[]): {
                   fill={color}
                   data-hash={c.commit.hash}
                   data-row={c.row}
-                  className="origin-center transition-[scale,opacity] transform-fill"
+                  className="origin-center transition-opacity duration-500 transform-fill"
                 />
               )
             }
@@ -187,7 +187,7 @@ export function useGitTree(commits: GitCommit[]): {
                   strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}
                   data-row={c.row}
-                  className="origin-center transition-[scale,opacity] transform-fill"
+                  className="origin-center transition-opacity duration-500 transform-fill"
                 />
               )
 
@@ -200,7 +200,7 @@ export function useGitTree(commits: GitCommit[]): {
                 fill={color}
                 data-hash={c.commit.hash}
                 data-row={c.row}
-                className="origin-center transition-[scale,opacity] transform-fill"
+                className="origin-center transition-opacity duration-500 transform-fill"
               />
             )
           })}
