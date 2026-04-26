@@ -6,19 +6,17 @@ const BRANCH_COLORS = [
   '#3b82f6', // blue-500
   '#ec4899', // pink-500
   '#84cc16', // lime-500
-  '#14b8a6', // teal-500
-  '#a855f7', // purple-500
-  '#ef4444', // red-500
-  '#eab308', // yellow-500
   '#f97316', // orange-500
-  '#06b6d4', // cyan-500
-  '#8b5cf6', // violet-500
+  '#a855f7', // purple-500
+  '#f43f5e', // rose-500
+  '#14b8a6', // teal-500
+  '#eab308', // yellow-500
 ]
 
 const ROW_HEIGHT = 24
 const COL_WIDTH = 16
-const DOT_RADIUS = 4
-const LINE_WIDTH = 1.5
+const DOT_RADIUS = 5
+const LINE_WIDTH = 2
 
 // d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
 const CURVE_D = ROW_HEIGHT * 0.8
@@ -113,7 +111,14 @@ export function useGitTree(commits: GitCommit[]): {
               // Stash: outer ring + inner dot (matches vscode-git-graph stashOuter/stashInner)
               return (
                 <g key={c.commit.hash}>
-                  <circle cx={dotX} cy={dotY} r={DOT_RADIUS + 0.5} fill="none" stroke={color} strokeWidth={1.5} />
+                  <circle
+                    cx={dotX}
+                    cy={dotY}
+                    r={DOT_RADIUS + 0.5}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={LINE_WIDTH}
+                  />
                   <circle cx={dotX} cy={dotY} r={2} fill={color} />
                 </g>
               )
