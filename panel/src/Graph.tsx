@@ -17,7 +17,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteGitCommits(
     selectedBranches,
-    100,
+    10,
   )
 
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({

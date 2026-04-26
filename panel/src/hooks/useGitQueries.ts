@@ -147,8 +147,7 @@ export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number =
     },
     initialPageParam: 0,
     getNextPageParam: lastPage => {
-      // If hasMore is true, return the next skip value
-      return lastPage.hasMore ? lastPage.skip + lastPage.commits.length : undefined
+      return lastPage.hasMore ? lastPage.skip + maxCount : undefined
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes

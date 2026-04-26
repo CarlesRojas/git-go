@@ -46,7 +46,6 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const setDefaultBranches = useCallback(() => {
     const isMain = (name: string) => name === 'main' || name === 'master'
 
-    // TODO limit to X branches and select these ones by default
     const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
     const mainBranch = branches.filter(b => isMain(b.cleanName))
 
