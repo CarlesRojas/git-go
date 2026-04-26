@@ -21,6 +21,7 @@ const ROW_HEIGHT = 24
 export const COL_WIDTH = 16 // If this changes, change the mask calc below too susbtract this size
 const DOT_RADIUS = 5
 const LINE_WIDTH = 2
+const CURVE_D = ROW_HEIGHT * 0.8
 
 export const getColor = (index: number, isStash?: boolean) =>
   isStash ? STASH_COLOR : BRANCH_COLORS[index % BRANCH_COLORS.length]
@@ -28,16 +29,19 @@ export const getColor = (index: number, isStash?: boolean) =>
 const px = (col: number) => col * COL_WIDTH + COL_WIDTH / 2
 
 /**
- * Builds the SVG path for a segment.
- * Curve size is proportional to the actual gap between the two points,
- * so it adapts when a row is expanded.
+ * Straight segment path.
  */
-function segmentPath(x1: number, y1: number, x2: number, y2: number): string {
-  if (x1 === x2) {
-    return `M${x1},${y1}L${x2},${y2}`
-  }
-  const d = (y2 - y1) * 0.8
-  return `M${x1},${y1}C${x1},${(y1 + d).toFixed(1)} ${x2},${(y2 - d).toFixed(1)} ${x2},${y2}`
+function straightPath(x: number, y1: number, y2: number): string {
+  return `M${x},${y1}L${x},${y2}`
+}
+
+/**
+ * Curved segment path — always uses the standard CURVE_D regardless of
+ * actual vertical gap. This keeps curves looking consistent even when
+ * rows are expanded.
+ */
+function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
+  return `M${x1},${y1}C${x1},${(y1 + CURVE_D).toFixed(1)} ${x2},${(y2 - CURVE_D).toFixed(1)} ${x2},${y2}`
 }
 
 export interface ExpandedRow {
@@ -55,6 +59,8 @@ export function useGitTree(
 } {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
 
+  const maxVisibleCol = MAX_TREE_COLUMNS + 1
+
   // Y coordinate function that accounts for expanded row
   const getY = useMemo(() => {
     if (!expandedRow) return (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2
@@ -66,6 +72,75 @@ export function useGitTree(
       return baseY + extraHeight
     }
   }, [expandedRow])
+
+  /**
+   * Build the path string for a segment, handling the expanded row.
+   *
+   * When a segment crosses the expanded row boundary:
+   * - Straight segments: just a vertical line (getY handles the offset)
+   * - Diagonal segments: we split into straight line + normal-sized curve
+   *   so the curve doesn't stretch with the extra height.
+   *
+   * For a diagonal crossing the expanded row:
+   *   p1 is above the expanded row, p2 is below.
+   *   We draw: straight down from p1.y to (p2.y - ROW_HEIGHT),
+   *   then a normal curve from there to p2.y.
+   *   This way the curve always spans exactly ROW_HEIGHT.
+   */
+  const buildSegmentPath = useMemo(() => {
+    if (!expandedRow) {
+      // No expansion — use standard paths
+      return (seg: { p1: { x: number; y: number }; p2: { x: number; y: number } }) => {
+        const x1 = px(seg.p1.x)
+        const y1 = getY(seg.p1.y)
+        const x2 = px(seg.p2.x)
+        const y2 = getY(seg.p2.y)
+
+        if (x1 === x2) return straightPath(x1, y1, y2)
+        return curvedPath(x1, y1, x2, y2)
+      }
+    }
+
+    const { row: expandedIdx } = expandedRow
+
+    return (seg: { p1: { x: number; y: number }; p2: { x: number; y: number } }) => {
+      const x1 = px(seg.p1.x)
+      const y1 = getY(seg.p1.y)
+      const x2 = px(seg.p2.x)
+      const y2 = getY(seg.p2.y)
+
+      const crossesExpanded = seg.p1.y <= expandedIdx && seg.p2.y > expandedIdx
+
+      if (x1 === x2) {
+        // Straight — just draw the full line, the gap is handled by getY
+        return straightPath(x1, y1, y2)
+      }
+
+      if (!crossesExpanded) {
+        // Diagonal but doesn't cross — normal curve
+        return curvedPath(x1, y1, x2, y2)
+      }
+
+      if (x2 > x1) {
+        // Going down-right (branch peeling off) — curve at top, straight line below
+        const curveEndY = y1 + ROW_HEIGHT
+        let d = curvedPath(x1, y1, x2, curveEndY)
+        if (curveEndY < y2) {
+          d += `L${x2},${y2}`
+        }
+        return d
+      } else {
+        // Going down-left (merging back) — straight line above, curve at bottom
+        const curveStartY = y2 - ROW_HEIGHT
+        let d = ''
+        if (curveStartY > y1) {
+          d += `M${x1},${y1}L${x1},${curveStartY}`
+        }
+        d += curvedPath(x1, curveStartY, x2, y2)
+        return d
+      }
+    }
+  }, [expandedRow, getY])
 
   const treeWidth = useMemo(() => {
     let maxCol = 0
@@ -83,7 +158,6 @@ export function useGitTree(
 
   const isOverflowing = treeWidth > MAX_TREE_COLUMNS * COL_WIDTH
   const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH)
-  const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
   const svgHeight = commits.length * ROW_HEIGHT + (expandedRow?.extraHeight ?? 0)
 
@@ -143,15 +217,10 @@ export function useGitTree(
         <g mask="url(#commit-mask)">
           {layout.branches.map((branch, bi) => {
             const color = getColor(branch.colorIndex, branch.isStash)
-            // Merge consecutive straight segments into one path (perf + visual)
             let d = ''
             for (const seg of branch.segments) {
               if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
-              const x1 = px(seg.p1.x)
-              const y1 = getY(seg.p1.y)
-              const x2 = px(seg.p2.x)
-              const y2 = getY(seg.p2.y)
-              d += segmentPath(x1, y1, x2, y2)
+              d += buildSegmentPath(seg)
             }
             if (!d) return null
             return (
