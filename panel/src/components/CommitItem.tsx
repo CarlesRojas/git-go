@@ -4,7 +4,7 @@ import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
 import { useToast } from '../contexts/ToastContext'
-import { getColor } from '../hooks/useGitTree'
+import { ExpandedRow, getColor } from '../hooks/useGitTree'
 import { useResizable } from '../hooks/useResizable'
 import { cn } from '../utils/cn'
 import { CommitLayout } from '../utils/GraphLayoutGenerator'
@@ -20,7 +20,7 @@ interface CommitItemProps {
   onCommitHover: (hash: string | null, row: number | null) => void
   row: number
   layout: CommitLayout
-  setPanelHeight?: (height: number) => void
+  setExpandedRow?: (expandedRow?: ExpandedRow) => void
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -32,7 +32,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   onCommitHover,
   row,
   layout,
-  setPanelHeight,
+  setExpandedRow,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
@@ -46,8 +46,8 @@ export const CommitItem: FC<CommitItemProps> = ({
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
 
   useEffect(() => {
-    setPanelHeight?.(isExpanded ? panelHeight : 0)
-  }, [isExpanded, panelHeight, setPanelHeight])
+    if (isExpanded && panelHeight > 0) setExpandedRow?.({ row, extraHeight: panelHeight })
+  }, [isExpanded, panelHeight, setExpandedRow, row])
 
   const groupedBranches = useMemo(() => groupBranches(selectedBranches, false), [selectedBranches])
 
@@ -259,7 +259,7 @@ export const CommitItem: FC<CommitItemProps> = ({
             // Layout
             'relative overflow-auto',
             // Spacing
-            'mb-3 py-3 pr-2',
+            'py-3 pr-2',
             // Colors
             'bg-(--vscode-editor-foreground)/3',
             // Interactive
