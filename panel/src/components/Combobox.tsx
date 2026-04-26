@@ -108,7 +108,7 @@ function ComboboxContent({
               // Transform Origin
               'origin-(--transform-origin)',
               // Colors & Background
-              'bg-(--vscode-editor-background)/70 text-(--vscode-editor-foreground) backdrop-blur-sm',
+              'bg-(--vscode-editor-background)/80 text-(--vscode-editor-foreground) backdrop-blur-md',
               'border border-(--vscode-editor-foreground)/15',
               // Animations & Transitions
               'duration-100',

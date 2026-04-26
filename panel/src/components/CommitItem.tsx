@@ -83,7 +83,7 @@ export const CommitItem: FC<CommitItemProps> = ({
           // Interactive
           'cursor-pointer hover:bg-(--vscode-editor-foreground)/10',
           // State
-          isExpanded && 'bg-(--vscode-editor-foreground)/10',
+          isExpanded && !layout.isHead && 'bg-(--vscode-editor-foreground)/10 hover:bg-(--vscode-editor-foreground)/15',
         )}
         style={{ paddingLeft: `${treeWidth + 8}px` }}
         onClick={onToggle}
@@ -106,6 +106,13 @@ export const CommitItem: FC<CommitItemProps> = ({
               className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
               style={{ backgroundColor: getColor(layout.colorIndex) }}
             />
+          </>
+        )}
+
+        {isExpanded && !layout.isHead && (
+          <>
+            <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px bg-(--vscode-editor-foreground)/10" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px bg-(--vscode-editor-foreground)/10" />
           </>
         )}
 
