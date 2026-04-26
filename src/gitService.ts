@@ -199,24 +199,20 @@ export class GitService {
     }
 
     /**
-     * Get the set of hashes reachable from refs/stash (the stash commit itself
-     * plus its index-state and untracked-files parents). These are used to mark
-     * commits returned by git log as stashes.
+     * Returns a map of stash commit hash → stash ref name (e.g. "stash@{0}").
+     * Single git call replaces both getStashHashes and getAllStashRefs.
      */
-    private async getStashHashes(workspacePath: string, gitPath: string): Promise<Map<string, string>> {
+    private async getStashInfo(workspacePath: string, gitPath: string): Promise<Map<string, string>> {
         const stashMap = new Map<string, string>();
 
         try {
-            const output = await this.spawnGit(
-                [gitPath, 'reflog', '--format=%H|%gd', 'refs/stash', '--'],
-                workspacePath
-            );
+            const output = await this.spawnGit([gitPath, 'stash', 'list', '--format=%H|%gd'], workspacePath);
 
             const lines = output.split(EOL_REGEX).filter((l) => l.trim());
             for (const line of lines) {
                 const [hash, ref] = line.split('|');
                 if (hash?.trim() && ref?.trim()) {
-                    stashMap.set(hash.trim(), ref.trim()); // e.g. "abc123" → "stash@{0}"
+                    stashMap.set(hash.trim(), ref.trim());
                 }
             }
         } catch {
@@ -226,21 +222,9 @@ export class GitService {
         return stashMap;
     }
 
-    private async getAllStashRefs(workspacePath: string, gitPath: string): Promise<string[]> {
-        try {
-            const output = await this.spawnGit([gitPath, 'stash', 'list', '--format=%H'], workspacePath);
-            return output
-                .split(EOL_REGEX)
-                .filter((l) => l.trim())
-                .map((l) => l.trim());
-        } catch {
-            return [];
-        }
-    }
-
     /**
-     * Get git commits from the current workspace with branch filtering, pagination,
-     * and stashes included inline (sorted by date alongside regular commits).
+     * Get git commits with branch filtering, pagination, and stashes included
+     * inline positioned directly before their parent commit.
      */
     public async getGitCommits(
         log: (message: string) => void,
@@ -261,9 +245,9 @@ export class GitService {
             const gitExecutable = await this.findGitExecutable();
             log(`Using git executable: ${gitExecutable.path} (version: ${gitExecutable.version})`);
 
-            // Fetch stash hashes so we can mark commits accordingly
-            const stashMap = await this.getStashHashes(workspacePath, gitExecutable.path);
-            log(`Stash map: ${JSON.stringify([...stashMap.entries()])}`);
+            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
+            const stashHashes = [...stashMap.keys()];
+            log(`Found ${stashMap.size} stash(es)`);
 
             const format = [
                 '%H', // Hash
@@ -282,7 +266,7 @@ export class GitService {
                 '-c',
                 'log.showSignature=false',
                 'log',
-                `--max-count=${maxCount + 1}`, // Fetch one extra to detect hasMore
+                `--max-count=${maxCount + 1}`,
                 `--skip=${skip}`,
                 `--pretty=format:${format}`,
                 '--date-order',
@@ -298,10 +282,7 @@ export class GitService {
                 log('Showing commits from all branches');
             }
 
-            const stashRefs = await this.getAllStashRefs(workspacePath, gitExecutable.path);
-            if (stashRefs.length > 0) {
-                gitArgs.push(...stashRefs);
-            }
+            if (stashHashes.length > 0) gitArgs.push(...stashHashes);
 
             gitArgs.push('--');
 
@@ -362,9 +343,19 @@ export class GitService {
                     commitRefs = cleaned || undefined;
                 }
 
-                const commit: GitCommit = {
+                if (stashRef) {
+                    log(`Stash: ${commitRefs} → ${parentHashes.trim()}`);
+                }
+
+                commits.push({
                     hash: trimmedHash,
-                    parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
+                    parents: stashRef
+                        ? parentHashes?.trim()
+                            ? [parentHashes.trim().split(' ')[0]!]
+                            : []
+                        : parentHashes?.trim()
+                          ? parentHashes.trim().split(' ')
+                          : [],
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',
@@ -372,9 +363,7 @@ export class GitService {
                     tags,
                     isStash: !!stashRef,
                     refs: commitRefs
-                };
-
-                commits.push(commit);
+                });
             }
 
             log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
