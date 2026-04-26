@@ -54,7 +54,9 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
     onBranchesChange([...currentBranch, ...mainBranch])
 
-    // setSelectedBranches([...branches.map(b => b.cleanName)])
+    // const names = branches.map(b => b.cleanName)
+    // setSelectedBranches(names)
+    // setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
     // onBranchesChange([...branches])
   }, [branches, onBranchesChange])
 

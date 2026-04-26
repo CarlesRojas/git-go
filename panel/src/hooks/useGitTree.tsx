@@ -80,6 +80,7 @@ export function useGitTree(commits: GitCommit[]): {
 
   const isOverflowing = treeWidth > MAX_TREE_COLUMNS * COL_WIDTH
   const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH)
+  const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
   const svgHeight = commits.length * ROW_HEIGHT
 
@@ -97,6 +98,8 @@ export function useGitTree(commits: GitCommit[]): {
             <rect x="0" y="0" width={treeWidth} height={svgHeight} fill="white" />
 
             {layout.commits.map(c => {
+              if (c.column > maxVisibleCol) return null
+
               const dotX = px(c.column)
               const dotY = py(c.row)
 
@@ -140,6 +143,7 @@ export function useGitTree(commits: GitCommit[]): {
             // Merge consecutive straight segments into one path (perf + visual)
             let d = ''
             for (const seg of branch.segments) {
+              if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
               const x1 = px(seg.p1.x)
               const y1 = py(seg.p1.y)
               const x2 = px(seg.p2.x)
@@ -167,6 +171,8 @@ export function useGitTree(commits: GitCommit[]): {
         {/* Commit dots — drawn on top */}
         <g>
           {layout.commits.map(c => {
+            if (c.column > maxVisibleCol) return null
+
             const dotX = px(c.column)
             const dotY = py(c.row)
             const color = getColor(c.colorIndex, c.isStash)
