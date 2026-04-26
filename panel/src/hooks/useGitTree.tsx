@@ -141,7 +141,7 @@ export function useGitTree(commits: GitCommit[]): {
                 strokeLinejoin="round"
                 opacity={0.7}
                 data-rows={branch.commitRows.join(',')}
-                className="transition-opacity duration-500"
+                className="transition-opacity"
               />
             )
           })}
@@ -168,7 +168,8 @@ export function useGitTree(commits: GitCommit[]): {
                   ry={squareSize * 0.3}
                   fill={color}
                   data-hash={c.commit.hash}
-                  className="origin-center transition-[scale] transform-fill"
+                  data-row={c.row}
+                  className="origin-center transition-[scale,opacity] transform-fill"
                 />
               )
             }
@@ -184,7 +185,8 @@ export function useGitTree(commits: GitCommit[]): {
                   stroke={color}
                   strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}
-                  className="origin-center transition-[scale] transform-fill"
+                  data-row={c.row}
+                  className="origin-center transition-[scale,opacity] transform-fill"
                 />
               )
 
@@ -196,7 +198,8 @@ export function useGitTree(commits: GitCommit[]): {
                 r={DOT_RADIUS}
                 fill={color}
                 data-hash={c.commit.hash}
-                className="origin-center transition-[scale] transform-fill"
+                data-row={c.row}
+                className="origin-center transition-[scale,opacity] transform-fill"
               />
             )
           })}

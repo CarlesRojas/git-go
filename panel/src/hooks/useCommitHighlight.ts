@@ -29,14 +29,29 @@ export function useCommitHighlight() {
       })
 
       dimTimeoutRef.current = setTimeout(() => {
+        const activeRows = new Set<string>()
         const paths = document.querySelectorAll('[data-rows]')
+
         paths.forEach(path => {
           const rows = path.getAttribute('data-rows')?.split(',') ?? []
-          if (!rows.includes(String(row))) {
+          if (rows.includes(String(row))) {
+            rows.forEach(r => activeRows.add(r))
+          } else {
             path.classList.add('dimmed')
             hoveredPathsRef.current.push(path)
           }
         })
+
+        const allDots = document.querySelectorAll('[data-hash]')
+
+        allDots.forEach(dot => {
+          const dotRow = dot.getAttribute('data-row')
+          if (dotRow && !activeRows.has(dotRow)) {
+            dot.classList.add('dimmed')
+            hoveredPathsRef.current.push(dot)
+          }
+        })
+
         dimTimeoutRef.current = null
       }, 1_000)
     }
