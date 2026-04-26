@@ -7,7 +7,7 @@ const buttonVariants = cva(
     // Layout & Structure
     'inline-flex items-center justify-center',
     // Typography
-    'text-sm font-medium whitespace-nowrap',
+    'text-xs font-medium whitespace-nowrap',
     // Interactions
     'transition-colors',
     // Disabled States
@@ -18,10 +18,12 @@ const buttonVariants = cva(
       variant: {
         default:
           'bg-(--vscode-button-background) text-(--vscode-button-foreground) hover:bg-(--vscode-button-hoverBackground)',
+        secondary:
+          'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground)/80 hover:bg-(--vscode-editor-foreground)/10',
         ghost: 'text-(--vscode-button-foreground)/80 hover:text-(--vscode-button-foreground)',
       },
       size: {
-        default: 'h-7 px-2',
+        default: 'h-7 px-3',
         icon: 'h-7 w-7',
       },
     },

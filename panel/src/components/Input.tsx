@@ -33,7 +33,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type 
 
   if (onClear) {
     return (
-      <div className="relative">
+      <div className="relative w-full">
         <input type={type} className={cn(inputVariants({ className }), 'pr-9')} ref={ref} {...props} />
 
         {hasValue && (

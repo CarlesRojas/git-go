@@ -137,11 +137,9 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
       className={cn(
         [
           // Scrolling
-          'no-scrollbar scroll-py-1 overflow-y-auto overscroll-contain',
+          'no-scrollbar scroll-py-1 overflow-x-hidden overflow-y-auto overscroll-contain',
           // Sizing
           'max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]',
-          // Spacing
-          'p-1',
           // Empty State
           'data-empty:p-0',
         ],
@@ -243,7 +241,7 @@ function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
-      className={cn('-mx-1 my-1 h-px bg-(--vscode-editor-foreground)/15', className)}
+      className={cn('-mx-1 h-px bg-(--vscode-editor-foreground)/15', className)}
       {...props}
     />
   )

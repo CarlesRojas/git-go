@@ -6,6 +6,7 @@ import { useGitBranches } from '../hooks/useGitQueries'
 import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
 import { groupBranches } from '../utils/groupBranches'
+import { Button } from './Button'
 import {
   Combobox,
   ComboboxCollection,
@@ -155,15 +156,22 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       </ComboboxTrigger>
 
       <ComboboxContent>
-        <ComboboxInput onClear={() => setInputValue('')} placeholder="Search..." />
-        <ComboboxSeparator className="my-0" />
+        <div className="flex w-full">
+          <ComboboxInput className="grow" onClear={() => setInputValue('')} placeholder="Search..." />
+
+          <Button variant="secondary" onClick={() => handleValueChange([])} className="border-y-0 border-r-0">
+            Reset
+          </Button>
+        </div>
+
+        <ComboboxSeparator />
 
         {selectedCount < SELECTED_LIMIT && <ComboboxEmpty>No branches found.</ComboboxEmpty>}
 
         <ComboboxList>
           {group => (
             <ComboboxGroup key={group.value} items={group.items} className="group/branches">
-              <ComboboxLabel>{group.value}</ComboboxLabel>
+              {group.value !== 'Selected' && <ComboboxLabel>{group.value}</ComboboxLabel>}
 
               <ComboboxCollection>
                 {item => (
