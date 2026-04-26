@@ -15,7 +15,7 @@ const BRANCH_COLORS = [
 
 const ROW_HEIGHT = 24
 const COL_WIDTH = 16
-const DOT_RADIUS = 5
+const DOT_RADIUS = 6
 const LINE_WIDTH = 2
 
 // d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
@@ -108,24 +108,48 @@ export function useGitTree(commits: GitCommit[]): {
             const color = getColor(c.colorIndex)
 
             if (c.isStash) {
-              // Stash: outer ring + inner dot (matches vscode-git-graph stashOuter/stashInner)
+              const squareSize = DOT_RADIUS * 2
+              const halfSize = squareSize / 2
               return (
-                <g key={c.commit.hash}>
-                  <circle
-                    cx={dotX}
-                    cy={dotY}
-                    r={DOT_RADIUS + 0.5}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={LINE_WIDTH}
-                  />
-                  <circle cx={dotX} cy={dotY} r={2} fill={color} />
-                </g>
+                <rect
+                  key={c.commit.hash}
+                  x={dotX - halfSize}
+                  y={dotY - halfSize}
+                  width={squareSize}
+                  height={squareSize}
+                  rx={squareSize * 0.3}
+                  ry={squareSize * 0.3}
+                  fill={color}
+                  stroke="var(--vscode-editor-background)"
+                  strokeWidth={LINE_WIDTH}
+                />
               )
             }
 
-            // Normal commit dot
-            return <circle key={c.commit.hash} cx={dotX} cy={dotY} r={DOT_RADIUS} fill={color} />
+            if (c.isHead)
+              return (
+                <circle
+                  key={c.commit.hash}
+                  cx={dotX}
+                  cy={dotY}
+                  r={DOT_RADIUS - LINE_WIDTH / 2}
+                  fill="var(--vscode-editor-background)"
+                  stroke={color}
+                  strokeWidth={LINE_WIDTH}
+                />
+              )
+
+            return (
+              <circle
+                key={c.commit.hash}
+                cx={dotX}
+                cy={dotY}
+                r={DOT_RADIUS}
+                fill={color}
+                stroke="var(--vscode-editor-background)"
+                strokeWidth={LINE_WIDTH}
+              />
+            )
           })}
         </g>
       </svg>

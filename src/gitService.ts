@@ -11,6 +11,7 @@ export interface GitCommit {
     refs?: string;
     tags: string[];
     isStash?: boolean;
+    isHead?: boolean;
 }
 
 export interface GitBranch {
@@ -373,6 +374,9 @@ export class GitService {
                     commitRefs = cleaned || undefined;
                 }
 
+                const isHead =
+                    refs?.split(',').some((r) => r.trim() === 'HEAD' || r.trim().startsWith('HEAD ->')) ?? false;
+
                 commits.push({
                     hash: trimmedHash,
                     parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
@@ -382,7 +386,8 @@ export class GitService {
                     message: message?.trim() || '',
                     tags,
                     isStash: false,
-                    refs: commitRefs
+                    refs: commitRefs,
+                    isHead
                 });
             }
 

@@ -41,6 +41,7 @@ export class GraphBranch {
 class GraphVertex {
   public readonly row: number
   public readonly isStash: boolean
+  public readonly isHead: boolean
   private x: number = 0
   private nextX: number = 0
   private branch: GraphBranch | null = null
@@ -48,9 +49,10 @@ class GraphVertex {
   private nextParentIdx: number = 0
   private connections: (UnavailablePoint | undefined)[] = []
 
-  constructor(row: number, isStash: boolean) {
+  constructor(row: number, isStash: boolean, isHead: boolean) {
     this.row = row
     this.isStash = isStash
+    this.isHead = isHead
   }
 
   // Parents
@@ -123,6 +125,7 @@ export interface CommitLayout {
   colorIndex: number
   isMerge: boolean
   isStash: boolean
+  isHead: boolean
 }
 
 export interface BranchPath {
@@ -149,7 +152,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
   if (commits.length === 0) return { commits: [], branches: [] }
 
   // Build vertex list
-  const vertices: GraphVertex[] = commits.map((c, i) => new GraphVertex(i, !!c.isStash))
+  const vertices: GraphVertex[] = commits.map((c, i) => new GraphVertex(i, !!c.isStash, !!c.isHead))
 
   // Build lookup and parent links
   const lookup: Record<string, number> = {}
@@ -269,6 +272,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
     colorIndex: v.getColorIndex(),
     isMerge: v.isMerge(),
     isStash: v.isStash,
+    isHead: v.isHead,
   }))
 
   const branchPaths: BranchPath[] = branches.map(b => ({
