@@ -5,7 +5,7 @@ import { useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
 import { useCommitHighlight } from './hooks/useCommitHighlight'
-import { useInfiniteGitCommits } from './hooks/useGitQueries'
+import { useInfiniteGitCommits, useWorkingChanges } from './hooks/useGitQueries'
 import { ExpandedRow, useGitTree } from './hooks/useGitTree'
 
 interface GraphProps {
@@ -16,8 +16,10 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
   const [expandedRow, setExpandedRow] = useState<ExpandedRow | undefined>()
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteGitCommits(selectedBranches)
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteGitCommits(
+    selectedBranches,
+    5,
+  )
 
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
@@ -26,7 +28,16 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     },
   })
 
-  const commits = data?.pages.flatMap(page => page.commits) ?? []
+  const { data: workingChangesData } = useWorkingChanges(true)
+
+  const commits = React.useMemo(() => {
+    const gitCommits = data?.pages.flatMap(page => page.commits) ?? []
+
+    if (workingChangesData?.commit) return [workingChangesData.commit, ...gitCommits]
+
+    return gitCommits
+  }, [data, workingChangesData])
+
   const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
 
   const toggleCommit = (commitHash: string) => {
@@ -71,6 +82,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
             row={row}
             layout={rows.find(c => c.commit.hash === commit.hash)!}
             setExpandedRow={setExpandedRow}
+            uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
           />
         ))}
 

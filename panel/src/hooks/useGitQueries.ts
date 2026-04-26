@@ -30,6 +30,7 @@ export const queryKeys = {
   stashes: ['git', 'stashes'] as const,
   infiniteCommits: (branches?: GitBranch[]) =>
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
+  workingChanges: ['git', 'working-changes'] as const,
 }
 
 // Custom hook for fetching branches
@@ -213,6 +214,43 @@ export const useRefreshGitData = () => {
   })
 }
 
+export const useWorkingChanges = (includeFiles: boolean = false) => {
+  return useQuery({
+    queryKey: [...queryKeys.workingChanges, { includeFiles }],
+    queryFn: (): Promise<{ commit: GitCommit; files: GitFileChange[] } | null> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'workingChanges') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.workingChanges)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'getWorkingChanges',
+          includeFiles: includeFiles,
+        })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch working changes'))
+        }, 10000)
+      })
+    },
+    staleTime: 30 * 1000, // 30 seconds - working changes change frequently
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  })
+}
+
 export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean): void => {
   const vscode = getVSCodeApi()
 
@@ -223,5 +261,6 @@ export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?
     status: file.status,
     commitHash,
     isRootCommit: isRootCommit ?? false,
+    isUncommitted: commitHash === 'working-changes',
   })
 }

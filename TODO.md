@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] Current changes commit
+- [ ] Fix or check what should happen when the selected branches do not include the HEAD commit
 - [ ] Navigate commits with arrows
 - [ ] Add shadcn modal
 - [ ] Add shadcn right click menu
@@ -17,3 +17,4 @@
 - [ ] Commit Right Click Menu
 - [ ] Stash Right Click Menu
 - [ ] Tag Right Click Menu
+- [ ] Uncommitted Changes Right Click Menu

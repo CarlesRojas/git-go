@@ -1,4 +1,4 @@
-import React, { useState, ImgHTMLAttributes } from 'react'
+import React, { ImgHTMLAttributes, useState } from 'react'
 
 // Pure JavaScript MD5 implementation for Gravatar
 function md5(input: string): string {
@@ -212,7 +212,7 @@ export const Avatar: React.FC<AvatarProps> = ({ email, author, size = 24, classN
       <img
         src={gravatarUrl}
         alt={author}
-        className={`rounded-full ${className}`}
+        className={`pointer-events-none rounded-full ${className}`}
         style={{ ...sizeStyle, ...style }}
         onError={() => setImageError(true)}
         {...imgProps}
@@ -222,7 +222,7 @@ export const Avatar: React.FC<AvatarProps> = ({ email, author, size = 24, classN
 
   return (
     <div
-      className={`${fallbackTextSize} flex items-center justify-center rounded-full font-medium ${className}`}
+      className={`${fallbackTextSize} pointer-events-none flex items-center justify-center rounded-full font-medium ${className}`}
       style={{
         ...sizeStyle,
         backgroundColor: 'var(--vscode-button-background)',

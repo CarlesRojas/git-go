@@ -30,6 +30,8 @@ export function useCommitHighlight() {
         })
 
         dimTimeoutRef.current = setTimeout(() => {
+          if (hash === 'working-changes') return
+
           const activeRows = new Set<string>()
           const paths = document.querySelectorAll('[data-rows]')
 

@@ -116,6 +116,27 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'getWorkingChanges':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const includeFiles = message.includeFiles ?? false;
+                                const workingChanges = await gitService.getWorkingChanges(log, includeFiles);
+                                log(
+                                    `Successfully retrieved working changes: ${workingChanges ? `found changes (${workingChanges.files?.length || 0} files)` : 'no changes'}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'workingChanges',
+                                    workingChanges: workingChanges
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting working changes: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                         case 'openFile':
                             try {
                                 const filePath = message.filePath;
@@ -135,7 +156,56 @@ export function activate(context: vscode.ExtensionContext) {
                                 const fileUri = vscode.Uri.joinPath(workspaceUri, filePath);
 
                                 if (commitHash) {
-                                    if (status === 'D') {
+                                    if (message.isUncommitted) {
+                                        if (status === 'A') {
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                vscode.Uri.parse('untitled:empty'),
+                                                fileUri,
+                                                `${filePath} (new file)`
+                                            );
+                                        } else if (status === 'D') {
+                                            const gitUri = vscode.Uri.from({
+                                                scheme: 'git',
+                                                path: fileUri.path,
+                                                query: JSON.stringify({ ref: 'HEAD', path: fileUri.path })
+                                            });
+
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                gitUri,
+                                                vscode.Uri.parse('untitled:empty'),
+                                                `${filePath} (deleted)`
+                                            );
+                                        } else if ((status === 'R' || status === 'C') && oldPath) {
+                                            const oldFileUri = vscode.Uri.joinPath(workspaceUri, oldPath);
+                                            const gitUri = vscode.Uri.from({
+                                                scheme: 'git',
+                                                path: oldFileUri.path,
+                                                query: JSON.stringify({ ref: 'HEAD', path: oldFileUri.path })
+                                            });
+
+                                            const label =
+                                                status === 'R'
+                                                    ? `${oldPath} → ${filePath} (renamed)`
+                                                    : `${filePath} (copied from ${oldPath})`;
+
+                                            await vscode.commands.executeCommand('vscode.diff', gitUri, fileUri, label);
+                                        } else {
+                                            const gitUri = vscode.Uri.from({
+                                                scheme: 'git',
+                                                path: fileUri.path,
+                                                query: JSON.stringify({ ref: 'HEAD', path: fileUri.path })
+                                            });
+
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                gitUri,
+                                                fileUri,
+                                                `${filePath} (uncommitted changes)`
+                                            );
+                                        }
+                                    } else if (status === 'D') {
                                         const prevGitUri = vscode.Uri.from({
                                             scheme: 'git',
                                             path: fileUri.path,

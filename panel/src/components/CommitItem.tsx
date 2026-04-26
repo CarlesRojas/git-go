@@ -1,12 +1,13 @@
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FC, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
-import type { GitBranch, GitCommit } from '../../../src/gitService'
+import type { GitBranch, GitCommit, GitFileChange } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
 import { useToast } from '../contexts/ToastContext'
 import { useGitCommitFiles } from '../hooks/useGitQueries'
 import { ExpandedRow, getColor } from '../hooks/useGitTree'
 import { useResizable } from '../hooks/useResizable'
+import { buildFileTree } from '../utils/buildFileTree'
 import { cn } from '../utils/cn'
 import { CommitLayout } from '../utils/GraphLayoutGenerator'
 import { groupBranches } from '../utils/groupBranches'
@@ -24,6 +25,7 @@ interface CommitItemProps {
   row: number
   layout: CommitLayout
   setExpandedRow?: (expandedRow?: ExpandedRow) => void
+  uncommitedFiles?: GitFileChange[]
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -36,6 +38,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   row,
   layout,
   setExpandedRow,
+  uncommitedFiles,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
@@ -44,7 +47,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   const fileTree = useGitCommitFiles({
     commitHash: commit.hash,
     isRootCommit: commit.parents.length === 0,
-    enabled: isExpanded,
+    enabled: isExpanded && !commit.isUncommitted,
   })
 
   const {
@@ -154,17 +157,20 @@ export const CommitItem: FC<CommitItemProps> = ({
               'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
             )}
           >
-            {Object.entries(groupedBranches)
-              .filter(
-                ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
-              )
-              .map(([baseName, { local, remotes }]) => (
-                <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
-              ))}
+            {commit.isUncommitted &&
+              Object.entries(groupedBranches)
+                .filter(
+                  ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
+                )
+                .map(([baseName, { local, remotes }]) => (
+                  <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
+                ))}
 
-            {commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
+            {commit.isUncommitted && commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
 
-            {commit.tags.length > 0 && commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
+            {commit.isUncommitted &&
+              commit.tags.length > 0 &&
+              commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
 
             <h3
               className={cn(
@@ -173,7 +179,7 @@ export const CommitItem: FC<CommitItemProps> = ({
                 // Typography
                 'line-clamp-1 truncate text-xs leading-tight font-semibold',
                 // State
-                layout?.isMerge && 'opacity-50',
+                layout?.isMerge && !layout?.isHead && 'opacity-50',
               )}
               style={{ color: layout?.isHead ? getColor(layout.colorIndex, commit.isStash) : undefined }}
             >
@@ -189,6 +195,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               'line-clamp-1 truncate text-xs leading-tight font-medium',
               // Appearance
               'opacity-50',
+              commit.isUncommitted && 'opacity-0',
             )}
             dateTime={commit.date.split('T')[0]}
           >
@@ -207,6 +214,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               'line-clamp-1 truncate text-xs leading-tight font-medium',
               // Appearance
               'opacity-50',
+              commit.isUncommitted && 'opacity-0',
             )}
             dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
           >
@@ -217,7 +225,12 @@ export const CommitItem: FC<CommitItemProps> = ({
             })}
           </time>
 
-          <Avatar email={commit.email} author={commit.author} size={20} />
+          <Avatar
+            email={commit.email}
+            author={commit.author}
+            size={20}
+            className={cn(commit.isUncommitted && 'opacity-0')}
+          />
 
           <span
             className={cn(
@@ -227,6 +240,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               'line-clamp-1 truncate text-xs leading-tight font-medium',
               // Appearance
               'opacity-50',
+              commit.isUncommitted && 'opacity-0',
             )}
           >
             {commit.author}
@@ -249,50 +263,54 @@ export const CommitItem: FC<CommitItemProps> = ({
           style={{ height: `${panelHeight}px`, maxHeight: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
         >
           <div className="relative size-full max-h-full min-h-full max-w-full overflow-x-hidden overflow-y-auto">
-            <div className="relative flex h-fit w-full flex-col gap-1 py-3 pr-2">
-              <div className="relative flex h-fit w-full items-center gap-3">
-                <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
+            <div className={cn('relative flex h-fit w-full flex-col gap-1 py-3 pr-2', commit.isUncommitted && 'py-0')}>
+              {!commit.isUncommitted && (
+                <div className="relative flex h-fit w-full items-center gap-3">
+                  <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
 
-                <div className="relative flex h-fit w-full flex-col">
-                  <p className="text-xs font-medium">
-                    <span className="opacity-50">Hash: </span>
-                    <code
-                      className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
-                      onClick={() => copyText(commit.hash, 'Hash')}
-                    >
-                      {commit.hash}
-                    </code>
-                  </p>
+                  <div className="relative flex h-fit w-full flex-col">
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Hash: </span>
+                      <code
+                        className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.hash, 'Hash')}
+                      >
+                        {commit.hash}
+                      </code>
+                    </p>
 
-                  <p className="text-xs font-medium">
-                    <span className="opacity-50">Author: </span>
-                    <span
-                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                      onClick={() => copyText(commit.author, 'Author')}
-                    >
-                      {commit.author}
-                    </span>{' '}
-                    <span
-                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                      onClick={() => copyText(commit.email, 'Email')}
-                    >
-                      ({commit.email})
-                    </span>
-                  </p>
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Author: </span>
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.author, 'Author')}
+                      >
+                        {commit.author}
+                      </span>{' '}
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.email, 'Email')}
+                      >
+                        ({commit.email})
+                      </span>
+                    </p>
 
-                  <p className="text-xs font-medium">
-                    <span className="opacity-50">Message: </span>
-                    <span
-                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                      onClick={() => copyText(commit.message, 'Message')}
-                    >
-                      {commit.message}
-                    </span>
-                  </p>
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Message: </span>
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.message, 'Message')}
+                      >
+                        {commit.message}
+                      </span>
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {fileTree.data && <TreeView data={fileTree.data} expandAll />}
+
+              {uncommitedFiles && <TreeView data={buildFileTree(uncommitedFiles, 'working-changes')} expandAll />}
             </div>
           </div>
 

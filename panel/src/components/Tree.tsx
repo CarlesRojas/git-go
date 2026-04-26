@@ -476,24 +476,27 @@ const TreeLeaf = forwardRef<
             <TreeIcon item={item} isSelected={isSelected} default={defaultLeafIcon} />
 
             <span className="line-clamp-1 w-fit truncate text-xs">
-              {item.name}{' '}
-              {item.fileChange && (
-                <span className="text-(--vscode-editor-foreground) opacity-60">
-                  (
-                  {item.fileChange.additions > 0 && (
-                    <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
-                      +{item.fileChange.additions}
-                    </span>
-                  )}
-                  {item.fileChange.additions && item.fileChange.deletions ? ' ' : ''}
-                  {item.fileChange.deletions > 0 && (
-                    <span className="text-(--vscode-gitDecoration-deletedResourceForeground)">
-                      -{item.fileChange.deletions}
-                    </span>
-                  )}
-                  )
-                </span>
-              )}
+              {item.name}
+              {item.fileChange &&
+                !['A', 'D'].includes(item.fileChange.status) &&
+                (item.fileChange.additions > 0 || item.fileChange.deletions > 0) && (
+                  <span className="text-(--vscode-editor-foreground) opacity-60">
+                    {' '}
+                    (
+                    {item.fileChange.additions > 0 && (
+                      <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
+                        +{item.fileChange.additions}
+                      </span>
+                    )}
+                    {item.fileChange.additions && item.fileChange.deletions ? ' ' : ''}
+                    {item.fileChange.deletions > 0 && (
+                      <span className="text-(--vscode-gitDecoration-deletedResourceForeground)">
+                        -{item.fileChange.deletions}
+                      </span>
+                    )}
+                    )
+                  </span>
+                )}
             </span>
 
             {item.fileChange && !!item.onOpenFile && (

@@ -12,6 +12,7 @@ export interface GitCommit {
     tags: string[];
     isStash?: boolean;
     isHead?: boolean;
+    isUncommitted?: boolean;
 }
 
 export interface GitBranch {
@@ -52,9 +53,6 @@ export class GitService {
         return GitService.instance;
     }
 
-    /**
-     * Find and validate a Git executable
-     */
     public async findGitExecutable(): Promise<GitExecutable> {
         if (this.cachedGitExecutable) {
             return this.cachedGitExecutable;
@@ -95,9 +93,6 @@ export class GitService {
         throw new Error('Unable to find Git executable. Please install Git or configure the git.path setting.');
     }
 
-    /**
-     * Spawn a git process and return stdout as string
-     */
     private spawnGit(args: string[], cwd: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!args.length || !args[0]) {
@@ -135,9 +130,6 @@ export class GitService {
         });
     }
 
-    /**
-     * Sanitize branch name by removing refs and remote prefixes
-     */
     private sanitizeBranchName(branchName: string, isRemote: boolean): string {
         let cleanName = branchName;
         cleanName = cleanName.replace(/^refs\/(heads|remotes)\//, '');
@@ -146,9 +138,6 @@ export class GitService {
         return cleanName;
     }
 
-    /**
-     * Check if the current workspace is a git repository
-     */
     public async isGitRepository(): Promise<boolean> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) return false;
@@ -161,9 +150,6 @@ export class GitService {
         }
     }
 
-    /**
-     * Get all git branches from the current workspace
-     */
     public async getGitBranches(log: (message: string) => void): Promise<GitBranch[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -214,10 +200,6 @@ export class GitService {
         }
     }
 
-    /**
-     * Returns a map of stash commit hash → stash ref name (e.g. "stash@{0}").
-     * Single git call replaces both getStashHashes and getAllStashRefs.
-     */
     private async getStashInfo(workspacePath: string, gitPath: string): Promise<Map<string, string>> {
         const stashMap = new Map<string, string>();
 
@@ -237,10 +219,7 @@ export class GitService {
 
         return stashMap;
     }
-    /**
-     * Fetch stash commits individually, returning only the top-level stash
-     * commit with parents stripped to first-only (the HEAD commit at stash time).
-     */
+
     private async getStashCommits(
         workspacePath: string,
         gitPath: string,
@@ -278,10 +257,117 @@ export class GitService {
         return stashes;
     }
 
-    /**
-     * Get git commits with branch filtering, pagination, and stashes included
-     * inline positioned directly before their parent commit.
-     */
+    public async getWorkingChanges(
+        log: (message: string) => void,
+        includeFiles: boolean = false
+    ): Promise<{ commit: GitCommit; files: GitFileChange[] } | null> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return null;
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const statusOutput = await this.spawnGit(
+                [gitExecutable.path, 'diff', 'HEAD', '--name-status', '-r', '-M'],
+                workspacePath
+            );
+
+            const untrackedOutput = await this.spawnGit(
+                [gitExecutable.path, 'ls-files', '--others', '--exclude-standard'],
+                workspacePath
+            );
+
+            const statusLines = statusOutput.split(EOL_REGEX).filter((l) => l.trim());
+            const untrackedLines = untrackedOutput.split(EOL_REGEX).filter((l) => l.trim());
+
+            if (statusLines.length === 0 && untrackedLines.length === 0) {
+                log('No working changes');
+                return null;
+            }
+
+            const headHash = await this.spawnGit([gitExecutable.path, 'rev-parse', 'HEAD'], workspacePath);
+
+            let author = '';
+            let email = '';
+            try {
+                author = (await this.spawnGit([gitExecutable.path, 'config', 'user.name'], workspacePath)).trim();
+                email = (await this.spawnGit([gitExecutable.path, 'config', 'user.email'], workspacePath)).trim();
+            } catch {
+                // user config not set
+            }
+
+            const fileCount = statusLines.length + untrackedLines.length;
+
+            const commit: GitCommit = {
+                hash: 'working-changes',
+                parents: [headHash.trim()],
+                author,
+                email,
+                date: new Date().toISOString(),
+                message: `Uncommitted changes (${fileCount})`,
+                tags: [],
+                isStash: false,
+                isHead: false,
+                refs: undefined,
+                isUncommitted: true
+            };
+
+            let files: GitFileChange[] = [];
+
+            if (includeFiles) {
+                const numstatOutput = await this.spawnGit(
+                    [gitExecutable.path, 'diff', 'HEAD', '--numstat', '-r', '-M'],
+                    workspacePath
+                );
+
+                const statsMap = new Map<string, { additions: number; deletions: number }>();
+                for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) continue;
+                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0]!, 10);
+                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]!, 10);
+                    const path = parts[parts.length - 1]!.trim();
+                    statsMap.set(path, { additions, deletions });
+                }
+
+                for (const line of statusLines) {
+                    const parts = line.split('\t');
+                    if (parts.length < 2) continue;
+
+                    const statusRaw = parts[0]!.trim();
+                    const status = statusRaw[0] as GitFileChange['status'];
+
+                    if (status === 'R' || status === 'C') {
+                        const oldPath = parts[1]?.trim() || '';
+                        const newPath = parts[2]?.trim() || '';
+                        const stats = statsMap.get(newPath) ?? { additions: 0, deletions: 0 };
+                        files.push({ path: newPath, status, oldPath, ...stats });
+                    } else {
+                        const path = parts[1]?.trim() || '';
+                        const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
+                        files.push({ path, status, ...stats });
+                    }
+                }
+
+                for (const line of untrackedLines) {
+                    files.push({
+                        path: line.trim(),
+                        status: 'A',
+                        additions: 0,
+                        deletions: 0
+                    });
+                }
+            }
+
+            log(`Found uncommitted changes (${statusLines.length + untrackedLines.length} files)`);
+            return { commit, files };
+        } catch (error) {
+            log(`Error getting working changes: ${error}`);
+            return null;
+        }
+    }
+
     public async getGitCommits(
         log: (message: string) => void,
         branches?: string[],
@@ -426,10 +512,6 @@ export class GitService {
         }
     }
 
-    /**
-     * Get the list of files changed in a specific commit.
-     * Uses git diff-tree for regular commits and git diff for root commits.
-     */
     public async getCommitFiles(log: (message: string) => void, commitHash: string): Promise<GitFileChange[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -438,19 +520,16 @@ export class GitService {
         const gitExecutable = await this.findGitExecutable();
 
         try {
-            // Get status (A/M/D/R/C/T) and paths
             const statusOutput = await this.spawnGit(
                 [gitExecutable.path, 'diff-tree', '--no-commit-id', '--name-status', '-r', '-M', '--root', commitHash],
                 workspacePath
             );
 
-            // Get line stats (additions/deletions)
             const numstatOutput = await this.spawnGit(
                 [gitExecutable.path, 'diff-tree', '--no-commit-id', '--numstat', '-r', '-M', '--root', commitHash],
                 workspacePath
             );
 
-            // Parse numstat into a map: path → { additions, deletions }
             const statsMap = new Map<string, { additions: number; deletions: number }>();
             for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
                 const parts = line.split('\t');
@@ -462,7 +541,6 @@ export class GitService {
                 statsMap.set(path, { additions, deletions });
             }
 
-            // Parse status and merge with stats
             const files: GitFileChange[] = [];
             for (const line of statusOutput.split(EOL_REGEX).filter((l) => l.trim())) {
                 const parts = line.split('\t');

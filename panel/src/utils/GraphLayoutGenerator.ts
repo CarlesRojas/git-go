@@ -25,13 +25,15 @@ interface UnavailablePoint {
 export class GraphBranch {
   public readonly colorIndex: number
   public readonly isStash: boolean
+  public readonly isUncommitted: boolean
   public segments: Segment[] = []
   public end: number = 0
   public hashes: Set<number> = new Set()
 
-  constructor(colorIndex: number, isStash: boolean) {
+  constructor(colorIndex: number, isStash: boolean, isUncommitted: boolean) {
     this.colorIndex = colorIndex
     this.isStash = isStash
+    this.isUncommitted = isUncommitted
   }
 
   addSegment(p1: Point, p2: Point, lockedFirst: boolean) {
@@ -45,6 +47,7 @@ class GraphVertex {
   public readonly row: number
   public readonly isStash: boolean
   public readonly isHead: boolean
+  public readonly isUncommitted: boolean
   private x: number = 0
   private nextX: number = 0
   private branch: GraphBranch | null = null
@@ -52,10 +55,11 @@ class GraphVertex {
   private nextParentIdx: number = 0
   private connections: (UnavailablePoint | undefined)[] = []
 
-  constructor(row: number, isStash: boolean, isHead: boolean) {
+  constructor(row: number, isStash: boolean, isHead: boolean, isUncommitted: boolean) {
     this.row = row
     this.isStash = isStash
     this.isHead = isHead
+    this.isUncommitted = isUncommitted
   }
 
   // Parents
@@ -129,11 +133,13 @@ export interface CommitLayout {
   isMerge: boolean
   isStash: boolean
   isHead: boolean
+  isUncommitted: boolean
 }
 
 export interface BranchPath {
   colorIndex: number
   isStash: boolean
+  isUncommitted: boolean
   segments: Segment[]
   commitRows: number[]
 }
@@ -145,7 +151,7 @@ export interface GraphLayout {
 
 // ─── NULL sentinel ────────────────────────────────────────────────────────────
 
-const NULL_VERTEX = new GraphVertex(-1, false, false)
+const NULL_VERTEX = new GraphVertex(-1, false, false, false)
 
 // ─── Main layout function ─────────────────────────────────────────────────────
 
@@ -157,7 +163,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
   if (commits.length === 0) return { commits: [], branches: [] }
 
   // Build vertex list
-  const vertices: GraphVertex[] = commits.map((c, i) => new GraphVertex(i, !!c.isStash, !!c.isHead))
+  const vertices: GraphVertex[] = commits.map((c, i) => new GraphVertex(i, !!c.isStash, !!c.isHead, !!c.isUncommitted))
 
   // Build lookup and parent links
   const lookup: Record<string, number> = {}
@@ -226,7 +232,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
       }
     } else {
       // Normal branch
-      const branch = new GraphBranch(getAvailableColor(startAt), vertex.isStash)
+      const branch = new GraphBranch(getAvailableColor(startAt), vertex.isStash, vertex.isUncommitted)
       vertex.addToBranch(branch, lastPoint.x)
       branch.hashes.add(startAt)
       vertex.registerUnavailablePoint(lastPoint.x, vertex, branch)
@@ -264,6 +270,11 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
 
   let i = 0
   while (i < vertices.length) {
+    if (vertices[i]!.isUncommitted) {
+      i++
+      continue
+    }
+
     if (vertices[i]!.getNextParent() !== null || vertices[i]!.isNotOnBranch()) {
       determinePath(i)
     } else {
@@ -280,11 +291,13 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
     isMerge: v.isMerge(),
     isStash: v.isStash,
     isHead: v.isHead,
+    isUncommitted: v.isUncommitted,
   }))
 
   const branchPaths: BranchPath[] = branches.map(b => ({
     colorIndex: b.colorIndex,
     isStash: b.isStash,
+    isUncommitted: b.isUncommitted,
     segments: b.segments,
     commitRows: [...b.hashes],
   }))
