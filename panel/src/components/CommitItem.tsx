@@ -5,6 +5,7 @@ import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
 import { useToast } from '../contexts/ToastContext'
+import { getColor } from '../hooks/useGitTree'
 import { useResizable } from '../hooks/useResizable'
 import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
@@ -110,8 +111,6 @@ export const CommitItem: FC<CommitItemProps> = ({
               'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
             )}
           >
-            {layout?.isHead && getBranchIcons(null, null, true)}
-
             {Object.entries(groupedBranches)
               .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
               .map(([baseName, { local, remote }]) => (
@@ -180,6 +179,7 @@ export const CommitItem: FC<CommitItemProps> = ({
                 // State
                 layout?.isMerge && 'opacity-50',
               )}
+              style={{ color: layout?.isHead ? getColor(layout.colorIndex, commit.isStash) : undefined }}
             >
               {commit.message}
             </h3>
