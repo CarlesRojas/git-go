@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import type { GitCommit } from '../../../src/gitService'
 import { CommitLayout, computeGraphLayout } from '../utils/GraphLayoutGenerator'
+import { cn } from '../utils/cn'
 
 const BRANCH_COLORS = [
   '#3b82f6', // blue-500
@@ -15,8 +16,9 @@ const BRANCH_COLORS = [
 
 const STASH_COLOR = '#737373' // neutral-500
 
+const MAX_TREE_COLUMNS = 16
 const ROW_HEIGHT = 24
-const COL_WIDTH = 16
+export const COL_WIDTH = 16 // If this changes, change the mask calc below too susbtract this size
 const DOT_RADIUS = 5
 const LINE_WIDTH = 2
 
@@ -56,6 +58,11 @@ export function useGitTree(commits: GitCommit[]): {
   rows: CommitLayout[]
 } {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
+  console.log(
+    'branches:',
+    layout.branches.length,
+    layout.branches.map(b => b.segments.length),
+  )
 
   const treeWidth = useMemo(() => {
     let maxCol = 0
@@ -71,14 +78,23 @@ export function useGitTree(commits: GitCommit[]): {
     return (maxCol + 1) * COL_WIDTH
   }, [layout])
 
+  const isOverflowing = treeWidth > MAX_TREE_COLUMNS * COL_WIDTH
+  const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH)
+
   const svgHeight = commits.length * ROW_HEIGHT
 
   const treeComponent = (
-    <div className="pointer-events-none absolute top-0 left-0 z-10 h-fit py-3" style={{ width: treeWidth }}>
+    <div
+      className={cn(
+        'pointer-events-none absolute top-0 left-0 z-10 h-fit py-3',
+        isOverflowing && 'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
+      )}
+      style={{ width: clampedTreeWidth }}
+    >
       <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
-          <mask id="commit-mask">
-            <rect width="100%" height="100%" fill="white" />
+          <mask id="commit-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={treeWidth} height={svgHeight}>
+            <rect x="0" y="0" width={treeWidth} height={svgHeight} fill="white" />
 
             {layout.commits.map(c => {
               const dotX = px(c.column)
@@ -209,5 +225,5 @@ export function useGitTree(commits: GitCommit[]): {
     </div>
   )
 
-  return { treeComponent, treeWidth, rows: layout.commits }
+  return { treeComponent, treeWidth: clampedTreeWidth, rows: layout.commits }
 }

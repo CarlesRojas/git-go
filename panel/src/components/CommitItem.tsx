@@ -192,21 +192,6 @@ export const CommitItem: FC<CommitItemProps> = ({
             </h3>
           </div>
 
-          <span
-            className={cn(
-              // Layout & sizing
-              'min-w-fit',
-              // Typography
-              'line-clamp-1 truncate text-xs leading-tight font-medium',
-              // Appearance
-              'opacity-50',
-            )}
-          >
-            {commit.author}
-          </span>
-
-          <Avatar email={commit.email} author={commit.author} size={20} />
-
           <time
             className={cn(
               // Layout & sizing
@@ -242,6 +227,21 @@ export const CommitItem: FC<CommitItemProps> = ({
               hour12: false,
             })}
           </time>
+
+          <Avatar email={commit.email} author={commit.author} size={20} />
+
+          <span
+            className={cn(
+              // Layout & sizing
+              'w-24 max-w-24 min-w-24',
+              // Typography
+              'line-clamp-1 truncate text-xs leading-tight font-medium',
+              // Appearance
+              'opacity-50',
+            )}
+          >
+            {commit.author}
+          </span>
         </div>
       </button>
 
@@ -314,6 +314,24 @@ export const CommitItem: FC<CommitItemProps> = ({
               >
                 {commit.hash}
               </code>
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="opacity-50">Parents:</span>
+
+              {commit.parents.map(parent => (
+                <code
+                  className={cn(
+                    // Spacing
+                    'w-fit px-1',
+                    // Interactive
+                    'cursor-pointer transition-opacity hover:opacity-75',
+                  )}
+                  onClick={() => copyText(parent, 'Parent Hash')}
+                >
+                  {parent}
+                </code>
+              ))}
             </div>
 
             <div className="flex gap-2">

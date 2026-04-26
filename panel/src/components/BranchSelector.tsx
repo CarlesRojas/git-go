@@ -32,7 +32,7 @@ interface BrancItem {
 }
 
 const LIMIT = 100
-const SELECTED_LIMIT = 3
+const SELECTED_LIMIT = 16
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], ...branchesQuery } = useGitBranches()
