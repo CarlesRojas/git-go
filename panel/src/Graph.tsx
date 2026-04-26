@@ -34,25 +34,24 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
   }
 
-  const hoveredCircleRef = useRef<Element | null>(null)
+  const hoveredCircleRefs = useRef<Element[]>([])
   const onCommitHover = useCallback((hash: string | null) => {
-    if (hoveredCircleRef.current) {
-      hoveredCircleRef.current.classList.remove('scaled')
-      hoveredCircleRef.current = null
-    }
+    hoveredCircleRefs.current.forEach(el => el.classList.remove('highlighted'))
+    hoveredCircleRefs.current = []
 
     if (hash) {
-      const el = document.querySelector(`[data-hash="${hash}"]`)
-      if (el) {
-        el.classList.add('scaled')
-        hoveredCircleRef.current = el
-      }
+      const elements = document.querySelectorAll(`[data-hash="${hash}"]`)
+      elements.forEach(el => {
+        el.classList.add('highlighted')
+        hoveredCircleRefs.current.push(el)
+      })
     }
   }, [])
 
   useEffect(() => {
     return () => {
-      if (hoveredCircleRef.current) hoveredCircleRef.current.classList.remove('scaled')
+      hoveredCircleRefs.current.forEach(el => el.classList.remove('highlighted'))
+      hoveredCircleRefs.current = []
     }
   }, [])
 

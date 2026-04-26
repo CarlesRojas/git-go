@@ -17,7 +17,7 @@ const STASH_COLOR = '#737373' // neutral-500
 
 const ROW_HEIGHT = 24
 const COL_WIDTH = 16
-const DOT_RADIUS = 5.5
+const DOT_RADIUS = 5
 const LINE_WIDTH = 2
 
 // d = grid.y * 0.8 — exact value from vscode-git-graph's curved style
@@ -75,8 +75,49 @@ export function useGitTree(commits: GitCommit[]): {
   const treeComponent = (
     <div className="pointer-events-none absolute top-0 left-0 z-10 h-fit py-3" style={{ width: treeWidth }}>
       <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
-        {/* Branch lines — drawn first, under dots */}
-        <g>
+        <defs>
+          <mask id="commit-mask">
+            <rect width="100%" height="100%" fill="white" />
+
+            {layout.commits.map(c => {
+              const dotX = px(c.column)
+              const dotY = py(c.row)
+
+              if (c.isStash) {
+                const squareSize = (DOT_RADIUS + LINE_WIDTH) * 2
+                const halfSize = squareSize / 2
+                return (
+                  <rect
+                    key={`mask-${c.commit.hash}`}
+                    x={dotX - halfSize}
+                    y={dotY - halfSize}
+                    width={squareSize}
+                    height={squareSize}
+                    rx={squareSize * 0.3}
+                    ry={squareSize * 0.3}
+                    fill="black"
+                    data-hash={c.commit.hash}
+                    className="origin-center transition-[scale] transform-fill"
+                  />
+                )
+              }
+
+              return (
+                <circle
+                  key={`mask-${c.commit.hash}`}
+                  cx={dotX}
+                  cy={dotY}
+                  r={DOT_RADIUS + LINE_WIDTH}
+                  fill="black"
+                  data-hash={c.commit.hash}
+                  className="origin-center transition-[scale] transform-fill"
+                />
+              )
+            })}
+          </mask>
+        </defs>
+
+        <g mask="url(#commit-mask)">
           {layout.branches.map((branch, bi) => {
             const color = getColor(branch.colorIndex, branch.isStash)
             // Merge consecutive straight segments into one path (perf + visual)
@@ -98,7 +139,7 @@ export function useGitTree(commits: GitCommit[]): {
                 strokeWidth={LINE_WIDTH}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={0.75}
+                opacity={0.7}
               />
             )
           })}
@@ -124,8 +165,6 @@ export function useGitTree(commits: GitCommit[]): {
                   rx={squareSize * 0.3}
                   ry={squareSize * 0.3}
                   fill={color}
-                  stroke="var(--vscode-editor-background)"
-                  strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}
                   className="origin-center transition-[scale] transform-fill"
                 />
@@ -138,7 +177,7 @@ export function useGitTree(commits: GitCommit[]): {
                   key={c.commit.hash}
                   cx={dotX}
                   cy={dotY}
-                  r={DOT_RADIUS - LINE_WIDTH / 2}
+                  r={DOT_RADIUS}
                   fill="var(--vscode-editor-background)"
                   stroke={color}
                   strokeWidth={LINE_WIDTH}
@@ -154,8 +193,6 @@ export function useGitTree(commits: GitCommit[]): {
                 cy={dotY}
                 r={DOT_RADIUS}
                 fill={color}
-                stroke="var(--vscode-editor-background)"
-                strokeWidth={LINE_WIDTH}
                 data-hash={c.commit.hash}
                 className="origin-center transition-[scale] transform-fill"
               />

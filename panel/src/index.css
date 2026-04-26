@@ -22,7 +22,7 @@
     @apply no-underline;
   }
 
-  .scaled {
+  .highlighted {
     @apply scale-125 stroke-(--vscode-editor-foreground)/10;
   }
 }
