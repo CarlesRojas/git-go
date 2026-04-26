@@ -2,22 +2,21 @@ import type { GitBranch } from '../../../src/gitService'
 
 export type GroupedBranch = {
   local: GitBranch | null
-  remote: GitBranch | null
+  remotes: GitBranch[]
 }
 
 export const groupBranches = (branches: GitBranch[], ignoreHash: boolean = true): Record<string, GroupedBranch> => {
-  return branches.reduce(
+  const result = branches.reduce(
     (acc, branch) => {
       const baseName = branch.cleanName
-
       const key = ignoreHash ? baseName : `${baseName}-${branch.hash}`
 
       if (!acc[key]) {
-        acc[key] = { local: null, remote: null }
+        acc[key] = { local: null, remotes: [] }
       }
 
       if (branch.remote) {
-        acc[key].remote = branch
+        acc[key].remotes.push(branch)
       } else {
         acc[key].local = branch
       }
@@ -26,4 +25,6 @@ export const groupBranches = (branches: GitBranch[], ignoreHash: boolean = true)
     },
     {} as Record<string, GroupedBranch>,
   )
+
+  return result
 }

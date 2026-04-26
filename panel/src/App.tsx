@@ -26,7 +26,7 @@ export const App: React.FC = () => {
           // Layout & Structure
           'flex max-h-screen min-h-screen max-w-screen min-w-screen flex-col',
           // Typography
-          'leading-relaxed font-medium text-(--vscode-editor-foreground)',
+          'font-medium text-(--vscode-editor-foreground)',
           // Colors & Background
           // 'bg-(--vscode-editor-background)',
           // Selection States

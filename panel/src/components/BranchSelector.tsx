@@ -44,6 +44,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const setDefaultBranches = useCallback(() => {
     const isMain = (name: string) => name === 'main' || name === 'master'
 
+    // TODO limit to X branches and select these ones by default
     // const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
     // const mainBranch = branches.filter(b => isMain(b.cleanName))
 
@@ -66,7 +67,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const displayText = useMemo(() => {
     const grouped = Object.values(groupBranches(branches.filter(b => selectedBranches.includes(b.cleanName))))
     if (grouped.length === 0) return 'Select branches...'
-    if (grouped.length === 1) return grouped[0]!.local?.cleanName ?? grouped[0]!.remote?.cleanName ?? ''
+    if (grouped.length === 1) return grouped[0]!.local?.cleanName ?? grouped[0]!.remotes[0]?.cleanName ?? ''
     return `${grouped.length} branches`
   }, [branches, selectedBranches])
 
@@ -75,15 +76,15 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       const localBranches: BrancItem[] = []
       const remoteBranches: BrancItem[] = []
 
-      Object.entries(groupedBranches).forEach(([baseName, { local, remote }]) => {
+      Object.entries(groupedBranches).forEach(([baseName, { local, remotes }]) => {
         const item = {
           value: baseName,
           label: baseName,
-          icon: getBranchIcons({ local, remote, isCurrent: local?.current ?? remote?.current }),
+          icon: getBranchIcons({ isLocal: !!local, hasRemote: remotes.length > 0, isCurrent: local?.current }),
         }
 
         if (local) localBranches.push(item)
-        else if (remote) remoteBranches.push(item)
+        else if (remotes.length) remoteBranches.push(item)
       })
 
       const groups = []

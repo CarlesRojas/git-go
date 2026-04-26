@@ -1,5 +1,4 @@
-import { faCheckCircle, faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FC, useEffect, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
@@ -112,12 +111,14 @@ export const CommitItem: FC<CommitItemProps> = ({
             )}
           >
             {Object.entries(groupedBranches)
-              .filter(([_, { local, remote }]) => local?.hash === commit.hash || remote?.hash === commit.hash)
-              .map(([baseName, { local, remote }]) => (
-                <BranchPill key={baseName} branch={{ local, remote }} baseName={baseName} layout={layout} />
+              .filter(
+                ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
+              )
+              .map(([baseName, { local, remotes }]) => (
+                <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
               ))}
 
-            {commit.isStash && (
+            {/* {commit.isStash && (
               <div
                 className={cn(
                   // Layout & sizing
@@ -153,7 +154,7 @@ export const CommitItem: FC<CommitItemProps> = ({
                   <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
                   <span>{tag}</span>
                 </div>
-              ))}
+              ))} */}
 
             <h3
               className={cn(

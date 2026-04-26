@@ -20,6 +20,7 @@ export interface GitBranch {
     hash: string;
     current: boolean;
     remote: boolean;
+    remoteName?: string;
 }
 
 export interface GitExecutable {
@@ -129,10 +130,11 @@ export class GitService {
     /**
      * Sanitize branch name by removing refs and remote prefixes
      */
-    private sanitizeBranchName(branchName: string): string {
+    private sanitizeBranchName(branchName: string, isRemote: boolean): string {
         let cleanName = branchName;
         cleanName = cleanName.replace(/^refs\/(heads|remotes)\//, '');
-        cleanName = cleanName.replace(/^[^/]+\//, '');
+        if (isRemote) cleanName = cleanName.replace(/^[^/]+\//, '');
+
         return cleanName;
     }
 
@@ -168,7 +170,7 @@ export class GitService {
             log(`Using git executable: ${gitExecutable.path}`);
 
             const branchOutput = await this.spawnGit(
-                [gitExecutable.path, 'branch', '-a', '--format=%(refname:short),%(HEAD),%(objectname)'],
+                [gitExecutable.path, 'branch', '-a', '--format=%(refname),%(HEAD),%(objectname)'],
                 workspacePath
             );
 
@@ -178,15 +180,20 @@ export class GitService {
             for (const line of lines) {
                 const [name, isHead, hash] = line.split(',');
                 if (name && name.trim() && hash && hash.trim()) {
-                    const branchName = name.trim();
-                    if (branchName === 'origin' || branchName === 'upstream') continue;
+                    const refName = name.trim();
+                    const isRemote = refName.startsWith('refs/remotes/');
+                    const remoteName = isRemote ? refName.replace('refs/remotes/', '').split('/')[0] : undefined;
+                    const branchName = this.sanitizeBranchName(refName, isRemote);
+
+                    if (refName.endsWith('/HEAD')) continue;
 
                     branches.push({
-                        name: branchName,
-                        cleanName: this.sanitizeBranchName(branchName),
+                        name: refName,
+                        cleanName: branchName,
                         hash: hash.trim(),
                         current: isHead?.trim() === '*',
-                        remote: branchName.includes('/')
+                        remote: isRemote,
+                        remoteName
                     });
                 }
             }

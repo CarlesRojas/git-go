@@ -11,7 +11,7 @@ interface Props {
 }
 
 const BranchPill: React.FC<Props> = ({ branch, baseName, layout }) => {
-  const { local, remote } = branch
+  const { local, remotes } = branch
 
   return (
     <div
@@ -20,6 +20,7 @@ const BranchPill: React.FC<Props> = ({ branch, baseName, layout }) => {
         'relative flex h-4.5 max-h-4.5 min-h-4.5 min-w-fit items-center rounded-sm',
         // Colors
         'bg-(--vscode-editor-foreground)/15',
+        !local && 'border border-(--vscode-editor-foreground)/15',
       )}
     >
       <div
@@ -30,28 +31,49 @@ const BranchPill: React.FC<Props> = ({ branch, baseName, layout }) => {
           'pr-0.75 pl-1',
         )}
         style={{
-          backgroundColor: getColor(layout.colorIndex, false),
+          backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
         }}
       >
-        {getBranchIcons({ local, remote, black: true })}
+        {getBranchIcons({
+          isLocal: !!local,
+          hasRemote: !local && !!remotes.length,
+          black: !!local,
+          white: !local,
+        })}
       </div>
 
       <div
         className={cn(
           // Layout & sizing
-          'flex h-full min-w-fit items-center rounded-r-sm',
-          // Spacing
-          'px-1.5',
+          'relative flex h-full min-w-fit items-center rounded-r-sm',
           // Typography
           'text-xs font-medium',
-          // Typography
-          'border-l-none border border-(--vscode-editor-foreground)/15',
+          // Border
+          'border-(--vscode-editor-foreground)/15',
+          !!local && 'border-l-none border',
+          !local && 'border-l',
         )}
         style={{
           borderColor: !!local && layout.isHead ? getColor(layout.colorIndex, false) : undefined,
         }}
       >
-        <span>{local?.name ?? remote?.name ?? baseName}</span>
+        <div className="flex h-full w-fit min-w-fit items-center px-1.5">
+          <span className={cn('leading-tight')}>
+            {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
+          </span>
+        </div>
+
+        {remotes
+          .map(({ remoteName }) => remoteName)
+          .filter(Boolean)
+          .map((remote, i) => (
+            <div
+              key={`remote-${i}-${remote}`}
+              className="flex h-full w-fit min-w-fit items-center border-l border-(--vscode-editor-foreground)/15 px-1.5"
+            >
+              <span className="leading-tight opacity-60">{remote}</span>
+            </div>
+          ))}
       </div>
     </div>
   )

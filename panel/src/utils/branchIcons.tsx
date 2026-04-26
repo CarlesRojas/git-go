@@ -1,16 +1,22 @@
 import { faCodeBranch, faStar } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { GitBranch } from '../../../src/gitService'
 import { cn } from './cn'
 
 interface Props {
-  local: GitBranch | null
-  remote: GitBranch | null
+  isLocal?: boolean
+  hasRemote?: boolean
   isCurrent?: boolean
   black?: boolean
+  white?: boolean
 }
 
-export const getBranchIcons = ({ local, remote, isCurrent = false, black = false }: Props) => {
+export const getBranchIcons = ({
+  isLocal = false,
+  hasRemote = false,
+  isCurrent = false,
+  black = false,
+  white = false,
+}: Props) => {
   const icons = []
 
   if (isCurrent)
@@ -18,25 +24,33 @@ export const getBranchIcons = ({ local, remote, isCurrent = false, black = false
       <FontAwesomeIcon
         key="current"
         icon={faStar}
-        className={cn('size-3 text-yellow-500', black && 'text-black/80')}
+        className={cn('size-3 text-yellow-500', black && 'text-black/80', white && 'text-white/80')}
       />,
     )
 
-  if (local)
+  if (isLocal)
     icons.push(
       <FontAwesomeIcon
         key="local"
         icon={faCodeBranch}
-        className={cn('size-3 text-(--vscode-editor-foreground)/70', black && 'text-black/80')}
+        className={cn(
+          'size-3 text-(--vscode-editor-foreground)/70',
+          black && 'text-black/80',
+          white && 'text-white/80',
+        )}
       />,
     )
 
-  if (remote)
+  if (hasRemote)
     icons.push(
       <svg
         width={12}
         height={12}
-        className={cn('block overflow-visible fill-transparent stroke-blue-500', black && 'stroke-black/80')}
+        className={cn(
+          'block overflow-visible fill-transparent stroke-blue-500',
+          black && 'stroke-black/80',
+          white && 'stroke-white/80',
+        )}
       >
         <circle cx={6} cy={6} r={4.5} strokeWidth={1.75} />
       </svg>,
