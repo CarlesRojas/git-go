@@ -221,6 +221,46 @@ export class GitService {
 
         return stashMap;
     }
+    /**
+     * Fetch stash commits individually, returning only the top-level stash
+     * commit with parents stripped to first-only (the HEAD commit at stash time).
+     */
+    private async getStashCommits(
+        workspacePath: string,
+        gitPath: string,
+        stashMap: Map<string, string>
+    ): Promise<GitCommit[]> {
+        const format = ['%H', '%P', '%an', '%ae', '%ai', '%s'].join(GIT_LOG_SEPARATOR);
+        const stashes: GitCommit[] = [];
+
+        for (const [hash, ref] of stashMap) {
+            try {
+                const output = await this.spawnGit(
+                    [gitPath, 'log', '-1', `--pretty=format:${format}`, hash],
+                    workspacePath
+                );
+                const parts = output.trim().split(GIT_LOG_SEPARATOR);
+                if (parts.length < 6) continue;
+                const [, parentHashes, author, email, date, message] = parts;
+
+                stashes.push({
+                    hash,
+                    parents: parentHashes?.trim() ? [parentHashes.trim().split(' ')[0]!] : [],
+                    author: author?.trim() || '',
+                    email: email?.trim() || '',
+                    date: date?.trim() || '',
+                    message: message?.trim() || '',
+                    tags: [],
+                    isStash: true,
+                    refs: ref
+                });
+            } catch {
+                // Skip this stash
+            }
+        }
+
+        return stashes;
+    }
 
     /**
      * Get git commits with branch filtering, pagination, and stashes included
@@ -244,10 +284,6 @@ export class GitService {
         try {
             const gitExecutable = await this.findGitExecutable();
             log(`Using git executable: ${gitExecutable.path} (version: ${gitExecutable.version})`);
-
-            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
-            const stashHashes = [...stashMap.keys()];
-            log(`Found ${stashMap.size} stash(es)`);
 
             const format = [
                 '%H', // Hash
@@ -282,8 +318,6 @@ export class GitService {
                 log('Showing commits from all branches');
             }
 
-            if (stashHashes.length > 0) gitArgs.push(...stashHashes);
-
             gitArgs.push('--');
 
             const gitLog = await this.spawnGit(gitArgs, workspacePath);
@@ -315,26 +349,22 @@ export class GitService {
                 }
 
                 const trimmedHash = hash.trim();
-                const stashRef = stashMap.get(trimmedHash);
 
-                const tags =
-                    !stashRef && refs?.trim()
-                        ? refs
-                              .split(',')
-                              .map((r) => r.trim())
-                              .filter((r) => r.includes('refs/tags/'))
-                              .map((r) =>
-                                  r
-                                      .replace(/^tag:\s*/, '')
-                                      .replace('refs/tags/', '')
-                                      .trim()
-                              )
-                        : [];
+                const tags = refs?.trim()
+                    ? refs
+                          .split(',')
+                          .map((r) => r.trim())
+                          .filter((r) => r.includes('refs/tags/'))
+                          .map((r) =>
+                              r
+                                  .replace(/^tag:\s*/, '')
+                                  .replace('refs/tags/', '')
+                                  .trim()
+                          )
+                    : [];
 
                 let commitRefs: string | undefined;
-                if (stashRef) {
-                    commitRefs = stashRef;
-                } else if (refs?.trim()) {
+                if (refs?.trim()) {
                     const cleaned = refs
                         .split(',')
                         .map((r) => r.trim())
@@ -343,27 +373,29 @@ export class GitService {
                     commitRefs = cleaned || undefined;
                 }
 
-                if (stashRef) {
-                    log(`Stash: ${commitRefs} → ${parentHashes.trim()}`);
-                }
-
                 commits.push({
                     hash: trimmedHash,
-                    parents: stashRef
-                        ? parentHashes?.trim()
-                            ? [parentHashes.trim().split(' ')[0]!]
-                            : []
-                        : parentHashes?.trim()
-                          ? parentHashes.trim().split(' ')
-                          : [],
+                    parents: parentHashes?.trim() ? parentHashes.trim().split(' ') : [],
                     author: author?.trim() || '',
                     email: email?.trim() || '',
                     date: date?.trim() || '',
                     message: message?.trim() || '',
                     tags,
-                    isStash: !!stashRef,
+                    isStash: false,
                     refs: commitRefs
                 });
+            }
+
+            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
+            log(`Found ${stashMap.size} stash(es)`);
+
+            if (stashMap.size > 0) {
+                const stashCommits = await this.getStashCommits(workspacePath, gitExecutable.path, stashMap);
+                for (const stash of stashCommits) {
+                    const parentIdx = commits.findIndex((c) => c.hash === stash.parents[0]);
+
+                    if (parentIdx !== -1) commits.splice(parentIdx, 0, stash);
+                }
             }
 
             log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
