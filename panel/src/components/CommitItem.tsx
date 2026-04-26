@@ -20,6 +20,7 @@ interface CommitItemProps {
   onCommitHover: (hash: string | null, row: number | null) => void
   row: number
   layout: CommitLayout
+  setPanelHeight?: (height: number) => void
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -31,16 +32,22 @@ export const CommitItem: FC<CommitItemProps> = ({
   onCommitHover,
   row,
   layout,
+  setPanelHeight,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
+
   const {
     height: panelHeight,
     isDragging,
     handleMouseDown,
     containerRef,
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
+
+  useEffect(() => {
+    setPanelHeight?.(isExpanded ? panelHeight : 0)
+  }, [isExpanded, panelHeight, setPanelHeight])
 
   const groupedBranches = useMemo(() => groupBranches(selectedBranches, false), [selectedBranches])
 
