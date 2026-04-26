@@ -1,5 +1,5 @@
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
-import { FC, useEffect, useRef } from 'react'
+import { FC, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 import type { GitBranch, GitCommit } from '../../../src/gitService'
 import { Avatar } from '../Avatar'
@@ -42,7 +42,7 @@ export const CommitItem: FC<CommitItemProps> = ({
     containerRef,
   } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.5, 164) })
 
-  const groupedBranches = groupBranches(selectedBranches, false)
+  const groupedBranches = useMemo(() => groupBranches(selectedBranches, false), [selectedBranches])
 
   const copyText = (text: string, label: string) => {
     copy(text)

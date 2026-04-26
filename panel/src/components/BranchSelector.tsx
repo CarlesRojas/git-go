@@ -32,27 +32,31 @@ interface BrancItem {
 }
 
 const LIMIT = 100
+const SELECTED_LIMIT = 3
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], ...branchesQuery } = useGitBranches()
 
   const [inputValue, setInputValue] = useState('')
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
+  const [selectedCount, setSelectedCount] = useState(0)
 
-  const groupedBranches = groupBranches(branches)
+  const groupedBranches = useMemo(() => groupBranches(branches), [branches])
 
   const setDefaultBranches = useCallback(() => {
     const isMain = (name: string) => name === 'main' || name === 'master'
 
     // TODO limit to X branches and select these ones by default
-    // const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
-    // const mainBranch = branches.filter(b => isMain(b.cleanName))
+    const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
+    const mainBranch = branches.filter(b => isMain(b.cleanName))
 
-    // setSelectedBranches([...currentBranch.map(b => b.cleanName), ...mainBranch.map(b => b.cleanName)])
-    // onBranchesChange([...currentBranch, ...mainBranch])
+    const names = [...currentBranch.map(b => b.cleanName), ...mainBranch.map(b => b.cleanName)]
+    setSelectedBranches(names)
+    setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
+    onBranchesChange([...currentBranch, ...mainBranch])
 
-    setSelectedBranches([...branches.map(b => b.cleanName)])
-    onBranchesChange([...branches])
+    // setSelectedBranches([...branches.map(b => b.cleanName)])
+    // onBranchesChange([...branches])
   }, [branches, onBranchesChange])
 
   useEffect(() => {
@@ -61,6 +65,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
   const handleValueChange = (selected: string[]) => {
     setSelectedBranches(selected)
+    setSelectedCount(Object.keys(groupedBranches).filter(name => selected.includes(name)).length)
     onBranchesChange(branches.filter(branch => selected.includes(branch.cleanName)))
   }
 
@@ -73,8 +78,9 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
   const branchGroups = useMemo(() => {
     try {
-      const localBranches: BrancItem[] = []
-      const remoteBranches: BrancItem[] = []
+      const selectedBranchesGroup: BrancItem[] = []
+      const localBranchesGroup: BrancItem[] = []
+      const remoteBranchesGroup: BrancItem[] = []
 
       Object.entries(groupedBranches).forEach(([baseName, { local, remotes }]) => {
         const item = {
@@ -83,24 +89,27 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
           icon: getBranchIcons({ isLocal: !!local, hasRemote: remotes.length > 0, isCurrent: local?.current }),
         }
 
-        if (local) localBranches.push(item)
-        else if (remotes.length) remoteBranches.push(item)
+        if (selectedBranches.includes(baseName)) selectedBranchesGroup.push(item)
+        else if (local) localBranchesGroup.push(item)
+        else if (remotes.length) remoteBranchesGroup.push(item)
       })
 
       const groups = []
-      if (localBranches.length > 0) {
-        groups.push({ value: 'Local', items: localBranches.sort((a, b) => a.label.localeCompare(b.label)) })
-      }
 
-      if (remoteBranches.length > 0) {
-        groups.push({ value: 'Remote', items: remoteBranches.sort((a, b) => a.label.localeCompare(b.label)) })
-      }
+      if (selectedBranchesGroup.length > 0)
+        groups.push({ value: 'Selected', items: selectedBranchesGroup.sort((a, b) => a.label.localeCompare(b.label)) })
+
+      if (localBranchesGroup.length > 0)
+        groups.push({ value: 'Local', items: localBranchesGroup.sort((a, b) => a.label.localeCompare(b.label)) })
+
+      if (remoteBranchesGroup.length > 0)
+        groups.push({ value: 'Remote', items: remoteBranchesGroup.sort((a, b) => a.label.localeCompare(b.label)) })
 
       return groups
     } catch (error) {
       return []
     }
-  }, [groupedBranches])
+  }, [groupedBranches, selectedBranches])
 
   if (branchesQuery.isLoading) {
     return (
@@ -127,7 +136,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       multiple
       autoHighlight
       limit={LIMIT}
-      items={branchGroups}
+      items={selectedCount >= SELECTED_LIMIT ? branchGroups.filter(({ value }) => value === 'Selected') : branchGroups}
       inputValue={inputValue}
       onInputValueChange={(value, { reason }) => {
         if (reason !== 'input-clear') setInputValue(value)
@@ -148,11 +157,11 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
         <ComboboxInput onClear={() => setInputValue('')} placeholder="Search..." />
         <ComboboxSeparator className="my-0" />
 
-        <ComboboxEmpty>No branches found.</ComboboxEmpty>
+        {selectedCount < SELECTED_LIMIT && <ComboboxEmpty>No branches found.</ComboboxEmpty>}
 
         <ComboboxList>
-          {(group, index) => (
-            <ComboboxGroup key={group.value} items={group.items}>
+          {group => (
+            <ComboboxGroup key={group.value} items={group.items} className="group/branches">
               <ComboboxLabel>{group.value}</ComboboxLabel>
 
               <ComboboxCollection>
@@ -166,10 +175,23 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
                 )}
               </ComboboxCollection>
 
-              {group.value === 'Local' && index < branchGroups.length - 1 && <ComboboxSeparator />}
+              <ComboboxSeparator className="group-last/branches:hidden" />
             </ComboboxGroup>
           )}
         </ComboboxList>
+
+        {selectedCount >= SELECTED_LIMIT && (
+          <div
+            className={cn([
+              // Layout
+              'w-full px-2.5 py-2',
+              // Typography
+              'text-xs text-(--vscode-editor-foreground)/50',
+            ])}
+          >
+            Branch selection limit reached
+          </div>
+        )}
       </ComboboxContent>
     </Combobox>
   )
