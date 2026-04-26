@@ -51,6 +51,7 @@ export function buildFileTree(files: GitFileChange[]): TreeDataItem[] {
           id: fullPath,
           name: file.oldPath ? `${name} ← ${file.oldPath.split('/').pop()}` : name,
           className: statusClass(file.status),
+          fileChange: file,
         })
       } else {
         items.push({
@@ -93,13 +94,13 @@ export function buildFileTree(files: GitFileChange[]): TreeDataItem[] {
 function statusClass(status: string): string {
   switch (status) {
     case 'A':
-      return 'text-green-500'
+      return 'text-(--vscode-gitDecoration-addedResourceForeground)'
     case 'D':
-      return 'text-red-500'
+      return 'text-(--vscode-gitDecoration-deletedResourceForeground)'
     case 'M':
-      return 'text-yellow-500'
+      return 'text-(--vscode-gitDecoration-modifiedResourceForeground)'
     case 'R':
-      return 'text-blue-500'
+      return 'text-(--vscode-gitDecoration-renamedResourceForeground)'
     default:
       return ''
   }

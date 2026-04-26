@@ -14,10 +14,11 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { GitFileChange } from '../../../src/gitService'
 import { cn } from '../utils/cn'
 
 const treeVariants = cva(
-  'group before:bg-accent/70 px-2 before:absolute before:left-0 before:-z-10 before:h-[2rem] before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100',
+  'group before:bg-accent/70 before:absolute before:left-0 before:-z-10 before:h-[2rem] before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100',
 )
 
 const selectedTreeVariants = cva('before:bg-accent/70 text-accent-foreground before:opacity-100')
@@ -37,6 +38,7 @@ interface TreeDataItem {
   droppable?: boolean
   disabled?: boolean
   className?: string
+  fileChange?: GitFileChange
 }
 
 type TreeRenderItemParams = {
@@ -131,7 +133,7 @@ const TreeView = forwardRef<HTMLDivElement, TreeProps>(
     }, [data, expandAll, initialSelectedItemId])
 
     return (
-      <div className={cn('relative overflow-hidden p-2', className)}>
+      <div className={cn('relative overflow-hidden py-3 pr-2', className)}>
         <TreeItem
           data={data}
           ref={ref}
@@ -147,6 +149,7 @@ const TreeView = forwardRef<HTMLDivElement, TreeProps>(
           level={0}
           {...props}
         />
+
         <div
           className="h-12 w-full"
           onDrop={() => {
@@ -327,12 +330,12 @@ const TreeNode = ({
           ) : (
             <>
               <TreeIcon item={item} isSelected={isSelected} isOpen={isOpen} default={defaultNodeIcon} />
-              <span className="truncate text-sm">{item.name}</span>
+              <span className="truncate text-xs leading-tight">{item.name}</span>
               <TreeActions isSelected={isSelected}>{item.actions}</TreeActions>
             </>
           )}
         </AccordionTrigger>
-        <AccordionContent className="ml-4 border-l pl-1">
+        <AccordionContent className="ml-4">
           <TreeItem
             data={item.children ? item.children : item}
             selectedItemId={selectedItemId}
@@ -416,7 +419,7 @@ const TreeLeaf = forwardRef<
       <div
         ref={ref}
         className={cn(
-          'ml-5 flex cursor-pointer items-center py-2 text-left before:right-1',
+          'flex h-5 max-h-5 min-h-5 cursor-pointer items-center pl-1 text-left',
           treeVariants(),
           className,
           isSelected && selectedTreeVariants(),
@@ -438,7 +441,7 @@ const TreeLeaf = forwardRef<
       >
         {renderItem ? (
           <>
-            <div className="mr-1 h-4 w-4 shrink-0" />
+            <div className="mr-1 h-3 w-3 shrink-0" />
             {renderItem({
               item,
               level,
@@ -450,7 +453,28 @@ const TreeLeaf = forwardRef<
         ) : (
           <>
             <TreeIcon item={item} isSelected={isSelected} default={defaultLeafIcon} />
-            <span className="grow truncate text-sm">{item.name}</span>
+
+            <span className="grow truncate text-xs">
+              {item.name}{' '}
+              <span className="text-(--vscode-editor-foreground) opacity-50">
+                (
+                {item.fileChange && item.fileChange.additions > 0 && (
+                  <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
+                    +{item.fileChange.additions}
+                  </span>
+                )}
+                {item.fileChange && item.fileChange.additions && item.fileChange && item.fileChange.deletions
+                  ? ' '
+                  : ''}
+                {item.fileChange && item.fileChange.deletions > 0 && (
+                  <span className="text-(--vscode-gitDecoration-deletedResourceForeground)">
+                    -{item.fileChange.deletions}
+                  </span>
+                )}
+                )
+              </span>
+            </span>
+
             <TreeActions isSelected={isSelected && !item.disabled}>{item.actions}</TreeActions>
           </>
         )}
@@ -467,15 +491,12 @@ const AccordionTrigger = forwardRef<
   <AccordionPrimitive.Header>
     <AccordionPrimitive.Trigger
       ref={ref}
-      className={cn(
-        'flex w-full flex-1 items-center py-2 transition-all first:[&[data-state=open]>svg]:first-of-type:rotate-90',
-        className,
-      )}
+      className={cn('group/trigger flex h-5 max-h-5 min-h-5 w-full cursor-pointer items-center', className)}
       {...props}
     >
       <FontAwesomeIcon
         icon={faChevronRight}
-        className="text-accent-foreground/50 mr-1 h-4 w-4 shrink-0 transition-transform duration-200"
+        className="mr-2 h-3 w-3 shrink-0 text-(--vscode-editor-foreground)/50 transition-transform duration-300 group-data-[state=open]/trigger:rotate-90"
       />
       {children}
     </AccordionPrimitive.Trigger>
@@ -490,12 +511,12 @@ const AccordionContent = forwardRef<
   <AccordionPrimitive.Content
     ref={ref}
     className={cn(
-      'data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm transition-all',
+      'data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-xs transition-all',
       className,
     )}
     {...props}
   >
-    <div className="pt-0 pb-1">{children}</div>
+    <div className="pt-0">{children}</div>
   </AccordionPrimitive.Content>
 ))
 AccordionContent.displayName = AccordionPrimitive.Content.displayName
@@ -519,7 +540,7 @@ const TreeIcon = ({
   } else if (item.icon) {
     Icon = item.icon
   }
-  return Icon ? <Icon className="mr-2 h-4 w-4 shrink-0" /> : <></>
+  return Icon ? <Icon className="mr-2 h-3 w-3 shrink-0" /> : <></>
 }
 
 const TreeActions = ({ children, isSelected }: { children: ReactNode; isSelected: boolean }) => {

@@ -32,6 +32,8 @@ export interface GitFileChange {
     path: string;
     status: 'A' | 'M' | 'D' | 'R' | 'C' | 'T';
     oldPath?: string; // only for renames (R) and copies (C)
+    additions: number;
+    deletions: number;
 }
 
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
@@ -436,25 +438,33 @@ export class GitService {
         const gitExecutable = await this.findGitExecutable();
 
         try {
-            // diff-tree doesn't work for root commits (no parent), so handle that case
-            const output = await this.spawnGit(
-                [
-                    gitExecutable.path,
-                    'diff-tree',
-                    '--no-commit-id',
-                    '--name-status',
-                    '-r',
-                    '-M', // detect renames
-                    '--root', // handle root commits (shows as diff against empty tree)
-                    commitHash
-                ],
+            // Get status (A/M/D/R/C/T) and paths
+            const statusOutput = await this.spawnGit(
+                [gitExecutable.path, 'diff-tree', '--no-commit-id', '--name-status', '-r', '-M', '--root', commitHash],
                 workspacePath
             );
 
-            const files: GitFileChange[] = [];
-            const lines = output.split(EOL_REGEX).filter((l) => l.trim());
+            // Get line stats (additions/deletions)
+            const numstatOutput = await this.spawnGit(
+                [gitExecutable.path, 'diff-tree', '--no-commit-id', '--numstat', '-r', '-M', '--root', commitHash],
+                workspacePath
+            );
 
-            for (const line of lines) {
+            // Parse numstat into a map: path → { additions, deletions }
+            const statsMap = new Map<string, { additions: number; deletions: number }>();
+            for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+                const parts = line.split('\t');
+                if (parts.length < 3) continue;
+                const additions = parts[0] === '-' ? 0 : parseInt(parts[0]!, 10);
+                const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]!, 10);
+                // For renames: numstat shows "oldPath => newPath" or just the new path
+                const path = parts[parts.length - 1]!.trim();
+                statsMap.set(path, { additions, deletions });
+            }
+
+            // Parse status and merge with stats
+            const files: GitFileChange[] = [];
+            for (const line of statusOutput.split(EOL_REGEX).filter((l) => l.trim())) {
                 const parts = line.split('\t');
                 if (parts.length < 2) continue;
 
@@ -462,17 +472,14 @@ export class GitService {
                 const status = statusRaw[0] as GitFileChange['status'];
 
                 if (status === 'R' || status === 'C') {
-                    // Rename/copy: status\toldPath\tnewPath
-                    files.push({
-                        path: parts[2]?.trim() || '',
-                        status,
-                        oldPath: parts[1]?.trim() || ''
-                    });
+                    const oldPath = parts[1]?.trim() || '';
+                    const newPath = parts[2]?.trim() || '';
+                    const stats = statsMap.get(newPath) ?? { additions: 0, deletions: 0 };
+                    files.push({ path: newPath, status, oldPath, ...stats });
                 } else {
-                    files.push({
-                        path: parts[1]?.trim() || '',
-                        status
-                    });
+                    const path = parts[1]?.trim() || '';
+                    const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
+                    files.push({ path, status, ...stats });
                 }
             }
 

@@ -268,141 +268,62 @@ export const CommitItem: FC<CommitItemProps> = ({
           ref={containerRef}
           className={cn(
             // Layout
-            'relative overflow-auto',
-            // Spacing
-            'py-3 pr-2',
+            'relative overflow-hidden',
             // Colors
             'bg-(--vscode-editor-foreground)/3',
             // Interactive
             'transition-opacity duration-500',
           )}
           data-commit-row={row}
-          style={{ height: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
+          style={{ height: `${panelHeight}px`, maxHeight: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
         >
-          <div
-            className={cn(
-              // Layout
-              'relative flex flex-col',
-              // Spacing
-              'gap-1',
-              // Typography
-              'text-xs font-medium',
-            )}
-          >
-            {/*<div className="flex gap-2">
-              <span className="opacity-50">Date:</span>
-              <span
-                className={cn(
-                  // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75',
-                )}
-                onClick={() => copyText(new Date(commit.date).getTime().toString(), 'Milliseconds')}
-              >
-                {new Date(commit.date).getTime()}ms
-              </span>
+          <div className="relative size-full max-h-full min-h-full max-w-full overflow-x-hidden overflow-y-auto">
+            <div className="relative flex h-fit w-full flex-col gap-1 py-3 pr-2">
+              <div className="relative flex h-fit w-full items-center gap-3">
+                <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
 
+                <div className="relative flex h-fit w-full flex-col">
+                  <p className="text-xs font-medium">
+                    <span className="opacity-50">Hash: </span>
+                    <code
+                      className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
+                      onClick={() => copyText(commit.hash, 'Hash')}
+                    >
+                      {commit.hash}
+                    </code>
+                  </p>
 
-              <span>
-                {new Date(commit.date).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false,
-                })}
-              </span>
+                  <p className="text-xs font-medium">
+                    <span className="opacity-50">Author: </span>
+                    <span
+                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                      onClick={() => copyText(commit.author, 'Author')}
+                    >
+                      {commit.author}
+                    </span>{' '}
+                    <span
+                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                      onClick={() => copyText(commit.email, 'Email')}
+                    >
+                      ({commit.email})
+                    </span>
+                  </p>
 
-              <span>
-                {new Date(commit.date).toLocaleDateString('en-CA', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            </div>*/}
-
-            <div className="flex gap-2">
-              <span className="opacity-50">Hash:</span>
-              <code
-                className={cn(
-                  // Spacing
-                  'px-1',
-                  // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75',
-                )}
-                onClick={() => copyText(commit.hash, 'Hash')}
-              >
-                {commit.hash}
-              </code>
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              <span className="opacity-50">Parents:</span>
-
-              {commit.parents.map(parent => (
-                <code
-                  className={cn(
-                    // Spacing
-                    'w-fit px-1',
-                    // Interactive
-                    'cursor-pointer transition-opacity hover:opacity-75',
-                  )}
-                  onClick={() => copyText(parent, 'Parent Hash')}
-                >
-                  {parent}
-                </code>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <span className="opacity-50">Author:</span>
-              <span
-                className={cn(
-                  // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75',
-                )}
-                onClick={() => copyText(commit.author, 'Author')}
-              >
-                {commit.author}
-              </span>
-              <span
-                className={cn(
-                  // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75',
-                )}
-                onClick={() => copyText(commit.email, 'Email')}
-              >
-                ({commit.email})
-              </span>
-            </div>
-
-            {commit.refs && (
-              <div className="flex gap-2">
-                <span className="opacity-50">Refs:</span>
-                <span
-                  className="cursor-pointer transition-opacity hover:opacity-75"
-                  onClick={() => copyText(commit.refs!, 'Refs')}
-                >
-                  {commit.refs}
-                </span>
+                  <p className="text-xs font-medium">
+                    <span className="opacity-50">Message: </span>
+                    <span
+                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                      onClick={() => copyText(commit.message, 'Message')}
+                    >
+                      {commit.message}
+                    </span>
+                  </p>
+                </div>
               </div>
-            )}
 
-            <div className="flex gap-2">
-              <span className="opacity-50">Message:</span>
-              <span
-                className={cn(
-                  // Typography
-                  'whitespace-pre-wrap',
-                  // Interactive
-                  'cursor-pointer transition-opacity hover:opacity-75',
-                )}
-                onClick={() => copyText(commit.message, 'Message')}
-              >
-                {commit.message}
-              </span>
+              {fileTree.data && <TreeView data={fileTree.data} expandAll />}
             </div>
           </div>
-
-          {fileTree.data && <TreeView data={fileTree.data} />}
 
           <div
             className={cn(
