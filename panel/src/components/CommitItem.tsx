@@ -11,6 +11,7 @@ import { cn } from '../utils/cn'
 import { CommitLayout } from '../utils/GraphLayoutGenerator'
 import { groupBranches } from '../utils/groupBranches'
 import BranchPill from './BranchPill'
+import StashTagPill from './StashTagPill'
 import { TreeView } from './Tree'
 
 interface CommitItemProps {
@@ -161,43 +162,9 @@ export const CommitItem: FC<CommitItemProps> = ({
                 <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
               ))}
 
-            {/* {commit.isStash && (
-              <div
-                className={cn(
-                  // Layout & sizing
-                  'flex min-w-fit items-center',
-                  // Spacing
-                  'gap-2 px-2 py-0.5',
-                  // Typography
-                  'text-xs font-medium',
-                  // Colors
-                  'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
-                )}
-              >
-                <FontAwesomeIcon key="stash" icon={faInbox} className="size-3 text-purple-500" />
-                <span>{commit.refs}</span>
-              </div>
-            )}
+            {commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
 
-            {commit.tags.length > 0 &&
-              commit.tags.map(tag => (
-                <div
-                  key={tag}
-                  className={cn(
-                    // Layout & sizing
-                    'flex min-w-fit items-center',
-                    // Spacing
-                    'gap-2 px-2 py-0.5',
-                    // Typography
-                    'text-xs font-medium',
-                    // Colors
-                    'bg-(--vscode-editor-foreground)/20 text-(--vscode-editor-foreground)',
-                  )}
-                >
-                  <FontAwesomeIcon key={tag} icon={faTag} className="size-3 text-amber-500" />
-                  <span>{tag}</span>
-                </div>
-              ))} */}
+            {commit.tags.length > 0 && commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
 
             <h3
               className={cn(
