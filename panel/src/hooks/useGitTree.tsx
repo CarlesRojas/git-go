@@ -17,6 +17,8 @@ const BRANCH_COLORS = [
 const STASH_COLOR = '#737373' // neutral-500
 
 const MAX_TREE_COLUMNS = 16
+
+const LEFT_PADDING = 8
 const ROW_HEIGHT = 24
 export const COL_WIDTH = 16 // If this changes, change the mask calc below too susbtract this size
 const DOT_RADIUS = 5
@@ -157,17 +159,17 @@ export function useGitTree(
   }, [layout])
 
   const isOverflowing = treeWidth > MAX_TREE_COLUMNS * COL_WIDTH
-  const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH)
+  const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH) + LEFT_PADDING
 
   const svgHeight = commits.length * ROW_HEIGHT + (expandedRow?.extraHeight ?? 0)
 
   const treeComponent = (
     <div
       className={cn(
-        'pointer-events-none absolute top-0 left-0 z-10 h-fit py-3',
+        'pointer-events-none absolute top-0 z-10 h-fit py-3',
         isOverflowing && 'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
       )}
-      style={{ width: clampedTreeWidth }}
+      style={{ width: clampedTreeWidth, left: LEFT_PADDING }}
     >
       <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
         <defs>

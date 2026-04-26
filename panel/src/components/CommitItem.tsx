@@ -255,7 +255,7 @@ export const CommitItem: FC<CommitItemProps> = ({
           <span
             className={cn(
               // Layout & sizing
-              'w-24 max-w-24 min-w-24',
+              'w-20 max-w-20 min-w-20',
               // Typography
               'line-clamp-1 truncate text-xs leading-tight font-medium',
               // Appearance

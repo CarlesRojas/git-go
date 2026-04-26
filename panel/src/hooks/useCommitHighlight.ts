@@ -63,7 +63,7 @@ export function useCommitHighlight() {
           })
 
           dimTimeoutRef.current = null
-        }, 1_500)
+        }, 1_000)
       }
     },
     [cleanup],
