@@ -1,12 +1,12 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import * as React from 'react'
+import { TextareaHTMLAttributes } from 'react'
 import { cn } from '../utils/cn'
 
 const textareaVariants = cva([
   // Layout & Structure
-  'flex min-h-[60px] w-full resize-none',
+  'flex min-h-15 w-full resize-none',
   // Spacing
-  'px-3 py-2',
+  'px-3 py-1.5',
   // Typography
   'text-sm text-(--vscode-input-foreground)',
   // Colors & Background
@@ -16,17 +16,16 @@ const textareaVariants = cva([
   // Interactions
   'transition-colors',
   // Placeholder
-  'placeholder:text-(--vscode-input-placeholderForeground)/70',
+  'placeholder:text-(--vscode-input-placeholderForeground)/50',
   // Disabled States
   'disabled:cursor-not-allowed disabled:opacity-50',
 ])
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement>, VariantProps<typeof textareaVariants> {}
+  extends TextareaHTMLAttributes<HTMLTextAreaElement>, VariantProps<typeof textareaVariants> {}
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ...props }, ref) => {
-  return <textarea className={cn(textareaVariants({ className }))} ref={ref} {...props} />
-})
-Textarea.displayName = 'Textarea'
+const Textarea = ({ className, ...props }: TextareaProps) => {
+  return <textarea className={cn(textareaVariants({ className }))} {...props} />
+}
 
 export { Textarea }

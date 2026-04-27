@@ -1,5 +1,6 @@
 import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { FC } from 'react'
 import { cn } from '../utils/cn'
 
 interface StashTagPillProps {
@@ -12,7 +13,7 @@ function formatStash(ref: string): string {
   return match ? `Stash ${match[1]}` : ref
 }
 
-const StashTagPill: React.FC<StashTagPillProps> = ({ type, label }) => {
+const StashTagPill: FC<StashTagPillProps> = ({ type, label }) => {
   const icon = type === 'stash' ? faInbox : faTag
   const iconColor = type === 'stash' ? 'text-(--vscode-editor-foreground)/70' : 'text-amber-500'
 

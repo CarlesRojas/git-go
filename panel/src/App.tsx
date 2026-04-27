@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React, { useState } from 'react'
+import { FC, useState } from 'react'
 import type { GitBranch } from '../../src/gitService'
 import { Graph } from './Graph'
 import { BranchSelector } from './components/BranchSelector'
@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
   },
 })
 
-export const App: React.FC = () => {
+export const App: FC = () => {
   const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
 
   return (

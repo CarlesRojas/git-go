@@ -1,4 +1,4 @@
-import React, { ImgHTMLAttributes, useState } from 'react'
+import { FC, ImgHTMLAttributes, useState } from 'react'
 
 // Pure JavaScript MD5 implementation for Gravatar
 function md5(input: string): string {
@@ -183,7 +183,7 @@ interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 
   size?: number // Size in pixels, e.g., 24, 32, 48
 }
 
-export const Avatar: React.FC<AvatarProps> = ({ email, author, size = 24, className = '', style, ...imgProps }) => {
+export const Avatar: FC<AvatarProps> = ({ email, author, size = 24, className = '', style, ...imgProps }) => {
   const [imageError, setImageError] = useState(false)
 
   const authorInitials = author

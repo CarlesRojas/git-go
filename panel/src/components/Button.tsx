@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import * as React from 'react'
+import { ButtonHTMLAttributes } from 'react'
 import { cn } from '../utils/cn'
 
 const buttonVariants = cva(
@@ -17,12 +17,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-(--vscode-button-background) text-(--vscode-button-foreground) hover:bg-(--vscode-button-hoverBackground)',
+          'border border-(--vscode-button-foreground)/15 bg-(--vscode-button-background) text-(--vscode-button-foreground) hover:bg-(--vscode-button-hoverBackground)',
         secondary:
-          'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground)/80 hover:bg-(--vscode-editor-foreground)/10',
-        outline:
           'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground) hover:bg-(--vscode-editor-foreground)/10',
-        destructive: 'bg-red-600 text-white hover:bg-red-700',
+        destructive:
+          'border border-(--vscode-errorForeground)/15 bg-(--vscode-inputValidation-errorBackground) text-(--vscode-errorForeground) hover:bg-(--vscode-inputValidation-errorBackground)/80',
         ghost: 'text-(--vscode-button-foreground)/80 hover:text-(--vscode-button-foreground)',
       },
       size: {
@@ -38,14 +37,14 @@ const buttonVariants = cva(
   },
 )
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, type = 'button', ...props }, ref) => {
-    return <button className={cn(buttonVariants({ variant, size, className }))} ref={ref} type={type} {...props} />
-  },
+const Button = ({
+  className,
+  variant,
+  size,
+  type = 'button',
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>) => (
+  <button className={cn(buttonVariants({ variant, size, className }))} type={type} {...props} />
 )
-Button.displayName = 'Button'
 
 export { Button }

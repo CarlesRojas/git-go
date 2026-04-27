@@ -1,6 +1,6 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { Fragment, useCallback, useState } from 'react'
+import { FC, Fragment, useCallback, useMemo, useState } from 'react'
 import { useEventListener, useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
@@ -12,7 +12,7 @@ interface GraphProps {
   selectedBranches: GitBranch[]
 }
 
-export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
+export const Graph: FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
   const [expandedRow, setExpandedRow] = useState<ExpandedRow | undefined>()
 
@@ -28,7 +28,7 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
 
   const { data: workingChangesData } = useWorkingChanges(true)
 
-  const commits = React.useMemo(() => {
+  const commits = useMemo(() => {
     const gitCommits = data?.pages.flatMap(page => page.commits) ?? []
 
     if (workingChangesData?.commit) return [workingChangesData.commit, ...gitCommits]
@@ -69,7 +69,8 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
         if (!expandedRow) return
         event.preventDefault()
 
-        navigateCommit(event.key === 'ArrowUp' ? 'up' : 'down')
+        if (event.key === 'ArrowUp') navigateCommit('up')
+        else if (event.key === 'ArrowDown') navigateCommit('down')
       },
       [expandedRow, navigateCommit],
     ),

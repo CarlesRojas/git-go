@@ -42,7 +42,7 @@ export function useResizable({ initialHeight = 164, minHeight = 164 }: UseResiza
   useEventListener('mouseup', handleMouseUp)
 
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent) => {
       e.preventDefault()
 
       let maxHeight = window.innerHeight * 0.9

@@ -1,7 +1,7 @@
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { ComponentProps } from 'react'
+import { ComponentProps, HTMLAttributes } from 'react'
 import { cn } from '../utils/cn'
 
 const Dialog = DialogPrimitive.Root
@@ -19,7 +19,7 @@ const DialogOverlay = ({ className, ref, ...props }: ComponentProps<typeof Dialo
         // Z-Index
         'z-50',
         // Colors & Background
-        'bg-(--vscode-editor-background)/80 backdrop-blur-sm',
+        'bg-(--vscode-editor-background)/80 backdrop-blur-md',
         // Animations & Transitions
         'duration-200',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0',
@@ -45,15 +45,14 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           // Layout & Structure
           'grid w-full gap-4',
           // Sizing
-          'max-w-lg',
+          'max-w-md',
           // Colors & Background
-          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
+          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80',
           // Spacing
-          'p-6',
+          'p-3',
           // Typography
           'text-(--vscode-editor-foreground)',
-          // Shadow & Effects
-          'shadow-lg',
+
           // Animations & Transitions
           'duration-200',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
@@ -64,7 +63,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-(--vscode-editor-background) transition-opacity hover:opacity-100 focus:ring-2 focus:ring-(--vscode-editor-foreground)/50 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-(--vscode-editor-foreground)/10 data-[state=open]:text-(--vscode-editor-foreground)/70">
+      <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-(--vscode-editor-foreground)/10 data-[state=open]:text-(--vscode-editor-foreground)/70">
         <FontAwesomeIcon icon={faXmark} className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -72,16 +71,14 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
   </DialogPortal>
 )
 
-const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogHeader = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
       [
         // Layout & Structure
-        'flex flex-col',
-        // Spacing
-        'space-y-1.5',
+        'flex h-6 flex-col justify-center',
         // Typography
-        'text-center sm:text-left',
+        'text-left',
       ],
       className,
     )}
@@ -89,14 +86,14 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   />
 )
 
-const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogFooter = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
       [
         // Layout & Structure
-        'flex flex-col-reverse sm:flex-row sm:justify-end',
+        'flex flex-col-reverse md:flex-row md:justify-end',
         // Spacing
-        'sm:space-x-2',
+        'gap-2',
       ],
       className,
     )}
@@ -110,7 +107,7 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
     className={cn(
       [
         // Typography
-        'text-lg leading-none font-semibold tracking-tight text-(--vscode-editor-foreground)',
+        'text-sm leading-none font-semibold text-(--vscode-editor-foreground)',
       ],
       className,
     )}
@@ -121,13 +118,7 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
 const DialogDescription = ({ className, ref, ...props }: ComponentProps<typeof DialogPrimitive.Description>) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn(
-      [
-        // Typography
-        'text-sm text-(--vscode-editor-foreground)/70',
-      ],
-      className,
-    )}
+    className={cn(['text-xs text-(--vscode-editor-foreground)/70'], className)}
     {...props}
   />
 )

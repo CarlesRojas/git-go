@@ -1,3 +1,4 @@
+import { FC } from 'react'
 import { getColor } from '../hooks/useGitTree'
 import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
@@ -10,7 +11,7 @@ interface Props {
   layout: CommitLayout
 }
 
-const BranchPill: React.FC<Props> = ({ branch, baseName, layout }) => {
+const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const { local, remotes } = branch
 
   return (

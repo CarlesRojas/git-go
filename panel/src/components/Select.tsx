@@ -18,11 +18,10 @@ const SelectTrigger = ({ className, children, ref, ...props }: ComponentProps<ty
         // Spacing
         'px-3 py-2',
         // Typography
-        'text-xs placeholder:text-(--vscode-editor-foreground)/50',
+        'text-xs placeholder:text-(--vscode-input-placeholderForeground)/50',
         // Colors & Background
         'border border-(--vscode-editor-foreground)/15 bg-(--vscode-input-background)',
         // Interactive States
-        'focus:ring-2 focus:ring-(--vscode-editor-foreground)/50 focus:outline-hidden',
         'disabled:cursor-not-allowed disabled:opacity-50',
         // Icon Styles
         '[&>span]:line-clamp-1',
@@ -75,7 +74,7 @@ const SelectContent = ({
       className={cn(
         [
           // Position & Layout
-          'relative z-50 max-h-96 min-w-[8rem] overflow-hidden',
+          'relative z-50 max-h-96 min-w-32 overflow-hidden',
           // Colors & Background
           'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
           // Typography
@@ -96,8 +95,7 @@ const SelectContent = ({
       <SelectPrimitive.Viewport
         className={cn(
           'p-1',
-          position === 'popper' &&
-            'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
+          position === 'popper' && 'h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)',
         )}
       >
         {children}
@@ -127,7 +125,7 @@ const SelectItem = ({ className, children, ref, ...props }: ComponentProps<typeo
         // Typography
         'text-xs outline-hidden',
         // Interactive States
-        'focus:bg-(--vscode-editor-foreground)/15 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
       ],
       className,
     )}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { ReactNode, useMemo } from 'react'
 import type { GitCommit } from '../../../src/gitService'
 import { CommitLayout, computeGraphLayout } from '../utils/GraphLayoutGenerator'
 import { cn } from '../utils/cn'
@@ -51,7 +51,7 @@ export function useGitTree(
   commits: GitCommit[],
   expandedRow?: ExpandedRow,
 ): {
-  treeComponent: React.ReactNode
+  treeComponent: ReactNode
   treeWidth: number
   rows: CommitLayout[]
 } {

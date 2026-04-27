@@ -635,7 +635,7 @@ export class GitService {
         log: (message: string) => void,
         commitHash: string,
         recordOrigin: boolean = false,
-        noCommit: boolean = false
+        commitChanges: boolean = true
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -650,7 +650,7 @@ export class GitService {
                 args.push('-x');
             }
 
-            if (noCommit) {
+            if (!commitChanges) {
                 args.push('--no-commit');
             }
 
@@ -660,7 +660,7 @@ export class GitService {
 
             const options = [];
             if (recordOrigin) options.push('with origin record');
-            if (noCommit) options.push('without commit');
+            if (!commitChanges) options.push('without commit');
             const optionsText = options.length > 0 ? ` (${options.join(', ')})` : '';
 
             log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
@@ -673,7 +673,7 @@ export class GitService {
     public async revertCommit(
         log: (message: string) => void,
         commitHash: string,
-        noCommit: boolean = false
+        commitChanges: boolean = true
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -684,7 +684,7 @@ export class GitService {
         try {
             const args = [gitExecutable.path, 'revert'];
 
-            if (noCommit) {
+            if (!commitChanges) {
                 args.push('--no-commit');
             }
 
@@ -692,7 +692,7 @@ export class GitService {
 
             await this.spawnGit(args, workspacePath);
 
-            const action = noCommit ? 'staged revert changes for' : 'reverted';
+            const action = commitChanges ? 'reverted' : 'staged revert changes for';
             log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
         } catch (error) {
             log(`Error reverting commit: ${error}`);

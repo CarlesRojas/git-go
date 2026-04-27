@@ -1,7 +1,7 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cva, type VariantProps } from 'class-variance-authority'
-import * as React from 'react'
+import { InputHTMLAttributes } from 'react'
 import { cn } from '../utils/cn'
 import { Button } from './Button'
 
@@ -9,7 +9,7 @@ const inputVariants = cva([
   // Layout & Structure
   'flex h-7 w-full',
   // Spacing
-  'px-2.5',
+  'px-2',
   // Typography
   'text-xs text-(--vscode-input-foreground)',
   // Colors & Background
@@ -19,22 +19,22 @@ const inputVariants = cva([
   // Interactions
   'transition-colors',
   // Placeholder
-  'placeholder:text-(--vscode-input-placeholderForeground)/70',
+  'placeholder:text-(--vscode-input-placeholderForeground)/50',
   // Disabled States
   'disabled:cursor-not-allowed disabled:opacity-50',
 ])
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {
   onClear?: () => void
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type = 'text', onClear, ...props }, ref) => {
+const Input = ({ className, type = 'text', onClear, ...props }: InputProps) => {
   const hasValue = props.value !== undefined ? String(props.value).length > 0 : false
 
   if (onClear) {
     return (
       <div className="relative w-full">
-        <input type={type} className={cn(inputVariants({ className }), 'pr-9')} ref={ref} {...props} />
+        <input type={type} className={cn(inputVariants({ className }), 'pr-9')} {...props} />
 
         {hasValue && (
           <Button
@@ -51,8 +51,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type 
     )
   }
 
-  return <input type={type} className={cn(inputVariants({ className }))} ref={ref} {...props} />
-})
-Input.displayName = 'Input'
+  return <input type={type} className={cn(inputVariants({ className }))} {...props} />
+}
 
 export { Input }

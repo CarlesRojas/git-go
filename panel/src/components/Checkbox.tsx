@@ -10,11 +10,10 @@ const Checkbox = ({ className, ref, ...props }: ComponentProps<typeof CheckboxPr
     className={cn(
       [
         // Layout & Structure
-        'peer flex size-4 items-center justify-center',
+        'peer flex size-4 cursor-pointer items-center justify-center',
         // Colors & Background
         'border border-(--vscode-editor-foreground)/15 bg-(--vscode-input-background)',
         // Interactive States
-        'focus-visible:ring-2 focus-visible:ring-(--vscode-editor-foreground)/50 focus-visible:outline-hidden',
         'disabled:cursor-not-allowed disabled:opacity-50',
         // Data states
         'data-[state=checked]:bg-(--vscode-button-background) data-[state=checked]:text-(--vscode-button-foreground)',

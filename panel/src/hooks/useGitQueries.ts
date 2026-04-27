@@ -60,7 +60,7 @@ export const useGitBranches = () => {
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to fetch branches'))
-        }, 10000)
+        }, 10_000)
       })
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -194,7 +194,7 @@ export const useGitCommitFiles = ({ commitHash, isRootCommit = false, enabled = 
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to fetch commit files'))
-        }, 10000)
+        }, 10_000)
       })
     },
     enabled: !!commitHash && enabled,
@@ -243,7 +243,7 @@ export const useWorkingChanges = (includeFiles: boolean = false) => {
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to fetch working changes'))
-        }, 10000)
+        }, 10_000)
       })
     },
     staleTime: 30 * 1000, // 30 seconds - working changes change frequently
@@ -294,7 +294,7 @@ export const useAddTag = () => {
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to add tag'))
-        }, 10000)
+        }, 10_000)
       })
     },
     onSuccess: () => {
@@ -344,7 +344,7 @@ export const useCreateBranchFromCommit = () => {
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to create branch'))
-        }, 10000)
+        }, 10_000)
       })
     },
     onSuccess: () => {
@@ -362,11 +362,11 @@ export const useCherryPickCommit = () => {
     mutationFn: async ({
       commitHash,
       recordOrigin = false,
-      noCommit = false,
+      commitChanges = true,
     }: {
       commitHash: string
       recordOrigin?: boolean
-      noCommit?: boolean
+      commitChanges?: boolean
     }) => {
       return new Promise((resolve, reject) => {
         const vscode = getVSCodeApi()
@@ -388,13 +388,13 @@ export const useCherryPickCommit = () => {
           type: 'cherryPickCommit',
           commitHash,
           recordOrigin,
-          noCommit,
+          commitChanges,
         })
 
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to cherry-pick commit'))
-        }, 10000)
+        }, 10_000)
       })
     },
     onSuccess: () => {
@@ -409,7 +409,7 @@ export const useRevertCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ commitHash, noCommit }: { commitHash: string; noCommit?: boolean }) => {
+    mutationFn: async ({ commitHash, commitChanges }: { commitHash: string; commitChanges?: boolean }) => {
       return new Promise((resolve, reject) => {
         const vscode = getVSCodeApi()
 
@@ -429,13 +429,13 @@ export const useRevertCommit = () => {
         vscode.postMessage({
           type: 'revertCommit',
           commitHash,
-          noCommit,
+          commitChanges,
         })
 
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to revert commit'))
-        }, 10000)
+        }, 10_000)
       })
     },
     onSuccess: () => {

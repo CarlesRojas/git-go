@@ -1,7 +1,8 @@
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, FC, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { Button } from '../components/Button'
 import { cn } from '../utils/cn'
 
 interface Toast {
@@ -30,7 +31,7 @@ interface ToastProviderProps {
   children: ReactNode
 }
 
-export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
   const [toast, setToast] = useState<Toast | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -85,14 +86,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
           <span className="line-clamp-2 text-xs leading-tight text-ellipsis">{toast.text}</span>
 
-          <button
-            onClick={closeToast}
-            className="ml-4 cursor-pointer opacity-50 transition-opacity hover:opacity-100"
-            type="button"
-            aria-label="Close toast"
-          >
+          <Button onClick={closeToast} className="ml-4" variant="ghost" size="iconSmall" aria-label="Close toast">
             <FontAwesomeIcon icon={faTimes} className="size-3" />
-          </button>
+          </Button>
         </div>
       )}
     </ToastContext.Provider>

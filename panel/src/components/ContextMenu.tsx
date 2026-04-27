@@ -1,7 +1,8 @@
 import { faCheck, faChevronRight, faCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
-import { ComponentProps } from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { ComponentProps, HTMLAttributes } from 'react'
 import { cn } from '../utils/cn'
 
 const ContextMenu = ContextMenuPrimitive.Root
@@ -23,7 +24,7 @@ const ContextMenuSubTrigger = ({ className, inset, children, ref, ...props }: Co
         // Layout & Structure
         'flex cursor-default items-center select-none',
         // Spacing
-        'px-2 py-1.5',
+        'h-7 px-2',
         // Typography
         'text-xs',
         // Interactive States
@@ -55,15 +56,13 @@ const ContextMenuSubContent = ({
         // Layout & Structure
         'overflow-hidden',
         // Sizing
-        'min-w-32',
+        'min-w-48',
         // Colors & Background
         'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
         // Typography
         'text-(--vscode-editor-foreground)',
         // Spacing
         'p-1',
-        // Shadow & Effects
-        'shadow-md',
         // Animations & Transitions
         'duration-100',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
@@ -87,15 +86,11 @@ const ContextMenuContent = ({ className, ref, ...props }: ComponentProps<typeof 
           // Layout & Structure
           'overflow-hidden',
           // Sizing
-          'min-w-32',
+          'min-w-48',
           // Colors & Background
-          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
+          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80 backdrop-blur-md',
           // Typography
           'text-(--vscode-editor-foreground)',
-          // Spacing
-          'p-1',
-          // Shadow & Effects
-          'shadow-md',
           // Animations & Transitions
           'duration-100',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
@@ -109,29 +104,42 @@ const ContextMenuContent = ({ className, ref, ...props }: ComponentProps<typeof 
   </ContextMenuPrimitive.Portal>
 )
 
-interface ContextMenuItemProps extends ComponentProps<typeof ContextMenuPrimitive.Item> {
+const contextMenuItemVariants = cva(
+  [
+    // Layout & Structure
+    'relative flex cursor-pointer items-center select-none',
+    // Spacing
+    'h-7 gap-2 px-2',
+    // Typography
+    'text-xs font-semibold',
+    // Interactive States
+    'outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50',
+    // Icon Styles
+    '[&_svg]:pointer-events-none [&_svg]:size-3 [&_svg]:shrink-0',
+  ],
+  {
+    variants: {
+      variant: {
+        default: 'focus:bg-(--vscode-editor-foreground)/15',
+        destructive:
+          'text-(--vscode-errorForeground) focus:bg-(--vscode-errorForeground)/10 [&_svg]:text-(--vscode-errorForeground)',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
+  },
+)
+
+interface ContextMenuItemProps
+  extends ComponentProps<typeof ContextMenuPrimitive.Item>, VariantProps<typeof contextMenuItemVariants> {
   inset?: boolean
 }
 
-const ContextMenuItem = ({ className, inset, ref, ...props }: ContextMenuItemProps) => (
+const ContextMenuItem = ({ className, inset, variant, ref, ...props }: ContextMenuItemProps) => (
   <ContextMenuPrimitive.Item
     ref={ref}
-    className={cn(
-      [
-        // Layout & Structure
-        'relative flex cursor-default items-center select-none',
-        // Spacing
-        'px-2 py-1.5',
-        // Typography
-        'text-xs',
-        // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
-        // Icon Styles
-        '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
-      ],
-      inset && 'pl-8',
-      className,
-    )}
+    className={cn(contextMenuItemVariants({ variant }), inset && 'pl-8', className)}
     {...props}
   />
 )
@@ -150,7 +158,7 @@ const ContextMenuCheckboxItem = ({
         // Layout & Structure
         'relative flex cursor-default items-center select-none',
         // Spacing
-        'py-1.5 pr-2 pl-8',
+        'h-7 pr-2 pl-8',
         // Typography
         'text-xs',
         // Interactive States
@@ -185,7 +193,7 @@ const ContextMenuRadioItem = ({
         // Layout & Structure
         'relative flex cursor-default items-center select-none',
         // Spacing
-        'py-1.5 pr-2 pl-8',
+        'h-7 pr-2 pl-8',
         // Typography
         'text-xs',
         // Interactive States
@@ -216,9 +224,9 @@ const ContextMenuLabel = ({ className, inset, ref, ...props }: ContextMenuLabelP
     className={cn(
       [
         // Spacing
-        'px-2 py-1.5',
+        'flex h-7 items-center px-2',
         // Typography
-        'text-xs font-semibold text-(--vscode-editor-foreground)/70',
+        'text-xs text-(--vscode-editor-foreground)/60',
       ],
       inset && 'pl-8',
       className,
@@ -233,7 +241,7 @@ const ContextMenuSeparator = ({ className, ref, ...props }: ComponentProps<typeo
     className={cn(
       [
         // Layout & Structure
-        '-mx-1 my-1 h-px',
+        '-mx-1 h-px',
         // Colors & Background
         'bg-(--vscode-editor-foreground)/15',
       ],
@@ -243,7 +251,7 @@ const ContextMenuSeparator = ({ className, ref, ...props }: ComponentProps<typeo
   />
 )
 
-const ContextMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
+const ContextMenuShortcut = ({ className, ...props }: HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
       className={cn(
