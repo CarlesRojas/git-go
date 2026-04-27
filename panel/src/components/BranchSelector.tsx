@@ -1,11 +1,11 @@
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { GitBranch } from '../../../src/gitService'
 import { useGitBranches } from '../hooks/useGitQueries'
 import { getBranchIcons } from '../utils/branchIcons'
 import { cn } from '../utils/cn'
-import { groupBranches } from '../utils/groupBranches'
+import { groupBranches, GroupedBranch } from '../utils/groupBranches'
 import { Button } from './Button'
 import {
   Combobox,
@@ -47,23 +47,39 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const setDefaultBranches = useCallback(() => {
     const isMain = (name: string) => name === 'main' || name === 'master'
 
-    const currentBranch = branches.filter(b => b.current && !isMain(b.cleanName))
-    const mainBranch = branches.filter(b => isMain(b.cleanName))
+    const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
+    const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
 
-    const names = [...currentBranch.map(b => b.cleanName), ...mainBranch.map(b => b.cleanName)]
+    const localBranches = branches.filter(b => !b.remote && !b.current && !isMain(b.cleanName))
+    const additionalBranches: Record<string, GroupedBranch> = Object.fromEntries(
+      Object.entries(groupBranches(localBranches)).slice(0, Math.max(0, remainingSlots)),
+    )
+
+    const branchesToSelect = [
+      ...priorityBranches,
+      ...Object.values(additionalBranches).flatMap(
+        group => [group.local, ...group.remotes].filter(Boolean) as GitBranch[],
+      ),
+    ]
+
+    const names = branchesToSelect.map(b => b.cleanName)
     setSelectedBranches(names)
     setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
-    onBranchesChange([...currentBranch, ...mainBranch])
+    onBranchesChange(branchesToSelect)
 
     // const names = branches.map(b => b.cleanName)
     // setSelectedBranches(names)
     // setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
     // onBranchesChange([...branches])
-  }, [branches, onBranchesChange])
+  }, [branches, groupedBranches, onBranchesChange])
 
+  const defaultBranchesSet = useRef(false)
   useEffect(() => {
-    if (branches.length > 0 && selectedBranches.length === 0) setDefaultBranches()
-  }, [{ branches, selectedBranches, setDefaultBranches }])
+    if (branches.length > 0 && selectedBranches.length === 0 && !defaultBranchesSet.current) {
+      defaultBranchesSet.current = true
+      setDefaultBranches()
+    }
+  }, [branches, selectedBranches, setDefaultBranches])
 
   const handleValueChange = (selected: string[]) => {
     setSelectedBranches(selected)

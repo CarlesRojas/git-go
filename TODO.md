@@ -1,6 +1,5 @@
 ## TODO
 
-- [ ] Select all local branches by default with the limit
 - [ ] Navigate commits with arrows
 - [ ] Add shadcn modal
 - [ ] Add shadcn right click menu
