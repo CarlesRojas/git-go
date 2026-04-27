@@ -1,4 +1,4 @@
-import { CommitItem } from '@/components/CommitItem'
+import { CommitItem } from '@/component/CommitItem'
 import { useCommitHighlight } from '@/hooks/useCommitHighlight'
 import { useInfiniteGitCommits, useWorkingChanges } from '@/hooks/useGitQueries'
 import { ExpandedRow, useGitTree } from '@/hooks/useGitTree'

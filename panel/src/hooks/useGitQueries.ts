@@ -1,4 +1,4 @@
-import { TreeDataItem } from '@/components/Tree'
+import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/utils/buildFileTree'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'

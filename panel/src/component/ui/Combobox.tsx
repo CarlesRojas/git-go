@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/Input'
+import { Input } from '@/component/ui/Input'
 import { cn } from '@/utils/cn'
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
 import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'

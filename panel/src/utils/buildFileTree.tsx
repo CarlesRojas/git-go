@@ -1,4 +1,4 @@
-import { TreeDataItem } from '@/components/Tree'
+import { TreeDataItem } from '@/component/Tree'
 import { openFile } from '@/hooks/useGitQueries'
 import type { GitFileChange } from '@git/gitService'
 

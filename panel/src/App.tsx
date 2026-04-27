@@ -1,5 +1,5 @@
-import { BranchSelector } from '@/components/BranchSelector'
-import { Graph } from '@/components/Graph'
+import { BranchSelector } from '@/component/BranchSelector'
+import { Graph } from '@/component/Graph'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { cn } from '@/utils/cn'
 import { GitBranch } from '@git/gitService'

@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/component/ui/Button'
 import { cn } from '@/utils/cn'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

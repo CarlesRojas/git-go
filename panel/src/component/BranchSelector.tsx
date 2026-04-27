@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/component/ui/Button'
 import {
   Combobox,
   ComboboxCollection,
@@ -12,7 +12,7 @@ import {
   ComboboxSeparator,
   ComboboxTrigger,
   ComboboxValue,
-} from '@/components/ui/Combobox'
+} from '@/component/ui/Combobox'
 import { useGitBranches } from '@/hooks/useGitQueries'
 import { getBranchIcons } from '@/utils/branchIcons'
 import { cn } from '@/utils/cn'

@@ -4,7 +4,7 @@ import {
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuTrigger,
-} from '@/components/ui/ContextMenu'
+} from '@/component/ui/ContextMenu'
 import { useBranchDialog } from '@/hooks/dialogs/useBranchDialog'
 import { useCherryPickDialog } from '@/hooks/dialogs/useCherryPickDialog'
 import { useRevertDialog } from '@/hooks/dialogs/useRevertDialog'
