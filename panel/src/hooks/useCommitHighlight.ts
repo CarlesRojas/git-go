@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { useEventListener } from 'usehooks-ts'
 
 export function useCommitHighlight() {
   const highlightedRefs = useRef<Element[]>([])
@@ -70,6 +71,9 @@ export function useCommitHighlight() {
     },
     [cleanup],
   )
+
+  useEventListener('scroll', cleanup, undefined, { capture: true })
+  useEventListener('keydown', cleanup)
 
   useEffect(() => {
     return () => cleanup()
