@@ -1,5 +1,5 @@
 import { TreeDataItem } from '@/component/Tree'
-import { openFile } from '@/hooks/useGitQueries'
+import { openFile } from '@/hook/useGitQueries'
 import type { GitFileChange } from '@git/gitService'
 
 const STATUS_LABELS: Record<string, string> = {

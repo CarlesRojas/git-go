@@ -1,52 +1,52 @@
 import { Button } from '@/component/ui/Button'
-import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
+import { Textarea } from '@/component/ui/Textarea'
 import { useToast } from '@/context/ToastContext'
-import { useCreateBranchFromCommit } from '@/hooks/useGitQueries'
-import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { useAddTag } from '@/hook/useGitQueries'
+import { faCircleNotch, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-interface UseBranchDialogProps {
+interface UseTagDialogProps {
   commit: GitCommit
 }
 
-export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
+export const useTagDialog = ({ commit }: UseTagDialogProps) => {
   const { showToast } = useToast()
-  const [showBranchDialog, setShowBranchDialog] = useState(false)
-  const createBranchMutation = useCreateBranchFromCommit()
+  const [showTagDialog, setShowTagDialog] = useState(false)
+  const addTagMutation = useAddTag()
 
-  const branchForm = useForm({
+  const tagForm = useForm({
     defaultValues: {
-      branchName: '',
-      checkout: false,
+      tagName: '',
+      tagMessage: '',
     },
     onSubmit: async ({ value }) => {
       return new Promise<void>((resolve, reject) => {
-        createBranchMutation.mutate(
+        addTagMutation.mutate(
           {
             commitHash: commit.hash,
-            branchName: value.branchName,
-            checkout: value.checkout,
+            tagName: value.tagName,
+            tagMessage: value.tagMessage || undefined,
+            tagType: 'annotated',
           },
           {
             onSuccess: () => {
-              const action = value.checkout ? 'created and checked out' : 'created'
               showToast({
-                text: `Branch '${value.branchName}' ${action} successfully`,
-                icon: faCodeBranch,
+                text: `Annotated tag '${value.tagName}' created successfully`,
+                icon: faTag,
                 type: 'success',
               })
-              setShowBranchDialog(false)
-              branchForm.reset()
+              setShowTagDialog(false)
+              tagForm.reset()
               resolve()
             },
             onError: error => {
-              showToast({ text: `Failed to create branch: ${error.message}`, type: 'error' })
+              showToast({ text: `Failed to create tag: ${error.message}`, type: 'error' })
               reject(error)
             },
           },
@@ -55,38 +55,38 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
     },
   })
 
-  const openDialog = () => setShowBranchDialog(true)
+  const openDialog = () => setShowTagDialog(true)
 
   const DialogComponent = (
-    <Dialog open={showBranchDialog} onOpenChange={setShowBranchDialog}>
+    <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Branch at Commit {commit.hash.substring(0, 7)}</DialogTitle>
+          <DialogTitle>Add Tag to Commit {commit.hash.substring(0, 7)}</DialogTitle>
         </DialogHeader>
 
         <form
           onSubmit={e => {
             e.preventDefault()
             e.stopPropagation()
-            branchForm.handleSubmit()
+            tagForm.handleSubmit()
           }}
           className="flex flex-col gap-4"
         >
-          <branchForm.Field
-            name="branchName"
+          <tagForm.Field
+            name="tagName"
             validators={{
-              onChange: ({ value }) => (!value ? 'Branch name is required' : undefined),
+              onChange: ({ value }) => (!value ? 'Tag name is required' : undefined),
             }}
             children={field => (
               <div className="flex flex-col gap-1">
-                <Label>Branch Name</Label>
+                <Label>Tag Name</Label>
 
                 <Input
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
-                  placeholder="feature/new-feature"
+                  placeholder="v1.0.0"
                 />
 
                 {field.state.meta.errors && (
@@ -96,36 +96,37 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
             )}
           />
 
-          <branchForm.Field
-            name="checkout"
+          <tagForm.Field
+            name="tagMessage"
             children={field => (
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="checkout"
-                  checked={field.state.value}
-                  onCheckedChange={checked => field.handleChange(checked === true)}
-                />
+              <div className="flex flex-col gap-1">
+                <Label>Message</Label>
 
-                <Label htmlFor="checkout" className="cursor-pointer">
-                  Checkout new branch
-                </Label>
+                <Textarea
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={e => field.handleChange(e.target.value)}
+                  placeholder="Release notes or tag description"
+                  rows={3}
+                />
               </div>
             )}
           />
 
           <DialogFooter>
-            <Button variant="secondary" type="button" onClick={() => setShowBranchDialog(false)}>
+            <Button variant="secondary" type="button" onClick={() => setShowTagDialog(false)}>
               Cancel
             </Button>
 
-            <branchForm.Subscribe
+            <tagForm.Subscribe
               selector={state => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
                 <Button type="submit" disabled={!canSubmit || isSubmitting}>
                   {isSubmitting ? (
                     <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
                   ) : (
-                    'Create Branch'
+                    'Create Tag'
                   )}
                 </Button>
               )}
@@ -136,5 +137,8 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
     </Dialog>
   )
 
-  return { openDialog, DialogComponent }
+  return {
+    openDialog,
+    DialogComponent,
+  }
 }

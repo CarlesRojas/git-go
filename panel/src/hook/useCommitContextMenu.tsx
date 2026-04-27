@@ -5,10 +5,10 @@ import {
   ContextMenuLabel,
   ContextMenuTrigger,
 } from '@/component/ui/ContextMenu'
-import { useBranchDialog } from '@/hooks/dialog/useBranchDialog'
-import { useCherryPickDialog } from '@/hooks/dialog/useCherryPickDialog'
-import { useRevertDialog } from '@/hooks/dialog/useRevertDialog'
-import { useTagDialog } from '@/hooks/dialog/useTagDialog'
+import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
+import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
+import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
+import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { faClone, faCodeBranch, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'

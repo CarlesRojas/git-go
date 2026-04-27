@@ -13,7 +13,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from '@/component/ui/Combobox'
-import { useGitBranches } from '@/hooks/useGitQueries'
+import { useGitBranches } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/utils/branchIcons'
 import { cn } from '@/utils/cn'
 import { groupBranches, GroupedBranch } from '@/utils/groupBranches'

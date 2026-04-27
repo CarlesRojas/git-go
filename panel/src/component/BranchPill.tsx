@@ -1,4 +1,4 @@
-import { getColor } from '@/hooks/useGitTree'
+import { getColor } from '@/hook/useGitTree'
 import { getBranchIcons } from '@/utils/branchIcons'
 import { cn } from '@/utils/cn'
 import { CommitLayout } from '@/utils/computeGraphLayout'
