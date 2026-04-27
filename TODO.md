@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] Fix or check what should happen when the selected branches do not include the HEAD commit
+- [ ] Select all local branches by default with the limit
 - [ ] Navigate commits with arrows
 - [ ] Add shadcn modal
 - [ ] Add shadcn right click menu

@@ -374,6 +374,7 @@ export class GitService {
         maxCount: number = 100,
         skip: number = 0
     ): Promise<{ commits: GitCommit[]; hasMore: boolean; total?: number }> {
+        console.log('branches:', branches);
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -413,7 +414,6 @@ export class GitService {
 
             if (branches && branches.length > 0) {
                 gitArgs.push(...branches);
-                gitArgs.push('HEAD');
                 log(`Filtering commits for branches: ${branches.join(', ')}`);
             } else {
                 gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');

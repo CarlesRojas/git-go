@@ -157,7 +157,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
             )}
           >
-            {commit.isUncommitted &&
+            {!commit.isUncommitted &&
               Object.entries(groupedBranches)
                 .filter(
                   ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
@@ -166,9 +166,9 @@ export const CommitItem: FC<CommitItemProps> = ({
                   <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
                 ))}
 
-            {commit.isUncommitted && commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
+            {!commit.isUncommitted && commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
 
-            {commit.isUncommitted &&
+            {!commit.isUncommitted &&
               commit.tags.length > 0 &&
               commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
 
