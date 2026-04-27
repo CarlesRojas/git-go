@@ -1,7 +1,7 @@
-import { Checkbox } from '@/components/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/Dialog'
 import { Input } from '@/components/Input'
 import { Button } from '@/components/ui/Button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Label } from '@/components/ui/Label'
 import { useToast } from '@/contexts/ToastContext'
 import { useCreateBranchFromCommit } from '@/hooks/useGitQueries'

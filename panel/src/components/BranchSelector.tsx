@@ -1,11 +1,4 @@
-import { useGitBranches } from '@/hooks/useGitQueries'
-import { getBranchIcons } from '@/utils/branchIcons'
-import { cn } from '@/utils/cn'
-import { groupBranches, GroupedBranch } from '@/utils/groupBranches'
-import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { GitBranch } from '@git/gitService'
-import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from '@/components/ui/Button'
 import {
   Combobox,
   ComboboxCollection,
@@ -19,8 +12,15 @@ import {
   ComboboxSeparator,
   ComboboxTrigger,
   ComboboxValue,
-} from './Combobox'
-import { Button } from './ui/Button'
+} from '@/components/ui/Combobox'
+import { useGitBranches } from '@/hooks/useGitQueries'
+import { getBranchIcons } from '@/utils/branchIcons'
+import { cn } from '@/utils/cn'
+import { groupBranches, GroupedBranch } from '@/utils/groupBranches'
+import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitBranch } from '@git/gitService'
+import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface BranchSelectorProps {
   onBranchesChange: (branches: GitBranch[]) => void
