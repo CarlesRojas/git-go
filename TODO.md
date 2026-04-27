@@ -1,6 +1,7 @@
 ## TODO
 
-- [ ] Navigate commits with arrows
+- [ ] Implement the useHover hook for highlighting commits
+- [ ] On scroll, or arrow keys clicked, clear the hightlight commits timeout
 - [ ] Add shadcn modal
 - [ ] Add shadcn right click menu
 - [ ] Implement a search feature
