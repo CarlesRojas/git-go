@@ -39,13 +39,11 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
       className={cn(
         [
           // Layout & Position
-          'fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]',
-          // Z-Index
-          'z-50',
+          'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           // Layout & Structure
           'grid w-full gap-4',
           // Sizing
-          'max-w-md',
+          'max-w-[min(calc(100%-2rem),28rem)]',
           // Colors & Background
           'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80',
           // Spacing
@@ -55,8 +53,8 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
 
           // Animations & Transitions
           'duration-200',
-          'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
-          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]',
+          'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
         ],
         className,
       )}
@@ -91,7 +89,7 @@ const DialogFooter = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) =
     className={cn(
       [
         // Layout & Structure
-        'flex flex-col-reverse md:flex-row md:justify-end',
+        'flex flex-col-reverse sm:flex-row sm:justify-end',
         // Spacing
         'gap-2',
       ],
