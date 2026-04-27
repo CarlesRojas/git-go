@@ -26,32 +26,30 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
       tagMessage: '',
     },
     onSubmit: async ({ value }) => {
-      return new Promise<void>((resolve, reject) => {
-        addTagMutation.mutate(
-          {
-            commitHash: commit.hash,
-            tagName: value.tagName,
-            tagMessage: value.tagMessage || undefined,
-            tagType: 'annotated',
+      addTagMutation.mutate(
+        {
+          commitHash: commit.hash,
+          tagName: value.tagName,
+          tagMessage: value.tagMessage || undefined,
+          tagType: 'annotated',
+        },
+        {
+          onSuccess: () => {
+            showToast({
+              text: `Annotated tag '${value.tagName}' created successfully`,
+              icon: faTag,
+              type: 'success',
+            })
           },
-          {
-            onSuccess: () => {
-              showToast({
-                text: `Annotated tag '${value.tagName}' created successfully`,
-                icon: faTag,
-                type: 'success',
-              })
-              setShowTagDialog(false)
-              tagForm.reset()
-              resolve()
-            },
-            onError: error => {
-              showToast({ text: error.message, type: 'error', icon: faTag })
-              reject(error)
-            },
+          onError: error => {
+            showToast({ text: error.message, type: 'error', icon: faTag })
           },
-        )
-      })
+          onSettled: () => {
+            setShowTagDialog(false)
+            tagForm.reset()
+          },
+        },
+      )
     },
   })
 

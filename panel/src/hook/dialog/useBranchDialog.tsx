@@ -26,32 +26,30 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
       checkout: true,
     },
     onSubmit: async ({ value }) => {
-      return new Promise<void>((resolve, reject) => {
-        createBranchMutation.mutate(
-          {
-            commitHash: commit.hash,
-            branchName: value.branchName,
-            checkout: value.checkout,
+      createBranchMutation.mutate(
+        {
+          commitHash: commit.hash,
+          branchName: value.branchName,
+          checkout: value.checkout,
+        },
+        {
+          onSuccess: () => {
+            const action = value.checkout ? 'created and checked out' : 'created'
+            showToast({
+              text: `Branch '${value.branchName}' ${action} successfully`,
+              icon: faCodeBranch,
+              type: 'success',
+            })
           },
-          {
-            onSuccess: () => {
-              const action = value.checkout ? 'created and checked out' : 'created'
-              showToast({
-                text: `Branch '${value.branchName}' ${action} successfully`,
-                icon: faCodeBranch,
-                type: 'success',
-              })
-              setShowBranchDialog(false)
-              branchForm.reset()
-              resolve()
-            },
-            onError: error => {
-              showToast({ text: error.message, type: 'error', icon: faCodeBranch })
-              reject(error)
-            },
+          onError: error => {
+            showToast({ text: error.message, type: 'error', icon: faCodeBranch })
           },
-        )
-      })
+          onSettled: () => {
+            setShowBranchDialog(false)
+            branchForm.reset()
+          },
+        },
+      )
     },
   })
 

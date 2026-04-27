@@ -24,31 +24,29 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
       commitChanges: false,
     },
     onSubmit: async ({ value }) => {
-      return new Promise<void>((resolve, reject) => {
-        revertMutation.mutate(
-          {
-            commitHash: commit.hash,
-            commitChanges: value.commitChanges,
+      revertMutation.mutate(
+        {
+          commitHash: commit.hash,
+          commitChanges: value.commitChanges,
+        },
+        {
+          onSuccess: () => {
+            const action = value.commitChanges ? 'reverted' : 'staged revert changes for'
+            showToast({
+              text: `Successfully ${action} commit ${commit.hash.substring(0, 7)}`,
+              icon: faRotateLeft,
+              type: 'success',
+            })
           },
-          {
-            onSuccess: () => {
-              const action = value.commitChanges ? 'reverted' : 'staged revert changes for'
-              showToast({
-                text: `Successfully ${action} commit ${commit.hash.substring(0, 7)}`,
-                icon: faRotateLeft,
-                type: 'success',
-              })
-              setShowRevertDialog(false)
-              revertForm.reset()
-              resolve()
-            },
-            onError: error => {
-              showToast({ text: error.message, type: 'error', icon: faRotateLeft })
-              reject(error)
-            },
+          onError: error => {
+            showToast({ text: error.message, type: 'error', icon: faRotateLeft })
           },
-        )
-      })
+          onSettled: () => {
+            setShowRevertDialog(false)
+            revertForm.reset()
+          },
+        },
+      )
     },
   })
 

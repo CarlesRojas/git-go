@@ -25,27 +25,25 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
       commitChanges: false,
     },
     onSubmit: async ({ value }) => {
-      return new Promise<void>((resolve, reject) => {
-        cherryPickMutation.mutate(
-          {
-            commitHash: commit.hash,
-            recordOrigin: value.recordOrigin,
-            commitChanges: value.commitChanges,
+      cherryPickMutation.mutate(
+        {
+          commitHash: commit.hash,
+          recordOrigin: value.recordOrigin,
+          commitChanges: value.commitChanges,
+        },
+        {
+          onSuccess: () => {
+            showToast({ text: 'Commit cherry-picked successfully', icon: faClone, type: 'success' })
           },
-          {
-            onSuccess: () => {
-              showToast({ text: 'Commit cherry-picked successfully', icon: faClone, type: 'success' })
-              setShowCherryPickDialog(false)
-              cherryPickForm.reset()
-              resolve()
-            },
-            onError: error => {
-              showToast({ text: error.message, type: 'error', icon: faClone })
-              reject(error)
-            },
+          onError: error => {
+            showToast({ text: error.message, type: 'error', icon: faClone })
           },
-        )
-      })
+          onSettled: () => {
+            setShowCherryPickDialog(false)
+            cherryPickForm.reset()
+          },
+        },
+      )
     },
   })
 
