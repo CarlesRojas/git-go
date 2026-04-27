@@ -18,7 +18,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
     <div
       className={cn(
         // Layout & sizing
-        'relative flex h-4.5 max-h-4.5 min-h-4.5 min-w-fit items-center rounded-sm',
+        'relative flex h-5 max-h-5 min-h-5 min-w-fit items-center',
         // Colors
         'bg-(--vscode-editor-foreground)/15',
         !local && 'border border-(--vscode-editor-foreground)/15',
@@ -27,9 +27,9 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
       <div
         className={cn(
           // Layout & sizing
-          'flex h-full min-w-fit items-center rounded-l-sm',
+          'flex h-full min-w-fit items-center',
           // Spacing
-          'pr-0.75 pl-1',
+          'px-1',
         )}
         style={{
           backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
@@ -46,7 +46,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
       <div
         className={cn(
           // Layout & sizing
-          'relative flex h-full min-w-fit items-center rounded-r-sm',
+          'relative flex h-full min-w-fit items-center',
           // Typography
           'text-xs font-medium',
           // Border

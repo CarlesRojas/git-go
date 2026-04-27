@@ -21,9 +21,9 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label }) => {
     <div
       className={cn(
         // Layout & sizing
-        'flex h-4.5 max-h-4.5 min-h-4.5 min-w-fit items-center rounded-sm',
+        'flex h-5 max-h-5 min-h-5 min-w-fit items-center',
         // Spacing
-        'gap-1.5 px-1.5',
+        'gap-1.5 px-1',
         // Typography
         'text-xs font-medium',
         // Colors
