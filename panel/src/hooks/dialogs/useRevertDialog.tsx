@@ -1,7 +1,7 @@
 import { Button } from '@/components/Button'
 import { Checkbox } from '@/components/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/Dialog'
-import { Label } from '@/components/ui/label'
+import { Label } from '@/components/ui/Label43'
 import { useToast } from '@/contexts/ToastContext'
 import { useRevertCommit } from '@/hooks/useGitQueries'
 import { faCircleNotch, faRotateLeft } from '@fortawesome/free-solid-svg-icons'
