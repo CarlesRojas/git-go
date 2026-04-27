@@ -1,6 +1,6 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/Dialog'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Label } from '@/components/ui/Label'
 import { useToast } from '@/contexts/ToastContext'
 import { useCherryPickCommit } from '@/hooks/useGitQueries'

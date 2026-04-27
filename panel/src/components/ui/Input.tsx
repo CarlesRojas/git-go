@@ -3,7 +3,7 @@ import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { InputHTMLAttributes } from 'react'
-import { Button } from './ui/Button'
+import { Button } from './Button'
 
 const inputVariants = cva([
   // Layout & Structure

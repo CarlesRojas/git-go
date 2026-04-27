@@ -1,7 +1,7 @@
 import { getColor } from '@/hooks/useGitTree'
 import { getBranchIcons } from '@/utils/branchIcons'
 import { cn } from '@/utils/cn'
-import { CommitLayout } from '@/utils/GraphLayoutGenerator'
+import { CommitLayout } from '@/utils/computeGraphLayout'
 import { GroupedBranch } from '@/utils/groupBranches'
 import { FC } from 'react'
 

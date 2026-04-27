@@ -1,5 +1,5 @@
-import { CommitLayout, computeGraphLayout } from '@/utils/GraphLayoutGenerator'
 import { cn } from '@/utils/cn'
+import { CommitLayout, computeGraphLayout } from '@/utils/computeGraphLayout'
 import type { GitCommit } from '@git/gitService'
 import { ReactNode, useMemo } from 'react'
 
