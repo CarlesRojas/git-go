@@ -55,7 +55,7 @@ const ContextMenuSubContent = ({
         // Layout & Structure
         'overflow-hidden',
         // Sizing
-        'min-w-[8rem]',
+        'min-w-32',
         // Colors & Background
         'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
         // Typography
@@ -87,7 +87,7 @@ const ContextMenuContent = ({ className, ref, ...props }: ComponentProps<typeof 
           // Layout & Structure
           'overflow-hidden',
           // Sizing
-          'min-w-[8rem]',
+          'min-w-32',
           // Colors & Background
           'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
           // Typography
@@ -125,7 +125,7 @@ const ContextMenuItem = ({ className, inset, ref, ...props }: ContextMenuItemPro
         // Typography
         'text-xs',
         // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
         '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       ],
@@ -154,7 +154,7 @@ const ContextMenuCheckboxItem = ({
         // Typography
         'text-xs',
         // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
         '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       ],
@@ -189,7 +189,7 @@ const ContextMenuRadioItem = ({
         // Typography
         'text-xs',
         // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
         '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       ],
