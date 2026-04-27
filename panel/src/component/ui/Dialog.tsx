@@ -61,7 +61,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-(--vscode-editor-foreground)/10 data-[state=open]:text-(--vscode-editor-foreground)/70">
+      <DialogPrimitive.Close className="absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-(--vscode-editor-foreground)/10 data-[state=open]:text-(--vscode-editor-foreground)/70">
         <FontAwesomeIcon icon={faXmark} className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

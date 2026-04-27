@@ -17,7 +17,7 @@ import {
 } from 'react'
 
 const treeVariants = cva(
-  'group before:bg-accent/70 before:absolute before:left-0 before:-z-10 before:h-8 before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100',
+  'group before:bg-accent/70 before:absolute before:left-0 before:-z-10 before:h-8 before:w-full before:opacity-0 hover:before:opacity-100',
 )
 
 const selectedTreeVariants = cva('before:bg-accent/70 text-accent-foreground before:opacity-100')

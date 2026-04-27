@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] D
+- [ ] Double click to select branch
 - [ ] Implement a search feature
 - [ ] Add fetch icon to toolbar
 
