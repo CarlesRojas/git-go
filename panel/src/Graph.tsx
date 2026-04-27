@@ -16,10 +16,8 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
   const [expandedRow, setExpandedRow] = useState<ExpandedRow | undefined>()
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteGitCommits(
-    selectedBranches,
-    5,
-  )
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteGitCommits(selectedBranches)
 
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
