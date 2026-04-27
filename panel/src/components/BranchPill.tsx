@@ -1,9 +1,9 @@
+import { getColor } from '@/hooks/useGitTree'
+import { getBranchIcons } from '@/utils/branchIcons'
+import { cn } from '@/utils/cn'
+import { CommitLayout } from '@/utils/GraphLayoutGenerator'
+import { GroupedBranch } from '@/utils/groupBranches'
 import { FC } from 'react'
-import { getColor } from '../hooks/useGitTree'
-import { getBranchIcons } from '../utils/branchIcons'
-import { cn } from '../utils/cn'
-import { CommitLayout } from '../utils/GraphLayoutGenerator'
-import { GroupedBranch } from '../utils/groupBranches'
 
 interface Props {
   branch: GroupedBranch

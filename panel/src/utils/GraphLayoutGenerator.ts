@@ -1,4 +1,4 @@
-import type { GitCommit } from '../../../src/gitService'
+import type { GitCommit } from '@git/gitService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

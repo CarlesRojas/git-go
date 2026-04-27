@@ -1,8 +1,8 @@
+import { cn } from '@/utils/cn'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { InputHTMLAttributes } from 'react'
-import { cn } from '../utils/cn'
 import { Button } from './Button'
 
 const inputVariants = cva([

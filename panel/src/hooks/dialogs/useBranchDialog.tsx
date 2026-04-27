@@ -1,15 +1,15 @@
+import { Button } from '@/components/Button'
+import { Checkbox } from '@/components/Checkbox'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/Dialog'
+import { Input } from '@/components/Input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/contexts/ToastContext'
+import { useCreateBranchFromCommit } from '@/hooks/useGitQueries'
 import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitCommit } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
-import { GitCommit } from '../../../../src/gitService'
-import { Button } from '../../components/Button'
-import { Checkbox } from '../../components/Checkbox'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../components/Dialog'
-import { Input } from '../../components/Input'
-import { useToast } from '../../contexts/ToastContext'
-import { useCreateBranchFromCommit } from '../useGitQueries'
 
 interface UseBranchDialogProps {
   commit: GitCommit

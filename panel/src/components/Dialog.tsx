@@ -1,8 +1,8 @@
+import { cn } from '@/utils/cn'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { ComponentProps, HTMLAttributes } from 'react'
-import { cn } from '../utils/cn'
 
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger

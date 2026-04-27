@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { MouseEvent as ReactMouseEvent, useCallback, useRef, useState } from 'react'
 import { useEventListener } from 'usehooks-ts'
 
 interface UseResizableOptions {
@@ -42,7 +42,7 @@ export function useResizable({ initialHeight = 164, minHeight = 164 }: UseResiza
   useEventListener('mouseup', handleMouseUp)
 
   const handleMouseDown = useCallback(
-    (e: MouseEvent) => {
+    (e: ReactMouseEvent) => {
       e.preventDefault()
 
       let maxHeight = window.innerHeight * 0.9

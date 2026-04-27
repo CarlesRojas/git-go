@@ -1,5 +1,7 @@
+import { cn } from '@/utils/cn'
 import { faChevronRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitFileChange } from '@git/gitService'
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
 import { cva } from 'class-variance-authority'
 import {
@@ -12,8 +14,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { GitFileChange } from '../../../src/gitService'
-import { cn } from '../utils/cn'
 import { Button } from './Button'
 
 const treeVariants = cva(

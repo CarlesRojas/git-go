@@ -1,11 +1,11 @@
+import { useGitBranches } from '@/hooks/useGitQueries'
+import { getBranchIcons } from '@/utils/branchIcons'
+import { cn } from '@/utils/cn'
+import { groupBranches, GroupedBranch } from '@/utils/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitBranch } from '@git/gitService'
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { GitBranch } from '../../../src/gitService'
-import { useGitBranches } from '../hooks/useGitQueries'
-import { getBranchIcons } from '../utils/branchIcons'
-import { cn } from '../utils/cn'
-import { groupBranches, GroupedBranch } from '../utils/groupBranches'
 import { Button } from './Button'
 import {
   Combobox,

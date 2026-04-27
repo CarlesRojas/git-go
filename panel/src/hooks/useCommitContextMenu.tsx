@@ -1,14 +1,14 @@
-import { faClone, faCodeBranch, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ReactNode } from 'react'
-import { GitCommit } from '../../../src/gitService'
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuTrigger,
-} from '../components/ContextMenu'
+} from '@/components/ContextMenu'
+import { faClone, faCodeBranch, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitCommit } from '@git/gitService'
+import { ReactNode } from 'react'
 import { useBranchDialog } from './dialogs/useBranchDialog'
 import { useCherryPickDialog } from './dialogs/useCherryPickDialog'
 import { useRevertDialog } from './dialogs/useRevertDialog'

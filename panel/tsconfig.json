@@ -16,7 +16,8 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@git/*": ["../src/*"]
     }
   },
   "include": ["src"],

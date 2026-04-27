@@ -1,14 +1,14 @@
+import { Button } from '@/components/Button'
+import { Checkbox } from '@/components/Checkbox'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/Dialog'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/contexts/ToastContext'
+import { useCherryPickCommit } from '@/hooks/useGitQueries'
 import { faCircleNotch, faClone } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitCommit } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
-import { GitCommit } from '../../../../src/gitService'
-import { Button } from '../../components/Button'
-import { Checkbox } from '../../components/Checkbox'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../components/Dialog'
-import { useToast } from '../../contexts/ToastContext'
-import { useCherryPickCommit } from '../useGitQueries'
 
 interface UseCherryPickDialogProps {
   commit: GitCommit

@@ -1,8 +1,8 @@
+import { cn } from '@/utils/cn'
 import { faCheck, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { ComponentProps } from 'react'
-import { cn } from '../utils/cn'
 
 const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group

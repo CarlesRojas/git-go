@@ -1,6 +1,6 @@
-import type { GitFileChange } from '../../../src/gitService'
-import { TreeDataItem } from '../components/Tree'
-import { openFile } from '../hooks/useGitQueries'
+import { TreeDataItem } from '@/components/Tree'
+import { openFile } from '@/hooks/useGitQueries'
+import type { GitFileChange } from '@git/gitService'
 
 const STATUS_LABELS: Record<string, string> = {
   A: 'Added',

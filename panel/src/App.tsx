@@ -1,6 +1,6 @@
+import type { GitBranch } from '@/../src/gitService'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FC, useState } from 'react'
-import type { GitBranch } from '../../src/gitService'
 import { Graph } from './Graph'
 import { BranchSelector } from './components/BranchSelector'
 import { ToastProvider } from './contexts/ToastContext'

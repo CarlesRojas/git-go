@@ -1,7 +1,7 @@
+import { TreeDataItem } from '@/components/Tree'
+import { buildFileTree } from '@/utils/buildFileTree'
+import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { GitBranch, GitCommit, GitFileChange } from '../../../src/gitService'
-import { TreeDataItem } from '../components/Tree'
-import { buildFileTree } from '../utils/buildFileTree'
 
 interface VSCodeApi {
   postMessage(message: any): void

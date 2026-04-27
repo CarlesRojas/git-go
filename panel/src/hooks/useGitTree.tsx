@@ -1,7 +1,7 @@
+import { CommitLayout, computeGraphLayout } from '@/utils/GraphLayoutGenerator'
+import { cn } from '@/utils/cn'
+import type { GitCommit } from '@git/gitService'
 import { ReactNode, useMemo } from 'react'
-import type { GitCommit } from '../../../src/gitService'
-import { CommitLayout, computeGraphLayout } from '../utils/GraphLayoutGenerator'
-import { cn } from '../utils/cn'
 
 const BRANCH_COLORS = [
   '#3b82f6', // blue-500

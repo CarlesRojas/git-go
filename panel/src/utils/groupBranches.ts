@@ -1,4 +1,4 @@
-import type { GitBranch } from '../../../src/gitService'
+import type { GitBranch } from '@git/gitService'
 
 export type GroupedBranch = {
   local: GitBranch | null

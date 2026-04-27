@@ -1,7 +1,7 @@
+import { cn } from '@/utils/cn'
 import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { FC } from 'react'
-import { cn } from '../utils/cn'
 
 interface StashTagPillProps {
   type: 'stash' | 'tag'

@@ -1,6 +1,6 @@
+import { cn } from '@/utils/cn'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { ButtonHTMLAttributes } from 'react'
-import { cn } from '../utils/cn'
 
 const buttonVariants = cva(
   [

@@ -1,8 +1,8 @@
+import { cn } from '@/utils/cn'
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
 import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef } from 'react'
-import { cn } from '../utils/cn'
 import { Input } from './Input'
 
 const Combobox = ComboboxPrimitive.Root

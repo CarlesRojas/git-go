@@ -1,8 +1,8 @@
+import { cn } from '@/utils/cn'
 import { faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import { ComponentProps } from 'react'
-import { cn } from '../utils/cn'
 
 const Checkbox = ({ className, ref, ...props }: ComponentProps<typeof CheckboxPrimitive.Root>) => (
   <CheckboxPrimitive.Root

@@ -1,9 +1,9 @@
+import { cn } from '@/utils/cn'
 import { faCheck, faChevronRight, faCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { ComponentProps, HTMLAttributes } from 'react'
-import { cn } from '../utils/cn'
 
 const ContextMenu = ContextMenuPrimitive.Root
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
