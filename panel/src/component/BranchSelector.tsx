@@ -14,9 +14,9 @@ import {
   ComboboxValue,
 } from '@/component/ui/Combobox'
 import { useGitBranches } from '@/hook/useGitQueries'
-import { getBranchIcons } from '@/utils/branchIcons'
-import { cn } from '@/utils/cn'
-import { groupBranches, GroupedBranch } from '@/utils/groupBranches'
+import { getBranchIcons } from '@/util/branchIcons'
+import { cn } from '@/util/cn'
+import { groupBranches, GroupedBranch } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'

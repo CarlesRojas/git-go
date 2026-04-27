@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { faCheck, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as SelectPrimitive from '@radix-ui/react-select'

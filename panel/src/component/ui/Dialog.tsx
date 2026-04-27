@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as DialogPrimitive from '@radix-ui/react-dialog'

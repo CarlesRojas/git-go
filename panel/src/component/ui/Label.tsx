@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { Label as LabelPrimitive } from 'radix-ui'
 import { ComponentProps } from 'react'
 

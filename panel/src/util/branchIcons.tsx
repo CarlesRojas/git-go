@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { faCodeBranch, faStar } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 

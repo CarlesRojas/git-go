@@ -1,5 +1,5 @@
 import { Button } from '@/component/ui/Button'
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { faChevronRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitFileChange } from '@git/gitService'

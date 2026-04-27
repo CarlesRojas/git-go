@@ -1,7 +1,7 @@
 import { BranchSelector } from '@/component/BranchSelector'
 import { Graph } from '@/component/Graph'
 import { ToastProvider } from '@/context/ToastContext'
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { GitBranch } from '@git/gitService'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FC, useState } from 'react'

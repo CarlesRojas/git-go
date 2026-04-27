@@ -1,5 +1,5 @@
-import { cn } from '@/utils/cn'
-import { CommitLayout, computeGraphLayout } from '@/utils/computeGraphLayout'
+import { cn } from '@/util/cn'
+import { CommitLayout, computeGraphLayout } from '@/util/computeGraphLayout'
 import type { GitCommit } from '@git/gitService'
 import { ReactNode, useMemo } from 'react'
 

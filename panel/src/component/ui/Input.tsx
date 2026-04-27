@@ -1,5 +1,5 @@
 import { Button } from '@/component/ui/Button'
-import { cn } from '@/utils/cn'
+import { cn } from '@/util/cn'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cva, type VariantProps } from 'class-variance-authority'
