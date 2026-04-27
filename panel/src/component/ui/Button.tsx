@@ -22,7 +22,7 @@ const buttonVariants = cva(
           'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground) hover:bg-(--vscode-editor-foreground)/10',
         destructive:
           'border border-(--vscode-errorForeground)/15 bg-(--vscode-inputValidation-errorBackground) text-(--vscode-errorForeground) hover:bg-(--vscode-inputValidation-errorBackground)/80',
-        ghost: 'text-(--vscode-button-foreground)/80 hover:text-(--vscode-button-foreground)',
+        ghost: 'text-(--vscode-button-foreground)/70 hover:text-(--vscode-button-foreground)',
       },
       size: {
         default: 'h-7 px-3',

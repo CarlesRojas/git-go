@@ -46,7 +46,7 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
               resolve()
             },
             onError: error => {
-              showToast({ text: `Failed to create tag: ${error.message}`, type: 'error' })
+              showToast({ text: error.message, type: 'error', icon: faTag })
               reject(error)
             },
           },

@@ -48,12 +48,10 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
 
     setToast(newToast)
 
-    if (newToast.type === 'error') return
-
     timeoutRef.current = setTimeout(() => {
       setToast(null)
       timeoutRef.current = null
-    }, 6_000)
+    }, 5000)
   }, [])
 
   useEffect(() => {
@@ -68,7 +66,7 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
       {toast && (
         <div
           className={cn(
-            'fixed right-2 bottom-2 z-50 flex max-w-lg gap-3 border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80 p-2.5 text-sm backdrop-blur-md transition-all duration-300',
+            'fixed right-2 bottom-2 z-50 flex max-w-3xl items-center gap-3 border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80 p-2.5 text-sm backdrop-blur-md transition-all duration-300',
             toast.className,
           )}
         >
@@ -78,15 +76,15 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
                 icon={toast.icon}
                 className={cn(
                   'size-4 max-h-4 min-h-4 text-(--vscode-editor-foreground)/50',
-                  toast.type === 'success' && 'text-green-500/90',
-                  toast.type === 'error' && 'text-red-500/90',
-                  toast.type === 'warning' && 'text-amber-500/90',
+                  toast.type === 'success' && 'text-(--vscode-gitDecoration-addedResourceForeground)',
+                  toast.type === 'error' && 'text-(--vscode-gitDecoration-deletedResourceForeground)',
+                  toast.type === 'warning' && 'text-(--vscode-gitDecoration-modifiedResourceForeground)',
                 )}
               />
             </span>
           )}
 
-          <span className="text-xs leading-tight">{toast.text}</span>
+          <span className="line-clamp-2 text-xs leading-tight text-ellipsis">{toast.text}</span>
 
           <Button onClick={closeToast} className="ml-4" variant="ghost" size="iconSmall" aria-label="Close toast">
             <FontAwesomeIcon icon={faTimes} className="size-3" />

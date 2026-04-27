@@ -196,7 +196,7 @@ export class GitService {
             return branches;
         } catch (error) {
             log(`Error getting git branches: ${error}`);
-            throw new Error(`Failed to get git branches: ${error}`);
+            throw error;
         }
     }
 
@@ -508,7 +508,7 @@ export class GitService {
             return { commits, hasMore };
         } catch (error) {
             log(`Error getting git commits: ${error}`);
-            throw new Error(`Failed to get git commits: ${error}`);
+            throw error;
         }
     }
 
@@ -565,7 +565,7 @@ export class GitService {
             return files;
         } catch (error) {
             log(`Error getting commit files: ${error}`);
-            throw new Error(`Failed to get commit files: ${error}`);
+            throw error;
         }
     }
 
@@ -599,7 +599,7 @@ export class GitService {
             log(`Successfully created ${tagType} tag '${tagName}' at commit ${commitHash.substring(0, 7)}`);
         } catch (error) {
             log(`Error creating tag: ${error}`);
-            throw new Error(`Failed to create tag: ${error}`);
+            throw error;
         }
     }
 
@@ -627,7 +627,7 @@ export class GitService {
             }
         } catch (error) {
             log(`Error creating branch: ${error}`);
-            throw new Error(`Failed to create branch: ${error}`);
+            throw error;
         }
     }
 
@@ -666,7 +666,7 @@ export class GitService {
             log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
         } catch (error) {
             log(`Error cherry-picking commit: ${error}`);
-            throw new Error(`Failed to cherry-pick commit: ${error}`);
+            throw error;
         }
     }
 
@@ -696,7 +696,7 @@ export class GitService {
             log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
         } catch (error) {
             log(`Error reverting commit: ${error}`);
-            throw new Error(`Failed to revert commit: ${error}`);
+            throw error;
         }
     }
 

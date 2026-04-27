@@ -15,6 +15,7 @@ const Checkbox = ({ className, ref, ...props }: ComponentProps<typeof CheckboxPr
         'border border-(--vscode-editor-foreground)/15 bg-(--vscode-input-background)',
         // Interactive States
         'disabled:cursor-not-allowed disabled:opacity-50',
+        'hover:bg-(--vscode-editor-foreground)/5 data-[state=checked]:hover:bg-(--vscode-button-background)/70',
         // Data states
         'data-[state=checked]:bg-(--vscode-button-background) data-[state=checked]:text-(--vscode-button-foreground)',
         'data-[state=checked]:border-(--vscode-button-background)',

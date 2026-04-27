@@ -40,7 +40,7 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
               resolve()
             },
             onError: error => {
-              showToast({ text: `Failed to cherry-pick: ${error.message}`, type: 'error' })
+              showToast({ text: error.message, type: 'error', icon: faClone })
               reject(error)
             },
           },
@@ -69,14 +69,14 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
           <cherryPickForm.Field
             name="recordOrigin"
             children={field => (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="recordOrigin"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
 
-                <Label htmlFor="recordOrigin" className="cursor-pointer">
+                <Label htmlFor="recordOrigin" className="cursor-pointer pl-2">
                   Record origin
                 </Label>
               </div>
@@ -86,14 +86,14 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
           <cherryPickForm.Field
             name="commitChanges"
             children={field => (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="commitChanges"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
 
-                <Label htmlFor="commitChanges" className="cursor-pointer">
+                <Label htmlFor="commitChanges" className="cursor-pointer pl-2">
                   Commit changes
                 </Label>
               </div>

@@ -43,7 +43,7 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
               resolve()
             },
             onError: error => {
-              showToast({ text: `Failed to revert: ${error.message}`, type: 'error' })
+              showToast({ text: error.message, type: 'error', icon: faRotateLeft })
               reject(error)
             },
           },
@@ -73,14 +73,14 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
             name="commitChanges"
             children={field => (
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="commitChanges"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
 
-                  <Label htmlFor="commitChanges" className="cursor-pointer">
+                  <Label htmlFor="commitChanges" className="cursor-pointer pl-2">
                     Commit changes
                   </Label>
                 </div>

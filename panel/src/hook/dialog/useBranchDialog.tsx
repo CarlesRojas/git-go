@@ -23,7 +23,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
   const branchForm = useForm({
     defaultValues: {
       branchName: '',
-      checkout: false,
+      checkout: true,
     },
     onSubmit: async ({ value }) => {
       return new Promise<void>((resolve, reject) => {
@@ -46,7 +46,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
               resolve()
             },
             onError: error => {
-              showToast({ text: `Failed to create branch: ${error.message}`, type: 'error' })
+              showToast({ text: error.message, type: 'error', icon: faCodeBranch })
               reject(error)
             },
           },
@@ -86,7 +86,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
-                  placeholder="feature/new-feature"
+                  placeholder="new-feature"
                 />
 
                 {field.state.meta.errors && (
@@ -99,14 +99,14 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
           <branchForm.Field
             name="checkout"
             children={field => (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="checkout"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
 
-                <Label htmlFor="checkout" className="cursor-pointer">
+                <Label htmlFor="checkout" className="cursor-pointer pl-2">
                   Checkout new branch
                 </Label>
               </div>
