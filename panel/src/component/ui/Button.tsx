@@ -19,7 +19,7 @@ const buttonVariants = cva(
         default:
           'border border-(--vscode-button-foreground)/15 bg-(--vscode-button-background) text-(--vscode-button-foreground) hover:bg-(--vscode-button-hoverBackground)',
         secondary:
-          'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground) hover:bg-(--vscode-editor-foreground)/10',
+          'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-editor-foreground) hover:bg-(--vscode-editor-foreground)/10',
         destructive:
           'border border-(--vscode-errorForeground)/15 bg-(--vscode-inputValidation-errorBackground) text-(--vscode-errorForeground) hover:bg-(--vscode-inputValidation-errorBackground)/80',
         ghost: 'text-(--vscode-button-foreground)/70 hover:text-(--vscode-button-foreground)',

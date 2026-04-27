@@ -14,7 +14,7 @@ const BRANCH_COLORS = [
   '#eab308', // yellow-500
 ]
 
-const STASH_COLOR = '#737373' // neutral-500
+const STASH_COLOR = 'var(--vscode-editor-foreground)'
 const UNCOMMITTED_COLOR = 'var(--vscode-editor-foreground)'
 
 const MAX_TREE_COLUMNS = 16

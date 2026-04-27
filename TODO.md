@@ -1,5 +1,6 @@
 ## TODO
 
+- [ ] D
 - [ ] Implement a search feature
 - [ ] Add fetch icon to toolbar
 
