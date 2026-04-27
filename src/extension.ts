@@ -287,6 +287,107 @@ export function activate(context: vscode.ExtensionContext) {
                                 vscode.window.showErrorMessage(`Failed to open file: ${errorMessage}`);
                             }
                             break;
+                        case 'addTag':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { commitHash, tagName, tagMessage, tagType } = message;
+                                if (!commitHash || !tagName) {
+                                    throw new Error('Commit hash and tag name are required');
+                                }
+                                await gitService.addTag(log, commitHash, tagName, tagMessage, tagType);
+                                const typeText = tagType === 'lightweight' ? 'lightweight' : 'annotated';
+                                log(
+                                    `Successfully created ${typeText} tag '${tagName}' at commit ${commitHash.substring(0, 7)}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'tagCreated',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error creating tag: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'createBranchFromCommit':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { commitHash, branchName, checkout } = message;
+                                if (!commitHash || !branchName) {
+                                    throw new Error('Commit hash and branch name are required');
+                                }
+                                await gitService.createBranchFromCommit(log, commitHash, branchName, checkout);
+                                const action = checkout ? 'created and checked out' : 'created';
+                                log(
+                                    `Successfully ${action} branch '${branchName}' from commit ${commitHash.substring(0, 7)}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'branchCreated',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error creating branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'cherryPickCommit':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { commitHash, recordOrigin, noCommit } = message;
+                                if (!commitHash) {
+                                    throw new Error('Commit hash is required');
+                                }
+                                await gitService.cherryPickCommit(log, commitHash, recordOrigin, noCommit);
+
+                                const options = [];
+                                if (recordOrigin) options.push('with origin record');
+                                if (noCommit) options.push('without commit');
+                                const optionsText = options.length > 0 ? ` (${options.join(', ')})` : '';
+
+                                log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'commitCherryPicked',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error cherry-picking commit: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'revertCommit':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { commitHash, noCommit } = message;
+                                if (!commitHash) {
+                                    throw new Error('Commit hash is required');
+                                }
+                                await gitService.revertCommit(log, commitHash, noCommit);
+                                const action = noCommit ? 'staged revert changes for' : 'reverted';
+                                log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'commitReverted',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error reverting commit: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                     }
                 },
                 undefined,

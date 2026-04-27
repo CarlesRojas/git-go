@@ -569,6 +569,137 @@ export class GitService {
         }
     }
 
+    public async addTag(
+        log: (message: string) => void,
+        commitHash: string,
+        tagName: string,
+        tagMessage?: string,
+        tagType: 'annotated' | 'lightweight' = 'annotated'
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'tag'];
+
+            if (tagType === 'annotated') {
+                if (tagMessage) {
+                    args.push('-a', tagName, '-m', tagMessage, commitHash);
+                } else {
+                    args.push('-a', tagName, '-m', '', commitHash);
+                }
+            } else {
+                args.push(tagName, commitHash);
+            }
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully created ${tagType} tag '${tagName}' at commit ${commitHash.substring(0, 7)}`);
+        } catch (error) {
+            log(`Error creating tag: ${error}`);
+            throw new Error(`Failed to create tag: ${error}`);
+        }
+    }
+
+    public async createBranchFromCommit(
+        log: (message: string) => void,
+        commitHash: string,
+        branchName: string,
+        checkout: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            if (checkout) {
+                await this.spawnGit([gitExecutable.path, 'checkout', '-b', branchName, commitHash], workspacePath);
+                log(
+                    `Successfully created and checked out branch '${branchName}' from commit ${commitHash.substring(0, 7)}`
+                );
+            } else {
+                await this.spawnGit([gitExecutable.path, 'branch', branchName, commitHash], workspacePath);
+                log(`Successfully created branch '${branchName}' from commit ${commitHash.substring(0, 7)}`);
+            }
+        } catch (error) {
+            log(`Error creating branch: ${error}`);
+            throw new Error(`Failed to create branch: ${error}`);
+        }
+    }
+
+    public async cherryPickCommit(
+        log: (message: string) => void,
+        commitHash: string,
+        recordOrigin: boolean = false,
+        noCommit: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'cherry-pick'];
+
+            if (recordOrigin) {
+                args.push('-x');
+            }
+
+            if (noCommit) {
+                args.push('--no-commit');
+            }
+
+            args.push(commitHash);
+
+            await this.spawnGit(args, workspacePath);
+
+            const options = [];
+            if (recordOrigin) options.push('with origin record');
+            if (noCommit) options.push('without commit');
+            const optionsText = options.length > 0 ? ` (${options.join(', ')})` : '';
+
+            log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
+        } catch (error) {
+            log(`Error cherry-picking commit: ${error}`);
+            throw new Error(`Failed to cherry-pick commit: ${error}`);
+        }
+    }
+
+    public async revertCommit(
+        log: (message: string) => void,
+        commitHash: string,
+        noCommit: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'revert'];
+
+            if (noCommit) {
+                args.push('--no-commit');
+            }
+
+            args.push(commitHash);
+
+            await this.spawnGit(args, workspacePath);
+
+            const action = noCommit ? 'staged revert changes for' : 'reverted';
+            log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
+        } catch (error) {
+            log(`Error reverting commit: ${error}`);
+            throw new Error(`Failed to revert commit: ${error}`);
+        }
+    }
+
     public clearCache(): void {
         this.cachedGitExecutable = null;
     }

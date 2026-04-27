@@ -251,6 +251,200 @@ export const useWorkingChanges = (includeFiles: boolean = false) => {
   })
 }
 
+// Hook to add a tag at a specific commit
+export const useAddTag = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      commitHash,
+      tagName,
+      tagMessage,
+      tagType = 'annotated',
+    }: {
+      commitHash: string
+      tagName: string
+      tagMessage?: string
+      tagType?: 'annotated' | 'lightweight'
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'tagCreated') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'addTag',
+          commitHash,
+          tagName,
+          tagMessage,
+          tagType,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to add tag'))
+        }, 10000)
+      })
+    },
+    onSuccess: () => {
+      // Refresh git data after creating tag
+      queryClient.invalidateQueries({ queryKey: ['git'] })
+    },
+  })
+}
+
+// Hook to create a branch from a specific commit
+export const useCreateBranchFromCommit = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      commitHash,
+      branchName,
+      checkout = false,
+    }: {
+      commitHash: string
+      branchName: string
+      checkout?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'branchCreated') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'createBranchFromCommit',
+          commitHash,
+          branchName,
+          checkout,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to create branch'))
+        }, 10000)
+      })
+    },
+    onSuccess: () => {
+      // Refresh git data after creating branch
+      queryClient.invalidateQueries({ queryKey: ['git'] })
+    },
+  })
+}
+
+// Hook to cherry-pick a commit
+export const useCherryPickCommit = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      commitHash,
+      recordOrigin = false,
+      noCommit = false,
+    }: {
+      commitHash: string
+      recordOrigin?: boolean
+      noCommit?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'commitCherryPicked') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'cherryPickCommit',
+          commitHash,
+          recordOrigin,
+          noCommit,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to cherry-pick commit'))
+        }, 10000)
+      })
+    },
+    onSuccess: () => {
+      // Refresh git data after cherry-pick
+      queryClient.invalidateQueries({ queryKey: ['git'] })
+    },
+  })
+}
+
+// Hook to revert a commit
+export const useRevertCommit = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ commitHash, noCommit }: { commitHash: string; noCommit?: boolean }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'commitReverted') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'revertCommit',
+          commitHash,
+          noCommit,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to revert commit'))
+        }, 10000)
+      })
+    },
+    onSuccess: () => {
+      // Refresh git data after revert
+      queryClient.invalidateQueries({ queryKey: ['git'] })
+    },
+  })
+}
+
 export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean): void => {
   const vscode = getVSCodeApi()
 

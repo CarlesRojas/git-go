@@ -20,6 +20,9 @@ const buttonVariants = cva(
           'bg-(--vscode-button-background) text-(--vscode-button-foreground) hover:bg-(--vscode-button-hoverBackground)',
         secondary:
           'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground)/80 hover:bg-(--vscode-editor-foreground)/10',
+        outline:
+          'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-button-foreground) hover:bg-(--vscode-editor-foreground)/10',
+        destructive: 'bg-red-600 text-white hover:bg-red-700',
         ghost: 'text-(--vscode-button-foreground)/80 hover:text-(--vscode-button-foreground)',
       },
       size: {
