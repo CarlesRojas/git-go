@@ -1,7 +1,7 @@
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { Fragment, useState } from 'react'
-import { useIntersectionObserver } from 'usehooks-ts'
+import React, { Fragment, useCallback, useState } from 'react'
+import { useEventListener, useIntersectionObserver } from 'usehooks-ts'
 import type { GitBranch } from '../../src/gitService'
 import { CommitItem } from './components/CommitItem'
 import { useCommitHighlight } from './hooks/useCommitHighlight'
@@ -44,6 +44,36 @@ export const Graph: React.FC<GraphProps> = ({ selectedBranches }) => {
   }
 
   const { onCommitHover } = useCommitHighlight()
+
+  const navigateCommit = useCallback(
+    (direction: 'up' | 'down') => {
+      if (!expandedRow || commits.length === 0) return
+
+      let nextIndex: number
+      if (direction === 'up') nextIndex = expandedRow.row > 0 ? expandedRow.row - 1 : 0
+      else nextIndex = expandedRow.row < commits.length - 1 ? expandedRow.row + 1 : commits.length - 1
+
+      const nextCommit = commits[nextIndex]
+      if (nextIndex === expandedRow.row || !nextCommit) return
+
+      setExpandedCommitHash(nextCommit.hash)
+      setExpandedRow({ row: nextIndex, extraHeight: expandedRow.extraHeight })
+    },
+    [expandedRow, commits],
+  )
+
+  useEventListener(
+    'keydown',
+    useCallback(
+      (event: KeyboardEvent) => {
+        if (!expandedRow) return
+        event.preventDefault()
+
+        navigateCommit(event.key === 'ArrowUp' ? 'up' : 'down')
+      },
+      [expandedRow, navigateCommit],
+    ),
+  )
 
   if (isLoading) {
     return (
