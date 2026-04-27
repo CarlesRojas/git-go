@@ -1,7 +1,7 @@
-import { Button } from '@/components/Button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/Dialog'
 import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
+import { Button } from '@/components/ui/Button'
 import { Label } from '@/components/ui/Label'
 import { useToast } from '@/contexts/ToastContext'
 import { useAddTag } from '@/hooks/useGitQueries'

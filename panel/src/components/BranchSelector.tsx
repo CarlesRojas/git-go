@@ -6,7 +6,6 @@ import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button } from './Button'
 import {
   Combobox,
   ComboboxCollection,
@@ -21,6 +20,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from './Combobox'
+import { Button } from './ui/Button'
 
 interface BranchSelectorProps {
   onBranchesChange: (branches: GitBranch[]) => void

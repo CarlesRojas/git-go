@@ -14,7 +14,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { Button } from './Button'
+import { Button } from './ui/Button'
 
 const treeVariants = cva(
   'group before:bg-accent/70 before:absolute before:left-0 before:-z-10 before:h-8 before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100',
