@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/Button'
 import { cn } from '@/utils/cn'
 import { faChevronRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -14,7 +15,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { Button } from './ui/Button'
 
 const treeVariants = cva(
   'group before:bg-accent/70 before:absolute before:left-0 before:-z-10 before:h-8 before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100',

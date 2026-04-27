@@ -1,9 +1,8 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import '@fontsource/monaspace-neon/index.css'
+import { App } from '@/App'
+import '@/index.css'
 import '@fontsource/jetbrains-mono/index.css'
-import './index.css'
-import { App } from './App'
+import '@fontsource/monaspace-neon/index.css'
+import { createRoot } from 'react-dom/client'
 
 const root = createRoot(document.getElementById('root')!)
 root.render(<App />)

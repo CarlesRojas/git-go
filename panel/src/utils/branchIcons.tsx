@@ -1,6 +1,6 @@
+import { cn } from '@/utils/cn'
 import { faCodeBranch, faStar } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { cn } from './cn'
 
 interface Props {
   isLocal?: boolean

@@ -1,3 +1,6 @@
+import BranchPill from '@/components/BranchPill'
+import StashTagPill from '@/components/StashTagPill'
+import { TreeView } from '@/components/Tree'
 import { Avatar } from '@/components/ui/Avatar'
 import { useToast } from '@/contexts/ToastContext'
 import { useCommitContextMenu } from '@/hooks/useCommitContextMenu'
@@ -12,9 +15,6 @@ import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
 import { FC, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
-import BranchPill from './BranchPill'
-import StashTagPill from './StashTagPill'
-import { TreeView } from './Tree'
 
 interface CommitItemProps {
   commit: GitCommit

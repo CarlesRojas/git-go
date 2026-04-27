@@ -1,12 +1,12 @@
-import type { GitBranch } from '@/../src/gitService'
+import { CommitItem } from '@/components/CommitItem'
+import { useCommitHighlight } from '@/hooks/useCommitHighlight'
+import { useInfiniteGitCommits, useWorkingChanges } from '@/hooks/useGitQueries'
+import { ExpandedRow, useGitTree } from '@/hooks/useGitTree'
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitBranch } from '@git/gitService'
 import { FC, Fragment, useCallback, useMemo, useState } from 'react'
 import { useEventListener, useIntersectionObserver } from 'usehooks-ts'
-import { CommitItem } from './components/CommitItem'
-import { useCommitHighlight } from './hooks/useCommitHighlight'
-import { useInfiniteGitCommits, useWorkingChanges } from './hooks/useGitQueries'
-import { ExpandedRow, useGitTree } from './hooks/useGitTree'
 
 interface GraphProps {
   selectedBranches: GitBranch[]

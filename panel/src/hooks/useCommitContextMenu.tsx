@@ -5,14 +5,14 @@ import {
   ContextMenuLabel,
   ContextMenuTrigger,
 } from '@/components/ui/ContextMenu'
+import { useBranchDialog } from '@/hooks/dialogs/useBranchDialog'
+import { useCherryPickDialog } from '@/hooks/dialogs/useCherryPickDialog'
+import { useRevertDialog } from '@/hooks/dialogs/useRevertDialog'
+import { useTagDialog } from '@/hooks/dialogs/useTagDialog'
 import { faClone, faCodeBranch, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode } from 'react'
-import { useBranchDialog } from './dialogs/useBranchDialog'
-import { useCherryPickDialog } from './dialogs/useCherryPickDialog'
-import { useRevertDialog } from './dialogs/useRevertDialog'
-import { useTagDialog } from './dialogs/useTagDialog'
 
 interface UseCommitContextMenuProps {
   commit: GitCommit

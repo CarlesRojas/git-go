@@ -3,7 +3,6 @@
 - [ ] Implement a search feature
 - [ ] Add fetch icon to toolbar
 
-- [x] Commit Right Click Menu: Add Tag (annotated/lightweight), Create Branch (with checkout option), Cherry Pick (record origin/no-commit options), Revert (no-commit option)
 - [ ] Remote Branch Right Click Menu
 - [ ] Local Branch Right Click Menu
 - [ ] Stash Right Click Menu
