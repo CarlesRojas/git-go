@@ -59,9 +59,9 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
       <button
         className={cn(
           // Layout & sizing
-          'bg-vsc-editor-fg/15 relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center',
+          'bg-vsc-editor-bg relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center',
           // Interactions
-          onlyRemote && 'border-vsc-editor-fg/15 border',
+          onlyRemote && 'border-vsc-editor-fg/30 border',
           isCurrent && 'border',
           (onlyLocal || onlyRemote) && 'group/branch',
         )}
@@ -71,11 +71,13 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
         <div
           className={cn(
             // Layout & sizing
-            'flex h-full min-w-fit items-center',
+            'peer/icon flex h-full min-w-fit items-center',
             // Spacing
             'px-1',
             onlyRemote && 'pr-0 pl-1',
             !!local && !isCurrent && 'border-y border-l',
+            // Color
+            'bg-vsc-editor-fg/10',
           )}
           style={{
             backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
@@ -94,18 +96,20 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
         <div
           className={cn(
             // Layout & sizing
-            'relative flex h-full min-w-fit items-center',
+            'peer/local relative flex h-full min-w-fit items-center',
             // Typography
             'text-xs font-medium',
             // Border
-            onlyLocal && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
+            onlyLocal && !isCurrent && 'border-vsc-editor-fg/30 border-y border-r',
           )}
         >
           <div
             className={cn(
               // Layout & sizing
               'flex h-full w-fit min-w-fit items-center px-1.5',
-              localAndRemote && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
+              // Color
+              'bg-vsc-editor-fg/10',
+              localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
             )}
             onClick={localAndRemote ? handleLocalDoubleClick : undefined}
           >
@@ -123,13 +127,14 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                 className={cn(
                   'flex h-full w-fit min-w-fit items-center px-1.5',
                   // Colors
-                  onlyRemote && 'border-vsc-editor-fg/15 border-l',
-                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
-                  localAndRemote && isCurrent && 'border-vsc-editor-fg/15 border-l',
+                  'bg-vsc-editor-fg/10',
+                  onlyRemote && 'border-vsc-editor-fg/20 border-l',
+                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+                  localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
                 )}
                 onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
               >
-                <span className="line-clamp-1 leading-tight text-nowrap opacity-50">{remote}</span>
+                <span className="line-clamp-1 leading-tight font-normal text-nowrap opacity-50">{remote}</span>
               </div>
             ))}
         </div>

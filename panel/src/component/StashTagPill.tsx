@@ -27,7 +27,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label }) => {
         // Typography
         'text-xs font-medium',
         // Colors
-        'border-vsc-editor-fg/15 bg-vsc-editor-fg/15 text-vsc-editor-fg border',
+        'border-vsc-editor-fg/20 bg-vsc-editor-fg/10 text-vsc-editor-fg border',
       )}
     >
       <FontAwesomeIcon icon={icon} className={cn('size-3', iconColor)} />
