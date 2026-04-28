@@ -222,11 +222,9 @@ export const Avatar: FC<AvatarProps> = ({ email, author, size = 24, className = 
 
   return (
     <div
-      className={`${fallbackTextSize} pointer-events-none flex items-center justify-center rounded-full font-medium ${className}`}
+      className={`${fallbackTextSize} bg-vsc-button-bg text-vsc-button-fg pointer-events-none flex items-center justify-center rounded-full font-medium ${className}`}
       style={{
         ...sizeStyle,
-        backgroundColor: 'var(--vscode-button-background)',
-        color: 'var(--vscode-button-foreground)',
         ...style,
       }}
     >

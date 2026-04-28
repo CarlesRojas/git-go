@@ -239,7 +239,7 @@ export function useGitTree(
                     cx={dotX}
                     cy={dotY}
                     r={DOT_RADIUS}
-                    fill="var(--color-vsc-editor-bg)"
+                    className="fill-vsc-editor-bg"
                     stroke={color}
                     strokeWidth={LINE_WIDTH}
                   />
@@ -276,12 +276,11 @@ export function useGitTree(
                   cx={dotX}
                   cy={dotY}
                   r={DOT_RADIUS}
-                  fill="var(--color-vsc-editor-bg)"
                   stroke={color}
                   strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}
                   data-row={c.row}
-                  className="origin-center transition-opacity duration-500 transform-fill"
+                  className="fill-vsc-editor-bg origin-center transition-opacity duration-500 transform-fill"
                 />
               )
 

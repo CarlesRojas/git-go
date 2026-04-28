@@ -24,11 +24,7 @@ export const getBranchIcons = ({
       <FontAwesomeIcon
         key="current"
         icon={faStar}
-        className={cn(
-          'size-3 text-yellow-500',
-          black && 'text-vsc-editor-bg/80',
-          white && 'text-(--vscode-editor-foreground)/80',
-        )}
+        className={cn('size-3 text-yellow-500', black && 'text-vsc-editor-bg/80', white && 'text-vsc-editor-fg/80')}
       />,
     )
 

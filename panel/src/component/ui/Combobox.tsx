@@ -28,7 +28,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
           // Colors & Background
           'bg-vsc-input-fg/5',
           // Borders
-          'border border-(--vscode-editor-foreground)/15',
+          'border-vsc-editor-fg/15 border',
         ],
         className,
       )}

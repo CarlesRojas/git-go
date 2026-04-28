@@ -60,7 +60,7 @@ const ContextMenuSubContent = ({
         // Colors & Background
         'border-vsc-editor-fg/15 bg-vsc-editor-bg border',
         // Typography
-        'text-(--vscode-editor-foreground)',
+        'text-vsc-editor-fg',
         // Spacing
         'p-1',
         // Animations & Transitions
@@ -88,9 +88,9 @@ const ContextMenuContent = ({ className, ref, ...props }: ComponentProps<typeof 
           // Sizing
           'min-w-48',
           // Colors & Background
-          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80 backdrop-blur-md',
+          'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border backdrop-blur-md',
           // Typography
-          'text-(--vscode-editor-foreground)',
+          'text-vsc-editor-fg',
           // Animations & Transitions
           'duration-100',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
@@ -120,9 +120,8 @@ const contextMenuItemVariants = cva(
   {
     variants: {
       variant: {
-        default: 'focus:bg-(--vscode-editor-foreground)/15',
-        destructive:
-          'text-(--vscode-errorForeground) focus:bg-(--vscode-errorForeground)/10 [&_svg]:text-(--vscode-errorForeground)',
+        default: 'focus:bg-vsc-editor-fg/15',
+        destructive: 'text-vsc-error-fg focus:bg-vsc-error-fg/10 [&_svg]:text-vsc-error-fg',
       },
     },
     defaultVariants: {
@@ -162,7 +161,7 @@ const ContextMenuCheckboxItem = ({
         // Typography
         'text-xs',
         // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
+        'focus:bg-vsc-editor-fg/15 outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
         '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       ],
@@ -197,7 +196,7 @@ const ContextMenuRadioItem = ({
         // Typography
         'text-xs',
         // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
+        'focus:bg-vsc-editor-fg/15 outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
         '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       ],
@@ -226,7 +225,7 @@ const ContextMenuLabel = ({ className, inset, ref, ...props }: ContextMenuLabelP
         // Spacing
         'flex h-7 items-center px-2',
         // Typography
-        'text-xs text-(--vscode-editor-foreground)/60',
+        'text-vsc-editor-fg/60 text-xs',
       ],
       inset && 'pl-8',
       className,
@@ -243,7 +242,7 @@ const ContextMenuSeparator = ({ className, ref, ...props }: ComponentProps<typeo
         // Layout & Structure
         '-mx-1 h-px',
         // Colors & Background
-        'bg-(--vscode-editor-foreground)/15',
+        'bg-vsc-editor-fg/15',
       ],
       className,
     )}
@@ -259,7 +258,7 @@ const ContextMenuShortcut = ({ className, ...props }: HTMLAttributes<HTMLSpanEle
           // Layout & Structure
           'ml-auto',
           // Typography
-          'text-xs text-(--vscode-editor-foreground)/50',
+          'text-vsc-editor-fg/50 text-xs',
           // Spacing
           'tracking-widest',
         ],
