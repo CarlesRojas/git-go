@@ -21,17 +21,26 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label }) => {
     <div
       className={cn(
         // Layout & sizing
-        'flex h-5 max-h-5 min-h-5 min-w-fit items-center',
-        // Spacing
-        'gap-1.5 px-1',
-        // Typography
-        'text-xs font-medium',
+        'h-5 max-h-5 min-h-5 min-w-fit',
         // Colors
-        'border-vsc-editor-fg/20 bg-vsc-editor-fg/10 text-vsc-editor-fg border',
+        'bg-vsc-editor-bg',
       )}
     >
-      <FontAwesomeIcon icon={icon} className={cn('size-3', iconColor)} />
-      <span className="line-clamp-1 leading-tight text-nowrap">{type === 'stash' ? formatStash(label) : label}</span>
+      <div
+        className={cn(
+          // Layout & sizing
+          'flex h-5 max-h-5 min-h-5 min-w-fit items-center',
+          // Spacing
+          'gap-1.5 px-1',
+          // Colors
+          'border-vsc-editor-fg/20 bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20 text-vsc-editor-fg border',
+        )}
+      >
+        <FontAwesomeIcon icon={icon} className={cn('size-3', iconColor)} />
+        <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
+          {type === 'stash' ? formatStash(label) : label}
+        </span>
+      </div>
     </div>
   )
 }
