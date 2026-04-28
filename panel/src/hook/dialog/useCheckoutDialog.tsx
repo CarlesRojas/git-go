@@ -26,7 +26,7 @@ export const useCheckoutDialog = ({ remoteBranch }: UseCheckoutDialogProps) => {
     onSubmit: async ({ value }) => {
       checkoutRemoteMutation.mutate(
         {
-          remoteBranchName: remoteBranch?.name ?? '',
+          remoteBranchName: remoteBranch ? `${remoteBranch.remoteName}/${remoteBranch.cleanName}` : '',
           localBranchName: value.localBranchName,
         },
         {

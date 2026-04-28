@@ -19,15 +19,15 @@ interface Props {
 const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const { local, remotes } = branch
   const { showToast } = useToast()
-  const checkoutLocalMutation = useCheckoutLocalBranch()
 
+  const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0] })
 
   const handleLocalDoubleClick = useDoubleClick(() => {
     if (!local) return
 
     checkoutLocalMutation.mutate(
-      { branchName: local.name },
+      { branchName: local.cleanName },
       {
         onSuccess: () => {
           showToast({
@@ -50,18 +50,22 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
   const localAndRemote = !!local && remotes.length > 0
+  const isCurrent = layout.isHead && !!local
+
+  if (baseName.includes('main')) console.log(layout.row, onlyLocal, onlyRemote, localAndRemote)
 
   return (
     <>
       <button
         className={cn(
           // Layout & sizing
-          'relative flex h-5 max-h-5 min-h-5 min-w-fit items-center',
-          // Colors
-          !local && 'border-vsc-editor-fg/15 border',
+          'bg-vsc-editor-fg/15 relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center',
           // Interactions
-          (onlyLocal || onlyRemote) && 'group/branch cursor-pointer',
+          onlyRemote && 'border-vsc-editor-fg/15 border',
+          isCurrent && 'border',
+          (onlyLocal || onlyRemote) && 'group/branch',
         )}
+        style={{ borderColor: isCurrent ? getColor(layout.colorIndex, false) : undefined }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
       >
         <div
@@ -70,9 +74,12 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
             'flex h-full min-w-fit items-center',
             // Spacing
             'px-1',
+            onlyRemote && 'pr-0 pl-1',
+            !!local && !isCurrent && 'border-y border-l',
           )}
           style={{
             backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
+            borderColor: getColor(layout.colorIndex, false),
           }}
         >
           {getBranchIcons({
@@ -90,20 +97,14 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
             // Typography
             'text-xs font-medium',
             // Border
-            'border-vsc-editor-fg/15',
-            !!local && 'border-l-none border',
-            !local && 'border-l',
+            onlyLocal && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
           )}
-          style={{
-            borderColor: !!local && layout.isHead ? getColor(layout.colorIndex, false) : undefined,
-          }}
         >
           <div
             className={cn(
               // Layout & sizing
               'flex h-full w-fit min-w-fit items-center px-1.5',
-              // Colors
-              'bg-vsc-editor-fg/15',
+              localAndRemote && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
             )}
           >
             <span className="line-clamp-1 leading-tight text-nowrap">
@@ -118,12 +119,14 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
               <div
                 key={`remote-${i}-${remote}`}
                 className={cn(
-                  'border-vsc-editor-fg/15 flex h-full w-fit min-w-fit items-center border-l px-1.5',
+                  'flex h-full w-fit min-w-fit items-center px-1.5',
                   // Colors
-                  'bg-vsc-editor-fg/15',
+                  onlyRemote && 'border-vsc-editor-fg/15 border-l',
+                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
+                  localAndRemote && isCurrent && 'border-vsc-editor-fg/15 border-l',
                 )}
               >
-                <span className="line-clamp-1 leading-tight text-nowrap opacity-60">{remote}</span>
+                <span className="line-clamp-1 leading-tight text-nowrap opacity-50">{remote}</span>
               </div>
             ))}
         </div>

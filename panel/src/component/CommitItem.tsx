@@ -62,7 +62,14 @@ export const CommitItem: FC<CommitItemProps> = ({
     if (isExpanded && panelHeight > 0) setExpandedRow?.({ row, extraHeight: panelHeight })
   }, [isExpanded, panelHeight, setExpandedRow, row])
 
-  const groupedBranches = useMemo(() => groupBranches(selectedBranches, false), [selectedBranches])
+  const groupedBranches = useMemo(
+    () =>
+      groupBranches(
+        selectedBranches.filter(branch => branch.hash === commit.hash),
+        false,
+      ),
+    [selectedBranches, commit.hash],
+  )
 
   const copyText = (text: string, label: string) => {
     copy(text)
@@ -87,10 +94,8 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const { ContextMenuWrapper: CommitContextMenu } = useCommitContextMenu({ commit })
 
-  const commitBranches = Object.entries(groupedBranches).filter(
-    ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
-  )
-  const hasPills = !commit.isUncommitted && (commitBranches.length > 0 || commit.isStash || commit.tags.length > 0)
+  const hasPills =
+    !commit.isUncommitted && (Object.keys(groupedBranches).length > 0 || commit.isStash || commit.tags.length > 0)
 
   const pills = (
     <div
@@ -101,7 +106,7 @@ export const CommitItem: FC<CommitItemProps> = ({
         'items-center justify-between text-left',
       )}
     >
-      {commitBranches.map(([baseName, { local, remotes }]) => (
+      {Object.entries(groupedBranches).map(([baseName, { local, remotes }]) => (
         <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
       ))}
 
