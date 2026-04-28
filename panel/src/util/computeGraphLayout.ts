@@ -243,12 +243,19 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
           parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint()
 
         branch.addSegment(lastPoint, curPoint, lastPoint.x < curPoint.x)
-        curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch)
+
+        if (!(vertices[startAt]!.isStash && parentVertex === curVertex))
+          curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch)
+
         lastPoint = curPoint
 
         if (parentVertex === curVertex) {
           vertex.registerParentProcessed()
           branch.hashes.add(i)
+
+          // Stash branch stops at its parent — don't consume the parent
+          if (vertices[startAt]!.isStash) break
+
           const parentAlreadyOnBranch = !parentVertex.isNotOnBranch()
           parentVertex.addToBranch(branch, curPoint.x)
           vertex = parentVertex
