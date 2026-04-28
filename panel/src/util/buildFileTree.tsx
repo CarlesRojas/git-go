@@ -49,8 +49,6 @@ export function buildFileTree(files: GitFileChange[], commitHash?: string, isRoo
       if (value.__file) {
         const file = value.__file as GitFileChange
 
-        console.log(commitHash, ['D'].includes(file.status), file)
-
         items.push({
           id: fullPath,
           name: file.oldPath ? `${name} ← ${file.oldPath.split('/').pop()}` : name,

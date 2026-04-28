@@ -5,6 +5,7 @@ import { cn } from '@/util/cn'
 import { GitBranch } from '@git/gitService'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FC, useState } from 'react'
+import { useEventListener } from 'usehooks-ts'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -18,6 +19,12 @@ const queryClient = new QueryClient({
 
 export const App: FC = () => {
   const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
+
+  const onGitChange = (event: MessageEvent) => {
+    if (event.data.type === 'gitChanged') queryClient.invalidateQueries({ queryKey: ['git'] })
+  }
+
+  useEventListener('message', onGitChange)
 
   return (
     <QueryClientProvider client={queryClient}>

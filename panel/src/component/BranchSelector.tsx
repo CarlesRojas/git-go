@@ -73,6 +73,23 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     // onBranchesChange([...branches])
   }, [branches, groupedBranches, onBranchesChange])
 
+  useEffect(() => {
+    const validCleanNames = new Set(branches.map(b => b.cleanName))
+    const filtered = selectedBranches.filter(name => validCleanNames.has(name))
+
+    if (filtered.length !== selectedBranches.length) {
+      setSelectedBranches(filtered)
+      setSelectedCount(Object.keys(groupedBranches).filter(name => filtered.includes(name)).length)
+    }
+
+    const currentSelection = branches.filter(branch =>
+      filtered.length !== selectedBranches.length
+        ? filtered.includes(branch.cleanName)
+        : selectedBranches.includes(branch.cleanName),
+    )
+    onBranchesChange(currentSelection)
+  }, [branches])
+
   const defaultBranchesSet = useRef(false)
   useEffect(() => {
     if (branches.length > 0 && selectedBranches.length === 0 && !defaultBranchesSet.current) {

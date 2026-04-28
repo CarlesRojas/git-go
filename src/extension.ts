@@ -34,6 +34,8 @@ export function activate(context: vscode.ExtensionContext) {
                 localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
             });
 
+            watchGitChanges(currentPanel, log);
+
             if (!currentPanel) return;
 
             const scriptUri = currentPanel.webview.asWebviewUri(
@@ -477,3 +479,66 @@ export function getNonce() {
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
+
+function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void) {
+    const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+    if (!gitExtension) {
+        log('Git extension not found');
+        return;
+    }
+
+    const git = gitExtension.getAPI(1);
+    const disposables: vscode.Disposable[] = [];
+    let debounceTimer: NodeJS.Timeout | undefined;
+
+    const notifyChange = () => {
+        if (!panel.visible) return;
+
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            panel.webview.postMessage({ type: 'gitChanged' });
+            log('Git state changed — notified webview');
+        }, 300);
+    };
+
+    for (const repo of git.repositories) {
+        disposables.push(repo.state.onDidChange(notifyChange));
+    }
+
+    disposables.push(
+        git.onDidOpenRepository((repo: any) => {
+            disposables.push(repo.state.onDidChange(notifyChange));
+        })
+    );
+
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (workspaceFolder) {
+        const gitRefsPattern = new vscode.RelativePattern(workspaceFolder, '.git/refs/**/*');
+        const headPattern = new vscode.RelativePattern(workspaceFolder, '.git/HEAD');
+
+        const refsWatcher = vscode.workspace.createFileSystemWatcher(gitRefsPattern);
+        const headWatcher = vscode.workspace.createFileSystemWatcher(headPattern);
+
+        const onRefChange = () => notifyChange();
+
+        disposables.push(
+            refsWatcher.onDidCreate(onRefChange),
+            refsWatcher.onDidChange(onRefChange),
+            refsWatcher.onDidDelete(onRefChange),
+            headWatcher.onDidChange(onRefChange),
+            refsWatcher,
+            headWatcher
+        );
+    }
+
+    panel.onDidDispose(() => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        disposables.forEach((d) => d.dispose());
+    });
+
+    disposables.push(
+        panel.onDidChangeViewState((e) => {
+            if (e.webviewPanel.visible) notifyChange();
+        })
+    );
+}

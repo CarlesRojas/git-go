@@ -203,13 +203,17 @@ export const useGitCommitFiles = ({ commitHash, isRootCommit = false, enabled = 
   })
 }
 
+const refreshGitData = async (queryClient: any) => {
+  await queryClient.invalidateQueries({ queryKey: ['git'] })
+}
+
 // Hook to refresh git data
 export const useRefreshGitData = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['git'] })
+      await refreshGitData(queryClient)
     },
   })
 }
@@ -298,8 +302,7 @@ export const useAddTag = () => {
       })
     },
     onSuccess: () => {
-      // Refresh git data after creating tag
-      queryClient.invalidateQueries({ queryKey: ['git'] })
+      refreshGitData(queryClient)
     },
   })
 }
@@ -348,8 +351,7 @@ export const useCreateBranchFromCommit = () => {
       })
     },
     onSuccess: () => {
-      // Refresh git data after creating branch
-      queryClient.invalidateQueries({ queryKey: ['git'] })
+      refreshGitData(queryClient)
     },
   })
 }
@@ -398,8 +400,7 @@ export const useCherryPickCommit = () => {
       })
     },
     onSuccess: () => {
-      // Refresh git data after cherry-pick
-      queryClient.invalidateQueries({ queryKey: ['git'] })
+      refreshGitData(queryClient)
     },
   })
 }
@@ -439,8 +440,7 @@ export const useRevertCommit = () => {
       })
     },
     onSuccess: () => {
-      // Refresh git data after revert
-      queryClient.invalidateQueries({ queryKey: ['git'] })
+      refreshGitData(queryClient)
     },
   })
 }

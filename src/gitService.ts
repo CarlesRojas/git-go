@@ -138,6 +138,26 @@ export class GitService {
         return cleanName;
     }
 
+    private async filterToExistingRefs(workspacePath: string, gitPath: string, refs: string[]): Promise<string[]> {
+        try {
+            const output = await this.spawnGit(
+                [gitPath, 'for-each-ref', '--format=%(refname)', 'refs/heads/', 'refs/remotes/'],
+                workspacePath
+            );
+
+            const existingRefs = new Set(
+                output
+                    .split(EOL_REGEX)
+                    .filter((l) => l.trim())
+                    .map((l) => l.trim())
+            );
+
+            return refs.filter((ref) => existingRefs.has(ref));
+        } catch {
+            return [];
+        }
+    }
+
     public async isGitRepository(): Promise<boolean> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) return false;
@@ -374,7 +394,6 @@ export class GitService {
         maxCount: number = 100,
         skip: number = 0
     ): Promise<{ commits: GitCommit[]; hasMore: boolean; total?: number }> {
-        console.log('branches:', branches);
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -413,8 +432,15 @@ export class GitService {
             ];
 
             if (branches && branches.length > 0) {
-                gitArgs.push(...branches);
-                log(`Filtering commits for branches: ${branches.join(', ')}`);
+                const existingBranches = await this.filterToExistingRefs(workspacePath, gitExecutable.path, branches);
+
+                if (existingBranches.length > 0) {
+                    gitArgs.push(...existingBranches);
+                    log(`Filtering commits for branches: ${existingBranches.join(', ')}`);
+                } else {
+                    log('No valid branches found, showing all');
+                    gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
+                }
             } else {
                 gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
                 log('Showing commits from all branches');
