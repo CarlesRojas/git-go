@@ -62,11 +62,7 @@ export const CommitItem: FC<CommitItemProps> = ({
     if (isExpanded && panelHeight > 0) setExpandedRow?.({ row, extraHeight: panelHeight })
   }, [isExpanded, panelHeight, setExpandedRow, row])
 
-  const groupedBranches = useMemo(() => {
-    const grouped = groupBranches(selectedBranches, false)
-    // console.log(selectedBranches, grouped)
-    return grouped
-  }, [selectedBranches])
+  const groupedBranches = useMemo(() => groupBranches(selectedBranches, false), [selectedBranches])
 
   const copyText = (text: string, label: string) => {
     copy(text)
@@ -89,175 +85,181 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
-  const { ContextMenuWrapper } = useCommitContextMenu({ commit })
+  const { ContextMenuWrapper: CommitContextMenu } = useCommitContextMenu({ commit })
 
-  const commitButton = (
-    <button
+  const commitBranches = Object.entries(groupedBranches).filter(
+    ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
+  )
+  const hasPills = !commit.isUncommitted && (commitBranches.length > 0 || commit.isStash || commit.tags.length > 0)
+
+  const pills = (
+    <div
       className={cn(
         // Layout & sizing
-        'group/commit relative flex h-6 max-h-6 min-h-6 w-full',
-        // Spacing
-        'pr-2',
-        // Interactive
-        'hover:bg-vsc-editor-fg/10 cursor-pointer',
-        // State
-        isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
+        'flex w-fit min-w-fit gap-2 overflow-hidden',
+        // Alignment
+        'items-center justify-between text-left',
       )}
-      style={{ paddingLeft: `${treeWidth + 8}px` }}
-      onClick={onToggle}
-      onMouseEnter={() => onCommitHover(commit.hash, row)}
-      onMouseLeave={() => onCommitHover(null, null)}
     >
-      {layout.isHead && (
-        <>
-          <div
-            className="pointer-events-none absolute inset-0 -z-20 opacity-10"
-            style={{ backgroundColor: getColor(layout.colorIndex) }}
-          />
+      {commitBranches.map(([baseName, { local, remotes }]) => (
+        <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
+      ))}
 
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
-            style={{ backgroundColor: getColor(layout.colorIndex) }}
-          />
+      {commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
 
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
-            style={{ backgroundColor: getColor(layout.colorIndex) }}
-          />
-        </>
+      {commit.tags.length > 0 && commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
+    </div>
+  )
+
+  const message = (
+    <div
+      className={cn(
+        // Layout & sizing
+        'relative flex h-full grow overflow-hidden',
+        // Alignment
+        'items-center text-left',
+        hasPills && 'pl-2',
       )}
+      onClick={onToggle}
+    >
+      <h3
+        className={cn(
+          // Typography
+          'line-clamp-1 truncate text-xs leading-tight font-semibold',
+          // State
+          layout?.isMerge && !layout?.isHead && 'opacity-50',
+        )}
+        style={{ color: layout?.isHead ? getColor(layout.colorIndex, commit.isStash) : undefined }}
+      >
+        {commit.message}
+      </h3>
+    </div>
+  )
 
-      {isExpanded && !layout.isHead && (
-        <>
-          <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
-          <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
-        </>
+  const timeAndAuthor = (
+    <div
+      className={cn(
+        // Layout & sizing
+        'flex w-fit min-w-fit gap-2 overflow-hidden pl-2',
+        // Alignment
+        'items-center justify-between text-left',
       )}
-
-      <div
+      onClick={onToggle}
+    >
+      <time
         className={cn(
           // Layout & sizing
-          'flex size-full',
-          // Spacing
-          'gap-2',
+          'min-w-fit',
           // Typography
-          'text-left',
-          // Alignment
-          'items-center justify-between',
-          // Interactive
-          'transition-opacity duration-500',
+          'line-clamp-1 truncate text-xs leading-tight font-medium',
+          // Appearance
+          'opacity-50',
+          commit.isUncommitted && 'opacity-0',
         )}
-        data-commit-row={row}
+        dateTime={commit.date.split('T')[0]}
       >
-        <div
-          className={cn(
-            // Layout & sizing
-            'relative flex h-full grow overflow-hidden',
-            // Spacing
-            'gap-1',
-            // Typography
-            'text-left',
-            // Alignment
-            'items-center justify-between',
-            // Mask effect
-            'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
-          )}
-        >
-          {!commit.isUncommitted &&
-            Object.entries(groupedBranches)
-              .filter(
-                ([_, { local, remotes }]) => local?.hash === commit.hash || remotes.some(r => r.hash === commit.hash),
-              )
-              .map(([baseName, { local, remotes }]) => (
-                <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
-              ))}
+        {new Date(commit.date).toLocaleDateString('en-CA', {
+          year: isFromThisYear ? undefined : 'numeric',
+          month: 'short',
+          day: 'numeric',
+        })}
+      </time>
 
-          {!commit.isUncommitted && commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
+      <time
+        className={cn(
+          // Layout & sizing
+          'min-w-fit',
+          // Typography
+          'line-clamp-1 truncate text-xs leading-tight font-medium',
+          // Appearance
+          'opacity-50',
+          commit.isUncommitted && 'opacity-0',
+        )}
+        dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
+      >
+        {new Date(commit.date).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })}
+      </time>
 
-          {!commit.isUncommitted &&
-            commit.tags.length > 0 &&
-            commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
+      <Avatar
+        email={commit.email}
+        author={commit.author}
+        size={20}
+        className={cn(commit.isUncommitted && 'opacity-0')}
+      />
 
-          <h3
-            className={cn(
-              // Layout
-              'grow pl-1',
-              // Typography
-              'line-clamp-1 truncate text-xs leading-tight font-semibold',
-              // State
-              layout?.isMerge && !layout?.isHead && 'opacity-50',
-            )}
-            style={{ color: layout?.isHead ? getColor(layout.colorIndex, commit.isStash) : undefined }}
-          >
-            {commit.message}
-          </h3>
-        </div>
-
-        <time
-          className={cn(
-            // Layout & sizing
-            'min-w-fit',
-            // Typography
-            'line-clamp-1 truncate text-xs leading-tight font-medium',
-            // Appearance
-            'opacity-50',
-            commit.isUncommitted && 'opacity-0',
-          )}
-          dateTime={commit.date.split('T')[0]}
-        >
-          {new Date(commit.date).toLocaleDateString('en-CA', {
-            year: isFromThisYear ? undefined : 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })}
-        </time>
-
-        <time
-          className={cn(
-            // Layout & sizing
-            'min-w-fit',
-            // Typography
-            'line-clamp-1 truncate text-xs leading-tight font-medium',
-            // Appearance
-            'opacity-50',
-            commit.isUncommitted && 'opacity-0',
-          )}
-          dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}
-        >
-          {new Date(commit.date).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })}
-        </time>
-
-        <Avatar
-          email={commit.email}
-          author={commit.author}
-          size={20}
-          className={cn(commit.isUncommitted && 'opacity-0')}
-        />
-
-        <span
-          className={cn(
-            // Layout & sizing
-            'w-20 max-w-20 min-w-20',
-            // Typography
-            'line-clamp-1 truncate text-xs leading-tight font-medium',
-            // Appearance
-            'opacity-50',
-            commit.isUncommitted && 'opacity-0',
-          )}
-        >
-          {commit.author}
-        </span>
-      </div>
-    </button>
+      <span
+        className={cn(
+          // Layout & sizing
+          'w-20 max-w-20 min-w-20',
+          // Typography
+          'line-clamp-1 truncate text-xs leading-tight font-medium',
+          // Appearance
+          'opacity-50',
+          commit.isUncommitted && 'opacity-0',
+        )}
+      >
+        {commit.author}
+      </span>
+    </div>
   )
 
   return (
     <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
-      <ContextMenuWrapper>{commitButton}</ContextMenuWrapper>
+      <div
+        className={cn(
+          'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
+          // Interactive
+          'transition-opacity duration-500',
+          isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
+          'hover:bg-vsc-editor-fg/10 cursor-pointer',
+        )}
+        style={{ paddingLeft: `${treeWidth + 8}px` }}
+        onMouseEnter={() => onCommitHover(commit.hash, row)}
+        onMouseLeave={() => onCommitHover(null, null)}
+        data-commit-row={row}
+      >
+        <CommitContextMenu>
+          <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />
+        </CommitContextMenu>
+
+        <div className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}>
+          {!!hasPills && pills}
+
+          <CommitContextMenu>{message}</CommitContextMenu>
+        </div>
+
+        <CommitContextMenu>{timeAndAuthor}</CommitContextMenu>
+
+        {layout.isHead && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 -z-20 opacity-10"
+              style={{ backgroundColor: getColor(layout.colorIndex) }}
+            />
+
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
+              style={{ backgroundColor: getColor(layout.colorIndex) }}
+            />
+
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
+              style={{ backgroundColor: getColor(layout.colorIndex) }}
+            />
+          </>
+        )}
+
+        {isExpanded && !layout.isHead && (
+          <>
+            <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
+            <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
+          </>
+        )}
+      </div>
 
       {isExpanded && (
         <div
@@ -314,6 +316,24 @@ export const CommitItem: FC<CommitItemProps> = ({
                       >
                         {commit.message}
                       </span>
+                    </p>
+
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Date: </span>
+                      <time dateTime={commit.date.split('T')[0]}>
+                        {new Date(commit.date).toLocaleDateString('en-CA', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </time>{' '}
+                      <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
+                        {new Date(commit.date).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })}
+                      </time>
                     </p>
                   </div>
                 </div>

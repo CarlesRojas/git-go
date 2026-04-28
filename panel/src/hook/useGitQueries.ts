@@ -458,3 +458,88 @@ export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?
     isUncommitted: commitHash === 'working-changes',
   })
 }
+
+// Hook to checkout a local branch
+export const useCheckoutLocalBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ branchName }: { branchName: string }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'branchCheckedOut' && message.isLocal) {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'checkoutLocalBranch',
+          branchName,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to checkout local branch'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Hook to checkout a remote branch (creates local branch)
+export const useCheckoutRemoteBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      remoteBranchName,
+      localBranchName,
+    }: {
+      remoteBranchName: string
+      localBranchName: string
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'branchCheckedOut' && !message.isLocal) {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'checkoutRemoteBranch',
+          remoteBranchName,
+          localBranchName,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to checkout remote branch'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}

@@ -726,6 +726,47 @@ export class GitService {
         }
     }
 
+    public async checkoutLocalBranch(log: (message: string) => void, branchName: string): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Checking out local branch: ${branchName}`);
+            await this.spawnGit([gitExecutable.path, 'checkout', branchName], workspacePath);
+            log(`Successfully checked out branch: ${branchName}`);
+        } catch (error) {
+            log(`Error checking out branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async checkoutRemoteBranch(
+        log: (message: string) => void,
+        remoteBranchName: string,
+        localBranchName: string
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Creating and checking out local branch '${localBranchName}' from remote '${remoteBranchName}'`);
+            await this.spawnGit(
+                [gitExecutable.path, 'checkout', '-b', localBranchName, remoteBranchName],
+                workspacePath
+            );
+            log(`Successfully created and checked out branch: ${localBranchName}`);
+        } catch (error) {
+            log(`Error creating branch from remote: ${error}`);
+            throw error;
+        }
+    }
+
     public clearCache(): void {
         this.cachedGitExecutable = null;
     }

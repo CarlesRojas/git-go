@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] Double click to select branch
+- [ ] Fix the reset button in the branch selector
 - [ ] Implement a search feature
 - [ ] Add fetch icon to toolbar
 

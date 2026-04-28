@@ -390,6 +390,53 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'checkoutLocalBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { branchName } = message;
+                                if (!branchName) {
+                                    throw new Error('Branch name is required');
+                                }
+                                await gitService.checkoutLocalBranch(log, branchName);
+                                log(`Successfully checked out local branch: ${branchName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'branchCheckedOut',
+                                    branchName: branchName,
+                                    isLocal: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error checking out local branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'checkoutRemoteBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { remoteBranchName, localBranchName } = message;
+                                if (!remoteBranchName || !localBranchName) {
+                                    throw new Error('Both remote and local branch names are required');
+                                }
+                                await gitService.checkoutRemoteBranch(log, remoteBranchName, localBranchName);
+                                log(`Successfully created and checked out branch: ${localBranchName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'branchCheckedOut',
+                                    branchName: localBranchName,
+                                    isLocal: false,
+                                    remoteBranchName: remoteBranchName
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error creating branch from remote: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                     }
                 },
                 undefined,
