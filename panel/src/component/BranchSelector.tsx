@@ -16,7 +16,7 @@ import {
 import { useGitBranches } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
-import { groupBranches, GroupedBranch } from '@/util/groupBranches'
+import { groupBranches } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -49,20 +49,14 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
     const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
     const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
+    const localBranches = branches
+      .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
+      .slice(0, Math.max(0, remainingSlots))
 
-    const localBranches = branches.filter(b => !b.remote && !b.current && !isMain(b.cleanName))
-    const additionalBranches: Record<string, GroupedBranch> = Object.fromEntries(
-      Object.entries(groupBranches(localBranches)).slice(0, Math.max(0, remainingSlots)),
-    )
+    const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
+    const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
 
-    const branchesToSelect = [
-      ...priorityBranches,
-      ...Object.values(additionalBranches).flatMap(
-        group => [group.local, ...group.remotes].filter(Boolean) as GitBranch[],
-      ),
-    ]
-
-    const names = branchesToSelect.map(b => b.cleanName)
+    const names = Array.from(new Set(branchesToSelect.map(b => b.cleanName)))
     setSelectedBranches(names)
     setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
     onBranchesChange(branchesToSelect)

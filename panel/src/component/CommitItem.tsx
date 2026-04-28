@@ -62,7 +62,11 @@ export const CommitItem: FC<CommitItemProps> = ({
     if (isExpanded && panelHeight > 0) setExpandedRow?.({ row, extraHeight: panelHeight })
   }, [isExpanded, panelHeight, setExpandedRow, row])
 
-  const groupedBranches = useMemo(() => groupBranches(selectedBranches, false), [selectedBranches])
+  const groupedBranches = useMemo(() => {
+    const grouped = groupBranches(selectedBranches, false)
+    // console.log(selectedBranches, grouped)
+    return grouped
+  }, [selectedBranches])
 
   const copyText = (text: string, label: string) => {
     copy(text)
