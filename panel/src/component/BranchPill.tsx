@@ -68,76 +68,78 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
         style={{ borderColor: isCurrent ? getColor(layout.colorIndex, false) : undefined }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
       >
-        <div
-          className={cn(
-            // Layout & sizing
-            'peer/icon flex h-full min-w-fit items-center',
-            // Spacing
-            'px-1',
-            onlyRemote && 'pr-0 pl-1',
-            !!local && !isCurrent && 'border-y border-l',
-            // Color
-            'bg-vsc-editor-fg/10',
-          )}
-          style={{
-            backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
-            borderColor: getColor(layout.colorIndex, false),
-          }}
-          onClick={localAndRemote ? handleLocalDoubleClick : undefined}
-        >
-          {getBranchIcons({
-            isLocal: !!local,
-            hasRemote: !local && !!remotes.length,
-            black: !!local,
-            white: !local,
-          })}
-        </div>
-
-        <div
-          className={cn(
-            // Layout & sizing
-            'peer/local relative flex h-full min-w-fit items-center',
-            // Typography
-            'text-xs font-medium',
-            // Border
-            onlyLocal && !isCurrent && 'border-vsc-editor-fg/30 border-y border-r',
-          )}
-        >
+        {!onlyRemote && (
           <div
             className={cn(
               // Layout & sizing
-              'flex h-full w-fit min-w-fit items-center px-1.5',
+              'peer/icon flex h-full min-w-fit items-center',
+              // Spacing
+              'px-1',
               // Color
               'bg-vsc-editor-fg/10',
-              localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+              !!local && !isCurrent && 'border-y border-l',
             )}
+            style={{
+              backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
+              borderColor: getColor(layout.colorIndex, false),
+            }}
             onClick={localAndRemote ? handleLocalDoubleClick : undefined}
           >
-            <span className="line-clamp-1 leading-tight text-nowrap">
-              {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
-            </span>
+            {getBranchIcons({
+              isLocal: !!local,
+              hasRemote: !local && !!remotes.length,
+              black: !!local,
+              white: !local,
+            })}
           </div>
+        )}
 
-          {remotes
-            .map(({ remoteName }) => remoteName)
-            .filter(Boolean)
-            .map((remote, i) => (
-              <div
-                key={`remote-${i}-${remote}`}
-                className={cn(
-                  'flex h-full w-fit min-w-fit items-center px-1.5',
-                  // Colors
-                  'bg-vsc-editor-fg/10',
-                  onlyRemote && 'border-vsc-editor-fg/20 border-l',
-                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
-                  localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
-                )}
-                onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
-              >
-                <span className="line-clamp-1 leading-tight font-normal text-nowrap opacity-50">{remote}</span>
-              </div>
-            ))}
+        <div
+          className={cn(
+            // Layout & sizing
+            'flex h-full w-fit min-w-fit items-center px-1.5',
+            // Color
+            'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
+            localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+            onlyLocal && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+            onlyRemote && 'gap-1.5 pl-1',
+            !onlyRemote && 'peer-hover/icon:bg-vsc-editor-fg/20',
+          )}
+          onClick={localAndRemote ? handleLocalDoubleClick : undefined}
+        >
+          {onlyRemote &&
+            getBranchIcons({
+              isLocal: !!local,
+              hasRemote: !local && !!remotes.length,
+              black: !!local,
+              white: !local,
+            })}
+
+          <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
+            {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
+          </span>
         </div>
+
+        {remotes
+          .map(({ remoteName }) => remoteName)
+          .filter(Boolean)
+          .map((remote, i) => (
+            <div
+              key={`remote-${i}-${remote}`}
+              className={cn(
+                'flex h-full w-fit min-w-fit items-center px-1.5',
+                // Colors
+                'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
+                onlyRemote && 'border-vsc-editor-fg/20 border-l',
+                localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+                localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
+              )}
+              onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
+            >
+              <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">{remote}</span>
+            </div>
+          ))}
+        {/* </div> */}
       </button>
 
       {checkoutDialog.DialogComponent}
