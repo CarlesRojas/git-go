@@ -171,8 +171,6 @@ export function useGitTree(
                     rx={squareSize * 0.3}
                     ry={squareSize * 0.3}
                     fill="black"
-                    // data-hash={c.commit.hash}
-                    // className="origin-center transition-[scale] transform-fill"
                   />
                 )
               }
@@ -184,8 +182,6 @@ export function useGitTree(
                   cy={dotY}
                   r={DOT_RADIUS + LINE_WIDTH * 1.5}
                   fill="black"
-                  // data-hash={c.commit.hash}
-                  // className="origin-center transition-[scale] transform-fill"
                 />
               )
             })}

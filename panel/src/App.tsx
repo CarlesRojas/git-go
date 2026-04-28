@@ -1,6 +1,7 @@
 import { BranchSelector } from '@/component/BranchSelector'
 import { Graph } from '@/component/Graph'
 import { RefetchButton } from '@/component/RefreshButton'
+import { SearchInput } from '@/component/SearchInput'
 import { ToastProvider } from '@/context/ToastContext'
 import { cn } from '@/util/cn'
 import { GitBranch } from '@git/gitService'
@@ -20,6 +21,7 @@ const queryClient = new QueryClient({
 
 export const App: FC = () => {
   const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   const onGitChange = (event: MessageEvent) => {
     if (event.data.type === 'gitChanged') queryClient.invalidateQueries({ queryKey: ['git'] })
@@ -49,22 +51,26 @@ export const App: FC = () => {
           <div
             className={cn([
               // Position & Layout
-              'flex h-9 max-h-9 min-h-9 w-full items-center justify-between',
+              'flex h-9 max-h-9 min-h-9 w-full items-center justify-between gap-2',
               // Colors & Background
               'bg-vsc-editor-bg',
               // Borders
               'border-vsc-editor-fg/15 border-b',
               // Spacing
-              'px-4',
+              'px-2',
             ])}
           >
             <BranchSelector onBranchesChange={setSelectedBranches} />
 
-            <RefetchButton />
+            <div className="flex items-center gap-2">
+              <SearchInput value={searchTerm} onChange={setSearchTerm} />
+
+              <RefetchButton />
+            </div>
           </div>
 
           <main className="graph-h relative flex flex-col overflow-y-auto">
-            <Graph selectedBranches={selectedBranches} />
+            <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} />
           </main>
         </ToastProvider>
       </div>

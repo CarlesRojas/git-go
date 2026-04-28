@@ -27,6 +27,7 @@ interface CommitItemProps {
   layout: CommitLayout
   setExpandedRow?: (expandedRow?: ExpandedRow) => void
   uncommitedFiles?: GitFileChange[]
+  dimmed?: boolean
 }
 
 export const CommitItem: FC<CommitItemProps> = ({
@@ -40,6 +41,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   layout,
   setExpandedRow,
   uncommitedFiles,
+  dimmed,
 }) => {
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
@@ -242,6 +244,7 @@ export const CommitItem: FC<CommitItemProps> = ({
           'transition-opacity duration-500',
           isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
           'hover:bg-vsc-editor-fg/10 cursor-pointer',
+          dimmed && 'opacity-10',
         )}
         style={{ paddingLeft: `${treeWidth + 8}px` }}
         onMouseEnter={() => onCommitHover(commit.hash, row)}
