@@ -28,7 +28,7 @@ const ContextMenuSubTrigger = ({ className, inset, children, ref, ...props }: Co
         // Typography
         'text-xs',
         // Interactive States
-        'outline-hidden focus:bg-(--vscode-editor-foreground)/15 data-[state=open]:bg-(--vscode-editor-foreground)/15',
+        'focus:bg-vsc-editor-fg/15 data-[state=open]:bg-vsc-editor-fg/15 outline-hidden',
         // Icon Styles
         '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       ],
@@ -58,7 +58,7 @@ const ContextMenuSubContent = ({
         // Sizing
         'min-w-48',
         // Colors & Background
-        'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
+        'border-vsc-editor-fg/15 bg-vsc-editor-bg border',
         // Typography
         'text-(--vscode-editor-foreground)',
         // Spacing

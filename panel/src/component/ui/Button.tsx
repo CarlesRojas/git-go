@@ -16,13 +16,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'border border-(--vscode-button-foreground)/15 bg-(--vscode-button-background) text-(--vscode-button-foreground) hover:bg-(--vscode-button-hoverBackground)',
-        secondary:
-          'border border-(--vscode-editor-foreground)/15 bg-transparent text-(--vscode-editor-foreground) hover:bg-(--vscode-editor-foreground)/10',
-        destructive:
-          'border border-(--vscode-errorForeground)/15 bg-(--vscode-inputValidation-errorBackground) text-(--vscode-errorForeground) hover:bg-(--vscode-inputValidation-errorBackground)/80',
-        ghost: 'text-(--vscode-button-foreground)/70 hover:text-(--vscode-button-foreground)',
+        default: 'border-vsc-button-fg/15 bg-vsc-button-bg text-vsc-button-fg hover:bg-vsc-button-hover-bg border',
+        secondary: 'border-vsc-editor-fg/15 text-vsc-editor-fg hover:bg-vsc-editor-fg/10 border bg-transparent',
+        destructive: 'border-vsc-error-fg/15 bg-vsc-error-bg text-vsc-error-fg hover:bg-vsc-error-bg/80 border',
+        ghost: 'text-vsc-button-fg/70 hover:text-vsc-button-fg',
       },
       size: {
         default: 'h-7 px-3',

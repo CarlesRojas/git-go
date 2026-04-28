@@ -457,19 +457,15 @@ const TreeLeaf = ({
             {item.fileChange &&
               !['A', 'D'].includes(item.fileChange.status) &&
               (item.fileChange.additions > 0 || item.fileChange.deletions > 0) && (
-                <span className="text-(--vscode-editor-foreground) opacity-60">
+                <span className="text-vsc-editor-fg opacity-60">
                   {' '}
                   (
                   {item.fileChange.additions > 0 && (
-                    <span className="text-(--vscode-gitDecoration-addedResourceForeground)">
-                      +{item.fileChange.additions}
-                    </span>
+                    <span className="text-vsc-git-added-fg">+{item.fileChange.additions}</span>
                   )}
                   {item.fileChange.additions && item.fileChange.deletions ? ' ' : ''}
                   {item.fileChange.deletions > 0 && (
-                    <span className="text-(--vscode-gitDecoration-deletedResourceForeground)">
-                      -{item.fileChange.deletions}
-                    </span>
+                    <span className="text-vsc-git-deleted-fg">-{item.fileChange.deletions}</span>
                   )}
                   )
                 </span>
@@ -510,7 +506,7 @@ const AccordionTrigger = ({
     >
       <FontAwesomeIcon
         icon={faChevronRight}
-        className="mr-2 h-3 w-3 shrink-0 text-(--vscode-editor-foreground)/50 transition-transform duration-300 group-data-[state=open]/trigger:rotate-90"
+        className="text-vsc-editor-fg/50 mr-2 h-3 w-3 shrink-0 transition-transform duration-300 group-data-[state=open]/trigger:rotate-90"
       />
       {children}
     </AccordionPrimitive.Trigger>

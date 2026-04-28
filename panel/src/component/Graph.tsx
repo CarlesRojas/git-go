@@ -88,8 +88,8 @@ export const Graph: FC<GraphProps> = ({ selectedBranches }) => {
   if (isError) {
     return (
       <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
-        <FontAwesomeIcon icon={faTimesCircle} className="size-4 text-(--vscode-errorForeground)" />
-        <p className="text-xs text-(--vscode-errorForeground)">Error loading git history</p>
+        <FontAwesomeIcon icon={faTimesCircle} className="text-vsc-error-fg size-4" />
+        <p className="text-vsc-error-fg text-xs">Error loading git history</p>
       </div>
     )
   }

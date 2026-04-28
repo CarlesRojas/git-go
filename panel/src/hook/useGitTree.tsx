@@ -14,8 +14,8 @@ const BRANCH_COLORS = [
   '#eab308', // yellow-500
 ]
 
-const STASH_COLOR = 'var(--vscode-editor-foreground)'
-const UNCOMMITTED_COLOR = 'var(--vscode-editor-foreground)'
+const STASH_COLOR = 'var(--color-vsc-editor-fg)'
+const UNCOMMITTED_COLOR = 'var(--color-vsc-editor-fg)'
 
 const MAX_TREE_COLUMNS = 16
 
@@ -239,7 +239,7 @@ export function useGitTree(
                     cx={dotX}
                     cy={dotY}
                     r={DOT_RADIUS}
-                    fill="var(--vscode-editor-background)"
+                    fill="var(--color-vsc-editor-bg)"
                     stroke={color}
                     strokeWidth={LINE_WIDTH}
                   />
@@ -276,7 +276,7 @@ export function useGitTree(
                   cx={dotX}
                   cy={dotY}
                   r={DOT_RADIUS}
-                  fill="var(--vscode-editor-background)"
+                  fill="var(--color-vsc-editor-bg)"
                   stroke={color}
                   strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}

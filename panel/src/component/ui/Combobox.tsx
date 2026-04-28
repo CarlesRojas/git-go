@@ -24,9 +24,9 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
           // Spacing
           'px-2.5',
           // Typography
-          'text-xs whitespace-nowrap text-(--vscode-input-foreground)',
+          'text-vsc-input-fg text-xs whitespace-nowrap',
           // Colors & Background
-          'bg-(--vscode-input-foreground)/5',
+          'bg-vsc-input-fg/5',
           // Borders
           'border border-(--vscode-editor-foreground)/15',
         ],
@@ -35,7 +35,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       {...props}
     >
       <div className="flex min-w-0 flex-row items-center gap-2">
-        <FontAwesomeIcon icon={faCodeBranch} className="size-2.5 min-w-2.5 text-(--vscode-editor-foreground)/70" />
+        <FontAwesomeIcon icon={faCodeBranch} className="text-vsc-editor-fg/70 size-2.5 min-w-2.5" />
         {children}
       </div>
 
@@ -60,13 +60,7 @@ function ComboboxInput({
 }) {
   return (
     <ComboboxPrimitive.Input
-      render={
-        <Input
-          disabled={disabled}
-          className="border-b! border-none border-(--vscode-editor-foreground)/15"
-          onClear={onClear}
-        />
-      }
+      render={<Input disabled={disabled} className="border-vsc-editor-fg/15 border-b! border-none" onClear={onClear} />}
       className={cn(className)}
       {...props}
     />
@@ -108,8 +102,8 @@ function ComboboxContent({
               // Transform Origin
               'origin-(--transform-origin)',
               // Colors & Background
-              'bg-(--vscode-editor-background)/80 text-(--vscode-editor-foreground) backdrop-blur-md',
-              'border border-(--vscode-editor-foreground)/15',
+              'bg-vsc-editor-bg/80 text-vsc-editor-fg backdrop-blur-md',
+              'border-vsc-editor-fg/15 border',
               // Animations & Transitions
               'duration-100',
               'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
@@ -165,7 +159,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
           // Typography
           'text-xs',
           // Interactive States
-          'data-highlighted:bg-(--vscode-editor-foreground)/15! data-selected:bg-(--vscode-editor-foreground)/7',
+          'data-highlighted:bg-vsc-editor-fg/15! data-selected:bg-vsc-editor-fg/7',
           // Disabled States
           'data-disabled:pointer-events-none data-disabled:opacity-50',
           // Icon Styles
@@ -179,10 +173,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
       <ComboboxPrimitive.ItemIndicator
         render={
           <span className="pointer-events-none absolute right-2 flex size-3 items-center justify-center">
-            <FontAwesomeIcon
-              icon={faCheck}
-              className="pointer-events-none size-3 text-(--vscode-editor-foreground)/70"
-            />
+            <FontAwesomeIcon icon={faCheck} className="text-vsc-editor-fg/70 pointer-events-none size-3" />
           </span>
         }
       />
@@ -203,7 +194,7 @@ function ComboboxLabel({ className, ...props }: ComboboxPrimitive.GroupLabel.Pro
           // Spacing
           'px-1.5 py-1',
           // Typography
-          'text-xs text-(--vscode-editor-foreground)/50',
+          'text-vsc-editor-fg/50 text-xs',
         ],
         className,
       )}
@@ -227,7 +218,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
           // Spacing
           'px-2.5 py-2',
           // Typography
-          'text-xs text-(--vscode-editor-foreground)/50',
+          'text-vsc-editor-fg/50 text-xs',
           // Group States
           'group-data-empty/combobox-content:flex',
         ],
@@ -241,7 +232,7 @@ function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
-      className={cn('-mx-1 h-px bg-(--vscode-editor-foreground)/15', className)}
+      className={cn('bg-vsc-editor-fg/15 -mx-1 h-px', className)}
       {...props}
     />
   )

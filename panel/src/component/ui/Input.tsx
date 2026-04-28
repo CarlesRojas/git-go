@@ -11,15 +11,15 @@ const inputVariants = cva([
   // Spacing
   'px-2',
   // Typography
-  'text-xs text-(--vscode-input-foreground)',
+  'text-vsc-input-fg text-xs',
   // Colors & Background
-  'bg-(--vscode-input-background)',
+  'bg-vsc-input-bg',
   // Borders
-  'border border-(--vscode-editor-foreground)/15',
+  'border-vsc-editor-fg/15 border',
   // Interactions
   'transition-colors',
   // Placeholder
-  'placeholder:text-(--vscode-input-placeholderForeground)/50',
+  'placeholder:text-vsc-input-placeholder-fg/50',
   // Disabled States
   'disabled:cursor-not-allowed disabled:opacity-50',
 ])

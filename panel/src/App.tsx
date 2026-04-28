@@ -26,12 +26,12 @@ export const App: FC = () => {
           // Layout & Structure
           'flex max-h-screen min-h-screen max-w-screen min-w-screen flex-col',
           // Typography
-          'font-medium text-(--vscode-editor-foreground)',
+          'text-vsc-editor-fg font-medium',
           // Colors & Background
-          // 'bg-(--vscode-editor-background)',
+          // 'bg-vsc-editor-bg',
           // Selection States
-          'selection:bg-(--vscode-editor-selectionBackground)',
-          'selection:text-(--vscode-editor-selectionForeground)',
+          'selection:bg-vsc-editor-selection-bg',
+          'selection:text-vsc-editor-selection-fg',
         ])}
         style={{
           fontFamily:
@@ -44,9 +44,9 @@ export const App: FC = () => {
               // Position & Layout
               'flex h-9 max-h-9 min-h-9 w-full items-center',
               // Colors & Background
-              'bg-(--vscode-editor-background)',
+              'bg-vsc-editor-bg',
               // Borders
-              'border-b border-(--vscode-editor-foreground)/15',
+              'border-vsc-editor-fg/15 border-b',
               // Spacing
               'px-4',
             ])}

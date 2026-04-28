@@ -15,7 +15,7 @@ function formatStash(ref: string): string {
 
 const StashTagPill: FC<StashTagPillProps> = ({ type, label }) => {
   const icon = type === 'stash' ? faInbox : faTag
-  const iconColor = type === 'stash' ? 'text-(--vscode-editor-foreground)/70' : 'text-amber-500'
+  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/70' : 'text-amber-500'
 
   return (
     <div
@@ -27,7 +27,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label }) => {
         // Typography
         'text-xs font-medium',
         // Colors
-        'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-foreground)/15 text-(--vscode-editor-foreground)',
+        'border-vsc-editor-fg/15 bg-vsc-editor-fg/15 text-vsc-editor-fg border',
       )}
     >
       <FontAwesomeIcon icon={icon} className={cn('size-3', iconColor)} />

@@ -12,13 +12,13 @@ const Checkbox = ({ className, ref, ...props }: ComponentProps<typeof CheckboxPr
         // Layout & Structure
         'peer flex size-4 cursor-pointer items-center justify-center',
         // Colors & Background
-        'border border-(--vscode-editor-foreground)/15 bg-(--vscode-input-background)',
+        'border-vsc-editor-fg/15 bg-vsc-input-bg border',
         // Interactive States
         'disabled:cursor-not-allowed disabled:opacity-50',
-        'hover:bg-(--vscode-editor-foreground)/5 data-[state=checked]:hover:bg-(--vscode-button-background)/70',
+        'hover:bg-vsc-editor-fg/5 data-[state=checked]:hover:bg-vsc-button-bg/70',
         // Data states
-        'data-[state=checked]:bg-(--vscode-button-background) data-[state=checked]:text-(--vscode-button-foreground)',
-        'data-[state=checked]:border-(--vscode-button-background)',
+        'data-[state=checked]:bg-vsc-button-bg data-[state=checked]:text-vsc-button-fg',
+        'data-[state=checked]:border-vsc-button-bg',
       ],
       className,
     )}

@@ -8,15 +8,15 @@ const textareaVariants = cva([
   // Spacing
   'px-3 py-1.5',
   // Typography
-  'text-sm text-(--vscode-input-foreground)',
+  'text-vsc-input-fg text-sm',
   // Colors & Background
-  'bg-(--vscode-input-background)',
+  'bg-vsc-input-bg',
   // Borders
-  'border border-(--vscode-editor-foreground)/15',
+  'border-vsc-editor-fg/15 border',
   // Interactions
   'transition-colors',
   // Placeholder
-  'placeholder:text-(--vscode-input-placeholderForeground)/50',
+  'placeholder:text-vsc-input-placeholder-fg/50',
   // Disabled States
   'disabled:cursor-not-allowed disabled:opacity-50',
 ])

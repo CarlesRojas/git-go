@@ -19,7 +19,7 @@ const DialogOverlay = ({ className, ref, ...props }: ComponentProps<typeof Dialo
         // Z-Index
         'z-50',
         // Colors & Background
-        'bg-(--vscode-editor-background)/80 backdrop-blur-md',
+        'bg-vsc-editor-bg/80 backdrop-blur-md',
         // Animations & Transitions
         'duration-200',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0',
@@ -45,11 +45,11 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           // Sizing
           'max-w-[min(calc(100%-2rem),28rem)]',
           // Colors & Background
-          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80',
+          'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border',
           // Spacing
           'p-3',
           // Typography
-          'text-(--vscode-editor-foreground)',
+          'text-vsc-editor-fg',
 
           // Animations & Transitions
           'duration-200',
@@ -61,7 +61,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-(--vscode-editor-foreground)/10 data-[state=open]:text-(--vscode-editor-foreground)/70">
+      <DialogPrimitive.Close className="data-[state=open]:bg-vsc-editor-fg/10 data-[state=open]:text-vsc-editor-fg/70 absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
         <FontAwesomeIcon icon={faXmark} className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -105,7 +105,7 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
     className={cn(
       [
         // Typography
-        'text-sm leading-none font-semibold text-(--vscode-editor-foreground)',
+        'text-vsc-editor-fg text-sm leading-none font-semibold',
       ],
       className,
     )}
@@ -114,11 +114,7 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
 )
 
 const DialogDescription = ({ className, ref, ...props }: ComponentProps<typeof DialogPrimitive.Description>) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn(['text-xs text-(--vscode-editor-foreground)/70'], className)}
-    {...props}
-  />
+  <DialogPrimitive.Description ref={ref} className={cn(['text-vsc-editor-fg/70 text-xs'], className)} {...props} />
 )
 
 export {

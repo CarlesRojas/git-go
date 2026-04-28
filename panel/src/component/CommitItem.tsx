@@ -95,9 +95,9 @@ export const CommitItem: FC<CommitItemProps> = ({
         // Spacing
         'pr-2',
         // Interactive
-        'cursor-pointer hover:bg-(--vscode-editor-foreground)/10',
+        'hover:bg-vsc-editor-fg/10 cursor-pointer',
         // State
-        isExpanded && !layout.isHead && 'bg-(--vscode-editor-foreground)/10 hover:bg-(--vscode-editor-foreground)/15',
+        isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
       )}
       style={{ paddingLeft: `${treeWidth + 8}px` }}
       onClick={onToggle}
@@ -125,8 +125,8 @@ export const CommitItem: FC<CommitItemProps> = ({
 
       {isExpanded && !layout.isHead && (
         <>
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px bg-(--vscode-editor-foreground)/10" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px bg-(--vscode-editor-foreground)/10" />
+          <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
+          <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
         </>
       )}
 
@@ -262,7 +262,7 @@ export const CommitItem: FC<CommitItemProps> = ({
             // Layout
             'relative overflow-hidden',
             // Colors
-            'bg-(--vscode-editor-foreground)/3',
+            'bg-vsc-editor-fg/3',
             // Interactive
             'transition-opacity duration-500',
           )}
@@ -326,11 +326,11 @@ export const CommitItem: FC<CommitItemProps> = ({
               // Position & sizing
               'absolute right-0 bottom-0 left-0 h-1',
               // Colors & borders
-              'border-b border-(--vscode-editor-foreground)/15 bg-transparent',
+              'border-vsc-editor-fg/15 border-b bg-transparent',
               // Interactive
-              'transition-colors hover:bg-(--vscode-editor-foreground)/20',
+              'hover:bg-vsc-editor-fg/20 transition-colors',
               // State
-              isDragging && 'bg-(--vscode-editor-foreground)/30',
+              isDragging && 'bg-vsc-editor-fg/30',
             )}
             style={{ cursor: isDragging ? 'ns-resize' : 'ns-resize' }}
             onMouseDown={handleMouseDown}

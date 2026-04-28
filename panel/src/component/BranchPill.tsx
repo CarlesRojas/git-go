@@ -20,8 +20,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
         // Layout & sizing
         'relative flex h-5 max-h-5 min-h-5 min-w-fit items-center',
         // Colors
-        'bg-(--vscode-editor-foreground)/15',
-        !local && 'border border-(--vscode-editor-foreground)/15',
+        'bg-vsc-editor-fg/15',
+        !local && 'border-vsc-editor-fg/15 border',
       )}
     >
       <div
@@ -50,7 +50,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
           // Typography
           'text-xs font-medium',
           // Border
-          'border-(--vscode-editor-foreground)/15',
+          'border-vsc-editor-fg/15',
           !!local && 'border-l-none border',
           !local && 'border-l',
         )}
@@ -70,7 +70,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
           .map((remote, i) => (
             <div
               key={`remote-${i}-${remote}`}
-              className="flex h-full w-fit min-w-fit items-center border-l border-(--vscode-editor-foreground)/15 px-1.5"
+              className="border-vsc-editor-fg/15 flex h-full w-fit min-w-fit items-center border-l px-1.5"
             >
               <span className="line-clamp-1 leading-tight text-nowrap opacity-60">{remote}</span>
             </div>

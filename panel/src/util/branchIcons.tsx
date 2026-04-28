@@ -26,7 +26,7 @@ export const getBranchIcons = ({
         icon={faStar}
         className={cn(
           'size-3 text-yellow-500',
-          black && 'text-(--vscode-editor-background)/80',
+          black && 'text-vsc-editor-bg/80',
           white && 'text-(--vscode-editor-foreground)/80',
         )}
       />,
@@ -38,9 +38,9 @@ export const getBranchIcons = ({
         key="local"
         icon={faCodeBranch}
         className={cn(
-          'size-3 text-(--vscode-editor-foreground)/70',
-          black && 'text-(--vscode-editor-background)/80',
-          white && 'text-(--vscode-editor-foreground)/80',
+          'text-vsc-editor-fg/70 size-3',
+          black && 'text-vsc-editor-bg/80',
+          white && 'text-vsc-editor-fg/80',
         )}
       />,
     )
@@ -52,8 +52,8 @@ export const getBranchIcons = ({
         height={12}
         className={cn(
           'block overflow-visible fill-transparent stroke-blue-500',
-          black && 'stroke-(--vscode-editor-background)/80',
-          white && 'stroke-(--vscode-editor-foreground)/80',
+          black && 'stroke-vsc-editor-bg/80',
+          white && 'stroke-vsc-editor-fg/80',
         )}
       >
         <circle cx={6} cy={6} r={4.5} strokeWidth={1.75} />

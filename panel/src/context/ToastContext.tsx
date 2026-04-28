@@ -69,7 +69,7 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
       {toast && (
         <div
           className={cn(
-            'fixed right-2 bottom-2 z-50 flex max-w-lg gap-3 border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80 p-2.5 backdrop-blur-md transition-all duration-300',
+            'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 fixed right-2 bottom-2 z-50 flex max-w-lg gap-3 border p-2.5 backdrop-blur-md transition-all duration-300',
             toast.className,
           )}
         >
@@ -79,10 +79,10 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
                 <FontAwesomeIcon
                   icon={toast.icon}
                   className={cn(
-                    'size-4 max-h-4 min-h-4 text-(--vscode-editor-foreground)/50',
-                    toast.type === 'success' && 'text-green-500/90',
-                    toast.type === 'error' && 'text-red-500/90',
-                    toast.type === 'warning' && 'text-amber-500/90',
+                    'text-vsc-editor-fg/50 size-4 max-h-4 min-h-4',
+                    toast.type === 'success' && 'text-vsc-git-added-fg',
+                    toast.type === 'error' && 'text-vsc-git-deleted-fg',
+                    toast.type === 'warning' && 'text-vsc-git-modified-fg',
                   )}
                 />
               </span>

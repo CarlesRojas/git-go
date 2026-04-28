@@ -66,7 +66,7 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
       {toast && (
         <div
           className={cn(
-            'fixed right-2 bottom-2 z-50 flex max-w-3xl items-center gap-3 border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)/80 p-2.5 text-sm backdrop-blur-md transition-all duration-300',
+            'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 fixed right-2 bottom-2 z-50 flex max-w-3xl items-center gap-3 border p-2.5 text-sm backdrop-blur-md transition-all duration-300',
             toast.className,
           )}
         >
@@ -75,10 +75,10 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
               <FontAwesomeIcon
                 icon={toast.icon}
                 className={cn(
-                  'size-4 max-h-4 min-h-4 text-(--vscode-editor-foreground)/50',
-                  toast.type === 'success' && 'text-(--vscode-gitDecoration-addedResourceForeground)',
-                  toast.type === 'error' && 'text-(--vscode-gitDecoration-deletedResourceForeground)',
-                  toast.type === 'warning' && 'text-(--vscode-gitDecoration-modifiedResourceForeground)',
+                  'text-vsc-editor-fg/50 size-4 max-h-4 min-h-4',
+                  toast.type === 'success' && 'text-vsc-git-added-fg',
+                  toast.type === 'error' && 'text-vsc-git-deleted-fg',
+                  toast.type === 'warning' && 'text-vsc-git-modified-fg',
                 )}
               />
             </span>

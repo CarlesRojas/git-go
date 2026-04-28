@@ -87,9 +87,7 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
                   placeholder="v1.0.0"
                 />
 
-                {field.state.meta.errors && (
-                  <p className="text-xs text-(--vscode-errorForeground)">{field.state.meta.errors[0]}</p>
-                )}
+                {field.state.meta.errors && <p className="text-vsc-error-fg text-xs">{field.state.meta.errors[0]}</p>}
               </div>
             )}
           />

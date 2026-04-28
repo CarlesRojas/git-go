@@ -101,13 +101,13 @@ export function buildFileTree(files: GitFileChange[], commitHash?: string, isRoo
 function statusClass(status: string): string {
   switch (status) {
     case 'A':
-      return 'text-(--vscode-gitDecoration-addedResourceForeground)'
+      return 'text-vsc-git-added-fg'
     case 'D':
-      return 'text-(--vscode-gitDecoration-deletedResourceForeground)'
+      return 'text-vsc-git-deleted-fg'
     case 'M':
-      return 'text-(--vscode-gitDecoration-modifiedResourceForeground)'
+      return 'text-vsc-git-modified-fg'
     case 'R':
-      return 'text-(--vscode-gitDecoration-renamedResourceForeground)'
+      return 'text-vsc-git-renamed-fg'
     default:
       return ''
   }

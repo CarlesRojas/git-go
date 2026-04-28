@@ -136,14 +136,14 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
         className={cn(
           'flex h-7 w-52 gap-2',
           'px-2.5',
-          'text-xs whitespace-nowrap text-(--vscode-input-foreground)',
-          'bg-(--vscode-input-foreground)/5',
-          'border border-(--vscode-editor-foreground)/15',
+          'text-vsc-input-fg text-xs whitespace-nowrap',
+          'bg-vsc-input-fg/5',
+          'border-vsc-editor-fg/15 border',
           'animate-pulse',
         )}
       >
         <div className="flex min-w-0 flex-row items-center gap-2">
-          <FontAwesomeIcon icon={faCodeBranch} className="size-2.5 text-(--vscode-editor-foreground)/70" />
+          <FontAwesomeIcon icon={faCodeBranch} className="text-vsc-editor-fg/70 size-2.5" />
           Loading branches...
         </div>
       </div>
@@ -212,7 +212,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
               // Layout
               'w-full px-2.5 py-2',
               // Typography
-              'text-xs text-(--vscode-editor-foreground)/50',
+              'text-vsc-editor-fg/50 text-xs',
             ])}
           >
             Branch selection limit reached

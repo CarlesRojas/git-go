@@ -18,9 +18,9 @@ const SelectTrigger = ({ className, children, ref, ...props }: ComponentProps<ty
         // Spacing
         'px-3 py-2',
         // Typography
-        'text-xs placeholder:text-(--vscode-input-placeholderForeground)/50',
+        'placeholder:text-vsc-input-placeholder-fg/50 text-xs',
         // Colors & Background
-        'border border-(--vscode-editor-foreground)/15 bg-(--vscode-input-background)',
+        'border-vsc-editor-fg/15 bg-vsc-input-bg border',
         // Interactive States
         'disabled:cursor-not-allowed disabled:opacity-50',
         // Icon Styles
@@ -76,9 +76,9 @@ const SelectContent = ({
           // Position & Layout
           'relative z-50 max-h-96 min-w-32 overflow-hidden',
           // Colors & Background
-          'border border-(--vscode-editor-foreground)/15 bg-(--vscode-editor-background)',
+          'border-vsc-editor-fg/15 bg-vsc-editor-bg border',
           // Typography
-          'text-(--vscode-editor-foreground)',
+          'text-vsc-editor-fg',
           // Animations
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
@@ -108,7 +108,7 @@ const SelectContent = ({
 const SelectLabel = ({ className, ref, ...props }: ComponentProps<typeof SelectPrimitive.Label>) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn('py-1.5 pr-2 pl-8 text-xs font-semibold text-(--vscode-editor-foreground)/70', className)}
+    className={cn('text-vsc-editor-fg/70 py-1.5 pr-2 pl-8 text-xs font-semibold', className)}
     {...props}
   />
 )
@@ -125,7 +125,7 @@ const SelectItem = ({ className, children, ref, ...props }: ComponentProps<typeo
         // Typography
         'text-xs outline-hidden',
         // Interactive States
-        'focus:bg-(--vscode-editor-foreground)/15 data-disabled:pointer-events-none data-disabled:opacity-50',
+        'focus:bg-vsc-editor-fg/15 data-disabled:pointer-events-none data-disabled:opacity-50',
       ],
       className,
     )}
@@ -141,11 +141,7 @@ const SelectItem = ({ className, children, ref, ...props }: ComponentProps<typeo
 )
 
 const SelectSeparator = ({ className, ref, ...props }: ComponentProps<typeof SelectPrimitive.Separator>) => (
-  <SelectPrimitive.Separator
-    ref={ref}
-    className={cn('-mx-1 my-1 h-px bg-(--vscode-editor-foreground)/15', className)}
-    {...props}
-  />
+  <SelectPrimitive.Separator ref={ref} className={cn('bg-vsc-editor-fg/15 -mx-1 my-1 h-px', className)} {...props} />
 )
 
 export {
