@@ -12,16 +12,17 @@ import { useState } from 'react'
 
 interface UseCheckoutDialogProps {
   remoteBranch?: GitBranch
+  hasLocalBranch?: boolean
 }
 
-export const useCheckoutDialog = ({ remoteBranch }: UseCheckoutDialogProps) => {
+export const useCheckoutDialog = ({ remoteBranch, hasLocalBranch = false }: UseCheckoutDialogProps) => {
   const { showToast } = useToast()
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false)
   const checkoutRemoteMutation = useCheckoutRemoteBranch()
 
   const checkoutForm = useForm({
     defaultValues: {
-      localBranchName: remoteBranch?.cleanName ?? '',
+      localBranchName: '',
     },
     onSubmit: async ({ value }) => {
       checkoutRemoteMutation.mutate(
@@ -50,17 +51,38 @@ export const useCheckoutDialog = ({ remoteBranch }: UseCheckoutDialogProps) => {
   })
 
   const openDialog = () => {
-    checkoutForm.setFieldValue('localBranchName', remoteBranch?.cleanName ?? '')
-    setShowCheckoutDialog(true)
+    if (!remoteBranch) return
+
+    if (!hasLocalBranch) {
+      checkoutRemoteMutation.mutate(
+        {
+          remoteBranchName: `${remoteBranch.remoteName}/${remoteBranch.cleanName}`,
+          localBranchName: remoteBranch.cleanName,
+        },
+        {
+          onSuccess: () => {
+            showToast({
+              text: `Branch '${remoteBranch.cleanName}' created and checked out successfully`,
+              icon: faCodeBranch,
+              type: 'success',
+            })
+          },
+          onError: error => {
+            showToast({ text: error.message, type: 'error', icon: faCodeBranch })
+          },
+        },
+      )
+    } else {
+      checkoutForm.setFieldValue('localBranchName', `${remoteBranch.cleanName}-2`)
+      setShowCheckoutDialog(true)
+    }
   }
 
   const DialogComponent = (
     <Dialog open={showCheckoutDialog} onOpenChange={setShowCheckoutDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Checkout Remote Branch{remoteBranch?.cleanName ? ` '${remoteBranch.cleanName}'` : ''}
-          </DialogTitle>
+          <DialogTitle>Local branch '{remoteBranch?.cleanName}' already exists</DialogTitle>
         </DialogHeader>
 
         <form
@@ -78,7 +100,7 @@ export const useCheckoutDialog = ({ remoteBranch }: UseCheckoutDialogProps) => {
             }}
             children={field => (
               <div className="flex flex-col gap-1">
-                <Label>Choose a name for the new Local Branch</Label>
+                <Label>Choose a different name for the new Local Branch</Label>
 
                 <Input
                   name={field.name}

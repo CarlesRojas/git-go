@@ -14,15 +14,16 @@ interface Props {
   branch: GroupedBranch
   baseName: string
   layout: CommitLayout
+  hasLocalBranch: boolean
 }
 
-const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
+const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => {
   const { local, remotes } = branch
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
 
   const checkoutLocalMutation = useCheckoutLocalBranch()
-  const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0] })
+  const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
 
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
@@ -52,8 +53,6 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const handleRemoteDoubleClick = useDoubleClick(() => {
     checkoutDialog.openDialog()
   })
-
-  if (baseName.includes('main')) console.log(layout.row, onlyLocal, onlyRemote, localAndRemote)
 
   return (
     <>

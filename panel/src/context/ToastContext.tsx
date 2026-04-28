@@ -70,6 +70,7 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
         <div
           className={cn(
             'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 fixed right-2 bottom-2 z-50 flex max-w-lg gap-3 border p-2.5 backdrop-blur-md transition-all duration-300',
+            toast.type === 'error' && 'border-vsc-git-deleted-fg/30 bg-vsc-git-deleted-fg/10',
             toast.className,
           )}
         >

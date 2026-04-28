@@ -4,7 +4,7 @@ import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
-import { useCurrentBranch, useGitCommitFiles } from '@/hook/useGitQueries'
+import { useCurrentBranch, useGitBranches, useGitCommitFiles } from '@/hook/useGitQueries'
 import { ExpandedRow, getColor } from '@/hook/useGitTree'
 import { useResizable } from '@/hook/useResizable'
 import { buildFileTree } from '@/util/buildFileTree'
@@ -45,6 +45,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
+  const { data: branches = [] } = useGitBranches()
 
   const fileTree = useGitCommitFiles({
     commitHash: commit.hash,
@@ -117,9 +118,18 @@ export const CommitItem: FC<CommitItemProps> = ({
 
           return 0
         })
-        .map(([baseName, { local, remotes }]) => (
-          <BranchPill key={baseName} branch={{ local, remotes }} baseName={baseName} layout={layout} />
-        ))}
+        .map(([baseName, { local, remotes }]) => {
+          const name = local?.cleanName ?? remotes?.[0]?.cleanName ?? baseName
+          return (
+            <BranchPill
+              key={baseName}
+              branch={{ local, remotes }}
+              baseName={baseName}
+              layout={layout}
+              hasLocalBranch={branches.some(branch => branch.cleanName === name && !branch.remote)}
+            />
+          )
+        })}
 
       {commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
 

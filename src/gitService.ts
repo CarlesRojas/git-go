@@ -730,7 +730,6 @@ export class GitService {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
-        console.log('branchname', branchName);
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 

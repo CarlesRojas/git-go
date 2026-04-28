@@ -61,8 +61,6 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
       const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
 
-      console.log('BRANCHES TO SELECT', branchesToSelect)
-
       const names = Array.from(new Set(branchesToSelect.map(b => b.cleanName)))
       setSelectedBranches(names)
     }
@@ -73,12 +71,6 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     if (branchesQuery.isLoading) return
 
     const previous = previousBranchesNamesRef.current
-    console.log(
-      'PREVIOUS',
-      previousBranchesNamesRef.current,
-      'CURRENT',
-      branches.map(b => b.name),
-    )
     if (previous === null) {
       previousBranchesNamesRef.current = branches.map(b => b.name)
       return
