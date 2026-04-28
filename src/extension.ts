@@ -437,6 +437,26 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'getCurrentBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const currentBranch = await gitService.getCurrentBranch(log);
+                                log(
+                                    `Successfully retrieved current branch: ${currentBranch || 'none (detached HEAD)'}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'currentBranch',
+                                    currentBranch: currentBranch
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting current branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                     }
                 },
                 undefined,

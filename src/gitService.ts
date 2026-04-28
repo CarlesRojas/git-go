@@ -768,6 +768,34 @@ export class GitService {
         }
     }
 
+    public async getCurrentBranch(log: (message: string) => void): Promise<string | null> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return null;
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const currentBranch = await this.spawnGit(
+                [gitExecutable.path, 'rev-parse', '--abbrev-ref', 'HEAD'],
+                workspacePath
+            );
+
+            const branchName = currentBranch.trim();
+            // If HEAD is detached, git returns 'HEAD' instead of a branch name
+            if (branchName === 'HEAD') {
+                log('Repository is in detached HEAD state');
+                return null;
+            }
+
+            log(`Current branch: ${branchName}`);
+            return branchName;
+        } catch (error) {
+            log(`Error getting current branch: ${error}`);
+            return null;
+        }
+    }
+
     public clearCache(): void {
         this.cachedGitExecutable = null;
     }

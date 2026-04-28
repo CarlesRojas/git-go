@@ -29,7 +29,7 @@
   }
 
   .dimmed {
-    @apply opacity-20 duration-500;
+    @apply opacity-10 duration-500;
   }
 }
 

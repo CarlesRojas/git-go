@@ -37,8 +37,7 @@ export const App: FC = () => {
           // Colors & Background
           // 'bg-vsc-editor-bg',
           // Selection States
-          'selection:bg-vsc-editor-selection-bg',
-          'selection:text-vsc-editor-selection-fg',
+          'selection:bg-vsc-editor-fg/10',
         ])}
         style={{
           fontFamily:

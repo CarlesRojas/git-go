@@ -1,7 +1,7 @@
 import { useToast } from '@/context/ToastContext'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
 import { useDoubleClick } from '@/hook/useDoubleClick'
-import { useCheckoutLocalBranch } from '@/hook/useGitQueries'
+import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
 import { getColor } from '@/hook/useGitTree'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
@@ -19,6 +19,7 @@ interface Props {
 const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const { local, remotes } = branch
   const { showToast } = useToast()
+  const { data: currentBranch } = useCurrentBranch()
 
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0] })
@@ -26,9 +27,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
   const localAndRemote = !!local && remotes.length > 0
-
-  // TODO this is wrong, we should check what the current branch is, not the head (if there are 2 local branches here, this should them both as selected)
-  const isCurrent = layout.isHead && !!local
+  const isCurrent = !!local && currentBranch === local.cleanName
 
   const handleLocalDoubleClick = useDoubleClick(() => {
     if (!local || isCurrent) return

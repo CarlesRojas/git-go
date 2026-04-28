@@ -31,6 +31,7 @@ export const queryKeys = {
   infiniteCommits: (branches?: GitBranch[]) =>
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
   workingChanges: ['git', 'working-changes'] as const,
+  currentBranch: ['git', 'current-branch'] as const,
 }
 
 // Custom hook for fetching branches
@@ -541,5 +542,40 @@ export const useCheckoutRemoteBranch = () => {
     onSuccess: () => {
       refreshGitData(queryClient)
     },
+  })
+}
+
+// Custom hook for fetching current branch
+export const useCurrentBranch = () => {
+  return useQuery({
+    queryKey: queryKeys.currentBranch,
+    queryFn: (): Promise<string | null> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'currentBranch') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.currentBranch)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'getCurrentBranch' })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch current branch'))
+        }, 10_000)
+      })
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   })
 }
