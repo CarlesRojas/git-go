@@ -2,6 +2,7 @@ import { CommitItem } from '@/component/CommitItem'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
 import { ExpandedRow, useGitTree } from '@/hook/useGitTree'
+import { matchesSearch } from '@/util/searchCommits'
 import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -11,33 +12,6 @@ import { useEventListener, useIntersectionObserver } from 'usehooks-ts'
 interface GraphProps {
   selectedBranches: GitBranch[]
   searchTerm?: string
-}
-
-const matchesSearch = (commit: any, branches: GitBranch[], searchTerm: string): boolean => {
-  let matches = false
-
-  if (!searchTerm.trim()) matches = true
-
-  const search = searchTerm.toLowerCase()
-
-  // Search in commit message
-  if (commit.message.toLowerCase().includes(search)) matches = true
-
-  // Search in author name
-  if (commit.author.toLowerCase().includes(search)) matches = true
-
-  // Search in email
-  if (commit.email.toLowerCase().includes(search)) matches = true
-
-  // Search in branch names that contain this commit
-  const commitBranches = branches.filter(branch => {
-    // This is a simplified check - in a real implementation you'd need to check if the commit is in each branch
-    return branch.name.toLowerCase().includes(search)
-  })
-
-  if (commitBranches.length > 0) matches = true
-
-  return matches
 }
 
 export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => {
@@ -72,7 +46,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     if (expandedCommitHash === commitHash) setExpandedRow(undefined)
   }
 
-  const { onCommitHover } = useCommitHighlight()
+  const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
 
   const navigateCommit = useCallback(
     (direction: 'up' | 'down') => {
@@ -141,14 +115,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
             layout={rows.find(c => c.commit.hash === commit.hash)!}
             setExpandedRow={setExpandedRow}
             uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
-            dimmed={
-              !!searchTerm &&
-              !matchesSearch(
-                commit,
-                branches.filter(b => b.hash === commit.hash),
-                searchTerm,
-              )
-            }
+            dimmed={!matchesSearch(commit, branches, searchTerm)}
           />
         ))}
 

@@ -138,7 +138,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     return (
       <div
         className={cn(
-          'flex h-7 w-52 gap-2',
+          'flex h-7 w-56 gap-2',
           'px-2.5',
           'text-vsc-input-fg text-xs whitespace-nowrap',
           'bg-vsc-input-fg/5',
