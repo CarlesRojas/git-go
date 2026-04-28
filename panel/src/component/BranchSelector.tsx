@@ -188,7 +188,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
           <ComboboxInput className="grow" onClear={() => setInputValue('')} placeholder="Search..." />
 
           <Button variant="secondary" onClick={() => handleValueChange([])} className="border-y-0 border-r-0">
-            Reset
+            Unselect All
           </Button>
         </div>
 
