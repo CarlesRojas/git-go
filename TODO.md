@@ -17,7 +17,6 @@
 - [ ] Settings: Show stashes?
 
 - [ ] Show tag message and if it pushed to the remote
-- [ ] Add created branches to the current selection
 
 ### Maybe
 

@@ -250,7 +250,7 @@ export function useGitTree(
             }
 
             if (c.isStash) {
-              const squareSize = DOT_RADIUS * 2
+              const squareSize = DOT_RADIUS * 1.8
               const halfSize = squareSize / 2
               return (
                 <rect
@@ -259,8 +259,8 @@ export function useGitTree(
                   y={dotY - halfSize}
                   width={squareSize}
                   height={squareSize}
-                  rx={squareSize * 0.3}
-                  ry={squareSize * 0.3}
+                  rx={squareSize * 0.25}
+                  ry={squareSize * 0.25}
                   stroke={color}
                   strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}

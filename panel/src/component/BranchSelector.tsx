@@ -20,7 +20,7 @@ import { groupBranches } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
-import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 
 interface BranchSelectorProps {
   onBranchesChange: (branches: GitBranch[]) => void
@@ -39,63 +39,63 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const { data: branches = [], ...branchesQuery } = useGitBranches()
 
   const [inputValue, setInputValue] = useState('')
+
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
-  const [selectedCount, setSelectedCount] = useState(0)
-
-  const groupedBranches = useMemo(() => groupBranches(branches), [branches])
-
-  const setDefaultBranches = useCallback(() => {
-    const isMain = (name: string) => name === 'main' || name === 'master'
-
-    const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
-    const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
-    const localBranches = branches
-      .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
-      .slice(0, Math.max(0, remainingSlots))
-
-    const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
-    const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
-
-    const names = Array.from(new Set(branchesToSelect.map(b => b.cleanName)))
-    setSelectedBranches(names)
-    setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
-    onBranchesChange(branchesToSelect)
-
-    // const names = branches.map(b => b.cleanName)
-    // setSelectedBranches(names)
-    // setSelectedCount(Object.keys(groupedBranches).filter(name => names.includes(name)).length)
-    // onBranchesChange([...branches])
-  }, [branches, groupedBranches, onBranchesChange])
-
   useEffect(() => {
-    const validCleanNames = new Set(branches.map(b => b.cleanName))
-    const filtered = selectedBranches.filter(name => validCleanNames.has(name))
-
-    if (filtered.length !== selectedBranches.length) {
-      setSelectedBranches(filtered)
-      setSelectedCount(Object.keys(groupedBranches).filter(name => filtered.includes(name)).length)
-    }
-
-    const currentSelection = branches.filter(branch =>
-      filtered.length !== selectedBranches.length
-        ? filtered.includes(branch.cleanName)
-        : selectedBranches.includes(branch.cleanName),
-    )
-    onBranchesChange(currentSelection)
-  }, [branches])
+    onBranchesChange(branches.filter(branch => selectedBranches.includes(branch.cleanName)))
+  }, [selectedBranches])
 
   const defaultBranchesSet = useRef(false)
   useEffect(() => {
     if (branches.length > 0 && selectedBranches.length === 0 && !defaultBranchesSet.current) {
       defaultBranchesSet.current = true
-      setDefaultBranches()
+
+      const isMain = (name: string) => name === 'main' || name === 'master'
+
+      const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
+      const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
+      const localBranches = branches
+        .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
+        .slice(0, Math.max(0, remainingSlots))
+
+      const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
+      const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
+
+      console.log('BRANCHES TO SELECT', branchesToSelect)
+
+      const names = Array.from(new Set(branchesToSelect.map(b => b.cleanName)))
+      setSelectedBranches(names)
     }
-  }, [branches, selectedBranches, setDefaultBranches])
+  }, [branches, selectedBranches])
+
+  const previousBranchesNamesRef = useRef<string[] | null>(null)
+  useEffect(() => {
+    if (branchesQuery.isLoading) return
+
+    const previous = previousBranchesNamesRef.current
+    console.log(
+      'PREVIOUS',
+      previousBranchesNamesRef.current,
+      'CURRENT',
+      branches.map(b => b.name),
+    )
+    if (previous === null) {
+      previousBranchesNamesRef.current = branches.map(b => b.name)
+      return
+    }
+
+    const newBranches = branches.filter(branch => !previous.includes(branch.name))
+    previousBranchesNamesRef.current = branches.map(b => b.name)
+
+    const validCleanNames = new Set(branches.map(b => b.cleanName))
+    const selectedWithoutDeletedBranches = selectedBranches.filter(name => validCleanNames.has(name))
+    const newSelection = [...new Set([...selectedWithoutDeletedBranches, ...newBranches.map(b => b.cleanName)])]
+
+    setSelectedBranches(newSelection)
+  }, [branches, branchesQuery.isLoading])
 
   const handleValueChange = (selected: string[]) => {
     setSelectedBranches(selected)
-    setSelectedCount(Object.keys(groupedBranches).filter(name => selected.includes(name)).length)
-    onBranchesChange(branches.filter(branch => selected.includes(branch.cleanName)))
   }
 
   const displayText = useMemo(() => {
@@ -112,6 +112,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       const localBranchesGroup: BrancItem[] = []
       const remoteBranchesGroup: BrancItem[] = []
 
+      const groupedBranches = groupBranches(branches)
       Object.entries(groupedBranches).forEach(([baseName, { local, remotes }]) => {
         const item = {
           value: baseName,
@@ -139,7 +140,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     } catch (error) {
       return []
     }
-  }, [groupedBranches, selectedBranches])
+  }, [selectedBranches])
 
   if (branchesQuery.isLoading) {
     return (
@@ -166,7 +167,11 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       multiple
       autoHighlight
       limit={LIMIT}
-      items={selectedCount >= SELECTED_LIMIT ? branchGroups.filter(({ value }) => value === 'Selected') : branchGroups}
+      items={
+        selectedBranches.length >= SELECTED_LIMIT
+          ? branchGroups.filter(({ value }) => value === 'Selected')
+          : branchGroups
+      }
       inputValue={inputValue}
       onInputValueChange={(value, { reason }) => {
         if (reason !== 'input-clear') setInputValue(value)
@@ -194,7 +199,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
         <ComboboxSeparator />
 
-        {selectedCount < SELECTED_LIMIT && <ComboboxEmpty>No branches found.</ComboboxEmpty>}
+        {selectedBranches.length < SELECTED_LIMIT && <ComboboxEmpty>No branches found.</ComboboxEmpty>}
 
         <ComboboxList>
           {group => (
@@ -217,7 +222,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
           )}
         </ComboboxList>
 
-        {selectedCount >= SELECTED_LIMIT && (
+        {selectedBranches.length >= SELECTED_LIMIT && (
           <div
             className={cn([
               // Layout
