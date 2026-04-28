@@ -13,6 +13,9 @@
 - [ ] Settings: Show stashes?
 - [ ] Settings: Show stashes?
 
+- [ ] Save selected branches per repo in some kind of local storage
+- [ ] Implement enter and shift enter to scroll to next found commit
+
 ### Maybe
 
 - [ ] Commit Right Click Menu: Merge current branch on this commit, Rebase current branch on this commit, Reset current branch to this commit

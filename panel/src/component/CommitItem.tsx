@@ -156,6 +156,7 @@ export const CommitItem: FC<CommitItemProps> = ({
           'line-clamp-1 truncate text-xs leading-tight font-semibold',
           // State
           layout?.isMerge && !layout?.isHead && 'opacity-50',
+          layout?.isHead && 'font-bold',
         )}
         style={{ color: layout?.isHead ? getColor(layout.colorIndex, commit.isStash) : undefined }}
       >
