@@ -23,8 +23,15 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0] })
 
+  const onlyLocal = !!local && remotes.length === 0
+  const onlyRemote = !local && remotes.length > 0
+  const localAndRemote = !!local && remotes.length > 0
+
+  // TODO this is wrong, we should check what the current branch is, not the head (if there are 2 local branches here, this should them both as selected)
+  const isCurrent = layout.isHead && !!local
+
   const handleLocalDoubleClick = useDoubleClick(() => {
-    if (!local) return
+    if (!local || isCurrent) return
 
     checkoutLocalMutation.mutate(
       { branchName: local.cleanName },
@@ -46,11 +53,6 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
   const handleRemoteDoubleClick = useDoubleClick(() => {
     checkoutDialog.openDialog()
   })
-
-  const onlyLocal = !!local && remotes.length === 0
-  const onlyRemote = !local && remotes.length > 0
-  const localAndRemote = !!local && remotes.length > 0
-  const isCurrent = layout.isHead && !!local
 
   if (baseName.includes('main')) console.log(layout.row, onlyLocal, onlyRemote, localAndRemote)
 
@@ -81,6 +83,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
             backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
             borderColor: getColor(layout.colorIndex, false),
           }}
+          onClick={localAndRemote ? handleLocalDoubleClick : undefined}
         >
           {getBranchIcons({
             isLocal: !!local,
@@ -106,6 +109,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
               'flex h-full w-fit min-w-fit items-center px-1.5',
               localAndRemote && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
             )}
+            onClick={localAndRemote ? handleLocalDoubleClick : undefined}
           >
             <span className="line-clamp-1 leading-tight text-nowrap">
               {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
@@ -125,6 +129,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout }) => {
                   localAndRemote && !isCurrent && 'border-vsc-editor-fg/15 border-y border-r',
                   localAndRemote && isCurrent && 'border-vsc-editor-fg/15 border-l',
                 )}
+                onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
               >
                 <span className="line-clamp-1 leading-tight text-nowrap opacity-50">{remote}</span>
               </div>
