@@ -244,7 +244,7 @@ export function useGitTree(
                     strokeWidth={LINE_WIDTH}
                   />
 
-                  <circle cx={dotX} cy={dotY} r={DOT_RADIUS * 0.33} fill={color} />
+                  <circle cx={dotX} cy={dotY} r={DOT_RADIUS * 0.25} fill={color} />
                 </g>
               )
             }
@@ -261,7 +261,8 @@ export function useGitTree(
                   height={squareSize}
                   rx={squareSize * 0.3}
                   ry={squareSize * 0.3}
-                  fill={color}
+                  stroke={color}
+                  strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}
                   data-row={c.row}
                   className="origin-center transition-opacity duration-500 transform-fill"

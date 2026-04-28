@@ -5,7 +5,7 @@
 
 - [ ] Remote Branch Right Click Menu
 - [ ] Local Branch Right Click Menu
-- [ ] Stash Right Click Menu
+- [ ] Stash Right Click Menu (Should include entire commit line)
 - [ ] Tag Right Click Menu
 - [ ] Uncommitted Changes Right Click Menu
 
