@@ -1,5 +1,6 @@
 import { BranchSelector } from '@/component/BranchSelector'
 import { Graph } from '@/component/Graph'
+import { RefetchButton } from '@/component/RefreshButton'
 import { ToastProvider } from '@/context/ToastContext'
 import { cn } from '@/util/cn'
 import { GitBranch } from '@git/gitService'
@@ -48,7 +49,7 @@ export const App: FC = () => {
           <div
             className={cn([
               // Position & Layout
-              'flex h-9 max-h-9 min-h-9 w-full items-center',
+              'flex h-9 max-h-9 min-h-9 w-full items-center justify-between',
               // Colors & Background
               'bg-vsc-editor-bg',
               // Borders
@@ -58,6 +59,8 @@ export const App: FC = () => {
             ])}
           >
             <BranchSelector onBranchesChange={setSelectedBranches} />
+
+            <RefetchButton />
           </div>
 
           <main className="graph-h relative flex flex-col overflow-y-auto">

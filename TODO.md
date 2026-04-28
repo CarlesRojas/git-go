@@ -1,7 +1,6 @@
 ## TODO
 
 - [ ] Implement a search feature
-- [ ] Add fetch icon to toolbar
 
 - [ ] Remote Branch Right Click Menu
 - [ ] Local Branch Right Click Menu

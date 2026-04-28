@@ -457,6 +457,24 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'fetch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                await gitService.fetch(log);
+                                log('Successfully fetched from remotes');
+                                currentPanel?.webview.postMessage({
+                                    type: 'fetchComplete',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error fetching from remotes: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                     }
                 },
                 undefined,

@@ -208,13 +208,42 @@ const refreshGitData = async (queryClient: any) => {
   await queryClient.invalidateQueries({ queryKey: ['git'] })
 }
 
-// Hook to refresh git data
-export const useRefreshGitData = () => {
+// Hook to fetch from git and refresh git data
+export const useFetchFromGit = (options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async () => {
-      await refreshGitData(queryClient)
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'fetchComplete') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'fetch' })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch from git'))
+        }, 30_000) // Longer timeout for network operations
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+      options?.onSuccess?.()
+    },
+    onError: (error: Error) => {
+      options?.onError?.(error)
     },
   })
 }

@@ -795,6 +795,23 @@ export class GitService {
         }
     }
 
+    public async fetch(log: (message: string) => void): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log('Fetching from remote repositories...');
+            await this.spawnGit([gitExecutable.path, 'fetch', '--all'], workspacePath);
+            log('Successfully fetched from remotes');
+        } catch (error) {
+            log(`Error fetching from remotes: ${error}`);
+            throw error;
+        }
+    }
+
     public clearCache(): void {
         this.cachedGitExecutable = null;
     }
