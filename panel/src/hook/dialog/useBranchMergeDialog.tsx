@@ -23,7 +23,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
   const mergeForm = useForm({
     defaultValues: {
       createNewCommit: true,
-      squash: true,
+      squash: false,
       noCommit: false,
     },
     onSubmit: async ({ value }) => {
@@ -63,8 +63,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            <FontAwesomeIcon icon={faCodeMerge} className="mr-2" />
-            Merge Branch <strong>{branch.cleanName}</strong> into{' '}
+            Merge branch <strong>{branch.cleanName}</strong> into{' '}
             {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch)
           </DialogTitle>
         </DialogHeader>
@@ -76,7 +75,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
             mergeForm.handleSubmit()
           }}
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <mergeForm.Field name="createNewCommit">
               {field => (
                 <div className="flex items-center space-x-2">

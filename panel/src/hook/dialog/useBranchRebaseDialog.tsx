@@ -22,7 +22,6 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
 
   const rebaseForm = useForm({
     defaultValues: {
-      interactive: false,
       ignoreDate: true,
     },
     onSubmit: async ({ value }) => {
@@ -60,7 +59,7 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Rebase Branch {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch) on Branch{' '}
+            Rebase branch {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch) on branch{' '}
             <strong>{branch.cleanName}</strong>
           </DialogTitle>
         </DialogHeader>
@@ -72,22 +71,7 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
             rebaseForm.handleSubmit()
           }}
         >
-          <div className="flex flex-col gap-4">
-            <rebaseForm.Field name="interactive">
-              {field => (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="interactive"
-                    checked={field.state.value}
-                    onCheckedChange={checked => field.handleChange(checked === true)}
-                  />
-                  <Label htmlFor="interactive" className="text-sm">
-                    Launch interactive rebase in terminal
-                  </Label>
-                </div>
-              )}
-            </rebaseForm.Field>
-
+          <div className="flex flex-col gap-3">
             <rebaseForm.Field name="ignoreDate">
               {field => (
                 <div className="flex items-center space-x-2">

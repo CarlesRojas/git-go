@@ -93,7 +93,7 @@ export const useCheckoutDialog = ({ remoteBranch, hasLocalBranch = false }: UseC
             e.stopPropagation()
             checkoutForm.handleSubmit()
           }}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
         >
           <checkoutForm.Field
             name="localBranchName"

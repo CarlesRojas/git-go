@@ -41,9 +41,9 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           // Layout & Position
           'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           // Layout & Structure
-          'grid w-full gap-4',
+          'grid w-full gap-3',
           // Sizing
-          'max-w-[min(calc(100%-2rem),28rem)]',
+          'max-w-[min(calc(100%-2rem),20rem)]',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border',
           // Spacing
@@ -74,7 +74,7 @@ const DialogHeader = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) =
     className={cn(
       [
         // Layout & Structure
-        'flex h-6 flex-col justify-center',
+        'mb-4 flex h-6 flex-col justify-center',
         // Typography
         'text-left',
       ],
@@ -89,7 +89,7 @@ const DialogFooter = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) =
     className={cn(
       [
         // Layout & Structure
-        'flex flex-col-reverse sm:flex-row sm:justify-end',
+        'mt-3 flex flex-col-reverse sm:flex-row sm:justify-end',
         // Spacing
         'gap-2',
       ],
@@ -105,7 +105,7 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
     className={cn(
       [
         // Typography
-        'text-vsc-editor-fg text-sm leading-none font-semibold',
+        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold',
       ],
       className,
     )}

@@ -60,7 +60,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Create Branch at Commit <strong>{commit.hash.substring(0, 7)}</strong>
+            Create branch at commit <strong>{commit.hash.substring(0, 7)}</strong>
           </DialogTitle>
         </DialogHeader>
 
@@ -70,7 +70,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
             e.stopPropagation()
             branchForm.handleSubmit()
           }}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
         >
           <branchForm.Field
             name="branchName"

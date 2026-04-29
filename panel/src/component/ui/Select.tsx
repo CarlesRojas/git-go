@@ -14,9 +14,9 @@ const SelectTrigger = ({ className, children, ref, ...props }: ComponentProps<ty
     className={cn(
       [
         // Layout & Structure
-        'flex h-10 w-full items-center justify-between',
+        'flex h-7 w-full items-center justify-between',
         // Spacing
-        'px-3 py-2',
+        'px-2',
         // Typography
         'placeholder:text-vsc-input-placeholder-fg/50 text-xs',
         // Colors & Background
@@ -32,7 +32,10 @@ const SelectTrigger = ({ className, children, ref, ...props }: ComponentProps<ty
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <FontAwesomeIcon icon={faChevronDown} className="size-4 opacity-50" />
+      <FontAwesomeIcon
+        icon={faChevronDown}
+        className="pointer-events-none size-2.5 min-w-2.5 opacity-50 transition-transform group-data-[state=open]:rotate-180"
+      />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 )
@@ -43,7 +46,7 @@ const SelectScrollUpButton = ({ className, ref, ...props }: ComponentProps<typeo
     className={cn('flex cursor-default items-center justify-center py-1', className)}
     {...props}
   >
-    <FontAwesomeIcon icon={faChevronUp} className="size-4" />
+    <FontAwesomeIcon icon={faChevronUp} className="size-3" />
   </SelectPrimitive.ScrollUpButton>
 )
 
@@ -57,7 +60,7 @@ const SelectScrollDownButton = ({
     className={cn('flex cursor-default items-center justify-center py-1', className)}
     {...props}
   >
-    <FontAwesomeIcon icon={faChevronDown} className="size-4" />
+    <FontAwesomeIcon icon={faChevronDown} className="size-3" />
   </SelectPrimitive.ScrollDownButton>
 )
 

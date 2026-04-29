@@ -69,7 +69,7 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
             deleteForm.handleSubmit()
           }}
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <deleteForm.Field name="force">
               {field => (
                 <div className="flex items-center space-x-2">

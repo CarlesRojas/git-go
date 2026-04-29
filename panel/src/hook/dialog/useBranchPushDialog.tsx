@@ -66,7 +66,7 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Push Branch <strong>{branch.cleanName}</strong>
+            Push branch <strong>{branch.cleanName}</strong>
           </DialogTitle>
         </DialogHeader>
 
@@ -77,12 +77,7 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
             pushForm.handleSubmit()
           }}
         >
-          <div className="flex flex-col gap-4">
-            <div>
-              <Label htmlFor="branchName">Branch</Label>
-              <Input id="branchName" value={branch.cleanName} disabled className="mt-1" />
-            </div>
-
+          <div className="flex flex-col gap-3">
             {remotes.length > 1 ? (
               <pushForm.Field name="remote">
                 {field => (
@@ -95,7 +90,7 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
                       <SelectContent>
                         {remotes.map(remote => (
                           <SelectItem key={remote.name} value={remote.name}>
-                            {remote.name} ({remote.fetchUrl})
+                            {remote.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

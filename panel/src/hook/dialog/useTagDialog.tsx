@@ -60,7 +60,7 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Add Tag to Commit <strong>{commit.hash.substring(0, 7)}</strong>
+            Add tag to commit <strong>{commit.hash.substring(0, 7)}</strong>
           </DialogTitle>
         </DialogHeader>
 
@@ -70,7 +70,7 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
             e.stopPropagation()
             tagForm.handleSubmit()
           }}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
         >
           <tagForm.Field
             name="tagName"

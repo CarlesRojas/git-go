@@ -54,7 +54,7 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Cherry Pick Commit <strong>{commit.hash.substring(0, 7)}</strong>
+            Cherry pick commit <strong>{commit.hash.substring(0, 7)}</strong>
           </DialogTitle>
         </DialogHeader>
 
@@ -64,7 +64,7 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
             e.stopPropagation()
             cherryPickForm.handleSubmit()
           }}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
         >
           <cherryPickForm.Field
             name="recordOrigin"

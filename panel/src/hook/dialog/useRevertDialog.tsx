@@ -57,7 +57,7 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Revert Commit <strong>{commit.hash.substring(0, 7)}</strong>
+            Revert commit <strong>{commit.hash.substring(0, 7)}</strong>
           </DialogTitle>
         </DialogHeader>
 
@@ -67,7 +67,7 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
             e.stopPropagation()
             revertForm.handleSubmit()
           }}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
         >
           <revertForm.Field
             name="commitChanges"

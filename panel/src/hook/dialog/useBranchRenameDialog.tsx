@@ -75,7 +75,7 @@ export const useBranchRenameDialog = ({ branch }: UseBranchRenameDialogProps) =>
             renameForm.handleSubmit()
           }}
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <renameForm.Field name="newName">
               {field => (
                 <div>
