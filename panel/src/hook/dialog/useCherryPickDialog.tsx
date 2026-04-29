@@ -22,14 +22,14 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
   const cherryPickForm = useForm({
     defaultValues: {
       recordOrigin: false,
-      commitChanges: false,
+      noCommit: true,
     },
     onSubmit: async ({ value }) => {
       cherryPickMutation.mutate(
         {
           commitHash: commit.hash,
           recordOrigin: value.recordOrigin,
-          commitChanges: value.commitChanges,
+          noCommit: value.noCommit,
         },
         {
           onSuccess: () => {
@@ -84,17 +84,17 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
           />
 
           <cherryPickForm.Field
-            name="commitChanges"
+            name="noCommit"
             children={field => (
               <div className="flex items-center">
                 <Checkbox
-                  id="commitChanges"
+                  id="noCommit"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
 
-                <Label htmlFor="commitChanges" className="cursor-pointer pl-2">
-                  Commit changes
+                <Label htmlFor="noCommit" className="cursor-pointer pl-2">
+                  Don't commit automatically
                 </Label>
               </div>
             )}

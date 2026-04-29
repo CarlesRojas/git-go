@@ -21,17 +21,17 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
 
   const revertForm = useForm({
     defaultValues: {
-      commitChanges: false,
+      noCommit: true,
     },
     onSubmit: async ({ value }) => {
       revertMutation.mutate(
         {
           commitHash: commit.hash,
-          commitChanges: value.commitChanges,
+          noCommit: value.noCommit,
         },
         {
           onSuccess: () => {
-            const action = value.commitChanges ? 'reverted' : 'staged revert changes for'
+            const action = value.noCommit ? 'staged revert changes for' : 'reverted'
             showToast({
               text: `Successfully ${action} commit ${commit.hash.substring(0, 7)}`,
               icon: faRotateLeft,
@@ -70,18 +70,18 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
           className="flex flex-col gap-3"
         >
           <revertForm.Field
-            name="commitChanges"
+            name="noCommit"
             children={field => (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center">
                   <Checkbox
-                    id="commitChanges"
+                    id="noCommit"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
 
-                  <Label htmlFor="commitChanges" className="cursor-pointer pl-2">
-                    Commit changes
+                  <Label htmlFor="noCommit" className="cursor-pointer pl-2">
+                    Don't commit automatically
                   </Label>
                 </div>
               </div>

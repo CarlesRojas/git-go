@@ -430,11 +430,11 @@ export const useCherryPickCommit = () => {
     mutationFn: async ({
       commitHash,
       recordOrigin = false,
-      commitChanges = true,
+      noCommit = false,
     }: {
       commitHash: string
       recordOrigin?: boolean
-      commitChanges?: boolean
+      noCommit?: boolean
     }) => {
       return new Promise((resolve, reject) => {
         const vscode = getVSCodeApi()
@@ -456,7 +456,7 @@ export const useCherryPickCommit = () => {
           type: 'cherryPickCommit',
           commitHash,
           recordOrigin,
-          commitChanges,
+          noCommit,
         })
 
         setTimeout(() => {
@@ -476,7 +476,7 @@ export const useRevertCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ commitHash, commitChanges }: { commitHash: string; commitChanges?: boolean }) => {
+    mutationFn: async ({ commitHash, noCommit }: { commitHash: string; noCommit?: boolean }) => {
       return new Promise((resolve, reject) => {
         const vscode = getVSCodeApi()
 
@@ -496,7 +496,7 @@ export const useRevertCommit = () => {
         vscode.postMessage({
           type: 'revertCommit',
           commitHash,
-          commitChanges,
+          noCommit,
         })
 
         setTimeout(() => {

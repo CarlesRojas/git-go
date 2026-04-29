@@ -360,15 +360,15 @@ export function activate(context: vscode.ExtensionContext) {
                         case 'cherryPickCommit':
                             try {
                                 const gitService = GitService.getInstance();
-                                const { commitHash, recordOrigin, commitChanges } = message;
+                                const { commitHash, recordOrigin, noCommit } = message;
                                 if (!commitHash) {
                                     throw new Error('Commit hash is required');
                                 }
-                                await gitService.cherryPickCommit(log, commitHash, recordOrigin, commitChanges);
+                                await gitService.cherryPickCommit(log, commitHash, recordOrigin, noCommit);
 
                                 const options = [];
                                 if (recordOrigin) options.push('with origin record');
-                                if (!commitChanges) options.push('without committing');
+                                if (noCommit) options.push('without committing');
                                 const optionsText = options.length > 0 ? ` (${options.join(', ')})` : '';
 
                                 log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
@@ -388,12 +388,12 @@ export function activate(context: vscode.ExtensionContext) {
                         case 'revertCommit':
                             try {
                                 const gitService = GitService.getInstance();
-                                const { commitHash, commitChanges } = message;
+                                const { commitHash, noCommit } = message;
                                 if (!commitHash) {
                                     throw new Error('Commit hash is required');
                                 }
-                                await gitService.revertCommit(log, commitHash, commitChanges);
-                                const action = commitChanges ? 'reverted' : 'staged revert changes for';
+                                await gitService.revertCommit(log, commitHash, noCommit);
+                                const action = noCommit ? 'staged revert changes for' : 'reverted';
                                 log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
                                 currentPanel?.webview.postMessage({
                                     type: 'commitReverted',
