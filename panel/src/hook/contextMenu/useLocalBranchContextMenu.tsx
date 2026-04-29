@@ -65,61 +65,71 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
     if (!branch || !enabled) return <>{children}</>
 
     return (
-      <>
-        <ContextMenu>
-          <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
 
-          <ContextMenuContent>
-            <ContextMenuLabel>Local Branch actions</ContextMenuLabel>
+        <ContextMenuContent
+          onClick={e => e.stopPropagation()}
+          onMouseDown={e => e.stopPropagation()}
+          onMouseUp={e => e.stopPropagation()}
+          onMouseEnter={e => e.stopPropagation()}
+          onMouseLeave={e => e.stopPropagation()}
+          data-context-menu="branch"
+        >
+          <ContextMenuLabel>Local Branch actions</ContextMenuLabel>
 
-            {!branch.current && (
-              <ContextMenuItem onClick={handleCheckout}>
-                <FontAwesomeIcon icon={faCheck} className="size-3" />
-                Checkout
-              </ContextMenuItem>
-            )}
-
-            <ContextMenuItem onClick={renameDialog.openDialog}>
-              <FontAwesomeIcon icon={faEdit} className="size-3" />
-              Rename
+          {!branch.current && (
+            <ContextMenuItem onClick={handleCheckout}>
+              <FontAwesomeIcon icon={faCheck} className="size-3" />
+              Checkout
             </ContextMenuItem>
+          )}
 
-            {remotes.length > 0 && (
-              <ContextMenuItem onClick={pushDialog.openDialog}>
-                <FontAwesomeIcon icon={faCloudArrowUp} className="size-3" />
-                Push
+          <ContextMenuItem onClick={renameDialog.openDialog}>
+            <FontAwesomeIcon icon={faEdit} className="size-3" />
+            Rename
+          </ContextMenuItem>
+
+          {remotes.length > 0 && (
+            <ContextMenuItem onClick={pushDialog.openDialog}>
+              <FontAwesomeIcon icon={faCloudArrowUp} className="size-3" />
+              Push
+            </ContextMenuItem>
+          )}
+
+          {!branch.current && (
+            <>
+              <ContextMenuItem onClick={mergeDialog.openDialog}>
+                <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
+                Merge into Current
               </ContextMenuItem>
-            )}
 
-            {!branch.current && (
-              <>
-                <ContextMenuItem onClick={mergeDialog.openDialog}>
-                  <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
-                  Merge into Current
-                </ContextMenuItem>
+              <ContextMenuItem onClick={rebaseDialog.openDialog}>
+                <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+                Rebase Current Branch Here
+              </ContextMenuItem>
 
-                <ContextMenuItem onClick={rebaseDialog.openDialog}>
-                  <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
-                  Rebase Current Branch Here
-                </ContextMenuItem>
+              <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
+                <FontAwesomeIcon icon={faTrash} className="size-3" />
+                Delete
+              </ContextMenuItem>
+            </>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
+    )
+  }
 
-                <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
-                  <FontAwesomeIcon icon={faTrash} className="size-3" />
-                  Delete
-                </ContextMenuItem>
-              </>
-            )}
-          </ContextMenuContent>
-        </ContextMenu>
-
+  return {
+    ContextMenuWrapper,
+    dialogs: (
+      <>
         {renameDialog.DialogComponent}
         {deleteDialog.DialogComponent}
         {pushDialog.DialogComponent}
         {mergeDialog.DialogComponent}
         {rebaseDialog.DialogComponent}
       </>
-    )
+    ),
   }
-
-  return { ContextMenuWrapper }
 }

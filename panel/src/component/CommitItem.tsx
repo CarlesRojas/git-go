@@ -96,7 +96,7 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
-  const { ContextMenuWrapper: CommitContextMenu } = useCommitContextMenu({ commit })
+  const { ContextMenuWrapper: CommitContextMenu, dialogs } = useCommitContextMenu({ commit })
 
   const hasPills =
     !commit.isUncommitted && (Object.keys(groupedBranches).length > 0 || commit.isStash || commit.tags.length > 0)
@@ -237,160 +237,168 @@ export const CommitItem: FC<CommitItemProps> = ({
   )
 
   return (
-    <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
-      <div
-        className={cn(
-          'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
-          // Interactive
-          'transition-opacity duration-500',
-          isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
-          'hover:bg-vsc-editor-fg/10 cursor-pointer',
-          dimmed && 'opacity-10',
-        )}
-        style={{ paddingLeft: `${treeWidth + 8}px` }}
-        onMouseEnter={() => onCommitHover(commit.hash, row)}
-        onMouseLeave={() => onCommitHover(null, null)}
-        data-commit-row={row}
-      >
-        <CommitContextMenu>
-          <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />
-        </CommitContextMenu>
-
-        <div className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}>
-          {!!hasPills && pills}
-
-          <CommitContextMenu>{message}</CommitContextMenu>
-        </div>
-
-        <CommitContextMenu>{timeAndAuthor}</CommitContextMenu>
-
-        {layout.isHead && (
-          <>
-            <div
-              className="pointer-events-none absolute inset-0 -z-20 opacity-10"
-              style={{ backgroundColor: getColor(layout.colorIndex) }}
-            />
-
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
-              style={{ backgroundColor: getColor(layout.colorIndex) }}
-            />
-
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
-              style={{ backgroundColor: getColor(layout.colorIndex) }}
-            />
-          </>
-        )}
-
-        {isExpanded && !layout.isHead && (
-          <>
-            <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
-            <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
-          </>
-        )}
-      </div>
-
-      {isExpanded && (
+    <>
+      <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
         <div
-          ref={containerRef}
           className={cn(
-            // Layout
-            'relative overflow-hidden',
-            // Colors
-            'bg-vsc-editor-fg/3',
+            'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
             // Interactive
             'transition-opacity duration-500',
+            isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
+            'hover:bg-vsc-editor-fg/10 cursor-pointer',
+            dimmed && 'opacity-10',
           )}
+          style={{ paddingLeft: `${treeWidth + 8}px` }}
+          onMouseEnter={() => onCommitHover(commit.hash, row)}
+          onMouseLeave={() => onCommitHover(null, null)}
           data-commit-row={row}
-          style={{ height: `${panelHeight}px`, maxHeight: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
         >
-          <div className="relative size-full max-h-full min-h-full max-w-full overflow-x-hidden overflow-y-auto">
-            <div className={cn('relative flex h-fit w-full flex-col gap-1 py-3 pr-2', commit.isUncommitted && 'py-0')}>
-              {!commit.isUncommitted && (
-                <div className="relative flex h-fit w-full items-center gap-3">
-                  <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
-
-                  <div className="relative flex h-fit w-full flex-col">
-                    <p className="text-xs font-medium">
-                      <span className="opacity-50">Hash: </span>
-                      <code
-                        className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
-                        onClick={() => copyText(commit.hash, 'Hash')}
-                      >
-                        {commit.hash}
-                      </code>
-                    </p>
-
-                    <p className="text-xs font-medium">
-                      <span className="opacity-50">Author: </span>
-                      <span
-                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                        onClick={() => copyText(commit.author, 'Author')}
-                      >
-                        {commit.author}
-                      </span>{' '}
-                      <span
-                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                        onClick={() => copyText(commit.email, 'Email')}
-                      >
-                        ({commit.email})
-                      </span>
-                    </p>
-
-                    <p className="text-xs font-medium">
-                      <span className="opacity-50">Message: </span>
-                      <span
-                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                        onClick={() => copyText(commit.message, 'Message')}
-                      >
-                        {commit.message}
-                      </span>
-                    </p>
-
-                    <p className="text-xs font-medium">
-                      <span className="opacity-50">Date: </span>
-                      <time dateTime={commit.date.split('T')[0]}>
-                        {new Date(commit.date).toLocaleDateString('en-CA', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </time>{' '}
-                      <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
-                        {new Date(commit.date).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false,
-                        })}
-                      </time>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {fileTree.data && <TreeView data={fileTree.data} expandAll />}
-
-              {uncommitedFiles && <TreeView data={buildFileTree(uncommitedFiles, 'working-changes')} expandAll />}
-            </div>
-          </div>
+          <CommitContextMenu>
+            <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />
+          </CommitContextMenu>
 
           <div
-            className={cn(
-              // Position & sizing
-              'absolute right-0 bottom-0 left-0 h-1',
-              // Colors & borders
-              'border-vsc-editor-fg/15 border-b bg-transparent',
-              // Interactive
-              'hover:bg-vsc-editor-fg/20 transition-colors',
-              // State
-              isDragging && 'bg-vsc-editor-fg/30',
-            )}
-            style={{ cursor: isDragging ? 'ns-resize' : 'ns-resize' }}
-            onMouseDown={handleMouseDown}
-          />
+            className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
+          >
+            {!!hasPills && pills}
+
+            <CommitContextMenu>{message}</CommitContextMenu>
+          </div>
+
+          <CommitContextMenu>{timeAndAuthor}</CommitContextMenu>
+
+          {layout.isHead && (
+            <>
+              <div
+                className="pointer-events-none absolute inset-0 -z-20 opacity-10"
+                style={{ backgroundColor: getColor(layout.colorIndex) }}
+              />
+
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
+                style={{ backgroundColor: getColor(layout.colorIndex) }}
+              />
+
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
+                style={{ backgroundColor: getColor(layout.colorIndex) }}
+              />
+            </>
+          )}
+
+          {isExpanded && !layout.isHead && (
+            <>
+              <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
+              <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
+            </>
+          )}
         </div>
-      )}
-    </section>
+
+        {isExpanded && (
+          <div
+            ref={containerRef}
+            className={cn(
+              // Layout
+              'relative overflow-hidden',
+              // Colors
+              'bg-vsc-editor-fg/3',
+              // Interactive
+              'transition-opacity duration-500',
+            )}
+            data-commit-row={row}
+            style={{ height: `${panelHeight}px`, maxHeight: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
+          >
+            <div className="relative size-full max-h-full min-h-full max-w-full overflow-x-hidden overflow-y-auto">
+              <div
+                className={cn('relative flex h-fit w-full flex-col gap-1 py-3 pr-2', commit.isUncommitted && 'py-0')}
+              >
+                {!commit.isUncommitted && (
+                  <div className="relative flex h-fit w-full items-center gap-3">
+                    <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
+
+                    <div className="relative flex h-fit w-full flex-col">
+                      <p className="text-xs font-medium">
+                        <span className="opacity-50">Hash: </span>
+                        <code
+                          className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
+                          onClick={() => copyText(commit.hash, 'Hash')}
+                        >
+                          {commit.hash}
+                        </code>
+                      </p>
+
+                      <p className="text-xs font-medium">
+                        <span className="opacity-50">Author: </span>
+                        <span
+                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                          onClick={() => copyText(commit.author, 'Author')}
+                        >
+                          {commit.author}
+                        </span>{' '}
+                        <span
+                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                          onClick={() => copyText(commit.email, 'Email')}
+                        >
+                          ({commit.email})
+                        </span>
+                      </p>
+
+                      <p className="text-xs font-medium">
+                        <span className="opacity-50">Message: </span>
+                        <span
+                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                          onClick={() => copyText(commit.message, 'Message')}
+                        >
+                          {commit.message}
+                        </span>
+                      </p>
+
+                      <p className="text-xs font-medium">
+                        <span className="opacity-50">Date: </span>
+                        <time dateTime={commit.date.split('T')[0]}>
+                          {new Date(commit.date).toLocaleDateString('en-CA', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </time>{' '}
+                        <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
+                          {new Date(commit.date).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                          })}
+                        </time>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {fileTree.data && <TreeView data={fileTree.data} expandAll />}
+
+                {uncommitedFiles && <TreeView data={buildFileTree(uncommitedFiles, 'working-changes')} expandAll />}
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                // Position & sizing
+                'absolute right-0 bottom-0 left-0 h-1',
+                // Colors & borders
+                'border-vsc-editor-fg/15 border-b bg-transparent',
+                // Interactive
+                'hover:bg-vsc-editor-fg/20 transition-colors',
+                // State
+                isDragging && 'bg-vsc-editor-fg/30',
+              )}
+              style={{ cursor: isDragging ? 'ns-resize' : 'ns-resize' }}
+              onMouseDown={handleMouseDown}
+            />
+          </div>
+        )}
+      </section>
+
+      {dialogs}
+    </>
   )
 }

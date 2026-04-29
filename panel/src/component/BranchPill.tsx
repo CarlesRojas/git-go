@@ -1,5 +1,5 @@
 import { useToast } from '@/context/ToastContext'
-import { useLocalBranchContextMenu } from '@/hook/contextMenu/useBranchContextMenu'
+import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchContextMenu'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
 import { useDoubleClick } from '@/hook/useDoubleClick'
 import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
@@ -23,7 +23,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
 
-  const { ContextMenuWrapper: LocalBranchContextMenu } = useLocalBranchContextMenu({
+  const { ContextMenuWrapper: LocalBranchContextMenu, dialogs } = useLocalBranchContextMenu({
     branch: branch.local ?? undefined,
   })
 
@@ -151,6 +151,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
       </button>
 
       {checkoutDialog.DialogComponent}
+      {dialogs}
     </>
   )
 }

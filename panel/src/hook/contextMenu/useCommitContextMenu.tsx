@@ -25,43 +25,53 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
   const revertDialog = useRevertDialog({ commit })
 
   const ContextMenuWrapper = ({ children }: { children: ReactNode }) => (
-    <>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
 
-        {!commit.isUncommitted && (
-          <ContextMenuContent>
-            <ContextMenuLabel>Commit actions</ContextMenuLabel>
+      {!commit.isUncommitted && (
+        <ContextMenuContent
+          onClick={e => e.stopPropagation()}
+          onMouseDown={e => e.stopPropagation()}
+          onMouseUp={e => e.stopPropagation()}
+          onMouseEnter={e => e.stopPropagation()}
+          onMouseLeave={e => e.stopPropagation()}
+          data-context-menu="commit"
+        >
+          <ContextMenuLabel>Commit actions</ContextMenuLabel>
 
-            <ContextMenuItem onClick={branchDialog.openDialog}>
-              <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
-              Create Branch
-            </ContextMenuItem>
+          <ContextMenuItem onClick={branchDialog.openDialog}>
+            <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+            Create Branch
+          </ContextMenuItem>
 
-            <ContextMenuItem onClick={tagDialog.openDialog}>
-              <FontAwesomeIcon icon={faTag} className="size-3" />
-              Add Tag
-            </ContextMenuItem>
+          <ContextMenuItem onClick={tagDialog.openDialog}>
+            <FontAwesomeIcon icon={faTag} className="size-3" />
+            Add Tag
+          </ContextMenuItem>
 
-            <ContextMenuItem onClick={cherryPickDialog.openDialog}>
-              <FontAwesomeIcon icon={faClone} className="size-3" />
-              Cherry Pick
-            </ContextMenuItem>
+          <ContextMenuItem onClick={cherryPickDialog.openDialog}>
+            <FontAwesomeIcon icon={faClone} className="size-3" />
+            Cherry Pick
+          </ContextMenuItem>
 
-            <ContextMenuItem onClick={revertDialog.openDialog} variant="destructive">
-              <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
-              Revert
-            </ContextMenuItem>
-          </ContextMenuContent>
-        )}
-      </ContextMenu>
-
-      {tagDialog.DialogComponent}
-      {branchDialog.DialogComponent}
-      {cherryPickDialog.DialogComponent}
-      {revertDialog.DialogComponent}
-    </>
+          <ContextMenuItem onClick={revertDialog.openDialog} variant="destructive">
+            <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
+            Revert
+          </ContextMenuItem>
+        </ContextMenuContent>
+      )}
+    </ContextMenu>
   )
 
-  return { ContextMenuWrapper }
+  return {
+    ContextMenuWrapper,
+    dialogs: (
+      <>
+        {tagDialog.DialogComponent}
+        {branchDialog.DialogComponent}
+        {cherryPickDialog.DialogComponent}
+        {revertDialog.DialogComponent}
+      </>
+    ),
+  }
 }

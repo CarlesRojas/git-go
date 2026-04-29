@@ -27,6 +27,9 @@ export function useCommitHighlight({ enabled }: Props) {
     (hash: string | null, row: number | null) => {
       cleanup()
 
+      const openContextMenu = document.querySelector('[data-context-menu]')
+      if (openContextMenu) return
+
       if (!hash || row === null || !enabled) return
 
       const elements = document.querySelectorAll(`[data-hash="${hash}"]`)
