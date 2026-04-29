@@ -4,7 +4,6 @@
       Checkout
       Fetch into local branch
       Merge into current branch
-      Pull into current branch
       Delete remote branch
       ---
       Copy branch name

@@ -43,7 +43,25 @@ export interface GitRemote {
     pushUrl: string;
 }
 
+export interface GitTagDetails {
+    hash: string;
+    taggerName: string;
+    taggerEmail: string;
+    taggerDate: string;
+    message: string;
+}
+
+export interface GitStash {
+    selector: string; // e.g., "stash@{0}"
+    hash: string;
+    message: string;
+    branchName: string;
+    date: string;
+}
+
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
+
+export type GitResetMode = 'mixed' | 'hard';
 
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -1004,6 +1022,259 @@ export class GitService {
             return remotes;
         } catch (error) {
             log(`Error getting remotes: ${error}`);
+            throw error;
+        }
+    }
+
+    // Stash operations
+
+    public async applyStash(
+        log: (message: string) => void,
+        stashSelector: string,
+        reinstateIndex: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'stash', 'apply'];
+            if (reinstateIndex) args.push('--index');
+            args.push(stashSelector);
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully applied stash ${stashSelector}${reinstateIndex ? ' with index reinstatement' : ''}`);
+        } catch (error) {
+            log(`Error applying stash: ${error}`);
+            throw error;
+        }
+    }
+
+    public async popStash(
+        log: (message: string) => void,
+        stashSelector: string,
+        reinstateIndex: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'stash', 'pop'];
+            if (reinstateIndex) args.push('--index');
+            args.push(stashSelector);
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully popped stash ${stashSelector}${reinstateIndex ? ' with index reinstatement' : ''}`);
+        } catch (error) {
+            log(`Error popping stash: ${error}`);
+            throw error;
+        }
+    }
+
+    public async dropStash(log: (message: string) => void, stashSelector: string): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            await this.spawnGit([gitExecutable.path, 'stash', 'drop', stashSelector], workspacePath);
+            log(`Successfully dropped stash ${stashSelector}`);
+        } catch (error) {
+            log(`Error dropping stash: ${error}`);
+            throw error;
+        }
+    }
+
+    public async createStash(
+        log: (message: string) => void,
+        message: string = '',
+        includeUntracked: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'stash', 'push'];
+            if (includeUntracked) args.push('--include-untracked');
+            if (message.trim()) args.push('-m', message);
+
+            await this.spawnGit(args, workspacePath);
+            log(
+                `Successfully created stash${message ? ` with message: ${message}` : ''}${includeUntracked ? ' (including untracked files)' : ''}`
+            );
+        } catch (error) {
+            log(`Error creating stash: ${error}`);
+            throw error;
+        }
+    }
+
+    // Remote branch operations
+
+    public async deleteRemoteBranch(log: (message: string) => void, branchName: string, remote: string): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            await this.spawnGit([gitExecutable.path, 'push', remote, '--delete', branchName], workspacePath);
+            log(`Successfully deleted remote branch ${branchName} on ${remote}`);
+        } catch (error) {
+            log(`Error deleting remote branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async fetchIntoLocalBranch(
+        log: (message: string) => void,
+        remote: string,
+        remoteBranch: string,
+        localBranch: string,
+        forceFetch: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'fetch'];
+            if (forceFetch) args.push('--force');
+            args.push(remote, `${remoteBranch}:${localBranch}`);
+
+            await this.spawnGit(args, workspacePath);
+            log(
+                `Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}${forceFetch ? ' (force)' : ''}`
+            );
+        } catch (error) {
+            log(`Error fetching into local branch: ${error}`);
+            throw error;
+        }
+    }
+
+    // Tag operations
+
+    public async getTagDetails(
+        log: (message: string) => void,
+        tagName: string
+    ): Promise<{
+        hash: string;
+        taggerName: string;
+        taggerEmail: string;
+        taggerDate: string;
+        message: string;
+    }> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const output = await this.spawnGit(
+                [
+                    gitExecutable.path,
+                    'for-each-ref',
+                    `refs/tags/${tagName}`,
+                    '--format=%(objectname)|%(taggername)|%(taggeremail)|%(taggerdate:iso)|%(contents)'
+                ],
+                workspacePath
+            );
+
+            const [hash, taggerName, taggerEmail, taggerDate, ...messageParts] = output.trim().split('|');
+
+            return {
+                hash: hash?.trim() || '',
+                taggerName: taggerName?.trim() || '',
+                taggerEmail: taggerEmail?.trim() || '',
+                taggerDate: taggerDate?.trim() || '',
+                message: messageParts.join('|').trim()
+            };
+        } catch (error) {
+            log(`Error getting tag details: ${error}`);
+            throw error;
+        }
+    }
+
+    public async pushTag(log: (message: string) => void, tagName: string, remotes: string[]): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            for (const remote of remotes) {
+                await this.spawnGit([gitExecutable.path, 'push', remote, tagName], workspacePath);
+                log(`Successfully pushed tag ${tagName} to ${remote}`);
+            }
+        } catch (error) {
+            log(`Error pushing tag: ${error}`);
+            throw error;
+        }
+    }
+
+    public async deleteTag(log: (message: string) => void, tagName: string, deleteOnRemote?: string): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            // Delete local tag
+            await this.spawnGit([gitExecutable.path, 'tag', '-d', tagName], workspacePath);
+            log(`Successfully deleted local tag ${tagName}`);
+
+            // Delete remote tag if specified
+            if (deleteOnRemote) {
+                await this.spawnGit([gitExecutable.path, 'push', deleteOnRemote, '--delete', tagName], workspacePath);
+                log(`Successfully deleted tag ${tagName} from remote ${deleteOnRemote}`);
+            }
+        } catch (error) {
+            log(`Error deleting tag: ${error}`);
+            throw error;
+        }
+    }
+
+    // Uncommitted changes operations
+
+    public async stashUncommittedChanges(
+        log: (message: string) => void,
+        message: string = '',
+        includeUntracked: boolean = false
+    ): Promise<void> {
+        return this.createStash(log, message, includeUntracked);
+    }
+
+    public async resetUncommittedChanges(
+        log: (message: string) => void,
+        mode: 'mixed' | 'hard' = 'mixed'
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const modeFlag = mode === 'hard' ? '--hard' : '--mixed';
+            await this.spawnGit([gitExecutable.path, 'reset', modeFlag, 'HEAD'], workspacePath);
+            log(`Successfully reset uncommitted changes (${mode} mode)`);
+        } catch (error) {
+            log(`Error resetting uncommitted changes: ${error}`);
             throw error;
         }
     }

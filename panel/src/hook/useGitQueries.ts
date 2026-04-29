@@ -868,3 +868,441 @@ export const useRebaseBranch = () => {
     },
   })
 }
+
+// Stash operations
+
+export const useApplyStash = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      stashSelector,
+      reinstateIndex = false,
+    }: {
+      stashSelector: string
+      reinstateIndex?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'applyStashSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'applyStash',
+          stashSelector,
+          reinstateIndex,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to apply stash'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const usePopStash = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      stashSelector,
+      reinstateIndex = false,
+    }: {
+      stashSelector: string
+      reinstateIndex?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'popStashSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'popStash',
+          stashSelector,
+          reinstateIndex,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to pop stash'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useDropStash = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ stashSelector }: { stashSelector: string }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'dropStashSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'dropStash',
+          stashSelector,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to drop stash'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useCreateStash = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      message = '',
+      includeUntracked = false,
+    }: {
+      message?: string
+      includeUntracked?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const messageData = event.data
+
+          if (messageData.type === 'createStashSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(messageData)
+          } else if (messageData.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(messageData.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'createStash',
+          message,
+          includeUntracked,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to create stash'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Remote branch operations
+
+export const useDeleteRemoteBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ branchName, remote }: { branchName: string; remote: string }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'deleteRemoteBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'deleteRemoteBranch',
+          branchName,
+          remote,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to delete remote branch'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useFetchIntoLocalBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      remote,
+      remoteBranch,
+      localBranch,
+      forceFetch = false,
+    }: {
+      remote: string
+      remoteBranch: string
+      localBranch: string
+      forceFetch?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'fetchIntoLocalBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'fetchIntoLocalBranch',
+          remote,
+          remoteBranch,
+          localBranch,
+          forceFetch,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch into local branch'))
+        }, 30_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Tag operations
+
+export const useGetTagDetails = (tagName: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['git', 'tag-details', tagName],
+    queryFn: (): Promise<{
+      hash: string
+      taggerName: string
+      taggerEmail: string
+      taggerDate: string
+      message: string
+    }> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'tagDetails') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.details)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'getTagDetails',
+          tagName,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to get tag details'))
+        }, 10_000)
+      })
+    },
+    enabled: !!tagName && enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
+export const usePushTag = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ tagName, remotes }: { tagName: string; remotes: string[] }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'pushTagSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'pushTag',
+          tagName,
+          remotes,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to push tag'))
+        }, 30_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useDeleteTag = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ tagName, deleteOnRemote }: { tagName: string; deleteOnRemote?: string }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'deleteTagSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'deleteTag',
+          tagName,
+          deleteOnRemote,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to delete tag'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Uncommitted changes operations
+
+export const useStashUncommittedChanges = () => {
+  return useCreateStash()
+}
+
+export const useResetUncommittedChanges = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      mode = 'mixed',
+    }: {
+      mode?: 'mixed' | 'hard'
+    } = {}) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'resetUncommittedChangesSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'resetUncommittedChanges',
+          mode,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to reset uncommitted changes'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
