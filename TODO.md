@@ -1,9 +1,29 @@
 ## TODO
 
 - [ ] Remote Branch Right Click Menu:
+      Checkout
+      Fetch into local branch
+      Merge into current branch
+      Pull into current branch
+      Delete remote branch
+      ---
+      Copy branch name
+
 - [ ] Stash Right Click Menu (Should include entire commit line)
+      Apply
+      Pop
+      Drop
+
 - [ ] Tag Right Click Menu
+      View details
+      Push
+      Delete
+      ---
+      Copy tag name
+
 - [ ] Uncommitted Changes Right Click Menu
+      Stash
+      Discard all changes
 
 - [ ] Settings: Show stashes?
 - [ ] Settings: Show tags?
