@@ -123,7 +123,10 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
                   {isSubmitting ? (
                     <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
                   ) : (
-                    'Create Branch'
+                    <>
+                      <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+                      Create Branch
+                    </>
                   )}
                 </Button>
               )}

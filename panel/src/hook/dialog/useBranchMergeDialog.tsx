@@ -132,7 +132,10 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
               {mergeBranchMutation.isPending ? (
                 <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
               ) : (
-                'Merge Branch'
+                <>
+                  <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
+                  Merge Branch
+                </>
               )}
             </Button>
           </DialogFooter>

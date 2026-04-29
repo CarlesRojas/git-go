@@ -15,12 +15,12 @@ import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
 import {
   faCheck,
-  faCloudArrowUp,
+  faClone,
   faCodeBranch,
   faCodeMerge,
-  faCopy,
-  faEdit,
+  faPen,
   faTrash,
+  faUpload,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -76,9 +76,9 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
     try {
       if (!branch) throw new Error('No branch to copy')
       await copy(branch.cleanName)
-      showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faCopy })
+      showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faClone })
     } catch (error) {
-      showToast({ text: 'Failed to copy branch name', type: 'error', icon: faCopy })
+      showToast({ text: 'Failed to copy branch name', type: 'error', icon: faClone })
     }
   }
 
@@ -107,13 +107,13 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
           )}
 
           <ContextMenuItem onClick={renameDialog.openDialog}>
-            <FontAwesomeIcon icon={faEdit} className="size-3" />
+            <FontAwesomeIcon icon={faPen} className="size-3" />
             Rename
           </ContextMenuItem>
 
           {remotes.length > 0 && (
             <ContextMenuItem onClick={pushDialog.openDialog}>
-              <FontAwesomeIcon icon={faCloudArrowUp} className="size-3" />
+              <FontAwesomeIcon icon={faUpload} className="size-3" />
               Push
             </ContextMenuItem>
           )}
@@ -140,7 +140,7 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
           <ContextMenuSeparator />
 
           <ContextMenuItem onClick={handleCopyBranchName}>
-            <FontAwesomeIcon icon={faCopy} className="size-3" />
+            <FontAwesomeIcon icon={faClone} className="size-3" />
             Copy Branch Name
           </ContextMenuItem>
         </ContextMenuContent>

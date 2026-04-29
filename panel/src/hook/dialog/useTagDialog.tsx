@@ -124,7 +124,10 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
                   {isSubmitting ? (
                     <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
                   ) : (
-                    'Create Tag'
+                    <>
+                      <FontAwesomeIcon icon={faTag} className="size-3" />
+                      Create Tag
+                    </>
                   )}
                 </Button>
               )}

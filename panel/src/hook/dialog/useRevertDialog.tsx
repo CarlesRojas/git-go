@@ -100,7 +100,10 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
                   {isSubmitting ? (
                     <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
                   ) : (
-                    'Revert Commit'
+                    <>
+                      <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
+                      Revert Commit
+                    </>
                   )}
                 </Button>
               )}

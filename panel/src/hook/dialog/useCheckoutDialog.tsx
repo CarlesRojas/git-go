@@ -126,7 +126,14 @@ export const useCheckoutDialog = ({ remoteBranch, hasLocalBranch = false }: UseC
               selector={state => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
                 <Button type="submit" disabled={!canSubmit || isSubmitting}>
-                  {isSubmitting ? <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" /> : 'Checkout'}
+                  {isSubmitting ? (
+                    <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+                      Checkout
+                    </>
+                  )}
                 </Button>
               )}
             />

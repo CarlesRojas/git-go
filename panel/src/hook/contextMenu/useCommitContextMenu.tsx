@@ -9,7 +9,7 @@ import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
 import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
-import { faClone, faCodeBranch, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
+import { faCodeBranch, faCodeCommit, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode } from 'react'
@@ -50,7 +50,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
           </ContextMenuItem>
 
           <ContextMenuItem onClick={cherryPickDialog.openDialog}>
-            <FontAwesomeIcon icon={faClone} className="size-3" />
+            <FontAwesomeIcon icon={faCodeCommit} className="size-3" />
             Cherry Pick
           </ContextMenuItem>
 

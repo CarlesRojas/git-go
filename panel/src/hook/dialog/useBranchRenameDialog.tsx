@@ -4,7 +4,7 @@ import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
 import { useRenameBranch } from '@/hook/useGitQueries'
-import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
@@ -38,12 +38,12 @@ export const useBranchRenameDialog = ({ branch }: UseBranchRenameDialogProps) =>
           onSuccess: () => {
             showToast({
               text: `Branch renamed from '${branch.cleanName}' to '${value.newName}' successfully`,
-              icon: faCodeBranch,
+              icon: faPen,
               type: 'success',
             })
           },
           onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faCodeBranch })
+            showToast({ text: error.message, type: 'error', icon: faPen })
           },
           onSettled: () => {
             setShowRenameDialog(false)
@@ -103,7 +103,10 @@ export const useBranchRenameDialog = ({ branch }: UseBranchRenameDialogProps) =>
               {renameBranchMutation.isPending ? (
                 <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
               ) : (
-                'Rename Branch'
+                <>
+                  <FontAwesomeIcon icon={faPen} className="size-3" />
+                  Rename Branch
+                </>
               )}
             </Button>
           </DialogFooter>

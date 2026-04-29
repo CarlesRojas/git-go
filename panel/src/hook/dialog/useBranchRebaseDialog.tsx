@@ -97,7 +97,10 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
               {rebaseBranchMutation.isPending ? (
                 <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
               ) : (
-                'Rebase Branch'
+                <>
+                  <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+                  Rebase Branch
+                </>
               )}
             </Button>
           </DialogFooter>

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
 import { useCherryPickCommit } from '@/hook/useGitQueries'
-import { faCircleNotch, faClone } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch, faCodeCommit } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
@@ -33,10 +33,10 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
         },
         {
           onSuccess: () => {
-            showToast({ text: 'Commit cherry-picked successfully', icon: faClone, type: 'success' })
+            showToast({ text: 'Commit cherry-picked successfully', icon: faCodeCommit, type: 'success' })
           },
           onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faClone })
+            showToast({ text: error.message, type: 'error', icon: faCodeCommit })
           },
           onSettled: () => {
             setShowCherryPickDialog(false)
@@ -112,7 +112,10 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
                   {isSubmitting ? (
                     <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
                   ) : (
-                    'Cherry pick'
+                    <>
+                      <FontAwesomeIcon icon={faCodeCommit} className="size-3" />
+                      Cherry pick
+                    </>
                   )}
                 </Button>
               )}

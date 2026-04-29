@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/component/ui/RadioGroup'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/component/ui/Select'
 import { useToast } from '@/context/ToastContext'
 import { useGitRemotes, usePushBranch } from '@/hook/useGitQueries'
-import { faCircleNotch, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch, GitPushMode } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
@@ -41,12 +41,12 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
           onSuccess: () => {
             showToast({
               text: `Branch '${branch.cleanName}' pushed to '${value.remote}' successfully`,
-              icon: faCloudArrowUp,
+              icon: faUpload,
               type: 'success',
             })
           },
           onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faCloudArrowUp })
+            showToast({ text: error.message, type: 'error', icon: faUpload })
           },
           onSettled: () => {
             setShowPushDialog(false)
@@ -164,7 +164,10 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
               {pushBranchMutation.isPending ? (
                 <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
               ) : (
-                'Push Branch'
+                <>
+                  <FontAwesomeIcon icon={faUpload} className="size-3" />
+                  Push Branch
+                </>
               )}
             </Button>
           </DialogFooter>

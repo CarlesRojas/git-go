@@ -95,7 +95,10 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
               {deleteBranchMutation.isPending ? (
                 <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
               ) : (
-                'Delete Branch'
+                <>
+                  <FontAwesomeIcon icon={faTrash} className="size-3" />
+                  Delete Branch
+                </>
               )}
             </Button>
           </DialogFooter>
