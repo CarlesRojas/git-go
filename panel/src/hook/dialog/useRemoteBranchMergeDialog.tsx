@@ -10,13 +10,10 @@ import { GitBranch } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-interface UseRemoteBranchMergeDialogProps {
-  remoteBranch: GitBranch
-}
-
-export const useRemoteBranchMergeDialog = ({ remoteBranch }: UseRemoteBranchMergeDialogProps) => {
+export const useRemoteBranchMergeDialog = () => {
   const { showToast } = useToast()
   const [showMergeDialog, setShowMergeDialog] = useState(false)
+  const [remoteBranch, setRemoteBranch] = useState<GitBranch | null>(null)
   const mergeBranchMutation = useMergeBranch()
   const { data: currentBranch } = useCurrentBranch()
 
@@ -27,6 +24,7 @@ export const useRemoteBranchMergeDialog = ({ remoteBranch }: UseRemoteBranchMerg
       noCommit: false,
     },
     onSubmit: async ({ value }) => {
+      if (!remoteBranch) return
       mergeBranchMutation.mutate(
         {
           branchName: remoteBranch.cleanName,
@@ -54,7 +52,8 @@ export const useRemoteBranchMergeDialog = ({ remoteBranch }: UseRemoteBranchMerg
     },
   })
 
-  const openDialog = () => {
+  const openDialog = (branch: GitBranch) => {
+    setRemoteBranch(branch)
     setShowMergeDialog(true)
   }
 
@@ -63,8 +62,8 @@ export const useRemoteBranchMergeDialog = ({ remoteBranch }: UseRemoteBranchMerg
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Merge remote branch <strong>{remoteBranch.cleanName}</strong> into <strong>{currentBranch}</strong> (current
-            branch)
+            Merge remote branch <strong>{remoteBranch?.cleanName}</strong> into <strong>{currentBranch}</strong>{' '}
+            (current branch)
           </DialogTitle>
         </DialogHeader>
 
@@ -78,39 +77,45 @@ export const useRemoteBranchMergeDialog = ({ remoteBranch }: UseRemoteBranchMerg
         >
           <mergeForm.Field name="createNewCommit">
             {field => (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="createNewCommit"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
-                <Label htmlFor="createNewCommit">Create new commit (no fast-forward)</Label>
+                <Label htmlFor="createNewCommit" className="cursor-pointer pl-2">
+                  Create new commit (no fast-forward)
+                </Label>
               </div>
             )}
           </mergeForm.Field>
 
           <mergeForm.Field name="squash">
             {field => (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="squash"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
-                <Label htmlFor="squash">Squash commits</Label>
+                <Label htmlFor="squash" className="cursor-pointer pl-2">
+                  Squash commits
+                </Label>
               </div>
             )}
           </mergeForm.Field>
 
           <mergeForm.Field name="noCommit">
             {field => (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="noCommit"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
-                <Label htmlFor="noCommit">Don't commit automatically</Label>
+                <Label htmlFor="noCommit" className="cursor-pointer pl-2">
+                  Don't commit automatically
+                </Label>
               </div>
             )}
           </mergeForm.Field>

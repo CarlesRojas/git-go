@@ -9,13 +9,10 @@ import { GitCommit } from '@git/gitService'
 import { useState } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
-interface UseTagDetailsDialogProps {
-  commit: GitCommit
-  tagName: string
-}
-
-export const useTagDetailsDialog = ({ commit, tagName }: UseTagDetailsDialogProps) => {
+export const useTagDetailsDialog = () => {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
+  const [commit, setCommit] = useState<GitCommit | null>(null)
+  const [tagName, setTagName] = useState<string>('')
   const { data: tagDetails } = useGetTagDetails(tagName, !!tagName)
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
@@ -25,7 +22,9 @@ export const useTagDetailsDialog = ({ commit, tagName }: UseTagDetailsDialogProp
     showToast({ text: `${label} copied to clipboard`, icon: faCheckCircle, type: 'info' })
   }
 
-  const openDialog = () => {
+  const openDialog = (commitData: GitCommit, tag: string) => {
+    setCommit(commitData)
+    setTagName(tag)
     setShowDetailsDialog(true)
   }
 
@@ -39,7 +38,7 @@ export const useTagDetailsDialog = ({ commit, tagName }: UseTagDetailsDialogProp
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
-          {tagDetails ? (
+          {tagDetails && commit ? (
             <>
               <p className="text-xs font-medium">
                 <span className="opacity-50">Tag Hash: </span>

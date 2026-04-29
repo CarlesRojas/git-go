@@ -10,14 +10,11 @@ import { GitCommit } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-interface UseTagPushDialogProps {
-  commit: GitCommit
-  tagName: string
-}
-
-export const useTagPushDialog = ({ commit, tagName }: UseTagPushDialogProps) => {
+export const useTagPushDialog = () => {
   const { showToast } = useToast()
   const [showPushDialog, setShowPushDialog] = useState(false)
+  const [commit, setCommit] = useState<GitCommit | null>(null)
+  const [tagName, setTagName] = useState<string>('')
   const { data: remotes = [] } = useGitRemotes()
   const pushTagMutation = usePushTag()
 
@@ -51,7 +48,9 @@ export const useTagPushDialog = ({ commit, tagName }: UseTagPushDialogProps) => 
     },
   })
 
-  const openDialog = () => {
+  const openDialog = (commitData: GitCommit, tag: string) => {
+    setCommit(commitData)
+    setTagName(tag)
     setShowPushDialog(true)
   }
 
@@ -78,7 +77,7 @@ export const useTagPushDialog = ({ commit, tagName }: UseTagPushDialogProps) => 
             {remotes.map(remote => (
               <pushForm.Field key={remote.name} name="selectedRemotes">
                 {field => (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
                     <Checkbox
                       id={`remote-${remote.name}`}
                       checked={field.state.value.includes(remote.name)}
@@ -91,7 +90,9 @@ export const useTagPushDialog = ({ commit, tagName }: UseTagPushDialogProps) => 
                       }}
                     />
 
-                    <Label htmlFor={`remote-${remote.name}`}>{remote.name}</Label>
+                    <Label htmlFor={`remote-${remote.name}`} className="cursor-pointer pl-2">
+                      {remote.name}
+                    </Label>
                   </div>
                 )}
               </pushForm.Field>

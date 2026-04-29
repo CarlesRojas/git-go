@@ -5,18 +5,13 @@ import { useToast } from '@/context/ToastContext'
 import { useDeleteTag, useGitRemotes } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { GitCommit } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-interface UseTagDeleteDialogProps {
-  commit: GitCommit
-  tagName: string
-}
-
-export const useTagDeleteDialog = ({ commit, tagName }: UseTagDeleteDialogProps) => {
+export const useTagDeleteDialog = () => {
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [tagName, setTagName] = useState<string>('')
   const { data: remotes = [] } = useGitRemotes()
   const deleteTagMutation = useDeleteTag()
 
@@ -53,7 +48,8 @@ export const useTagDeleteDialog = ({ commit, tagName }: UseTagDeleteDialogProps)
     },
   })
 
-  const openDialog = () => {
+  const openDialog = (tag: string) => {
+    setTagName(tag)
     setShowDeleteDialog(true)
   }
 
@@ -62,7 +58,7 @@ export const useTagDeleteDialog = ({ commit, tagName }: UseTagDeleteDialogProps)
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Delete the tag <strong>{tagName}</strong>
+            Delete <strong>{tagName}</strong>
           </DialogTitle>
         </DialogHeader>
 

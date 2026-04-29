@@ -78,14 +78,14 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
           <div className="flex flex-col gap-3">
             <mergeForm.Field name="createNewCommit">
               {field => (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="createNewCommit"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
 
-                  <Label htmlFor="createNewCommit" className="text-sm">
+                  <Label htmlFor="createNewCommit" className="cursor-pointer pl-2">
                     Fast forward if possible
                   </Label>
                 </div>
@@ -94,13 +94,13 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
 
             <mergeForm.Field name="squash">
               {field => (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="squash"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
-                  <Label htmlFor="squash" className="text-sm">
+                  <Label htmlFor="squash" className="cursor-pointer pl-2">
                     Squash commits
                   </Label>
                 </div>
@@ -109,13 +109,13 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
 
             <mergeForm.Field name="noCommit">
               {field => (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="noCommit"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
-                  <Label htmlFor="noCommit" className="text-sm">
+                  <Label htmlFor="noCommit" className="cursor-pointer pl-2">
                     Don't commit automatically
                   </Label>
                 </div>

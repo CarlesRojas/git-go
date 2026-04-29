@@ -12,6 +12,7 @@ const DialogClose = DialogPrimitive.Close
 const DialogOverlay = ({ className, ref, ...props }: ComponentProps<typeof DialogPrimitive.Overlay>) => (
   <DialogPrimitive.Overlay
     ref={ref}
+    onContextMenu={event => event.preventDefault()}
     className={cn(
       [
         // Layout & Position
@@ -36,6 +37,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      onContextMenu={event => event.preventDefault()}
       className={cn(
         [
           // Layout & Position
@@ -74,7 +76,7 @@ const DialogHeader = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) =
     className={cn(
       [
         // Layout & Structure
-        'mb-4 flex h-6 flex-col justify-center',
+        'mb-4 flex h-fit min-h-6 flex-col justify-center',
         // Typography
         'text-left',
       ],

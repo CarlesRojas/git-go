@@ -79,6 +79,7 @@ const ContextMenuContent = ({ className, ref, ...props }: ComponentProps<typeof 
   <ContextMenuPrimitive.Portal>
     <ContextMenuPrimitive.Content
       ref={ref}
+      onContextMenu={event => event.preventDefault()}
       className={cn(
         [
           // Z-Index

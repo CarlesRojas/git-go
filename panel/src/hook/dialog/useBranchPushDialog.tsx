@@ -107,13 +107,13 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
 
             <pushForm.Field name="setUpstream">
               {field => (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="setUpstream"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
-                  <Label htmlFor="setUpstream" className="text-sm">
+                  <Label htmlFor="setUpstream" className="cursor-pointer pl-2">
                     Set upstream
                   </Label>
                 </div>

@@ -51,14 +51,6 @@ export interface GitTagDetails {
     message: string;
 }
 
-export interface GitStash {
-    selector: string; // e.g., "stash@{0}"
-    hash: string;
-    message: string;
-    branchName: string;
-    date: string;
-}
-
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export type GitResetMode = 'mixed' | 'hard';

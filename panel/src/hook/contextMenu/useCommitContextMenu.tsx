@@ -24,11 +24,13 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
   const cherryPickDialog = useCherryPickDialog({ commit })
   const revertDialog = useRevertDialog({ commit })
 
-  const ContextMenuWrapper = ({ children }: { children: ReactNode }) => (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+  const ContextMenuWrapper = ({ children, enabled }: { children: ReactNode; enabled: boolean }) => {
+    if (!enabled) return <>{children}</>
 
-      {!commit.isUncommitted && (
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+
         <ContextMenuContent
           onClick={e => e.stopPropagation()}
           onMouseDown={e => e.stopPropagation()}
@@ -59,9 +61,9 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
             Revert
           </ContextMenuItem>
         </ContextMenuContent>
-      )}
-    </ContextMenu>
-  )
+      </ContextMenu>
+    )
+  }
 
   return {
     ContextMenuWrapper,

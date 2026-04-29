@@ -17,10 +17,6 @@ import { GitBranch } from '@git/gitService'
 import { ReactNode } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
-interface UseRemoteBranchContextMenuProps {
-  branch?: GitBranch
-}
-
 const EMPTY_BRANCH: GitBranch = {
   name: '',
   cleanName: '',
@@ -29,26 +25,31 @@ const EMPTY_BRANCH: GitBranch = {
   hash: '',
 }
 
-export const useRemoteBranchContextMenu = ({ branch }: UseRemoteBranchContextMenuProps) => {
-  const { showToast } = useToast()
-  const [, copy] = useCopyToClipboard()
+interface ContextMenuWrapperProps {
+  children: ReactNode
+  enabled?: boolean
+  branch?: GitBranch
+}
 
-  const checkoutDialog = useRemoteBranchCheckoutDialog({ remoteBranch: branch ?? EMPTY_BRANCH })
-  const mergeDialog = useRemoteBranchMergeDialog({ remoteBranch: branch ?? EMPTY_BRANCH })
-  const fetchIntoLocalDialog = useRemoteBranchFetchIntoLocalDialog({ remoteBranch: branch ?? EMPTY_BRANCH })
-  const deleteDialog = useRemoteBranchDeleteDialog({ branch: branch ?? EMPTY_BRANCH })
+export const useRemoteBranchContextMenu = () => {
+  const checkoutDialog = useRemoteBranchCheckoutDialog()
+  const mergeDialog = useRemoteBranchMergeDialog()
+  const fetchIntoLocalDialog = useRemoteBranchFetchIntoLocalDialog()
+  const deleteDialog = useRemoteBranchDeleteDialog()
 
-  const handleCopyBranchName = async () => {
-    try {
-      if (!branch) throw new Error('No branch to copy')
-      await copy(branch.cleanName)
-      showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faClone })
-    } catch (error) {
-      showToast({ text: 'Failed to copy branch name', type: 'error', icon: faClone })
+  const ContextMenuWrapper = ({ children, enabled = true, branch }: ContextMenuWrapperProps) => {
+    const { showToast } = useToast()
+    const [, copy] = useCopyToClipboard()
+
+    const handleCopyBranchName = async () => {
+      try {
+        if (!branch) throw new Error('No branch to copy')
+        await copy(branch.cleanName)
+        showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faClone })
+      } catch (error) {
+        showToast({ text: 'Failed to copy branch name', type: 'error', icon: faClone })
+      }
     }
-  }
-
-  const ContextMenuWrapper = ({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) => {
     if (!branch || !enabled) return <>{children}</>
 
     return (
@@ -65,26 +66,24 @@ export const useRemoteBranchContextMenu = ({ branch }: UseRemoteBranchContextMen
         >
           <ContextMenuLabel>Remote Branch actions</ContextMenuLabel>
 
-          <ContextMenuItem onClick={checkoutDialog.openDialog}>
+          <ContextMenuItem onClick={() => branch && checkoutDialog.openDialog(branch)}>
             <FontAwesomeIcon icon={faCheck} className="size-3" />
             Checkout
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={fetchIntoLocalDialog.openDialog}>
+          <ContextMenuItem onClick={() => branch && fetchIntoLocalDialog.openDialog(branch)}>
             <FontAwesomeIcon icon={faDownload} className="size-3" />
             Fetch into Local
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
-            <FontAwesomeIcon icon={faTrash} className="size-3" />
-            Delete
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          <ContextMenuItem onClick={mergeDialog.openDialog}>
+          <ContextMenuItem onClick={() => branch && mergeDialog.openDialog(branch)}>
             <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
             Merge into current branch
+          </ContextMenuItem>
+
+          <ContextMenuItem onClick={() => branch && deleteDialog.openDialog(branch)} variant="destructive">
+            <FontAwesomeIcon icon={faTrash} className="size-3" />
+            Delete
           </ContextMenuItem>
 
           <ContextMenuSeparator />

@@ -74,13 +74,13 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
           <div className="flex flex-col gap-3">
             <rebaseForm.Field name="ignoreDate">
               {field => (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="ignoreDate"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
-                  <Label htmlFor="ignoreDate" className="text-sm">
+                  <Label htmlFor="ignoreDate" className="cursor-pointer pl-2">
                     Ignore date
                   </Label>
                 </div>

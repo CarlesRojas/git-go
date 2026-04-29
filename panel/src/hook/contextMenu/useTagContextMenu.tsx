@@ -25,12 +25,12 @@ export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) =
   const { showToast } = useToast()
   const [, copy] = useCopyToClipboard()
 
-  const detailsDialog = useTagDetailsDialog({ commit, tagName: tagName || '' })
-  const pushDialog = useTagPushDialog({ commit, tagName: tagName || '' })
-  const deleteDialog = useTagDeleteDialog({ commit, tagName: tagName || '' })
+  const detailsDialog = useTagDetailsDialog()
+  const pushDialog = useTagPushDialog()
+  const deleteDialog = useTagDeleteDialog()
 
   const handleViewDetails = () => {
-    detailsDialog.openDialog()
+    if (tagName) detailsDialog.openDialog(commit, tagName)
   }
 
   const handleCopyTagName = async () => {
@@ -65,12 +65,12 @@ export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) =
             View details
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={pushDialog.openDialog}>
+          <ContextMenuItem onClick={() => tagName && pushDialog.openDialog(commit, tagName)}>
             <FontAwesomeIcon icon={faUpload} className="size-3" />
             Push
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
+          <ContextMenuItem onClick={() => tagName && deleteDialog.openDialog(tagName)} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
             Delete
           </ContextMenuItem>

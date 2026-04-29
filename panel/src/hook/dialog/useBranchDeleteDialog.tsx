@@ -72,13 +72,13 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
           <div className="flex flex-col gap-3">
             <deleteForm.Field name="force">
               {field => (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center">
                   <Checkbox
                     id="force"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
-                  <Label htmlFor="force" className="text-sm">
+                  <Label htmlFor="force" className="cursor-pointer pl-2">
                     Force Delete
                   </Label>
                 </div>

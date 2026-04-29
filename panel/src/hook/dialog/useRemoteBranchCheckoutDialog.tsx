@@ -10,20 +10,18 @@ import { GitBranch } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-interface UseRemoteBranchCheckoutDialogProps {
-  remoteBranch: GitBranch
-}
-
-export const useRemoteBranchCheckoutDialog = ({ remoteBranch }: UseRemoteBranchCheckoutDialogProps) => {
+export const useRemoteBranchCheckoutDialog = () => {
   const { showToast } = useToast()
   const [showDialog, setShowDialog] = useState(false)
+  const [remoteBranch, setRemoteBranch] = useState<GitBranch | null>(null)
   const checkoutRemoteBranchMutation = useCheckoutRemoteBranch()
 
   const checkoutForm = useForm({
     defaultValues: {
-      localBranchName: remoteBranch.cleanName,
+      localBranchName: '',
     },
     onSubmit: async ({ value }) => {
+      if (!remoteBranch) return
       checkoutRemoteBranchMutation.mutate(
         {
           remoteBranchName: remoteBranch.name,
@@ -49,8 +47,9 @@ export const useRemoteBranchCheckoutDialog = ({ remoteBranch }: UseRemoteBranchC
     },
   })
 
-  const openDialog = () => {
-    checkoutForm.setFieldValue('localBranchName', remoteBranch.cleanName)
+  const openDialog = (branch: GitBranch) => {
+    setRemoteBranch(branch)
+    checkoutForm.setFieldValue('localBranchName', branch.cleanName)
     setShowDialog(true)
   }
 
@@ -59,7 +58,7 @@ export const useRemoteBranchCheckoutDialog = ({ remoteBranch }: UseRemoteBranchC
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Checkout remote branch <strong>{remoteBranch.cleanName}</strong>
+            Checkout remote branch <strong>{remoteBranch?.cleanName}</strong>
           </DialogTitle>
         </DialogHeader>
 

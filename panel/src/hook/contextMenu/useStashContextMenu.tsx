@@ -1,3 +1,4 @@
+import { formatStash } from '@/component/StashTagPill'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,20 +11,11 @@ import { useStashDropDialog } from '@/hook/dialog/useStashDropDialog'
 import { useApplyStash, usePopStash } from '@/hook/useGitQueries'
 import { faArrowRightFromBracket, faPlay, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { GitStash } from '@git/gitService'
 import { ReactNode } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface UseStashContextMenuProps {
-  stash?: GitStash
-}
-
-const EMPTY_STASH: GitStash = {
-  selector: '',
-  hash: '',
-  message: '',
-  branchName: '',
-  date: '',
+  stash?: string
 }
 
 export const useStashContextMenu = ({ stash }: UseStashContextMenuProps) => {
@@ -32,16 +24,16 @@ export const useStashContextMenu = ({ stash }: UseStashContextMenuProps) => {
   const popStashMutation = usePopStash()
   const [, copy] = useCopyToClipboard()
 
-  const stashDropDialog = useStashDropDialog({ stash: stash ?? EMPTY_STASH })
+  const stashDropDialog = useStashDropDialog({ stash: stash ?? '' })
 
   const handleApplyStash = () => {
     if (!stash) return
 
     applyStashMutation.mutate(
-      { stashSelector: stash.selector, reinstateIndex: false },
+      { stashSelector: stash, reinstateIndex: false },
       {
         onSuccess: () => {
-          showToast({ text: `Applied stash '${stash.message}'`, icon: faPlay, type: 'success' })
+          showToast({ text: `Applied '${formatStash(stash)}'`, icon: faPlay, type: 'success' })
         },
         onError: error => {
           showToast({ text: error.message, type: 'error', icon: faPlay })
@@ -54,10 +46,10 @@ export const useStashContextMenu = ({ stash }: UseStashContextMenuProps) => {
     if (!stash) return
 
     popStashMutation.mutate(
-      { stashSelector: stash.selector, reinstateIndex: false },
+      { stashSelector: stash, reinstateIndex: false },
       {
         onSuccess: () => {
-          showToast({ text: `Popped stash '${stash.message}'`, icon: faArrowRightFromBracket, type: 'success' })
+          showToast({ text: `Popped '${formatStash(stash)}'`, icon: faArrowRightFromBracket, type: 'success' })
         },
         onError: error => {
           showToast({ text: error.message, type: 'error', icon: faArrowRightFromBracket })

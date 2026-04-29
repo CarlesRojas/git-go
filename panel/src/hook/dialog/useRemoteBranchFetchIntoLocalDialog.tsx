@@ -10,13 +10,10 @@ import { GitBranch } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-interface UseRemoteBranchFetchIntoLocalDialogProps {
-  remoteBranch: GitBranch
-}
-
-export const useRemoteBranchFetchIntoLocalDialog = ({ remoteBranch }: UseRemoteBranchFetchIntoLocalDialogProps) => {
+export const useRemoteBranchFetchIntoLocalDialog = () => {
   const { showToast } = useToast()
   const [showFetchDialog, setShowFetchDialog] = useState(false)
+  const [remoteBranch, setRemoteBranch] = useState<GitBranch | null>(null)
   const fetchIntoLocalBranchMutation = useFetchIntoLocalBranch()
 
   const fetchForm = useForm({
@@ -24,7 +21,7 @@ export const useRemoteBranchFetchIntoLocalDialog = ({ remoteBranch }: UseRemoteB
       forceFetch: false,
     },
     onSubmit: async ({ value }) => {
-      if (!remoteBranch.remoteName) {
+      if (!remoteBranch?.remoteName) {
         return
       }
 
@@ -55,7 +52,8 @@ export const useRemoteBranchFetchIntoLocalDialog = ({ remoteBranch }: UseRemoteB
     },
   })
 
-  const openDialog = () => {
+  const openDialog = (branch: GitBranch) => {
+    setRemoteBranch(branch)
     setShowFetchDialog(true)
   }
 
@@ -64,7 +62,7 @@ export const useRemoteBranchFetchIntoLocalDialog = ({ remoteBranch }: UseRemoteB
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Fetch Remote Branch <strong>{remoteBranch.cleanName}</strong> into Local
+            Fetch Remote Branch <strong>{remoteBranch?.cleanName}</strong> into Local
           </DialogTitle>
         </DialogHeader>
 
@@ -78,13 +76,16 @@ export const useRemoteBranchFetchIntoLocalDialog = ({ remoteBranch }: UseRemoteB
         >
           <fetchForm.Field name="forceFetch">
             {field => (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="forceFetch"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
-                <Label htmlFor="forceFetch">Force fetch</Label>
+
+                <Label htmlFor="forceFetch" className="cursor-pointer pl-2">
+                  Force fetch
+                </Label>
               </div>
             )}
           </fetchForm.Field>

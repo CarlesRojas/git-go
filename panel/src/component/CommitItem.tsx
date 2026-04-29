@@ -4,6 +4,7 @@ import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
+import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
 import { useCurrentBranch, useGitBranches, useGitCommitFiles } from '@/hook/useGitQueries'
 import { ExpandedRow, getColor } from '@/hook/useGitTree'
 import { useResizable } from '@/hook/useResizable'
@@ -96,7 +97,9 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
-  const { ContextMenuWrapper: CommitContextMenu, dialogs } = useCommitContextMenu({ commit })
+  const { ContextMenuWrapper: CommitContextMenu, dialogs: commitDialogs } = useCommitContextMenu({ commit })
+  const { ContextMenuWrapper: UncommittedChangesContextMenu, dialogs: uncommittedDialogs } =
+    useUncommittedChangesContextMenu()
 
   const hasPills =
     !commit.isUncommitted && (Object.keys(groupedBranches).length > 0 || commit.isStash || commit.tags.length > 0)
@@ -133,9 +136,10 @@ export const CommitItem: FC<CommitItemProps> = ({
           )
         })}
 
-      {commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} />}
+      {commit.isStash && <StashTagPill type="stash" label={commit.refs || 'stash'} commit={commit} />}
 
-      {commit.tags.length > 0 && commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} />)}
+      {commit.tags.length > 0 &&
+        commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} commit={commit} />)}
     </div>
   )
 
@@ -239,60 +243,62 @@ export const CommitItem: FC<CommitItemProps> = ({
   return (
     <>
       <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
-        <div
-          className={cn(
-            'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
-            // Interactive
-            'transition-opacity duration-500',
-            isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
-            'hover:bg-vsc-editor-fg/10 cursor-pointer',
-            dimmed && 'opacity-10',
-          )}
-          style={{ paddingLeft: `${treeWidth + 8}px` }}
-          onMouseEnter={() => onCommitHover(commit.hash, row)}
-          onMouseLeave={() => onCommitHover(null, null)}
-          data-commit-row={row}
-        >
-          <CommitContextMenu>
-            <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />
-          </CommitContextMenu>
-
+        <UncommittedChangesContextMenu enabled={commit.isUncommitted}>
           <div
-            className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
+            className={cn(
+              'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
+              // Interactive
+              'transition-opacity duration-500',
+              isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
+              'hover:bg-vsc-editor-fg/10 cursor-pointer',
+              dimmed && 'opacity-10',
+            )}
+            style={{ paddingLeft: `${treeWidth + 8}px` }}
+            onMouseEnter={() => onCommitHover(commit.hash, row)}
+            onMouseLeave={() => onCommitHover(null, null)}
+            data-commit-row={row}
           >
-            {!!hasPills && pills}
+            <CommitContextMenu enabled={!commit.isUncommitted}>
+              <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />
+            </CommitContextMenu>
 
-            <CommitContextMenu>{message}</CommitContextMenu>
+            <div
+              className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
+            >
+              {!!hasPills && pills}
+
+              <CommitContextMenu enabled={!commit.isUncommitted}>{message}</CommitContextMenu>
+            </div>
+
+            <CommitContextMenu enabled={!commit.isUncommitted}>{timeAndAuthor}</CommitContextMenu>
+
+            {layout.isHead && (
+              <>
+                <div
+                  className="pointer-events-none absolute inset-0 -z-20 opacity-10"
+                  style={{ backgroundColor: getColor(layout.colorIndex) }}
+                />
+
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
+                  style={{ backgroundColor: getColor(layout.colorIndex) }}
+                />
+
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
+                  style={{ backgroundColor: getColor(layout.colorIndex) }}
+                />
+              </>
+            )}
+
+            {isExpanded && !layout.isHead && (
+              <>
+                <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
+                <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
+              </>
+            )}
           </div>
-
-          <CommitContextMenu>{timeAndAuthor}</CommitContextMenu>
-
-          {layout.isHead && (
-            <>
-              <div
-                className="pointer-events-none absolute inset-0 -z-20 opacity-10"
-                style={{ backgroundColor: getColor(layout.colorIndex) }}
-              />
-
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
-                style={{ backgroundColor: getColor(layout.colorIndex) }}
-              />
-
-              <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
-                style={{ backgroundColor: getColor(layout.colorIndex) }}
-              />
-            </>
-          )}
-
-          {isExpanded && !layout.isHead && (
-            <>
-              <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
-              <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
-            </>
-          )}
-        </div>
+        </UncommittedChangesContextMenu>
 
         {isExpanded && (
           <div
@@ -398,7 +404,9 @@ export const CommitItem: FC<CommitItemProps> = ({
         )}
       </section>
 
-      {dialogs}
+      {commitDialogs}
+      {uncommittedDialogs.stashDialog.DialogComponent}
+      {uncommittedDialogs.resetDialog.DialogComponent}
     </>
   )
 }

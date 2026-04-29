@@ -1,5 +1,6 @@
 import { useToast } from '@/context/ToastContext'
 import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchContextMenu'
+import { useRemoteBranchContextMenu } from '@/hook/contextMenu/useRemoteBranchContextMenu'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
 import { useDoubleClick } from '@/hook/useDoubleClick'
 import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
@@ -9,7 +10,7 @@ import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 interface Props {
   branch: GroupedBranch
@@ -23,9 +24,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
 
-  const { ContextMenuWrapper: LocalBranchContextMenu, dialogs } = useLocalBranchContextMenu({
+  const { ContextMenuWrapper: LocalBranchContextMenu, dialogs: localDialogs } = useLocalBranchContextMenu({
     branch: branch.local ?? undefined,
   })
+
+  const { ContextMenuWrapper: RemoteBranchContextMenu, dialogs: remoteDialogs } = useRemoteBranchContextMenu()
 
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
@@ -58,6 +61,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   const handleRemoteDoubleClick = useDoubleClick(() => {
     checkoutDialog.openDialog()
   })
+
+  const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
+    if (onlyRemote) return <RemoteBranchContextMenu branch={remotes[0]!}>{children}</RemoteBranchContextMenu>
+    return <LocalBranchContextMenu>{children}</LocalBranchContextMenu>
+  }
 
   return (
     <>
@@ -101,7 +109,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
           </LocalBranchContextMenu>
         )}
 
-        <LocalBranchContextMenu enabled={!onlyRemote}>
+        <ContextMenuToUse>
           <div
             className={cn(
               // Layout & sizing
@@ -127,31 +135,38 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
               {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
             </span>
           </div>
-        </LocalBranchContextMenu>
+        </ContextMenuToUse>
 
         {remotes
-          .map(({ remoteName }) => remoteName)
-          .filter(Boolean)
+          .filter(({ remoteName }) => !!remoteName)
           .map((remote, i) => (
-            <div
-              key={`remote-${i}-${remote}`}
-              className={cn(
-                'flex h-full w-fit min-w-fit items-center px-1.5',
-                // Colors
-                'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
-                onlyRemote && 'border-vsc-editor-fg/20 border-l',
-                localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
-                localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
-              )}
-              onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
-            >
-              <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">{remote}</span>
-            </div>
+            <RemoteBranchContextMenu key={`remote-${i}-${remote.remoteName}`} enabled branch={remote}>
+              <div
+                key={`remote-${i}-${remote.remoteName}`}
+                className={cn(
+                  'flex h-full w-fit min-w-fit items-center px-1.5',
+                  // Colors
+                  'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
+                  onlyRemote && 'border-vsc-editor-fg/20 border-l',
+                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+                  localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
+                )}
+                onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
+              >
+                <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">
+                  {remote.remoteName}
+                </span>
+              </div>
+            </RemoteBranchContextMenu>
           ))}
       </button>
 
       {checkoutDialog.DialogComponent}
-      {dialogs}
+      {localDialogs}
+      {remoteDialogs.checkoutDialog.DialogComponent}
+      {remoteDialogs.mergeDialog.DialogComponent}
+      {remoteDialogs.fetchIntoLocalDialog.DialogComponent}
+      {remoteDialogs.deleteDialog.DialogComponent}
     </>
   )
 }

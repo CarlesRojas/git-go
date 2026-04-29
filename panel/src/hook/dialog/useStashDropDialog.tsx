@@ -1,14 +1,14 @@
+import { formatStash } from '@/component/StashTagPill'
 import { Button } from '@/component/ui/Button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { useToast } from '@/context/ToastContext'
 import { useDropStash } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { GitStash } from '@git/gitService'
 import { useState } from 'react'
 
 interface UseStashDropDialogProps {
-  stash: GitStash
+  stash: string
 }
 
 export const useStashDropDialog = ({ stash }: UseStashDropDialogProps) => {
@@ -18,11 +18,11 @@ export const useStashDropDialog = ({ stash }: UseStashDropDialogProps) => {
 
   const handleDrop = () => {
     dropStashMutation.mutate(
-      { stashSelector: stash.selector },
+      { stashSelector: stash },
       {
         onSuccess: () => {
           showToast({
-            text: `Stash '${stash.message}' dropped successfully`,
+            text: `Stash '${formatStash(stash)}' dropped successfully`,
             icon: faTrash,
             type: 'success',
           })
@@ -46,7 +46,7 @@ export const useStashDropDialog = ({ stash }: UseStashDropDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Drop the stash <strong>{stash.message}</strong>
+            Drop <strong>{formatStash(stash)}</strong>
           </DialogTitle>
         </DialogHeader>
 

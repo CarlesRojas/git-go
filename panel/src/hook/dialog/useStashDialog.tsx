@@ -83,13 +83,15 @@ export const useStashDialog = () => {
 
           <stashForm.Field name="includeUntracked">
             {field => (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <Checkbox
                   id="includeUntracked"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
-                <Label htmlFor="includeUntracked">Include untracked files</Label>
+                <Label htmlFor="includeUntracked" className="cursor-pointer pl-2">
+                  Include untracked files
+                </Label>
               </div>
             )}
           </stashForm.Field>

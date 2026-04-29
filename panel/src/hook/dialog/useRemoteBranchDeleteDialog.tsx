@@ -7,17 +7,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { useState } from 'react'
 
-interface UseRemoteBranchDeleteDialogProps {
-  branch: GitBranch
-}
-
-export const useRemoteBranchDeleteDialog = ({ branch }: UseRemoteBranchDeleteDialogProps) => {
+export const useRemoteBranchDeleteDialog = () => {
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [branch, setBranch] = useState<GitBranch | null>(null)
   const deleteRemoteBranchMutation = useDeleteRemoteBranch()
 
   const handleDelete = () => {
-    if (!branch.remoteName) {
+    if (!branch?.remoteName) {
       showToast({ text: 'Invalid remote branch', type: 'error', icon: faTrash })
       return
     }
@@ -45,7 +42,8 @@ export const useRemoteBranchDeleteDialog = ({ branch }: UseRemoteBranchDeleteDia
     )
   }
 
-  const openDialog = () => {
+  const openDialog = (branchToDelete: GitBranch) => {
+    setBranch(branchToDelete)
     setShowDeleteDialog(true)
   }
 
@@ -54,7 +52,13 @@ export const useRemoteBranchDeleteDialog = ({ branch }: UseRemoteBranchDeleteDia
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Delete the remote branch <strong>{branch.cleanName}</strong>
+            Delete the remote branch <strong>{branch?.cleanName}</strong>
+            {branch?.remoteName ? (
+              <>
+                {' '}
+                from remote <strong>{branch?.remoteName}</strong>
+              </>
+            ) : null}
           </DialogTitle>
         </DialogHeader>
 

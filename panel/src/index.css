@@ -25,7 +25,7 @@
   }
 
   strong {
-    @apply text-vsc-list-highlight-fg font-bold;
+    @apply text-vsc-list-highlight-fg font-bold text-nowrap;
   }
 
   .highlighted {
