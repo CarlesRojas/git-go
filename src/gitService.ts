@@ -1253,7 +1253,9 @@ export class GitService {
 
     public async resetUncommittedChanges(
         log: (message: string) => void,
-        mode: 'mixed' | 'hard' = 'mixed'
+        mode: 'mixed' | 'hard' = 'mixed',
+        cleanUntrackedFiles: boolean = true,
+        cleanDirectories: boolean = true
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -1262,11 +1264,36 @@ export class GitService {
         const gitExecutable = await this.findGitExecutable();
 
         try {
+            // First reset the uncommitted changes
             const modeFlag = mode === 'hard' ? '--hard' : '--mixed';
             await this.spawnGit([gitExecutable.path, 'reset', modeFlag, 'HEAD'], workspacePath);
             log(`Successfully reset uncommitted changes (${mode} mode)`);
+
+            // Clean untracked files if requested
+            if (cleanUntrackedFiles) {
+                await this.cleanUntrackedFiles(log, cleanDirectories);
+            }
         } catch (error) {
             log(`Error resetting uncommitted changes: ${error}`);
+            throw error;
+        }
+    }
+
+    public async cleanUntrackedFiles(log: (message: string) => void, directories: boolean = false): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const args = [gitExecutable.path, 'clean', '-f'];
+            if (directories) args.push('-d');
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully cleaned untracked files${directories ? ' and directories' : ''}`);
+        } catch (error) {
+            log(`Error cleaning untracked files: ${error}`);
             throw error;
         }
     }

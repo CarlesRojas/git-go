@@ -1270,7 +1270,7 @@ export const useResetUncommittedChanges = () => {
 
   return useMutation({
     mutationFn: async ({
-      mode = 'mixed',
+      mode = 'hard',
     }: {
       mode?: 'mixed' | 'hard'
     } = {}) => {

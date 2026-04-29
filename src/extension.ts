@@ -583,6 +583,232 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'applyStash':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { stashSelector, reinstateIndex } = message;
+                                if (!stashSelector) {
+                                    throw new Error('Stash selector is required');
+                                }
+                                await gitService.applyStash(log, stashSelector, reinstateIndex);
+                                log(`Successfully applied stash ${stashSelector}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'applyStashSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error applying stash: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'popStash':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { stashSelector, reinstateIndex } = message;
+                                if (!stashSelector) {
+                                    throw new Error('Stash selector is required');
+                                }
+                                await gitService.popStash(log, stashSelector, reinstateIndex);
+                                log(`Successfully popped stash ${stashSelector}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'popStashSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error popping stash: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'dropStash':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { stashSelector } = message;
+                                if (!stashSelector) {
+                                    throw new Error('Stash selector is required');
+                                }
+                                await gitService.dropStash(log, stashSelector);
+                                log(`Successfully dropped stash ${stashSelector}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'dropStashSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error dropping stash: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'createStash':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { message: stashMessage, includeUntracked } = message;
+                                await gitService.createStash(log, stashMessage || '', includeUntracked || false);
+                                log(
+                                    `Successfully created stash${stashMessage ? ` with message: ${stashMessage}` : ''}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'createStashSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error creating stash: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'deleteRemoteBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { branchName, remote } = message;
+                                if (!branchName || !remote) {
+                                    throw new Error('Branch name and remote are required');
+                                }
+                                await gitService.deleteRemoteBranch(log, branchName, remote);
+                                log(`Successfully deleted remote branch ${branchName} on ${remote}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'deleteRemoteBranchSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error deleting remote branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'fetchIntoLocalBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { remote, remoteBranch, localBranch, forceFetch } = message;
+                                if (!remote || !remoteBranch || !localBranch) {
+                                    throw new Error('Remote, remote branch, and local branch are required');
+                                }
+                                await gitService.fetchIntoLocalBranch(
+                                    log,
+                                    remote,
+                                    remoteBranch,
+                                    localBranch,
+                                    forceFetch || false
+                                );
+                                log(`Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'fetchIntoLocalBranchSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error fetching into local branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'getTagDetails':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { tagName } = message;
+                                if (!tagName) {
+                                    throw new Error('Tag name is required');
+                                }
+                                const tagDetails = await gitService.getTagDetails(log, tagName);
+                                log(`Successfully retrieved details for tag ${tagName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'tagDetails',
+                                    details: tagDetails
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting tag details: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'pushTag':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { tagName, remotes } = message;
+                                if (!tagName || !remotes || !Array.isArray(remotes)) {
+                                    throw new Error('Tag name and remotes array are required');
+                                }
+                                await gitService.pushTag(log, tagName, remotes);
+                                log(`Successfully pushed tag ${tagName} to ${remotes.join(', ')}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'pushTagSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error pushing tag: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'deleteTag':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { tagName, deleteOnRemote } = message;
+                                if (!tagName) {
+                                    throw new Error('Tag name is required');
+                                }
+                                await gitService.deleteTag(log, tagName, deleteOnRemote);
+                                log(
+                                    `Successfully deleted tag ${tagName}${deleteOnRemote ? ` from remote ${deleteOnRemote}` : ''}`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'deleteTagSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error deleting tag: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'resetUncommittedChanges':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { mode } = message;
+                                await gitService.resetUncommittedChanges(log, mode || 'mixed');
+                                log(
+                                    `Successfully reset uncommitted changes and cleaned untracked files (${mode || 'mixed'} mode)`
+                                );
+                                currentPanel?.webview.postMessage({
+                                    type: 'resetUncommittedChangesSuccess',
+                                    success: true
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error resetting uncommitted changes: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                     }
                 },
                 undefined,

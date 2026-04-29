@@ -44,8 +44,9 @@ export const useRemoteBranchContextMenu = () => {
     const handleCopyBranchName = async () => {
       try {
         if (!branch) throw new Error('No branch to copy')
-        await copy(branch.cleanName)
-        showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faClone })
+        const nameWithRemote = branch.remoteName ? `${branch.remoteName}/${branch.cleanName}` : branch.cleanName
+        await copy(nameWithRemote)
+        showToast({ text: `Copied '${nameWithRemote}' to clipboard`, type: 'success', icon: faClone })
       } catch (error) {
         showToast({ text: 'Failed to copy branch name', type: 'error', icon: faClone })
       }

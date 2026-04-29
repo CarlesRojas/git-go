@@ -1,28 +1,38 @@
 ## TODO
 
-- [ ] Remote Branch Right Click Menu:
-      Checkout
-      Fetch into local branch
-      Merge into current branch
-      Delete remote branch
-      ---
-      Copy branch name
+### Remote Branch Right Click Menu:
 
-- [ ] Stash Right Click Menu (Should include entire commit line)
-      Apply
-      Pop
-      Drop
+- [ ] Checkout
+- [ ] Fetch into local branch
+- [ ] Merge into current branch
+- [ ] Delete remote branch
 
-- [ ] Tag Right Click Menu
-      View details
-      Push
-      Delete
-      ---
-      Copy tag name
+---
 
-- [ ] Uncommitted Changes Right Click Menu
-      Stash
-      Discard all changes
+- [x] Copy branch name
+
+### Stash Right Click Menu (Should include entire commit line)
+
+- [x] Apply
+- [x] Pop
+- [x] Drop
+
+### Tag Right Click Menu
+
+- [ ] View details
+- [ ] Push
+- [ ] Delete
+
+---
+
+- [x] Copy tag name
+
+### Uncommitted Changes Right Click Menu
+
+- [x] Stash
+- [x] Discard all changes
+
+### Settings
 
 - [ ] Settings: Show stashes?
 - [ ] Settings: Show tags?
@@ -30,6 +40,8 @@
 - [ ] Settings: Remote Configuration
 - [ ] Settings: Show stashes?
 - [ ] Settings: Show stashes?
+
+### Others
 
 - [ ] Save selected branches per repo in some kind of local storage
 - [ ] Implement enter and shift enter to scroll to next found commit

@@ -50,6 +50,11 @@ export const useResetUncommittedChangesDialog = () => {
           </DialogTitle>
         </DialogHeader>
 
+        <div className="opacity-60">
+          This will permanently discard all modifications to tracked files and remove all untracked files and
+          directories.
+        </div>
+
         <form
           onSubmit={e => {
             e.preventDefault()
