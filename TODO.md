@@ -1,7 +1,10 @@
 ## TODO
 
-- [ ] Remote Branch Right Click Menu
 - [ ] Local Branch Right Click Menu
+      If it is a different branch: (Checkout, Push, Rename, Delete, Merge into Current, Rebase current branch here)
+      If it is the current branch: (Push, Rename)
+
+- [ ] Remote Branch Right Click Menu:
 - [ ] Stash Right Click Menu (Should include entire commit line)
 - [ ] Tag Right Click Menu
 - [ ] Uncommitted Changes Right Click Menu
@@ -15,6 +18,7 @@
 
 - [ ] Save selected branches per repo in some kind of local storage
 - [ ] Implement enter and shift enter to scroll to next found commit
+- [ ] No git repository in the folder
 
 ### Maybe
 

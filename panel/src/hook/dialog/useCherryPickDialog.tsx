@@ -53,7 +53,9 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
     <Dialog open={showCherryPickDialog} onOpenChange={setShowCherryPickDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cherry Pick Commit {commit.hash.substring(0, 7)}</DialogTitle>
+          <DialogTitle>
+            Cherry Pick Commit <strong>{commit.hash.substring(0, 7)}</strong>
+          </DialogTitle>
         </DialogHeader>
 
         <form

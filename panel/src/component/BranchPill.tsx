@@ -1,4 +1,5 @@
 import { useToast } from '@/context/ToastContext'
+import { useLocalBranchContextMenu } from '@/hook/contextMenu/useBranchContextMenu'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
 import { useDoubleClick } from '@/hook/useDoubleClick'
 import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
@@ -21,6 +22,10 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   const { local, remotes } = branch
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
+
+  const { ContextMenuWrapper: LocalBranchContextMenu } = useLocalBranchContextMenu({
+    branch: branch.local ?? undefined,
+  })
 
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
@@ -69,56 +74,60 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
       >
         {!onlyRemote && (
+          <LocalBranchContextMenu>
+            <div
+              className={cn(
+                // Layout & sizing
+                'peer/icon flex h-full min-w-fit items-center',
+                // Spacing
+                'px-1',
+                // Color
+                'bg-vsc-editor-fg/10',
+                !!local && !isCurrent && 'border-y border-l',
+              )}
+              style={{
+                backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
+                borderColor: getColor(layout.colorIndex, false),
+              }}
+              onClick={localAndRemote ? handleLocalDoubleClick : undefined}
+            >
+              {getBranchIcons({
+                isLocal: !!local,
+                hasRemote: !local && !!remotes.length,
+                black: !!local,
+                white: !local,
+              })}
+            </div>
+          </LocalBranchContextMenu>
+        )}
+
+        <LocalBranchContextMenu enabled={!onlyRemote}>
           <div
             className={cn(
               // Layout & sizing
-              'peer/icon flex h-full min-w-fit items-center',
-              // Spacing
-              'px-1',
+              'flex h-full w-fit min-w-fit items-center px-1.5',
               // Color
-              'bg-vsc-editor-fg/10',
-              !!local && !isCurrent && 'border-y border-l',
+              'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
+              localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+              onlyLocal && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+              onlyRemote && 'gap-1.5 pl-1',
+              !onlyRemote && 'peer-hover/icon:bg-vsc-editor-fg/20',
             )}
-            style={{
-              backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
-              borderColor: getColor(layout.colorIndex, false),
-            }}
             onClick={localAndRemote ? handleLocalDoubleClick : undefined}
           >
-            {getBranchIcons({
-              isLocal: !!local,
-              hasRemote: !local && !!remotes.length,
-              black: !!local,
-              white: !local,
-            })}
+            {onlyRemote &&
+              getBranchIcons({
+                isLocal: !!local,
+                hasRemote: !local && !!remotes.length,
+                black: !!local,
+                white: !local,
+              })}
+
+            <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
+              {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
+            </span>
           </div>
-        )}
-
-        <div
-          className={cn(
-            // Layout & sizing
-            'flex h-full w-fit min-w-fit items-center px-1.5',
-            // Color
-            'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
-            localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
-            onlyLocal && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
-            onlyRemote && 'gap-1.5 pl-1',
-            !onlyRemote && 'peer-hover/icon:bg-vsc-editor-fg/20',
-          )}
-          onClick={localAndRemote ? handleLocalDoubleClick : undefined}
-        >
-          {onlyRemote &&
-            getBranchIcons({
-              isLocal: !!local,
-              hasRemote: !local && !!remotes.length,
-              black: !!local,
-              white: !local,
-            })}
-
-          <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
-            {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
-          </span>
-        </div>
+        </LocalBranchContextMenu>
 
         {remotes
           .map(({ remoteName }) => remoteName)
@@ -139,7 +148,6 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
               <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">{remote}</span>
             </div>
           ))}
-        {/* </div> */}
       </button>
 
       {checkoutDialog.DialogComponent}

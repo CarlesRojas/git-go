@@ -1,6 +1,6 @@
 import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/util/buildFileTree'
-import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
+import type { GitBranch, GitCommit, GitFileChange, GitRemote } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface VSCodeApi {
@@ -32,6 +32,7 @@ export const queryKeys = {
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
+  remotes: ['git', 'remotes'] as const,
 }
 
 // Custom hook for fetching branches
@@ -61,6 +62,41 @@ export const useGitBranches = () => {
         setTimeout(() => {
           window.removeEventListener('message', messageHandler)
           reject(new Error('Timeout: Failed to fetch branches'))
+        }, 10_000)
+      })
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Custom hook for fetching remotes
+export const useGitRemotes = () => {
+  return useQuery({
+    queryKey: queryKeys.remotes,
+    queryFn: (): Promise<GitRemote[]> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitRemotes') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.remotes)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'getGitRemotes' })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to fetch remotes'))
         }, 10_000)
       })
     },
@@ -606,5 +642,229 @@ export const useCurrentBranch = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Hook to push a branch
+export const usePushBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      branchName,
+      remote = 'origin',
+      setUpstream = false,
+      pushMode = 'normal',
+    }: {
+      branchName: string
+      remote?: string
+      setUpstream?: boolean
+      pushMode?: 'normal' | 'force-with-lease' | 'force'
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'pushBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'pushBranch',
+          branchName,
+          remote,
+          setUpstream,
+          pushMode,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to push branch'))
+        }, 30_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Hook to rename a branch
+export const useRenameBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'renameBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'renameBranch',
+          oldName,
+          newName,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to rename branch'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Hook to delete a branch
+export const useDeleteBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ branchName, force = false }: { branchName: string; force?: boolean }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'deleteBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'deleteBranch',
+          branchName,
+          force,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to delete branch'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Hook to merge a branch into current branch
+export const useMergeBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      branchName,
+      createNewCommit = false,
+      squash = false,
+      noCommit = false,
+    }: {
+      branchName: string
+      createNewCommit?: boolean
+      squash?: boolean
+      noCommit?: boolean
+    }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'mergeBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'mergeBranch',
+          branchName,
+          createNewCommit,
+          squash,
+          noCommit,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to merge branch'))
+        }, 30_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+// Hook to rebase current branch onto target branch
+export const useRebaseBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ branchName, ignoreDate = false }: { branchName: string; ignoreDate?: boolean }) => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'rebaseBranchSuccess') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'rebaseBranch',
+          branchName,
+          ignoreDate,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to rebase branch'))
+        }, 30_000)
+      })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
   })
 }

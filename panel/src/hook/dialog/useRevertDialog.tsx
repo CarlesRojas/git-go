@@ -56,7 +56,9 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
     <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Revert Commit {commit.hash.substring(0, 7)}</DialogTitle>
+          <DialogTitle>
+            Revert Commit <strong>{commit.hash.substring(0, 7)}</strong>
+          </DialogTitle>
         </DialogHeader>
 
         <form

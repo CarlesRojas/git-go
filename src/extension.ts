@@ -93,6 +93,24 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'getGitRemotes':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const remotes = await gitService.getGitRemotes(log);
+                                log(`Successfully retrieved ${remotes.length} remotes`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitRemotes',
+                                    remotes: remotes
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting git remotes: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
                         case 'getCommitFiles':
                             try {
                                 const gitService = GitService.getInstance();
@@ -469,6 +487,96 @@ export function activate(context: vscode.ExtensionContext) {
                             } catch (error) {
                                 const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
                                 log(`Error fetching from remotes: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'pushBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { branchName, remote, setUpstream, pushMode } = message;
+                                await gitService.pushBranch(log, branchName, remote, setUpstream, pushMode);
+                                log(`Successfully pushed branch ${branchName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'pushBranchSuccess'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error pushing branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'renameBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { oldName, newName } = message;
+                                await gitService.renameBranch(log, oldName, newName);
+                                log(`Successfully renamed branch ${oldName} to ${newName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'renameBranchSuccess'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error renaming branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'deleteBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { branchName, force } = message;
+                                await gitService.deleteBranch(log, branchName, force);
+                                log(`Successfully deleted branch ${branchName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'deleteBranchSuccess'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error deleting branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'mergeBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { branchName, createNewCommit, squash, noCommit } = message;
+                                await gitService.mergeBranch(log, branchName, createNewCommit, squash, noCommit);
+                                log(`Successfully merged branch ${branchName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'mergeBranchSuccess'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error merging branch: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'rebaseBranch':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const { branchName, ignoreDate } = message;
+                                await gitService.rebaseBranch(log, branchName, ignoreDate);
+                                log(`Successfully rebased onto ${branchName}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'rebaseBranchSuccess'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error rebasing branch: ${errorMessage}`);
                                 currentPanel?.webview.postMessage({
                                     type: 'gitError',
                                     error: errorMessage

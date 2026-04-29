@@ -82,7 +82,9 @@ export const useCheckoutDialog = ({ remoteBranch, hasLocalBranch = false }: UseC
     <Dialog open={showCheckoutDialog} onOpenChange={setShowCheckoutDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Local branch '{remoteBranch?.cleanName}' already exists</DialogTitle>
+          <DialogTitle>
+            Local branch <strong>{remoteBranch?.cleanName}</strong> already exists
+          </DialogTitle>
         </DialogHeader>
 
         <form

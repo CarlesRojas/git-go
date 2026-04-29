@@ -37,6 +37,14 @@ export interface GitFileChange {
     deletions: number;
 }
 
+export interface GitRemote {
+    name: string;
+    fetchUrl: string;
+    pushUrl: string;
+}
+
+export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
+
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 const EOL_REGEX = /\r\n|\r|\n/g;
 
@@ -808,6 +816,194 @@ export class GitService {
             log('Successfully fetched from remotes');
         } catch (error) {
             log(`Error fetching from remotes: ${error}`);
+            throw error;
+        }
+    }
+
+    public async pushBranch(
+        log: (message: string) => void,
+        branchName: string,
+        remote: string = 'origin',
+        setUpstream: boolean = false,
+        pushMode: GitPushMode = 'normal'
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Pushing branch ${branchName} to ${remote}${setUpstream ? ' (setting upstream)' : ''}`);
+            const args = [gitExecutable.path, 'push'];
+            args.push(remote, branchName);
+            if (setUpstream) args.push('--set-upstream');
+            if (pushMode === 'force-with-lease') args.push('--force-with-lease');
+            else if (pushMode === 'force') args.push('--force');
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully pushed branch ${branchName}`);
+        } catch (error) {
+            log(`Error pushing branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async renameBranch(log: (message: string) => void, oldName: string, newName: string): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Renaming branch ${oldName} to ${newName}`);
+            await this.spawnGit([gitExecutable.path, 'branch', '-m', oldName, newName], workspacePath);
+            log(`Successfully renamed branch to ${newName}`);
+        } catch (error) {
+            log(`Error renaming branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async deleteBranch(
+        log: (message: string) => void,
+        branchName: string,
+        force: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Deleting branch ${branchName}${force ? ' (force)' : ''}`);
+            const deleteFlag = force ? '-D' : '-d';
+            await this.spawnGit([gitExecutable.path, 'branch', deleteFlag, branchName], workspacePath);
+            log(`Successfully deleted branch ${branchName}`);
+        } catch (error) {
+            log(`Error deleting branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async mergeBranch(
+        log: (message: string) => void,
+        branchName: string,
+        createNewCommit: boolean = false,
+        squash: boolean = false,
+        noCommit: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Merging branch ${branchName} into current branch`);
+            const args = [gitExecutable.path, 'merge', branchName];
+
+            // TODO are this incompatible? check how https://github.com/mhutchie/vscode-git-graph/tree/develop/src does it
+            if (squash) {
+                args.push('--squash');
+            } else if (createNewCommit) {
+                args.push('--no-ff');
+            }
+
+            if (noCommit) {
+                args.push('--no-commit');
+            }
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully merged branch ${branchName}`);
+        } catch (error) {
+            log(`Error merging branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async rebaseBranch(
+        log: (message: string) => void,
+        branchName: string,
+        ignoreDate: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Rebasing current branch onto ${branchName}`);
+            const args = [gitExecutable.path, 'rebase', branchName];
+
+            if (ignoreDate) {
+                args.push('--ignore-date');
+            }
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully rebased onto ${branchName}`);
+        } catch (error) {
+            log(`Error rebasing branch: ${error}`);
+            throw error;
+        }
+    }
+
+    public async getGitRemotes(log: (message: string) => void): Promise<GitRemote[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log('Getting git remotes');
+            const output = await this.spawnGit([gitExecutable.path, 'remote', '-v'], workspacePath);
+
+            const remotes: GitRemote[] = [];
+            const remoteMap = new Map<string, { fetchUrl?: string; pushUrl?: string }>();
+
+            for (const line of output.split(EOL_REGEX)) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                const fetchMatch = trimmed.match(/^(\S+)\s+(\S+)\s+\(fetch\)$/);
+                const pushMatch = trimmed.match(/^(\S+)\s+(\S+)\s+\(push\)$/);
+
+                if (fetchMatch && fetchMatch[1] && fetchMatch[2]) {
+                    const name = fetchMatch[1];
+                    const url = fetchMatch[2];
+                    if (!remoteMap.has(name)) {
+                        remoteMap.set(name, {});
+                    }
+                    remoteMap.get(name)!.fetchUrl = url;
+                } else if (pushMatch && pushMatch[1] && pushMatch[2]) {
+                    const name = pushMatch[1];
+                    const url = pushMatch[2];
+                    if (!remoteMap.has(name)) {
+                        remoteMap.set(name, {});
+                    }
+                    remoteMap.get(name)!.pushUrl = url;
+                }
+            }
+
+            // Convert map to array of GitRemote objects
+            for (const [name, urls] of remoteMap) {
+                if (urls.fetchUrl && urls.pushUrl) {
+                    remotes.push({
+                        name,
+                        fetchUrl: urls.fetchUrl,
+                        pushUrl: urls.pushUrl
+                    });
+                }
+            }
+
+            log(`Found ${remotes.length} remotes`);
+            return remotes;
+        } catch (error) {
+            log(`Error getting remotes: ${error}`);
             throw error;
         }
     }
