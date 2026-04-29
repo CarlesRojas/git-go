@@ -8,6 +8,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
+const LOCAL_ONLY = 'local-only-4dde2026-6e1a-429d-8541-e144511e87b3'
+
 export const useTagDeleteDialog = () => {
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -17,19 +19,20 @@ export const useTagDeleteDialog = () => {
 
   const deleteForm = useForm({
     defaultValues: {
-      deleteOnRemote: '',
+      deleteOnRemote: LOCAL_ONLY,
     },
     onSubmit: async ({ value }) => {
       deleteTagMutation.mutate(
         {
           tagName,
-          deleteOnRemote: value.deleteOnRemote || undefined,
+          deleteOnRemote: value.deleteOnRemote === LOCAL_ONLY ? undefined : value.deleteOnRemote,
         },
         {
           onSuccess: () => {
-            const message = value.deleteOnRemote
-              ? `Tag '${tagName}' deleted locally and from '${value.deleteOnRemote}' remote`
-              : `Local tag '${tagName}' deleted successfully`
+            const message =
+              value.deleteOnRemote !== LOCAL_ONLY
+                ? `Tag '${tagName}' deleted locally and from '${value.deleteOnRemote}' remote`
+                : `Local tag '${tagName}' deleted successfully`
             showToast({
               text: message,
               icon: faTrash,
@@ -50,6 +53,7 @@ export const useTagDeleteDialog = () => {
 
   const openDialog = (tag: string) => {
     setTagName(tag)
+    deleteForm.reset()
     setShowDeleteDialog(true)
   }
 
@@ -58,7 +62,7 @@ export const useTagDeleteDialog = () => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Delete <strong>{tagName}</strong>
+            Delete <strong>{tagName}</strong> tag
           </DialogTitle>
         </DialogHeader>
 
@@ -73,13 +77,13 @@ export const useTagDeleteDialog = () => {
           <deleteForm.Field name="deleteOnRemote">
             {field => (
               <div className="flex flex-col gap-1">
-                <Select value={field.state.value} onValueChange={field.handleChange}>
+                <Select value={field.state.value} onValueChange={value => field.handleChange(value)}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Only delete local tag" />
                   </SelectTrigger>
 
                   <SelectContent>
-                    <SelectItem value="">Only delete local tag</SelectItem>
+                    <SelectItem value={LOCAL_ONLY}>Only delete local tag</SelectItem>
 
                     {remotes.map(remote => (
                       <SelectItem key={remote.name} value={remote.name}>

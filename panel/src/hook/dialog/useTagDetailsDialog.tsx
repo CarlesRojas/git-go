@@ -33,7 +33,7 @@ export const useTagDetailsDialog = () => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Tag Details: <strong>{tagName}</strong>
+            View <strong>{tagName}</strong> tag details
           </DialogTitle>
         </DialogHeader>
 

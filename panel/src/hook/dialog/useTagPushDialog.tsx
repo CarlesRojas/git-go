@@ -59,7 +59,7 @@ export const useTagPushDialog = () => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Push Tag <strong>{tagName}</strong> to remote
+            Push <strong>{tagName}</strong> tag to remote
           </DialogTitle>
         </DialogHeader>
 
