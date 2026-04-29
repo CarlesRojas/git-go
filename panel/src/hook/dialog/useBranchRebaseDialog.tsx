@@ -57,7 +57,7 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
 
   const DialogComponent = (
     <Dialog open={showRebaseDialog} onOpenChange={setShowRebaseDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Rebase Branch {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch) on Branch{' '}

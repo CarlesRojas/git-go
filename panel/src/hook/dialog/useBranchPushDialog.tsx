@@ -63,7 +63,7 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
 
   const DialogComponent = (
     <Dialog open={showPushDialog} onOpenChange={setShowPushDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Push Branch <strong>{branch.cleanName}</strong>

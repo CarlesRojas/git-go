@@ -55,7 +55,7 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
 
   const DialogComponent = (
     <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Are you sure you want to delete the branch <strong>"{branch.cleanName}"</strong>?

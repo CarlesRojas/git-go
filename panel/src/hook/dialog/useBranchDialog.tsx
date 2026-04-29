@@ -57,7 +57,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
 
   const DialogComponent = (
     <Dialog open={showBranchDialog} onOpenChange={setShowBranchDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Create Branch at Commit <strong>{commit.hash.substring(0, 7)}</strong>

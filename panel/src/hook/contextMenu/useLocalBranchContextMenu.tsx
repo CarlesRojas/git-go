@@ -74,7 +74,7 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
           onMouseUp={e => e.stopPropagation()}
           onMouseEnter={e => e.stopPropagation()}
           onMouseLeave={e => e.stopPropagation()}
-          data-context-menu="branch"
+          data-disable-commit-highlight
         >
           <ContextMenuLabel>Local Branch actions</ContextMenuLabel>
 

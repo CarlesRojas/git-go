@@ -57,7 +57,7 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
 
   const DialogComponent = (
     <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Add Tag to Commit <strong>{commit.hash.substring(0, 7)}</strong>

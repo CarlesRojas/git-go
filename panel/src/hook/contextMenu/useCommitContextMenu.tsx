@@ -35,7 +35,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
           onMouseUp={e => e.stopPropagation()}
           onMouseEnter={e => e.stopPropagation()}
           onMouseLeave={e => e.stopPropagation()}
-          data-context-menu="commit"
+          data-disable-commit-highlight
         >
           <ContextMenuLabel>Commit actions</ContextMenuLabel>
 

@@ -60,7 +60,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
 
   const DialogComponent = (
     <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             <FontAwesomeIcon icon={faCodeMerge} className="mr-2" />

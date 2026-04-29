@@ -54,7 +54,7 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
 
   const DialogComponent = (
     <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Revert Commit <strong>{commit.hash.substring(0, 7)}</strong>

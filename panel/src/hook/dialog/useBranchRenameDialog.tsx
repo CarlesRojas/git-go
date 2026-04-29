@@ -61,7 +61,7 @@ export const useBranchRenameDialog = ({ branch }: UseBranchRenameDialogProps) =>
 
   const DialogComponent = (
     <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Rename branch <strong>{branch.cleanName}</strong>

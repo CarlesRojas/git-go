@@ -80,7 +80,7 @@ export const useCheckoutDialog = ({ remoteBranch, hasLocalBranch = false }: UseC
 
   const DialogComponent = (
     <Dialog open={showCheckoutDialog} onOpenChange={setShowCheckoutDialog}>
-      <DialogContent>
+      <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
             Local branch <strong>{remoteBranch?.cleanName}</strong> already exists
