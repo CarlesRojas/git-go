@@ -3,6 +3,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuLabel,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/component/ui/ContextMenu'
 import { useToast } from '@/context/ToastContext'
@@ -12,10 +13,19 @@ import { useBranchPushDialog } from '@/hook/dialog/useBranchPushDialog'
 import { useRebaseCurrentBranchIntoBranch } from '@/hook/dialog/useBranchRebaseDialog'
 import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
-import { faCheck, faCloudArrowUp, faCodeBranch, faCodeMerge, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCheck,
+  faCloudArrowUp,
+  faCodeBranch,
+  faCodeMerge,
+  faCopy,
+  faEdit,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { ReactNode } from 'react'
+import { useCopyToClipboard } from 'usehooks-ts'
 
 interface UseLocalBranchContextMenuProps {
   branch?: GitBranch
@@ -33,6 +43,7 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
   const { showToast } = useToast()
   const checkoutMutation = useCheckoutLocalBranch()
   const { data: remotes = [] } = useGitRemotes()
+  const [, copy] = useCopyToClipboard()
 
   const renameDialog = useBranchRenameDialog({ branch: branch ?? EMPTY_BRANCH })
   const deleteDialog = useBranchDeleteDialog({ branch: branch ?? EMPTY_BRANCH })
@@ -59,6 +70,16 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
         },
       },
     )
+  }
+
+  const handleCopyBranchName = async () => {
+    try {
+      if (!branch) throw new Error('No branch to copy')
+      await copy(branch.cleanName)
+      showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faCopy })
+    } catch (error) {
+      showToast({ text: 'Failed to copy branch name', type: 'error', icon: faCopy })
+    }
   }
 
   const ContextMenuWrapper = ({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) => {
@@ -115,6 +136,13 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
               </ContextMenuItem>
             </>
           )}
+
+          <ContextMenuSeparator />
+
+          <ContextMenuItem onClick={handleCopyBranchName}>
+            <FontAwesomeIcon icon={faCopy} className="size-3" />
+            Copy Branch Name
+          </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     )
