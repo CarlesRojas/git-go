@@ -24,6 +24,10 @@
     @apply no-underline;
   }
 
+  strong {
+    @apply text-vsc-list-highlight-fg font-bold;
+  }
+
   .highlighted {
     @apply scale-125;
   }
@@ -54,4 +58,6 @@
   --color-vsc-git-deleted-fg: var(--vscode-gitDecoration-deletedResourceForeground);
   --color-vsc-git-modified-fg: var(--vscode-gitDecoration-modifiedResourceForeground);
   --color-vsc-git-renamed-fg: var(--vscode-gitDecoration-renamedResourceForeground);
+
+  --color-vsc-list-highlight-fg: var(--vscode-list-highlightForeground);
 }
