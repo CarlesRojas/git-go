@@ -20,7 +20,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
           // Group
           'group',
           // Layout & Structure
-          'flex h-7 w-56 items-center justify-between gap-2',
+          'rounded-main flex h-7 w-56 items-center justify-between gap-2',
           // Spacing
           'px-2.5',
           // Typography
@@ -60,7 +60,7 @@ function ComboboxInput({
 }) {
   return (
     <ComboboxPrimitive.Input
-      render={<Input disabled={disabled} className="border-vsc-editor-fg/15 border-b! border-none" onClear={onClear} />}
+      render={<Input disabled={disabled} onClear={onClear} />}
       className={cn(className)}
       {...props}
     />
@@ -95,7 +95,7 @@ function ComboboxContent({
               // Group State
               'group/combobox-content',
               // Layout & Structure
-              'relative overflow-hidden',
+              'rounded-main-outer relative overflow-hidden',
               // Sizing
               'max-h-(--available-height) w-[calc(var(--anchor-width)+1px)]',
               'max-w-[calc(var(--anchor-width)+1px)] min-w-[calc(var(--anchor-width)+1px)]',
@@ -131,7 +131,7 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
       className={cn(
         [
           // Scrolling
-          'no-scrollbar scroll-py-1 overflow-x-hidden overflow-y-auto overscroll-contain',
+          'no-scrollbar pb-radius scroll-py-1 overflow-x-hidden overflow-y-auto overscroll-contain',
           // Sizing
           'max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]',
           // Empty State

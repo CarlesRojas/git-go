@@ -87,7 +87,7 @@ const ContextMenuContent = ({ className, ref, ...props }: ComponentProps<typeof 
           // Layout & Structure
           'overflow-hidden',
           // Sizing
-          'min-w-48',
+          'rounded-main-outer p-main min-w-48',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border backdrop-blur-md',
           // Typography
@@ -110,7 +110,7 @@ const contextMenuItemVariants = cva(
     // Layout & Structure
     'relative flex cursor-pointer items-center select-none',
     // Spacing
-    'h-7 gap-2 px-2',
+    'rounded-main h-7 gap-2 px-2',
     // Typography
     'text-xs font-semibold',
     // Interactive States
@@ -241,7 +241,7 @@ const ContextMenuSeparator = ({ className, ref, ...props }: ComponentProps<typeo
     className={cn(
       [
         // Layout & Structure
-        '-mx-1 h-px',
+        'my-main -mx-1 h-px',
         // Colors & Background
         'bg-vsc-editor-fg/15',
       ],

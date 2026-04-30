@@ -13,6 +13,12 @@
 
 - [ ] Implement enter and shift enter to scroll to next found commit
 - [ ] Better git errors
+- [ ] Apply and save global state for roundness theme. Rename useGlobalState, to useRepoState
+- [ ] CMD + F to focus search
+
+### Bug
+
+- [ ] The stashes don't show files when clicked
 
 ### Maybe
 

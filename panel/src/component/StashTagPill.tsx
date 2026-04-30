@@ -41,7 +41,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
         <div
           className={cn(
             // Layout & sizing
-            'h-5 max-h-5 min-h-5 min-w-fit',
+            'rounded-main h-5 max-h-5 min-h-5 min-w-fit',
             // Colors
             'bg-vsc-editor-bg',
           )}
@@ -51,7 +51,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
               // Layout & sizing
               'flex h-5 max-h-5 min-h-5 min-w-fit items-center',
               // Spacing
-              'gap-1.5 px-1',
+              'rounded-main gap-1.5 px-1',
               // Colors
               'border-vsc-editor-fg/20 bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20 text-vsc-editor-fg border',
             )}

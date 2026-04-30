@@ -50,7 +50,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           // Layout & Position
           'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           // Layout & Structure
-          'grid w-full gap-3',
+          'rounded-main-outer grid w-full gap-3',
           // Sizing
           'max-w-[min(calc(100%-2rem),20rem)]',
           // Colors & Background
@@ -70,7 +70,8 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="data-[state=open]:bg-vsc-editor-fg/10 data-[state=open]:text-vsc-editor-fg/70 absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
+
+      <DialogPrimitive.Close className="data-[state=open]:bg-vsc-editor-fg/10 data-[state=open]:text-vsc-editor-fg/70 absolute top-4 right-4 cursor-pointer opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
         <FontAwesomeIcon icon={faXmark} className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

@@ -7,7 +7,7 @@ import { InputHTMLAttributes } from 'react'
 
 const inputVariants = cva([
   // Layout & Structure
-  'flex h-7 w-full',
+  'rounded-main flex h-7 w-full',
   // Spacing
   'px-2',
   // Typography

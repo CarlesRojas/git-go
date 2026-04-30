@@ -72,7 +72,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
       <button
         className={cn(
           // Layout & sizing
-          'bg-vsc-editor-bg relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center',
+          'bg-vsc-editor-bg rounded-main relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center overflow-hidden',
           // Interactions
           onlyRemote && 'border-vsc-editor-fg/30 border',
           isCurrent && 'border',
@@ -91,7 +91,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                 'px-1',
                 // Color
                 'bg-vsc-editor-fg/10',
-                !!local && !isCurrent && 'border-y border-l',
+                !!local && !isCurrent && 'rounded-l-main border-y border-l',
               )}
               style={{
                 backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
@@ -117,7 +117,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
               // Color
               'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
               localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
-              onlyLocal && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+              onlyLocal && !isCurrent && 'border-vsc-editor-fg/20 rounded-r-main border-y border-r',
               onlyRemote && 'gap-1.5 pl-1',
               !onlyRemote && 'peer-hover/icon:bg-vsc-editor-fg/20',
             )}
@@ -148,7 +148,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                   // Colors
                   'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
                   onlyRemote && 'border-vsc-editor-fg/20 border-l',
-                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 last:rounded-r-main border-y border-r',
                   localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
                 )}
                 onClick={localAndRemote ? handleRemoteDoubleClick : undefined}

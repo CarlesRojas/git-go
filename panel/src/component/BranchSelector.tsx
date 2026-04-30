@@ -203,23 +203,19 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       </ComboboxTrigger>
 
       <ComboboxContent>
-        <ComboboxInput className="w-full" onClear={() => setInputValue('')} placeholder="Search..." />
+        <div className="gap-main p-main border-vsc-editor-fg/15 flex flex-col border-b">
+          <ComboboxInput className="w-full" onClear={() => setInputValue('')} placeholder="Search..." />
 
-        <div className="grid w-full grid-cols-2">
-          <Button variant="secondary" onClick={selectLocalBranches} className="w-full border-b-0 border-l-0">
-            Select Local
-          </Button>
+          <div className="gap-main grid w-full grid-cols-2">
+            <Button variant="secondary" onClick={selectLocalBranches} className="w-full">
+              Select Local
+            </Button>
 
-          <Button
-            variant="secondary"
-            onClick={() => handleValueChange([])}
-            className="text-vsc-error-fg w-full border-x-0 border-b-0"
-          >
-            Unselect All
-          </Button>
+            <Button variant="secondary" onClick={() => handleValueChange([])} className="text-vsc-error-fg w-full">
+              Unselect All
+            </Button>
+          </div>
         </div>
-
-        <ComboboxSeparator />
 
         {selectedBranches.length < SELECTED_LIMIT && <ComboboxEmpty>No branches found.</ComboboxEmpty>}
 
@@ -250,7 +246,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
               // Layout
               'w-full px-2.5 py-2',
               // Typography
-              'text-vsc-editor-fg/50 text-xs',
+              'text-vsc-editor-fg/50 border-vsc-editor-fg/15 border-t text-xs',
             ])}
           >
             Branch selection limit reached

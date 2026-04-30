@@ -6,7 +6,7 @@ const textareaVariants = cva([
   // Layout & Structure
   'flex min-h-15 w-full resize-none',
   // Spacing
-  'px-3 py-1.5',
+  'rounded-main px-3 py-1.5',
   // Typography
   'text-vsc-input-fg text-sm',
   // Colors & Background

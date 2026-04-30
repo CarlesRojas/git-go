@@ -16,7 +16,7 @@ const SelectTrigger = ({ className, children, ref, ...props }: ComponentProps<ty
         // Layout & Structure
         'flex h-7 w-full items-center justify-between',
         // Spacing
-        'px-2',
+        'rounded-main px-2',
         // Typography
         'placeholder:text-vsc-input-placeholder-fg/50 text-xs',
         // Colors & Background
@@ -77,7 +77,7 @@ const SelectContent = ({
       className={cn(
         [
           // Position & Layout
-          'relative z-50 max-h-96 min-w-32 overflow-hidden',
+          'rounded-main-outer relative z-50 max-h-96 min-w-32 overflow-hidden',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg border',
           // Typography
@@ -124,7 +124,7 @@ const SelectItem = ({ className, children, ref, ...props }: ComponentProps<typeo
         // Layout & Structure
         'relative flex w-full cursor-default items-center select-none',
         // Spacing
-        'py-1.5 pr-2 pl-8',
+        'rounded-main py-1.5 pr-2 pl-8',
         // Typography
         'text-xs outline-hidden',
         // Interactive States

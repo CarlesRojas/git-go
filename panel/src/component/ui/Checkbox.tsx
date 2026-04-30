@@ -10,7 +10,7 @@ const Checkbox = ({ className, ref, ...props }: ComponentProps<typeof CheckboxPr
     className={cn(
       [
         // Layout & Structure
-        'peer flex size-4 cursor-pointer items-center justify-center',
+        'peer rounded-small flex size-4 cursor-pointer items-center justify-center',
         // Colors & Background
         'border-vsc-editor-fg/15 bg-vsc-input-bg border',
         // Interactive States

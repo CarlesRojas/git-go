@@ -5,7 +5,7 @@ import { ButtonHTMLAttributes } from 'react'
 const buttonVariants = cva(
   [
     // Layout & Structure
-    'inline-flex items-center justify-center gap-2',
+    'rounded-main inline-flex items-center justify-center gap-2',
     // Typography
     'text-xs font-medium whitespace-nowrap',
     // Interactions

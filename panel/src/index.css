@@ -35,6 +35,15 @@
   .dimmed {
     @apply opacity-10 duration-500;
   }
+
+  /* Scrollbar styles */
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 @theme {
@@ -60,4 +69,20 @@
   --color-vsc-git-renamed-fg: var(--vscode-gitDecoration-renamedResourceForeground);
 
   --color-vsc-list-highlight-fg: var(--vscode-list-highlightForeground);
+
+  --spacing-main: 4px;
+  --spacing-radius: 0.4rem;
+
+  --radius-main: 0.4rem;
+  --radius-small: 3px;
+  --radius-main-outer: 0.6rem;
+}
+
+[data-theme='round'] {
+  --spacing-main: 0px;
+  --spacing-radius: 0px;
+
+  --radius-main: 0px;
+  --radius-small: 0px;
+  --radius-main-outer: 0px;
 }
