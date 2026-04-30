@@ -901,7 +901,7 @@ export class GitService {
     public async mergeBranch(
         log: (message: string) => void,
         branchName: string,
-        createNewCommit: boolean = false,
+        fastFordwardIfPossible: boolean = true,
         squash: boolean = false,
         noCommit: boolean = false
     ): Promise<void> {
@@ -915,10 +915,9 @@ export class GitService {
             log(`Merging branch ${branchName} into current branch`);
             const args = [gitExecutable.path, 'merge', branchName];
 
-            // TODO are this incompatible? check how https://github.com/mhutchie/vscode-git-graph/tree/develop/src does it
             if (squash) {
                 args.push('--squash');
-            } else if (createNewCommit) {
+            } else if (!fastFordwardIfPossible) {
                 args.push('--no-ff');
             }
 
@@ -1142,14 +1141,38 @@ export class GitService {
         const gitExecutable = await this.findGitExecutable();
 
         try {
-            const args = [gitExecutable.path, 'fetch'];
-            if (forceFetch) args.push('--force');
-            args.push(remote, `${remoteBranch}:${localBranch}`);
+            // Check if the target local branch is currently checked out
+            const currentBranch = await this.getCurrentBranch(log);
+            const isTargetBranchCheckedOut = currentBranch === localBranch;
 
-            await this.spawnGit(args, workspacePath);
-            log(
-                `Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}${forceFetch ? ' (force)' : ''}`
-            );
+            if (isTargetBranchCheckedOut) {
+                // If the target branch is checked out, fetch first then reset (for force) or merge
+                log(`Target branch ${localBranch} is currently checked out`);
+
+                if (forceFetch) {
+                    // For force update: fetch then reset --hard
+                    await this.spawnGit([gitExecutable.path, 'fetch', remote, remoteBranch], workspacePath);
+                    await this.spawnGit(
+                        [gitExecutable.path, 'reset', '--hard', `${remote}/${remoteBranch}`],
+                        workspacePath
+                    );
+                    log(`Successfully force-updated current branch ${localBranch} from ${remote}/${remoteBranch}`);
+                } else {
+                    // For normal update: use git pull
+                    await this.spawnGit([gitExecutable.path, 'pull', remote, remoteBranch], workspacePath);
+                    log(`Successfully pulled ${remote}/${remoteBranch} into current branch ${localBranch}`);
+                }
+            } else {
+                // If the target branch is not checked out, use the normal fetch approach
+                const args = [gitExecutable.path, 'fetch'];
+                if (forceFetch) args.push('--force');
+                args.push(remote, `${remoteBranch}:${localBranch}`);
+
+                await this.spawnGit(args, workspacePath);
+                log(
+                    `Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}${forceFetch ? ' (force)' : ''}`
+                );
+            }
         } catch (error) {
             log(`Error fetching into local branch: ${error}`);
             throw error;

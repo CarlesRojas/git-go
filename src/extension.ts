@@ -550,8 +550,8 @@ export function activate(context: vscode.ExtensionContext) {
                         case 'mergeBranch':
                             try {
                                 const gitService = GitService.getInstance();
-                                const { branchName, createNewCommit, squash, noCommit } = message;
-                                await gitService.mergeBranch(log, branchName, createNewCommit, squash, noCommit);
+                                const { branchName, fastFordwardIfPossible, squash, noCommit } = message;
+                                await gitService.mergeBranch(log, branchName, fastFordwardIfPossible, squash, noCommit);
                                 log(`Successfully merged branch ${branchName}`);
                                 currentPanel?.webview.postMessage({
                                     type: 'mergeBranchSuccess'

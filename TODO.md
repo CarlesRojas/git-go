@@ -1,21 +1,5 @@
 ## TODO
 
-### Remote Branch Right Click Menu:
-
-- [ ] Fetch into local branch
-- [ ] Merge into current branch
-- [ ] Delete remote branch
-
-### Tag Right Click Menu
-
-- [ ] View details
-- [ ] Push
-- [ ] Delete
-
-### Bugs
-
-- [ ] When copying on the tag dialog, it closes the dialog
-
 ### Settings
 
 - [ ] Settings: Show stashes?

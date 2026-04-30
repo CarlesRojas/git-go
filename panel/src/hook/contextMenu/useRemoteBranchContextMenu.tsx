@@ -79,7 +79,7 @@ export const useRemoteBranchContextMenu = () => {
 
           <ContextMenuItem onClick={() => branch && mergeDialog.openDialog(branch)}>
             <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
-            Merge into current branch
+            Merge into Current
           </ContextMenuItem>
 
           <ContextMenuItem onClick={() => branch && deleteDialog.openDialog(branch)} variant="destructive">

@@ -19,7 +19,7 @@ export const useRemoteBranchMergeDialog = () => {
 
   const mergeForm = useForm({
     defaultValues: {
-      createNewCommit: false,
+      fastFordwardIfPossible: true,
       squash: false,
       noCommit: false,
     },
@@ -28,7 +28,7 @@ export const useRemoteBranchMergeDialog = () => {
       mergeBranchMutation.mutate(
         {
           branchName: remoteBranch.cleanName,
-          createNewCommit: value.createNewCommit,
+          fastFordwardIfPossible: value.fastFordwardIfPossible,
           squash: value.squash,
           noCommit: value.noCommit,
         },
@@ -75,16 +75,16 @@ export const useRemoteBranchMergeDialog = () => {
           }}
           className="flex flex-col gap-3"
         >
-          <mergeForm.Field name="createNewCommit">
+          <mergeForm.Field name="fastFordwardIfPossible">
             {field => (
               <div className="flex items-center">
                 <Checkbox
-                  id="createNewCommit"
+                  id="fastFordwardIfPossible"
                   checked={field.state.value}
                   onCheckedChange={checked => field.handleChange(checked === true)}
                 />
-                <Label htmlFor="createNewCommit" className="cursor-pointer pl-2">
-                  Create new commit (no fast-forward)
+                <Label htmlFor="fastFordwardIfPossible" className="cursor-pointer pl-2">
+                  Fast forward if possible
                 </Label>
               </div>
             )}
