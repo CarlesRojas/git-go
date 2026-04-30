@@ -60,7 +60,7 @@ class ToastController {
     }
 
     this.toastElement.className = cn(
-      'fixed right-2 bottom-2 z-50 flex max-w-lg gap-3 border p-2.5 backdrop-blur-md transition-all duration-300',
+      'fixed right-2 bottom-2 z-60 flex max-w-lg gap-3 border p-2.5 backdrop-blur-md transition-all duration-300',
       'border-vsc-editor-fg/15 bg-vsc-editor-bg/80',
       toast.type === 'error' && 'border-vsc-git-deleted-fg/30 bg-vsc-git-deleted-fg/10',
       toast.className,
@@ -77,12 +77,7 @@ class ToastController {
       }
     })
 
-    this.timeout = setTimeout(
-      () => {
-        this.closeToast()
-      },
-      toast.type === 'error' ? 30_000 : 6_000,
-    )
+    this.timeout = setTimeout(this.closeToast, toast.type === 'error' ? 30_000 : 6_000)
   }
 
   closeToast() {
@@ -137,7 +132,12 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
       {/* Static toast component - controlled by vanilla JS */}
       <div
         ref={toastRef}
-        className="border-vsc-editor-fg/15 bg-vsc-editor-bg/80 fixed right-2 bottom-2 z-50 max-w-lg gap-3 border p-2.5 backdrop-blur-md transition-all duration-300"
+        className={cn(
+          'fixed right-2 bottom-2 z-60 flex max-w-lg gap-3 border p-2.5 backdrop-blur-md transition-all duration-300',
+          'border-vsc-editor-fg/15 bg-vsc-editor-bg/80',
+        )}
+        style={{ opacity: 0, pointerEvents: 'none' }}
+        onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">
           <span data-toast-icon className="shrink-0">
@@ -147,7 +147,16 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
           <span data-toast-text className="text-xs leading-tight"></span>
         </div>
 
-        <Button onClick={closeToast} className="ml-4" variant="ghost" size="iconSmall" aria-label="Close toast">
+        <Button
+          onClick={e => {
+            e.stopPropagation()
+            closeToast()
+          }}
+          className="ml-4"
+          variant="ghost"
+          size="iconSmall"
+          aria-label="Close toast"
+        >
           <FontAwesomeIcon icon={faTimes} className="size-3" />
         </Button>
       </div>
