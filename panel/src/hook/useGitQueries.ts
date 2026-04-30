@@ -2,6 +2,7 @@ import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/util/buildFileTree'
 import type { GitBranch, GitCommit, GitFileChange, GitRemote } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -22,6 +23,14 @@ export const getVSCodeApi = (): VSCodeApi => {
   return vscodeApi
 }
 
+interface GlobalState {
+  selectedBranches: string[]
+}
+
+const defaultGlobalState: GlobalState = {
+  selectedBranches: [],
+}
+
 // Query keys
 export const queryKeys = {
   branches: ['git', 'branches'] as const,
@@ -33,6 +42,7 @@ export const queryKeys = {
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
   remotes: ['git', 'remotes'] as const,
+  state: (key: string) => ['state', key] as const,
 }
 
 // Custom hook for fetching branches
@@ -1305,4 +1315,53 @@ export const useResetUncommittedChanges = () => {
       refreshGitData(queryClient)
     },
   })
+}
+
+export const useGlobalState = () => {
+  const queryClient = useQueryClient()
+
+  const query = useQuery({
+    queryKey: queryKeys.state('globalState'),
+    queryFn: (): Promise<GlobalState | null> => {
+      return new Promise(resolve => {
+        const vscode = getVSCodeApi()
+
+        const handler = (event: MessageEvent) => {
+          console.log('LOAD', event.data.value)
+          if (event.data.type === 'stateLoaded' && event.data.key === 'globalState') {
+            window.removeEventListener('message', handler)
+            resolve(event.data.value ?? null)
+          }
+        }
+
+        window.addEventListener('message', handler)
+        vscode.postMessage({ type: 'loadState', key: 'globalState' })
+
+        setTimeout(() => {
+          window.removeEventListener('message', handler)
+          resolve(null)
+        }, 3000)
+      })
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
+
+  const setGlobalState = useCallback(
+    (value: Partial<GlobalState>) => {
+      const currentState = query.data ?? defaultGlobalState
+      const newState = { ...currentState, ...value }
+      const vscode = getVSCodeApi()
+      console.log('SAVE', newState)
+      vscode.postMessage({ type: 'saveState', key: 'globalState', value: newState })
+      queryClient.setQueryData(queryKeys.state('globalState'), newState)
+    },
+    [query.data, queryClient],
+  )
+
+  return {
+    data: query.data ?? defaultGlobalState,
+    isLoading: query.isLoading,
+    setGlobalState,
+  }
 }

@@ -13,7 +13,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from '@/component/ui/Combobox'
-import { useGitBranches } from '@/hook/useGitQueries'
+import { useGitBranches, useGlobalState } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { groupBranches } from '@/util/groupBranches'
@@ -37,34 +37,51 @@ const SELECTED_LIMIT = 16
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], ...branchesQuery } = useGitBranches()
+  const {
+    data: { selectedBranches: defaultSelectedBranches },
+    isLoading: isLoadingGlobalState,
+    setGlobalState,
+  } = useGlobalState()
 
   const [inputValue, setInputValue] = useState('')
 
+  const defaultBranchesSet = useRef(false)
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
   useEffect(() => {
+    if (isLoadingGlobalState || !defaultBranchesSet.current) return
+    setGlobalState({ selectedBranches })
     onBranchesChange(branches.filter(branch => selectedBranches.includes(branch.cleanName)))
-  }, [selectedBranches])
+  }, [isLoadingGlobalState, selectedBranches, setGlobalState])
 
-  const defaultBranchesSet = useRef(false)
   useEffect(() => {
-    if (branches.length > 0 && selectedBranches.length === 0 && !defaultBranchesSet.current) {
-      defaultBranchesSet.current = true
+    if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current || !!isLoadingGlobalState)
+      return
 
-      const isMain = (name: string) => name === 'main' || name === 'master'
+    defaultBranchesSet.current = true
 
-      const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
-      const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
-      const localBranches = branches
-        .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
-        .slice(0, Math.max(0, remainingSlots))
-
-      const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
+    if (defaultSelectedBranches && Array.isArray(defaultSelectedBranches) && defaultSelectedBranches.length > 0) {
+      const targetNames = new Set(defaultSelectedBranches)
       const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
 
-      const names = Array.from(new Set(branchesToSelect.map(b => b.cleanName)))
-      setSelectedBranches(names)
+      if (branchesToSelect.length > 0) {
+        setSelectedBranches(Array.from(new Set(branchesToSelect.map(b => b.cleanName))))
+        return
+      }
     }
-  }, [branches, selectedBranches])
+
+    const isMain = (name: string) => name === 'main' || name === 'master'
+
+    const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
+    const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
+    const localBranches = branches
+      .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
+      .slice(0, Math.max(0, remainingSlots))
+
+    const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
+    const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
+
+    setSelectedBranches(Array.from(new Set(branchesToSelect.map(b => b.cleanName))))
+  }, [branches, selectedBranches, defaultSelectedBranches, isLoadingGlobalState])
 
   const previousBranchesNamesRef = useRef<string[] | null>(null)
   useEffect(() => {
@@ -134,7 +151,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
   }, [selectedBranches])
 
-  if (branchesQuery.isLoading) {
+  if (branchesQuery.isLoading || isLoadingGlobalState) {
     return (
       <div
         className={cn(

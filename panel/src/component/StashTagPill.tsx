@@ -21,8 +21,6 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
   const icon = type === 'stash' ? faInbox : faTag
   const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
 
-  if (type === 'tag') console.log('Rendering tag pill for tag:', label)
-
   const { ContextMenuWrapper: StashContextMenuWrapper, dialogs: stashDialogs } = useStashContextMenu({
     stash: type === 'stash' ? label : undefined,
   })

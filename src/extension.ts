@@ -809,6 +809,33 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'saveState':
+                            const saveRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+                            if (!saveRepoPath) {
+                                log('No workspace folder found, cannot save state');
+                                return;
+                            }
+                            context.globalState.update(`${saveRepoPath}:${message.key}`, message.value);
+                            break;
+                        case 'loadState':
+                            const loadRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+                            if (!loadRepoPath) {
+                                log('No workspace folder found, cannot load state');
+                                currentPanel?.webview.postMessage({
+                                    type: 'stateLoaded',
+                                    key: message.key,
+                                    value: null
+                                });
+                                return;
+                            }
+
+                            const stateValue = context.globalState.get(`${loadRepoPath}:${message.key}`);
+                            currentPanel?.webview.postMessage({
+                                type: 'stateLoaded',
+                                key: message.key,
+                                value: stateValue ?? null
+                            });
+                            break;
                     }
                 },
                 undefined,
