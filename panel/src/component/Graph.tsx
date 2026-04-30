@@ -3,7 +3,7 @@ import { useCommitHighlight } from '@/hook/useCommitHighlight'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
 import { ExpandedRow, useGitTree } from '@/hook/useGitTree'
 import { matchesSearch } from '@/util/searchCommits'
-import { faCircleNotch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch, faCodeBranch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { FC, Fragment, useCallback, useMemo, useState } from 'react'
@@ -29,7 +29,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
   })
 
   const { data: workingChangesData } = useWorkingChanges(true)
-  const { data: branches = [] } = useGitBranches()
+  const { data: branches = [], error: gitError, isLoading: isBranchesLoading } = useGitBranches()
 
   const commits = useMemo(() => {
     const gitCommits = data?.pages.flatMap(page => page.commits) ?? []
@@ -79,11 +79,23 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     ),
   )
 
-  if (isLoading) {
+  if (isLoading || isBranchesLoading) {
     return (
       <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
         <FontAwesomeIcon icon={faCircleNotch} className="size-4 animate-spin" />
         <p className="text-xs">Loading git history...</p>
+      </div>
+    )
+  }
+
+  const isNoGitRepo = gitError?.message === 'Not a git repository'
+  if (isNoGitRepo) {
+    return (
+      <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
+        <div className="flex min-w-0 flex-row items-center gap-2">
+          <FontAwesomeIcon icon={faCodeBranch} className="text-vsc-error-fg size-4" />
+          No git repository found
+        </div>
       </div>
     )
   }
