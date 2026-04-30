@@ -168,8 +168,8 @@ export function useGitTree(
                     y={dotY - halfSize}
                     width={squareSize}
                     height={squareSize}
-                    rx={squareSize * 0.3}
-                    ry={squareSize * 0.3}
+                    rx={squareSize * 0.25}
+                    ry={squareSize * 0.25}
                     fill="black"
                   />
                 )
@@ -261,7 +261,7 @@ export function useGitTree(
                   strokeWidth={LINE_WIDTH}
                   data-hash={c.commit.hash}
                   data-row={c.row}
-                  className="origin-center transition-opacity duration-500 transform-fill"
+                  className="origin-center fill-transparent transition-opacity duration-500 transform-fill"
                 />
               )
             }
