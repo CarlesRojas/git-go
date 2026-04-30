@@ -55,17 +55,17 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
 
     switch (type) {
       case 'success':
-        toast.success(content, { duration: 6_000 })
+        toast.success(content, { duration: 4_000 })
         break
       case 'error':
-        toast.error(content, { duration: 30_000 })
+        toast.error(content, { duration: 15_000 })
         break
       case 'warning':
-        toast.warning(content, { duration: 30_000 })
+        toast.warning(content, { duration: 15_000 })
         break
       case 'info':
       default:
-        toast.info(content, { duration: 6_000 })
+        toast.info(content, { duration: 4_000 })
         break
     }
   }
