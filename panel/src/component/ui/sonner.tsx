@@ -19,7 +19,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            'pointer-events-auto! poborder-vsc-editor-fg/15! bg-vsc-editor-bg/80! border! backdrop-blur-lg! rounded-none!',
+            'pointer-events-auto! p-0! poborder-vsc-editor-fg/15! bg-vsc-editor-bg/80! border! backdrop-blur-lg! rounded-none!',
           success: 'pointer-events-auto! border-vsc-git-added-fg/30! bg-vsc-editor-bg/80!',
           error: 'pointer-events-auto! border-vsc-git-deleted-fg/30! bg-vsc-editor-bg/80!',
           warning: 'pointer-events-auto! border-vsc-git-modified-fg/30! bg-vsc-editor-bg/80!',

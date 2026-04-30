@@ -2,7 +2,6 @@
 
 ### Remote Branch Right Click Menu:
 
-- [ ] Checkout
 - [ ] Fetch into local branch
 - [ ] Merge into current branch
 - [ ] Delete remote branch

@@ -34,22 +34,23 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
     const { text, type = 'info', icon } = toastData
 
     const content = icon ? (
-      <div className="flex items-center gap-3">
-        <span className="shrink-0">
+      <div className="flex gap-3 px-3">
+        <div className="flex h-fit min-h-10 w-fit items-center justify-center">
           <FontAwesomeIcon
             icon={icon}
             className={cn(
-              'text-vsc-editor-fg/80 size-4 max-h-4 min-h-4',
+              'text-vsc-editor-fg/80 m-0! size-4 max-h-4 min-h-4 p-0!',
               type === 'success' && 'text-vsc-git-added-fg',
               type === 'error' && 'text-vsc-git-deleted-fg',
               type === 'warning' && 'text-vsc-git-modified-fg',
             )}
           />
-        </span>
-        <span className="text-xs leading-tight">{text}</span>
+        </div>
+
+        <span className="py-3 text-xs leading-tight">{text}</span>
       </div>
     ) : (
-      text
+      <span className="py-3 text-xs leading-tight">{text}</span>
     )
 
     switch (type) {
