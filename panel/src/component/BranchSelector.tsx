@@ -20,7 +20,7 @@ import { groupBranches } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
-import { FC, ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface BranchSelectorProps {
   onBranchesChange: (branches: GitBranch[]) => void
@@ -47,6 +47,22 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
   const defaultBranchesSet = useRef(false)
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
+
+  const selectLocalBranches = useCallback(() => {
+    const isMain = (name: string) => name === 'main' || name === 'master'
+
+    const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
+    const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
+    const localBranches = branches
+      .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
+      .slice(0, Math.max(0, remainingSlots))
+
+    const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
+    const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
+
+    setSelectedBranches(Array.from(new Set(branchesToSelect.map(b => b.cleanName))))
+  }, [branches])
+
   useEffect(() => {
     if (isLoadingGlobalState || !defaultBranchesSet.current) return
     setGlobalState({ selectedBranches })
@@ -69,19 +85,8 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       }
     }
 
-    const isMain = (name: string) => name === 'main' || name === 'master'
-
-    const priorityBranches = branches.filter(b => b.current || isMain(b.cleanName))
-    const remainingSlots = SELECTED_LIMIT - Object.keys(groupBranches(priorityBranches)).length
-    const localBranches = branches
-      .filter(b => !b.remote && !b.current && !isMain(b.cleanName))
-      .slice(0, Math.max(0, remainingSlots))
-
-    const targetNames = new Set([...priorityBranches, ...localBranches].map(b => b.cleanName))
-    const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
-
-    setSelectedBranches(Array.from(new Set(branchesToSelect.map(b => b.cleanName))))
-  }, [branches, selectedBranches, defaultSelectedBranches, isLoadingGlobalState])
+    selectLocalBranches()
+  }, [branches, selectedBranches, defaultSelectedBranches, isLoadingGlobalState, selectLocalBranches])
 
   const previousBranchesNamesRef = useRef<string[] | null>(null)
   useEffect(() => {
@@ -198,10 +203,18 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
       </ComboboxTrigger>
 
       <ComboboxContent>
-        <div className="flex w-full">
-          <ComboboxInput className="grow" onClear={() => setInputValue('')} placeholder="Search..." />
+        <ComboboxInput className="w-full" onClear={() => setInputValue('')} placeholder="Search..." />
 
-          <Button variant="secondary" onClick={() => handleValueChange([])} className="border-y-0 border-r-0">
+        <div className="grid w-full grid-cols-2">
+          <Button variant="secondary" onClick={selectLocalBranches} className="w-full border-b-0 border-l-0">
+            Select Local
+          </Button>
+
+          <Button
+            variant="secondary"
+            onClick={() => handleValueChange([])}
+            className="text-vsc-error-fg w-full border-x-0 border-b-0"
+          >
             Unselect All
           </Button>
         </div>

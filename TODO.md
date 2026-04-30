@@ -11,7 +11,6 @@
 
 ### Others
 
-- [ ] Save selected branches per repo in some kind of local storage
 - [ ] Implement enter and shift enter to scroll to next found commit
 - [ ] Better git errors
 
