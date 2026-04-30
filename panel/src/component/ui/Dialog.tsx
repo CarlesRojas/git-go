@@ -9,6 +9,11 @@ const DialogTrigger = DialogPrimitive.Trigger
 const DialogPortal = DialogPrimitive.Portal
 const DialogClose = DialogPrimitive.Close
 
+const handleInteractOutside = (event: Event) => {
+  const isToastItem = (event.target as Element)?.closest('[data-sonner-toaster]')
+  if (isToastItem) event.preventDefault()
+}
+
 const DialogOverlay = ({ className, ref, ...props }: ComponentProps<typeof DialogPrimitive.Overlay>) => (
   <DialogPrimitive.Overlay
     ref={ref}
@@ -38,6 +43,8 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
     <DialogPrimitive.Content
       ref={ref}
       onContextMenu={event => event.preventDefault()}
+      onPointerDownOutside={handleInteractOutside}
+      onInteractOutside={handleInteractOutside}
       className={cn(
         [
           // Layout & Position

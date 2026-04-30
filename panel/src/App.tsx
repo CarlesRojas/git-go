@@ -31,23 +31,23 @@ export const App: FC = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div
-        className={cn([
-          // Layout & Structure
-          'flex max-h-screen min-h-screen max-w-screen min-w-screen flex-col',
-          // Typography
-          'text-vsc-editor-fg font-medium',
-          // Colors & Background
-          // 'bg-vsc-editor-bg',
-          // Selection States
-          'selection:bg-vsc-editor-fg/10!',
-        ])}
-        style={{
-          fontFamily:
-            '"Monaspace Neon", "JetBrains Mono", "JetBrainsMono Nerd Font", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace',
-        }}
-      >
-        <ToastProvider>
+      <ToastProvider>
+        <div
+          className={cn([
+            // Layout & Structure
+            'flex max-h-screen min-h-screen max-w-screen min-w-screen flex-col',
+            // Typography
+            'text-vsc-editor-fg font-medium',
+            // Colors & Background
+            // 'bg-vsc-editor-bg',
+            // Selection States
+            'selection:bg-vsc-editor-fg/10!',
+          ])}
+          style={{
+            fontFamily:
+              '"Monaspace Neon", "JetBrains Mono", "JetBrainsMono Nerd Font", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace',
+          }}
+        >
           <div
             className={cn([
               // Position & Layout
@@ -72,8 +72,10 @@ export const App: FC = () => {
           <main className="graph-h relative flex flex-col overflow-y-auto">
             <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} />
           </main>
-        </ToastProvider>
-      </div>
+
+          <div id="dialog-root" />
+        </div>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }
