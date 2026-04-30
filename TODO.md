@@ -7,30 +7,15 @@
 - [ ] Merge into current branch
 - [ ] Delete remote branch
 
----
-
-- [x] Copy branch name
-
-### Stash Right Click Menu (Should include entire commit line)
-
-- [x] Apply
-- [x] Pop
-- [x] Drop
-
 ### Tag Right Click Menu
 
 - [ ] View details
 - [ ] Push
 - [ ] Delete
 
----
+### Bugs
 
-- [x] Copy tag name
-
-### Uncommitted Changes Right Click Menu
-
-- [x] Stash
-- [x] Discard all changes
+- [ ] When copying on the tag dialog, it closes the dialog
 
 ### Settings
 
