@@ -19,6 +19,7 @@
 ### Bug
 
 - [ ] The stashes don't show files when clicked
+- [ ] When it disposes of the webview, it should also remove the reference, so opening it restarts it
 
 ### Maybe
 
