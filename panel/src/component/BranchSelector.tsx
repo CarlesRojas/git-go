@@ -37,9 +37,15 @@ const LIMIT = 100
 const SELECTED_LIMIT = 16
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
-  const { data: branches = [], ...branchesQuery } = useGitBranches()
+  const { data: allBranches = [], ...branchesQuery } = useGitBranches()
   const { setRepoState } = useRepoState()
   const { settings } = useSettings()
+
+  const branches = useMemo(() => {
+    return allBranches.filter(
+      branch => !branch.remote || !branch.remoteName || !settings.hiddenRemotes.includes(branch.remoteName),
+    )
+  }, [allBranches, settings.hiddenRemotes])
 
   const [inputValue, setInputValue] = useState('')
 
@@ -65,7 +71,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     if (!defaultBranchesSet.current) return
     setRepoState({ selectedBranches })
     onBranchesChange(branches.filter(b => selectedBranches.includes(b.cleanName)))
-  }, [selectedBranches, setRepoState])
+  }, [selectedBranches, setRepoState, branches])
 
   useEffect(() => {
     if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current) return
@@ -91,12 +97,12 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
     const previous = previousBranchesNamesRef.current
     if (previous === null) {
-      previousBranchesNamesRef.current = branches.map(b => b.name)
+      previousBranchesNamesRef.current = allBranches.map(b => b.name)
       return
     }
+    previousBranchesNamesRef.current = allBranches.map(b => b.name)
 
     const newBranches = branches.filter(branch => !previous.includes(branch.name))
-    previousBranchesNamesRef.current = branches.map(b => b.name)
 
     const validCleanNames = new Set(branches.map(b => b.cleanName))
     const selectedWithoutDeletedBranches = selectedBranches.filter(name => validCleanNames.has(name))
@@ -151,7 +157,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     } catch (error) {
       return []
     }
-  }, [selectedBranches])
+  }, [selectedBranches, branches])
 
   if (branchesQuery.isLoading) {
     return (
