@@ -115,12 +115,14 @@ export function activate(context: vscode.ExtensionContext) {
                             try {
                                 const gitService = GitService.getInstance();
                                 const commitHash = message.commitHash;
+                                const isStash = message.isStash ?? false;
                                 if (!commitHash) {
                                     throw new Error('Commit hash is required');
                                 }
-                                const files = await gitService.getCommitFiles(log, commitHash);
+                                const files = await gitService.getCommitFiles(log, commitHash, isStash);
+                                const commitType = isStash ? 'stash' : 'commit';
                                 log(
-                                    `Successfully retrieved ${files.length} files for commit ${commitHash.substring(0, 7)}`
+                                    `Successfully retrieved ${files.length} files for ${commitType} ${commitHash.substring(0, 7)}`
                                 );
                                 currentPanel?.webview.postMessage({
                                     type: 'gitCommitFiles',

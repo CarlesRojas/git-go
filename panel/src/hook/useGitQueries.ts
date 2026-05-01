@@ -209,10 +209,11 @@ export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number =
 interface GitCommitFilesProps {
   commitHash: string
   isRootCommit?: boolean
+  isStash?: boolean
   enabled?: boolean
 }
 
-export const useGitCommitFiles = ({ commitHash, isRootCommit = false, enabled = true }: GitCommitFilesProps) => {
+export const useGitCommitFiles = ({ commitHash, isRootCommit = false, isStash = false, enabled = true }: GitCommitFilesProps) => {
   return useQuery({
     queryKey: queryKeys.commitFiles(commitHash),
     queryFn: (): Promise<TreeDataItem[]> => {
@@ -235,6 +236,7 @@ export const useGitCommitFiles = ({ commitHash, isRootCommit = false, enabled = 
         vscode.postMessage({
           type: 'getCommitFiles',
           commitHash: commitHash,
+          isStash: isStash,
         })
 
         // Cleanup timeout to prevent memory leaks

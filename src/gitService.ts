@@ -258,6 +258,93 @@ export class GitService {
         return stashMap;
     }
 
+    /**
+     * Get stash parents information - stashes are merge commits with multiple parents:
+     * - Parent 0: baseHash (the commit the stash was created from)
+     * - Parent 1: index state (staged changes)
+     * - Parent 2: untrackedFilesHash (if untracked files exist)
+     */
+    private async getStashParents(
+        stashHash: string,
+        workspacePath: string,
+        gitPath: string
+    ): Promise<{ baseHash: string | null; untrackedFilesHash: string | null }> {
+        try {
+            const output = await this.spawnGit([gitPath, 'rev-list', '--parents', '-n', '1', stashHash], workspacePath);
+
+            const parts = output.trim().split(' ');
+            if (parts.length < 2) {
+                return { baseHash: null, untrackedFilesHash: null };
+            }
+
+            // parts[0] is the stash hash itself
+            // parts[1] is the base commit (first parent)
+            // parts[2] is the index state (second parent)
+            // parts[3] is the untracked files hash (third parent) if it exists
+            const baseHash = parts[1] || null;
+            // Check for exactly 4 parts (commit + 3 parents) to match Git Graph's logic
+            const untrackedFilesHash = parts.length === 4 ? parts[3] || null : null;
+
+            return { baseHash, untrackedFilesHash };
+        } catch (error) {
+            return { baseHash: null, untrackedFilesHash: null };
+        }
+    }
+
+    /**
+     * Get untracked files from stash using the untracked files hash
+     */
+    private async getUntrackedFilesFromStash(
+        untrackedFilesHash: string,
+        workspacePath: string,
+        gitPath: string
+    ): Promise<GitFileChange[]> {
+        try {
+            // For untracked files, use diff-tree to show the content of the untracked files commit
+            // This is exactly how Git Graph does it - diff-tree with a single hash shows the diff against parent
+            const statusOutput = await this.spawnGit(
+                [gitPath, 'diff-tree', '--name-status', '-r', '--root', untrackedFilesHash],
+                workspacePath
+            );
+
+            const numstatOutput = await this.spawnGit(
+                [gitPath, 'diff-tree', '--numstat', '-r', '--root', untrackedFilesHash],
+                workspacePath
+            );
+
+            // Parse numstat for untracked files
+            const statsMap = new Map<string, { additions: number; deletions: number }>();
+            for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+                const parts = line.split('\t');
+                if (parts.length >= 3) {
+                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0]) || 0;
+                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]) || 0;
+                    const path = parts.slice(2).join('\t');
+                    statsMap.set(path, { additions, deletions });
+                }
+            }
+
+            const untrackedFiles: GitFileChange[] = [];
+            for (const line of statusOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+                const parts = line.split('\t');
+                if (parts.length >= 2) {
+                    const statusRaw = parts[0]?.trim();
+                    const path = parts[1]?.trim() || '';
+                    const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
+
+                    // Convert 'A' (Added) status to untracked files, matching Git Graph's approach
+                    // In the context of stash untracked files, 'A' means the file was untracked when stashed
+                    const status = statusRaw === 'A' ? 'A' : (statusRaw?.[0] as GitFileChange['status']) || 'A';
+                    untrackedFiles.push({ path, status, ...stats });
+                }
+            }
+
+            return untrackedFiles;
+        } catch (error) {
+            return [];
+        }
+    }
+
     private async getStashCommits(
         workspacePath: string,
         gitPath: string,
@@ -556,7 +643,11 @@ export class GitService {
         }
     }
 
-    public async getCommitFiles(log: (message: string) => void, commitHash: string): Promise<GitFileChange[]> {
+    public async getCommitFiles(
+        log: (message: string) => void,
+        commitHash: string,
+        isStash: boolean = false
+    ): Promise<GitFileChange[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -564,6 +655,8 @@ export class GitService {
         const gitExecutable = await this.findGitExecutable();
 
         try {
+            if (isStash) return await this.getStashFiles(log, commitHash, workspacePath, gitExecutable.path);
+
             const statusOutput = await this.spawnGit(
                 [gitExecutable.path, 'diff-tree', '--no-commit-id', '--name-status', '-r', '-M', '--root', commitHash],
                 workspacePath
@@ -610,6 +703,82 @@ export class GitService {
         } catch (error) {
             log(`Error getting commit files: ${error}`);
             throw error;
+        }
+    }
+
+    private async getStashFiles(
+        log: (message: string) => void,
+        stashHash: string,
+        workspacePath: string,
+        gitPath: string
+    ): Promise<GitFileChange[]> {
+        try {
+            // Get stash parents information - stashes are merge commits with multiple parents
+            const stashParents = await this.getStashParents(stashHash, workspacePath, gitPath);
+            if (!stashParents.baseHash) {
+                log(`Could not get base commit for stash ${stashHash.substring(0, 7)}`);
+                return [];
+            }
+
+            // Use git diff between stash and its base commit (like Git Graph)
+            const statusOutput = await this.spawnGit(
+                [gitPath, 'diff', '--name-status', stashParents.baseHash, stashHash],
+                workspacePath
+            );
+
+            const numstatOutput = await this.spawnGit(
+                [gitPath, 'diff', '--numstat', stashParents.baseHash, stashHash],
+                workspacePath
+            );
+
+            // Parse numstat to get additions/deletions
+            const statsMap = new Map<string, { additions: number; deletions: number }>();
+            for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+                const parts = line.split('\t');
+                if (parts.length >= 3) {
+                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0]) || 0;
+                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]) || 0;
+                    const path = parts.slice(2).join('\t');
+                    statsMap.set(path, { additions, deletions });
+                }
+            }
+
+            // Parse file status
+            const files: GitFileChange[] = [];
+            for (const line of statusOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+                const parts = line.split('\t');
+                if (parts.length < 2) continue;
+
+                const statusRaw = parts[0]!.trim();
+                const status = statusRaw[0] as GitFileChange['status'];
+
+                if (status === 'R' || status === 'C') {
+                    const oldPath = parts[1]?.trim() || '';
+                    const newPath = parts[2]?.trim() || '';
+                    const stats = statsMap.get(newPath) ?? { additions: 0, deletions: 0 };
+                    files.push({ path: newPath, status, oldPath, ...stats });
+                } else {
+                    const path = parts[1]?.trim() || '';
+                    const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
+                    files.push({ path, status, ...stats });
+                }
+            }
+
+            // Handle untracked files if they exist (like Git Graph)
+            if (stashParents.untrackedFilesHash) {
+                const untrackedFiles = await this.getUntrackedFilesFromStash(
+                    stashParents.untrackedFilesHash,
+                    workspacePath,
+                    gitPath
+                );
+                files.push(...untrackedFiles);
+            }
+
+            log(`Found ${files.length} changed files in stash ${stashHash.substring(0, 7)}`);
+            return files;
+        } catch (error) {
+            log(`Error getting stash files: ${error}`);
+            return [];
         }
     }
 

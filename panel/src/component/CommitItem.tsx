@@ -53,6 +53,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   const fileTree = useGitCommitFiles({
     commitHash: commit.hash,
     isRootCommit: commit.parents.length === 0,
+    isStash: commit.isStash ?? false,
     enabled: isExpanded && !commit.isUncommitted,
   })
 
