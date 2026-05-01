@@ -44,7 +44,6 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const branches = useMemo(() => {
     return allBranches.filter(branch => {
       if (branch.remote && !settings.showRemotes) return false
-
       if (branch.remote && branch.remoteName && settings.hiddenRemotes.includes(branch.remoteName)) return false
 
       return true
@@ -106,7 +105,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
     previousBranchesNamesRef.current = allBranches.map(b => b.name)
 
-    const newBranches = branches.filter(branch => !previous.includes(branch.name))
+    const newBranches = branches.filter(branch => !previous.includes(branch.name) && !branch.remote)
 
     const validCleanNames = new Set(branches.map(b => b.cleanName))
     const selectedWithoutDeletedBranches = selectedBranches.filter(name => validCleanNames.has(name))
