@@ -1419,9 +1419,8 @@ export const useConfig = () => {
     return () => window.removeEventListener('message', handler)
   }, [queryClient])
 
-  console.log('SETTINGS', query.data)
   return {
-    data: query.data ?? defaultConfigState,
+    data: query.data,
     isLoading: query.isLoading,
   }
 }
