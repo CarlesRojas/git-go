@@ -37,6 +37,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.statusBar.enabled` Extension Setting.
+     */
+    get statusBarEnabled(): boolean {
+        return !!this.config.get('statusBar.enabled', true);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

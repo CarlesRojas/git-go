@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DiffDocProvider, encodeDiffDocUri } from './diffDocProvider';
 import { GitService } from './gitService';
+import { StatusBarItem } from './statusBarItem';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -12,6 +13,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     const outputChannel = vscode.window.createOutputChannel('Git Go');
     context.subscriptions.push(outputChannel);
+
+    // Create status bar item
+    const statusBarItem = new StatusBarItem((message: string) => {
+        const timestamp = new Date().toISOString();
+        outputChannel.appendLine(`[${timestamp}] ${message}`);
+    });
+    context.subscriptions.push({ dispose: () => statusBarItem.dispose() });
 
     // Register our custom diff document provider
     const diffDocProvider = new DiffDocProvider();
@@ -32,6 +40,12 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (event.affectsConfiguration('git-go')) {
                 log('Configuration changed, updating webview...');
+
+                // Refresh status bar item if its setting changed
+                if (event.affectsConfiguration('git-go.statusBar.enabled')) {
+                    statusBarItem.refresh();
+                }
+
                 // Send updated config to webview if it's open
                 if (currentPanel) {
                     const config = getConfig();
@@ -1038,17 +1052,12 @@ export function activate(context: vscode.ExtensionContext) {
             const gitService = GitService.getInstance();
             const isGitRepo = await gitService.isGitRepository();
 
+            // Update status bar item with git repository status
+            statusBarItem.setIsGitRepo(isGitRepo);
+
             if (isGitRepo) {
                 log('Auto-opening Git Go as workspace is a git repository and auto-open is enabled');
                 await vscode.commands.executeCommand('git-go.openGitGraph');
-
-                const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-                statusBarItem.text = 'Git Go';
-                statusBarItem.command = 'git-go.openGitGraph';
-                statusBarItem.tooltip = 'Open Git Go Graph';
-                statusBarItem.show();
-                context.subscriptions.push(statusBarItem);
-                log('Status bar item created for git repository');
             }
             return true; // Signal success/completion
         } catch (error) {
