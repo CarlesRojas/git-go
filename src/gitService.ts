@@ -1653,6 +1653,8 @@ export class GitService {
                     workspacePath
                 );
             }
+
+            await this.spawnGit([gitExecutable.path, 'fetch', remote.name], workspacePath);
         } catch (error) {
             throw new Error(`Failed to add remote: ${error}`);
         }
