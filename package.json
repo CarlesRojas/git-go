@@ -48,9 +48,19 @@
         "commands": [
             {
                 "command": "git-go.openGitGraph",
-                "title": "Git Go - Open Graph"
+                "title": "Open Git Go Graph",
+                "icon": "$(git-branch)"
             }
         ],
+        "menus": {
+            "scm/title": [
+                {
+                    "command": "git-go.openGitGraph",
+                    "when": "scmProvider == git",
+                    "group": "navigation"
+                }
+            ]
+        },
         "configuration": {
             "type": "object",
             "title": "Git Go",
