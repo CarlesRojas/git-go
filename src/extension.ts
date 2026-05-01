@@ -1043,7 +1043,7 @@ export function activate(context: vscode.ExtensionContext) {
                 await vscode.commands.executeCommand('git-go.openGitGraph');
 
                 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-                statusBarItem.text = '$(git-branch) Git Go';
+                statusBarItem.text = 'Git Go';
                 statusBarItem.command = 'git-go.openGitGraph';
                 statusBarItem.tooltip = 'Open Git Go';
                 statusBarItem.show();
