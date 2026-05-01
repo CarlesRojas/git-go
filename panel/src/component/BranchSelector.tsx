@@ -13,6 +13,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from '@/component/ui/Combobox'
+import { useSettings } from '@/context/SettingsContext'
 import { useGitBranches, useRepoState } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
@@ -37,11 +38,8 @@ const SELECTED_LIMIT = 16
 
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: branches = [], ...branchesQuery } = useGitBranches()
-  const {
-    data: { selectedBranches: defaultSelectedBranches },
-    isLoading: isLoadingRepoState,
-    setRepoState,
-  } = useRepoState()
+  const { setRepoState } = useRepoState()
+  const { settings } = useSettings()
 
   const [inputValue, setInputValue] = useState('')
 
@@ -64,19 +62,18 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   }, [branches])
 
   useEffect(() => {
-    if (isLoadingRepoState || !defaultBranchesSet.current) return
+    if (!defaultBranchesSet.current) return
     setRepoState({ selectedBranches })
     onBranchesChange(branches.filter(b => selectedBranches.includes(b.cleanName)))
-  }, [isLoadingRepoState, selectedBranches, setRepoState])
+  }, [selectedBranches, setRepoState])
 
   useEffect(() => {
-    if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current || !!isLoadingRepoState)
-      return
+    if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current) return
 
     defaultBranchesSet.current = true
 
-    if (defaultSelectedBranches && Array.isArray(defaultSelectedBranches) && defaultSelectedBranches.length > 0) {
-      const targetNames = new Set(defaultSelectedBranches)
+    if (settings.selectedBranches.length > 0) {
+      const targetNames = new Set(settings.selectedBranches)
       const branchesToSelect = branches.filter(b => targetNames.has(b.cleanName))
 
       if (branchesToSelect.length > 0) {
@@ -86,7 +83,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
 
     selectLocalBranches()
-  }, [branches, selectedBranches, defaultSelectedBranches, isLoadingRepoState, selectLocalBranches])
+  }, [branches, selectedBranches, settings.selectedBranches, selectLocalBranches])
 
   const previousBranchesNamesRef = useRef<string[] | null>(null)
   useEffect(() => {
@@ -156,7 +153,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
   }, [selectedBranches])
 
-  if (branchesQuery.isLoading || isLoadingRepoState) {
+  if (branchesQuery.isLoading) {
     return (
       <div
         className={cn(

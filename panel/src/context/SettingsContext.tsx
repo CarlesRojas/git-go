@@ -23,8 +23,6 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
   const { data: configData, isLoading: isConfigLoading } = useConfig()
   const { data: repoData, isLoading: isRepoLoading } = useRepoState()
 
-  console.log(configData, repoData)
-
   useEffect(() => {
     if (!configData) return
 
