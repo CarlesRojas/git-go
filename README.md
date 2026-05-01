@@ -8,7 +8,7 @@
 
 _Transform your Git workflow with an intuitive, feature-rich visual interface_
 
-<img src="git-go.gif" alt="Git Go" style="max-width: 600px; width: 100%;">
+![Git Go Demo](https://github.com/CarlesRojas/git-go/raw/main/git-go.gif)
 
 ## ✨ Features
 
