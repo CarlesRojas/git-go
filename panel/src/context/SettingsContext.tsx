@@ -1,5 +1,5 @@
 import { useConfig } from '@/hook/useGitQueries'
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
 interface ConfigState {
   rounded: boolean
@@ -26,7 +26,15 @@ interface SettingsProviderProps {
 export const SettingsProvider = ({ children }: SettingsProviderProps) => {
   const { data, isLoading } = useConfig()
 
-  // Only render children when we have received a response (not loading)
+  useEffect(() => {
+    if (!data) return
+
+    const htmlElement = document.documentElement
+
+    if (data.rounded) htmlElement.removeAttribute('data-theme-sharp')
+    else htmlElement.setAttribute('data-theme-sharp', '')
+  }, [data, data?.rounded])
+
   if (isLoading || !data) {
     return null
   }

@@ -78,7 +78,7 @@
   --radius-main-outer: 0.6rem;
 }
 
-[data-theme='round'] {
+[data-theme-sharp] {
   --spacing-main: 0px;
   --spacing-radius: 0px;
 
