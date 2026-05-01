@@ -76,7 +76,7 @@ export const RepoSettings: FC = () => {
       setRepoState({ showTags: checked })
       showToast({
         text: checked ? 'Tags are now visible' : 'Tags are now hidden',
-        type: 'success',
+        type: 'info',
         icon: faTag,
       })
     } catch (error) {
@@ -84,6 +84,23 @@ export const RepoSettings: FC = () => {
         text: 'Failed to toggle tags visibility',
         type: 'error',
         icon: faTag,
+      })
+    }
+  }
+
+  const handleToggleRemotes = async (checked: boolean) => {
+    try {
+      setRepoState({ showRemotes: checked })
+      showToast({
+        text: checked ? 'Remote branches are now visible' : 'Remote branches are now hidden',
+        type: 'info',
+        icon: faCodeBranch,
+      })
+    } catch (error) {
+      showToast({
+        text: 'Failed to toggle remote branches visibility',
+        type: 'error',
+        icon: faCodeBranch,
       })
     }
   }
@@ -126,7 +143,7 @@ export const RepoSettings: FC = () => {
           </Button>
         </SheetTrigger>
 
-        <SheetContent side="right" className="w-80">
+        <SheetContent side="right">
           <SheetHeader>
             <SheetTitle className="text-vsc-list-highlight-fg flex items-center gap-2 font-bold">
               <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
@@ -135,6 +152,14 @@ export const RepoSettings: FC = () => {
           </SheetHeader>
 
           <div className="flex flex-col gap-3 p-3">
+            <div className="flex items-center">
+              <Checkbox id="showRemotes" checked={settings.showRemotes} onCheckedChange={handleToggleRemotes} />
+
+              <Label htmlFor="showRemotes" className="cursor-pointer pl-2">
+                Show Remote Branches
+              </Label>
+            </div>
+
             <div className="flex items-center">
               <Checkbox id="showStashes" checked={settings.showStashes} onCheckedChange={handleToggleStashes} />
 

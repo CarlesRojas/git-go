@@ -81,7 +81,7 @@ function SheetContent({
             // Colors & Background
             'bg-vsc-editor-bg/80 bg-clip-padding backdrop-blur-md',
             // Typography
-            'text-vsc-editor-fg text-sm',
+            'text-vsc-editor-fg',
             // Borders
             'border-vsc-editor-fg/15 border',
             // Animations & Transitions

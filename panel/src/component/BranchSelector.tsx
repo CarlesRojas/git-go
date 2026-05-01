@@ -42,10 +42,14 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const { settings } = useSettings()
 
   const branches = useMemo(() => {
-    return allBranches.filter(
-      branch => !branch.remote || !branch.remoteName || !settings.hiddenRemotes.includes(branch.remoteName),
-    )
-  }, [allBranches, settings.hiddenRemotes])
+    return allBranches.filter(branch => {
+      if (branch.remote && !settings.showRemotes) return false
+
+      if (branch.remote && branch.remoteName && settings.hiddenRemotes.includes(branch.remoteName)) return false
+
+      return true
+    })
+  }, [allBranches, settings.hiddenRemotes, settings.showRemotes])
 
   const [inputValue, setInputValue] = useState('')
 

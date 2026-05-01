@@ -27,6 +27,7 @@ export interface RepoState {
   selectedBranches: string[]
   showStashes: boolean
   showTags: boolean
+  showRemotes: boolean
   hiddenRemotes: string[]
 }
 
@@ -34,6 +35,7 @@ const defaultRepoState: RepoState = {
   selectedBranches: [],
   showStashes: true,
   showTags: true,
+  showRemotes: true,
   hiddenRemotes: [],
 }
 
@@ -1355,7 +1357,8 @@ export const useRepoState = () => {
         const handler = (event: MessageEvent) => {
           if (event.data.type === 'repoStateLoaded' && event.data.key === 'repoState') {
             window.removeEventListener('message', handler)
-            resolve(event.data.value ?? null)
+            const loadedState = event.data.value ? { ...defaultRepoState, ...event.data.value } : defaultRepoState
+            resolve(loadedState)
           }
         }
 
