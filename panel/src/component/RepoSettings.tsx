@@ -12,18 +12,19 @@ import {
 } from '@/component/ui/Sheet'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
+import { useAddRemoteDialog } from '@/hook/dialog/useAddRemoteDialog'
 import { useOverrideGlobalGitUserDialog } from '@/hook/dialog/useOverrideGlobalGitUserDialog'
-import { useRemoteConfigDialog } from '@/hook/dialog/useRemoteConfigDialog'
 import { useRemoveLocalGitUserDialog } from '@/hook/dialog/useRemoveLocalGitUserDialog'
-import { useGitUserConfig, useRepoName, useRepoState } from '@/hook/useGitQueries'
+import { useRemoveRemoteDialog } from '@/hook/dialog/useRemoveRemoteDialog'
+import { useGitRemotes, useGitUserConfig, useRepoName, useRepoState } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
 import {
   faCheckCircle,
+  faCircleDot,
   faCircleNotch,
   faCodeBranch,
   faCog,
   faInbox,
-  faNetworkWired,
   faTag,
   faTrash,
   faUser,
@@ -38,10 +39,12 @@ export const RepoSettings: FC = () => {
   const { setRepoState } = useRepoState()
   const { showToast } = useToast()
   const { data: gitUserConfig } = useGitUserConfig()
+  const { data: remotes = [], isLoading: isLoadingRemotes } = useGitRemotes()
 
   const overrideGlobalGitUserDialog = useOverrideGlobalGitUserDialog()
   const removeLocalGitUserDialog = useRemoveLocalGitUserDialog()
-  const remoteConfigDialog = useRemoteConfigDialog()
+  const addRemoteDialog = useAddRemoteDialog()
+  const removeRemoteDialog = useRemoveRemoteDialog()
 
   const [, copy] = useCopyToClipboard()
   const copyText = (text: string, label: string) => {
@@ -58,7 +61,6 @@ export const RepoSettings: FC = () => {
         icon: faInbox,
       })
     } catch (error) {
-      console.error('Failed to toggle stashes visibility:', error)
       showToast({
         text: 'Failed to toggle stashes visibility',
         type: 'error',
@@ -76,7 +78,6 @@ export const RepoSettings: FC = () => {
         icon: faTag,
       })
     } catch (error) {
-      console.error('Failed to toggle tags visibility:', error)
       showToast({
         text: 'Failed to toggle tags visibility',
         type: 'error',
@@ -112,7 +113,7 @@ export const RepoSettings: FC = () => {
             <div className="flex items-center">
               <Checkbox id="showStashes" checked={settings.showStashes} onCheckedChange={handleToggleStashes} />
 
-              <Label htmlFor="showStashes" className="cursor-pointer pl-2 text-sm">
+              <Label htmlFor="showStashes" className="cursor-pointer pl-2">
                 Show Stashes
               </Label>
             </div>
@@ -120,7 +121,7 @@ export const RepoSettings: FC = () => {
             <div className="flex items-center">
               <Checkbox id="showTags" checked={settings.showTags} onCheckedChange={handleToggleTags} />
 
-              <Label htmlFor="showTags" className="cursor-pointer pl-2 text-sm">
+              <Label htmlFor="showTags" className="cursor-pointer pl-2">
                 Show Tags
               </Label>
             </div>
@@ -193,10 +194,50 @@ export const RepoSettings: FC = () => {
 
             <SheetSeparator />
 
-            <Button variant="secondary" className="w-fit" onClick={() => remoteConfigDialog.openDialog()}>
-              <FontAwesomeIcon icon={faNetworkWired} className="size-3" />
-              Remote Configuration
-            </Button>
+            <div className="flex flex-col gap-2">
+              <SheetLabel>Git Remotes</SheetLabel>
+
+              {isLoadingRemotes && (
+                <div className="flex items-center justify-center py-2">
+                  <FontAwesomeIcon icon={faCircleNotch} className="text-muted-foreground size-4 animate-spin" />
+                </div>
+              )}
+
+              {remotes.map(remote => (
+                <div key={remote.name} className="flex items-center justify-between">
+                  <div className="flec grow flex-col">
+                    <div className="font-semibold">{remote.name}</div>
+
+                    <div
+                      className="cursor-pointer truncate text-[0.7rem] opacity-50 hover:opacity-80"
+                      onClick={() => copyText(remote.fetchUrl, 'Fetch URL')}
+                      title={remote.fetchUrl}
+                    >
+                      Fetch: {remote.fetchUrl}
+                    </div>
+
+                    <div
+                      className="cursor-pointer truncate text-[0.7rem] opacity-50 hover:opacity-80"
+                      onClick={() => copyText(remote.pushUrl, 'Push URL')}
+                      title={remote.pushUrl}
+                    >
+                      Push: {remote.pushUrl}
+                    </div>
+                  </div>
+
+                  <Button variant="destructive" size="icon" onClick={() => removeRemoteDialog.openDialog(remote.name)}>
+                    <FontAwesomeIcon icon={faTrash} className="size-3" />
+                  </Button>
+                </div>
+              ))}
+
+              {remotes.length === 0 && <div className="py-2">No remotes configured</div>}
+
+              <Button variant="secondary" className="w-fit" onClick={() => addRemoteDialog.openDialog()}>
+                <FontAwesomeIcon icon={faCircleDot} className="size-3" />
+                Add Remote
+              </Button>
+            </div>
 
             <SheetSeparator />
 
@@ -210,7 +251,8 @@ export const RepoSettings: FC = () => {
 
       {overrideGlobalGitUserDialog.DialogComponent}
       {removeLocalGitUserDialog.DialogComponent}
-      {remoteConfigDialog.DialogComponent}
+      {addRemoteDialog.DialogComponent}
+      {removeRemoteDialog.DialogComponent}
     </>
   )
 }

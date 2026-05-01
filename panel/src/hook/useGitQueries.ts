@@ -55,8 +55,7 @@ export const queryKeys = {
   currentBranch: ['git', 'current-branch'] as const,
   remotes: ['git', 'remotes'] as const,
   repoName: ['git', 'repo-name'] as const,
-  gitUserConfig: ['git-user-config'] as const,
-  gitRemotes: ['git-remotes'] as const,
+  gitUserConfig: ['git', 'user-config'] as const,
   tagDetails: (tagName: string) => ['git', 'tag-details', tagName] as const,
   state: (key: string) => ['state', key] as const,
 }
@@ -1538,40 +1537,6 @@ export const useSetGitUserConfig = () => {
   })
 }
 
-// Hook to get git remotes
-export const useGetGitRemotes = () => {
-  return useQuery({
-    queryKey: queryKeys.gitRemotes,
-    queryFn: (): Promise<{ name: string; fetchUrl: string; pushUrl: string }[]> => {
-      return new Promise((resolve, reject) => {
-        const vscode = getVSCodeApi()
-
-        const messageHandler = (event: MessageEvent) => {
-          const message = event.data
-
-          if (message.type === 'gitRemotes') {
-            window.removeEventListener('message', messageHandler)
-            resolve(message.remotes)
-          } else if (message.type === 'gitError') {
-            window.removeEventListener('message', messageHandler)
-            reject(new Error(message.error))
-          }
-        }
-
-        window.addEventListener('message', messageHandler)
-        vscode.postMessage({ type: 'getGitRemotes' })
-
-        setTimeout(() => {
-          window.removeEventListener('message', messageHandler)
-          reject(new Error('Timeout: Failed to get git remotes'))
-        }, 10_000)
-      })
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  })
-}
-
 // Hook to add git remote
 export const useAddGitRemote = () => {
   const queryClient = useQueryClient()
@@ -1606,7 +1571,7 @@ export const useAddGitRemote = () => {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.gitRemotes })
+      refreshGitData(queryClient)
     },
   })
 }
@@ -1645,7 +1610,7 @@ export const useRemoveGitRemote = () => {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.gitRemotes })
+      refreshGitData(queryClient)
     },
   })
 }
