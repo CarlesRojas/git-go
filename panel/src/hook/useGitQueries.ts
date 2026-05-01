@@ -41,6 +41,7 @@ const defaultRepoState: RepoState = {
 
 export interface ConfigState {
   rounded: boolean
+  autoOpenEnabled: boolean
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
   branchPushSetUpstream: boolean
@@ -57,6 +58,7 @@ export interface ConfigState {
 
 const defaultConfigState: ConfigState = {
   rounded: true,
+  autoOpenEnabled: false,
   branchCreateCheckout: true,
   branchDeleteForce: false,
   branchPushSetUpstream: true,

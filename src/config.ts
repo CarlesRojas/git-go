@@ -23,6 +23,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.autoOpen.enabled` Extension Setting.
+     */
+    get autoOpenEnabled(): boolean {
+        return !!this.config.get('autoOpen.enabled', false);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

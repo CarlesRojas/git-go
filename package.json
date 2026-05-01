@@ -55,10 +55,10 @@
             "type": "object",
             "title": "Git Go",
             "properties": {
-                "git-go.graph.rounded": {
+                "git-go.autoOpen.enabled": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Use rounded corners for all commit graph elements."
+                    "default": false,
+                    "description": "Automatically open Git Go when VS Code opens in a git repository."
                 },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
@@ -119,6 +119,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Default value for 'Include untracked files' when creating stashes."
+                },
+                "git-go.graph.rounded": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Use rounded corners for all commit graph elements."
                 }
             }
         }
