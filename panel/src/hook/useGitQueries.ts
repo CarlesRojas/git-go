@@ -23,15 +23,19 @@ export const getVSCodeApi = (): VSCodeApi => {
   return vscodeApi
 }
 
-interface RepoState {
+export interface RepoState {
   selectedBranches: string[]
+  showStashes: boolean
+  showTags: boolean
 }
 
 const defaultRepoState: RepoState = {
   selectedBranches: [],
+  showStashes: true,
+  showTags: true,
 }
 
-interface ConfigState {
+export interface ConfigState {
   rounded: boolean
 }
 
@@ -50,6 +54,10 @@ export const queryKeys = {
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
   remotes: ['git', 'remotes'] as const,
+  repoName: ['git', 'repo-name'] as const,
+  gitUserConfig: ['git-user-config'] as const,
+  gitRemotes: ['git-remotes'] as const,
+  tagDetails: (tagName: string) => ['git', 'tag-details', tagName] as const,
   state: (key: string) => ['state', key] as const,
 }
 
@@ -1167,7 +1175,7 @@ export const useFetchIntoLocalBranch = () => {
 
 export const useGetTagDetails = (tagName: string, enabled: boolean = true) => {
   return useQuery({
-    queryKey: ['git', 'tag-details', tagName],
+    queryKey: queryKeys.tagDetails(tagName),
     queryFn: (): Promise<{
       hash: string
       taggerName: string
@@ -1423,4 +1431,221 @@ export const useConfig = () => {
     data: query.data,
     isLoading: query.isLoading,
   }
+}
+
+export const useRepoName = () => {
+  return useQuery({
+    queryKey: queryKeys.repoName,
+    queryFn: (): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'repoName') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.name)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'getRepoName' })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to get repository name'))
+        }, 10_000)
+      })
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
+export const useGitUserConfig = () => {
+  return useQuery({
+    queryKey: queryKeys.gitUserConfig,
+    queryFn: (): Promise<{ userName: string; userEmail: string; isLocal: boolean }> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitUserConfig') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.config)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'getGitUserConfig' })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to get git user config'))
+        }, 10_000)
+      })
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  })
+}
+
+// Hook to update git user configuration
+export const useSetGitUserConfig = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (config: { userName?: string; userEmail?: string; isLocal: boolean }) => {
+      return new Promise<void>((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitUserConfigSet') {
+            window.removeEventListener('message', messageHandler)
+            resolve()
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'setGitUserConfig',
+          config,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to set git user config'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.gitUserConfig })
+    },
+  })
+}
+
+// Hook to get git remotes
+export const useGetGitRemotes = () => {
+  return useQuery({
+    queryKey: queryKeys.gitRemotes,
+    queryFn: (): Promise<{ name: string; fetchUrl: string; pushUrl: string }[]> => {
+      return new Promise((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitRemotes') {
+            window.removeEventListener('message', messageHandler)
+            resolve(message.remotes)
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'getGitRemotes' })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to get git remotes'))
+        }, 10_000)
+      })
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Hook to add git remote
+export const useAddGitRemote = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (remote: { name: string; fetchUrl: string; pushUrl: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitRemoteAdded') {
+            window.removeEventListener('message', messageHandler)
+            resolve()
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'addGitRemote',
+          remote,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to add git remote'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.gitRemotes })
+    },
+  })
+}
+
+// Hook to remove git remote
+export const useRemoveGitRemote = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (remoteName: string) => {
+      return new Promise<void>((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          const message = event.data
+
+          if (message.type === 'gitRemoteRemoved') {
+            window.removeEventListener('message', messageHandler)
+            resolve()
+          } else if (message.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            reject(new Error(message.error))
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({
+          type: 'removeGitRemote',
+          remoteName,
+        })
+
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          reject(new Error('Timeout: Failed to remove git remote'))
+        }, 10_000)
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.gitRemotes })
+    },
+  })
 }

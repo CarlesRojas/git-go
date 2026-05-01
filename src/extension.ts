@@ -859,6 +859,102 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
+                        case 'getRepoName':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const repoName = await gitService.getRepoName();
+                                log('Successfully retrieved repository name');
+                                currentPanel?.webview.postMessage({
+                                    type: 'repoName',
+                                    name: repoName
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting repository name: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'getGitUserConfig':
+                            try {
+                                const gitService = GitService.getInstance();
+                                const userConfig = await gitService.getGitUserConfig();
+                                log('Successfully retrieved git user configuration');
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitUserConfig',
+                                    config: userConfig
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting git user config: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'setGitUserConfig':
+                            try {
+                                const gitService = GitService.getInstance();
+                                await gitService.setGitUserConfig(message.config);
+                                log('Successfully set git user configuration');
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitUserConfigSet'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error setting git user config: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'addGitRemote':
+                            try {
+                                const gitService = GitService.getInstance();
+                                await gitService.addGitRemote(message.remote);
+                                log('Successfully added git remote');
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitRemoteAdded'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error adding git remote: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'removeGitRemote':
+                            try {
+                                const gitService = GitService.getInstance();
+                                await gitService.removeGitRemote(message.remoteName);
+                                log('Successfully removed git remote');
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitRemoteRemoved'
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error removing git remote: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
+                            break;
+                        case 'openSettings':
+                            try {
+                                await vscode.commands.executeCommand('workbench.action.openSettings', message.query);
+                                log('Successfully opened VS Code settings');
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error opening VS Code settings: ${errorMessage}`);
+                            }
+                            break;
                     }
                 },
                 undefined,

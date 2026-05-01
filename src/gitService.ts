@@ -318,8 +318,8 @@ export class GitService {
             for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
                 const parts = line.split('\t');
                 if (parts.length >= 3) {
-                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0]) || 0;
-                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]) || 0;
+                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0] ?? '0') || 0;
+                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1] ?? '0') || 0;
                     const path = parts.slice(2).join('\t');
                     statsMap.set(path, { additions, deletions });
                 }
@@ -737,8 +737,8 @@ export class GitService {
             for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
                 const parts = line.split('\t');
                 if (parts.length >= 3) {
-                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0]) || 0;
-                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]) || 0;
+                    const additions = parts[0] === '-' ? 0 : parseInt(parts[0] ?? '0') || 0;
+                    const deletions = parts[1] === '-' ? 0 : parseInt(parts[1] ?? '0') || 0;
                     const path = parts.slice(2).join('\t');
                     statsMap.set(path, { additions, deletions });
                 }
@@ -1535,5 +1535,140 @@ export class GitService {
 
     public clearCache(): void {
         this.cachedGitExecutable = null;
+    }
+
+    // Repository operations
+    public async getRepoName(): Promise<string> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            throw new Error('No workspace folder found');
+        }
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+
+        // Use the directory name as repository name
+        const path = require('path');
+        const dirName = path.basename(workspacePath);
+        return dirName || 'Unknown Repository';
+    }
+
+    // Git user configuration operations
+    public async getGitUserConfig(): Promise<{ userName: string; userEmail: string; isLocal: boolean }> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        let userName = '';
+        let userEmail = '';
+        let isLocal = false;
+
+        try {
+            // Try to get local config first
+            try {
+                userName = (
+                    await this.spawnGit([gitExecutable.path, 'config', '--local', 'user.name'], workspacePath)
+                ).trim();
+                userEmail = (
+                    await this.spawnGit([gitExecutable.path, 'config', '--local', 'user.email'], workspacePath)
+                ).trim();
+                isLocal = true;
+            } catch {
+                // If local config doesn't exist, get global config
+                try {
+                    userName = (
+                        await this.spawnGit([gitExecutable.path, 'config', '--global', 'user.name'], workspacePath)
+                    ).trim();
+                    userEmail = (
+                        await this.spawnGit([gitExecutable.path, 'config', '--global', 'user.email'], workspacePath)
+                    ).trim();
+                    isLocal = false;
+                } catch {
+                    // Neither local nor global config exists
+                    userName = '';
+                    userEmail = '';
+                    isLocal = false;
+                }
+            }
+        } catch (error) {
+            throw new Error(`Failed to get git user config: ${error}`);
+        }
+
+        return { userName, userEmail, isLocal };
+    }
+
+    public async setGitUserConfig(config: { userName?: string; userEmail?: string; isLocal: boolean }): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        if (!config.isLocal) {
+            // Reset to use global settings by removing local config
+            try {
+                await this.spawnGit([gitExecutable.path, 'config', '--local', '--unset', 'user.name'], workspacePath);
+            } catch {
+                // Config might not exist, ignore error
+            }
+            try {
+                await this.spawnGit([gitExecutable.path, 'config', '--local', '--unset', 'user.email'], workspacePath);
+            } catch {
+                // Config might not exist, ignore error
+            }
+        } else {
+            // Set local config
+            if (config.userName !== undefined) {
+                await this.spawnGit(
+                    [gitExecutable.path, 'config', '--local', 'user.name', config.userName],
+                    workspacePath
+                );
+            }
+            if (config.userEmail !== undefined) {
+                await this.spawnGit(
+                    [gitExecutable.path, 'config', '--local', 'user.email', config.userEmail],
+                    workspacePath
+                );
+            }
+        }
+    }
+
+    // Additional git remotes operations
+    public async addGitRemote(remote: { name: string; fetchUrl: string; pushUrl: string }): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            // Add the remote with fetch URL
+            await this.spawnGit([gitExecutable.path, 'remote', 'add', remote.name, remote.fetchUrl], workspacePath);
+
+            // Set push URL if different from fetch URL
+            if (remote.pushUrl && remote.pushUrl !== remote.fetchUrl) {
+                await this.spawnGit(
+                    [gitExecutable.path, 'remote', 'set-url', '--push', remote.name, remote.pushUrl],
+                    workspacePath
+                );
+            }
+        } catch (error) {
+            throw new Error(`Failed to add remote: ${error}`);
+        }
+    }
+
+    public async removeGitRemote(remoteName: string): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            await this.spawnGit([gitExecutable.path, 'remote', 'remove', remoteName], workspacePath);
+        } catch (error) {
+            throw new Error(`Failed to remove remote: ${error}`);
+        }
     }
 }

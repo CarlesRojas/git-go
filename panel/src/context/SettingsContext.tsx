@@ -1,12 +1,8 @@
-import { useConfig } from '@/hook/useGitQueries'
+import { ConfigState, RepoState, useConfig, useRepoState } from '@/hook/useGitQueries'
 import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
-interface ConfigState {
-  rounded: boolean
-}
-
 interface SettingsContextType {
-  settings: ConfigState
+  settings: RepoState & ConfigState
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
@@ -24,20 +20,21 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider = ({ children }: SettingsProviderProps) => {
-  const { data, isLoading } = useConfig()
-
+  const { data: configData, isLoading: isConfigLoading } = useConfig()
+  const { data: repoData, isLoading: isRepoLoading } = useRepoState()
+  // TODO use the selected default branches from here
   useEffect(() => {
-    if (!data) return
+    if (!configData) return
 
     const htmlElement = document.documentElement
 
-    if (data.rounded) htmlElement.removeAttribute('data-theme-sharp')
+    if (configData.rounded) htmlElement.removeAttribute('data-theme-sharp')
     else htmlElement.setAttribute('data-theme-sharp', '')
-  }, [data, data?.rounded])
+  }, [configData, configData?.rounded])
 
-  if (isLoading || !data) {
-    return null
-  }
+  if (isConfigLoading || !configData || isRepoLoading || !repoData) return null
 
-  return <SettingsContext.Provider value={{ settings: data }}>{children}</SettingsContext.Provider>
+  const combinedSettings = { ...configData, ...repoData }
+
+  return <SettingsContext.Provider value={{ settings: combinedSettings }}>{children}</SettingsContext.Provider>
 }
