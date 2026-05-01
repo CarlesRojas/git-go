@@ -1,13 +1,15 @@
 ## TODO
 
-### Settings
+### Repo Settings
 
-- [ ] Settings: Show stashes?
-- [ ] Settings: Show tags?
-- [ ] Settings: Git User Settings
-- [ ] Settings: Remote Configuration
-- [ ] Settings: Show stashes?
-- [ ] Settings: Show stashes?
+The repo settings should be a button to the right of the fetch button in the toolbar, that on click should open a https://ui.shadcn.com/docs/components/radix/dropdown-menu dropdown with:
+
+- RepoSettings: Change repository name (dialog with an input with the current repo name)
+- RepoSettings: Show stashes
+- RepoSettings: Show tags
+- RepoSettings: Git User Settings: show user name and email, and a button that allows changing the user name an email for this repository only (dialog with inputs for name and email with default as the current local or global if no local with a button to go back to using the global settings)
+- RepoSettings: Remote Configuration: show the repotes configured now (name, fetch and push urls), with options to remove a remote (open confirmation dialog), add a remote (open dialog with name, fetch and push inputs) and hide/show a remote.
+- Button to open the Git Go extension settings in the vscode settings page
 
 ### Others
 
