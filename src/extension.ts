@@ -1027,6 +1027,13 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        // Check if Git extension is activated
+        const gitExtension = vscode.extensions.getExtension('vscode.git');
+        if (!gitExtension?.isActive) {
+            log('Git extension not yet activated, will retry...');
+            return false; // Signal that we should retry
+        }
+
         try {
             const gitService = GitService.getInstance();
             const isGitRepo = await gitService.isGitRepository();
@@ -1034,18 +1041,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (isGitRepo) {
                 log('Auto-opening Git Go as workspace is a git repository and auto-open is enabled');
                 await vscode.commands.executeCommand('git-go.openGitGraph');
-            }
-        } catch (error) {
-            log(`Error during auto-open check: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    };
 
-    const createStatusBarIfGitRepo = async () => {
-        try {
-            const gitService = GitService.getInstance();
-            const isGitRepo = await gitService.isGitRepository();
-
-            if (isGitRepo) {
                 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
                 statusBarItem.text = '$(git-branch) Git Go';
                 statusBarItem.command = 'git-go.openGitGraph';
@@ -1054,17 +1050,30 @@ export function activate(context: vscode.ExtensionContext) {
                 context.subscriptions.push(statusBarItem);
                 log('Status bar item created for git repository');
             }
+            return true; // Signal success/completion
         } catch (error) {
-            log(
-                `Error checking git repository for status bar: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
+            log(`Error during auto-open check: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return true; // Don't retry on other errors
         }
     };
 
-    setTimeout(async () => {
-        await autoOpenGitGo();
-        createStatusBarIfGitRepo();
-    }, 100);
+    // Auto-open with retry logic for Git extension activation
+    let retryCount = 0;
+    const maxRetries = 100; // 5 seconds total (100 * 50ms)
+
+    const interval = setInterval(async () => {
+        const completed = await autoOpenGitGo();
+        if (completed) {
+            clearInterval(interval);
+            return;
+        }
+
+        retryCount++;
+        if (retryCount >= maxRetries) {
+            clearInterval(interval);
+            log('Auto-open retry limit reached, Git extension may not be available');
+        }
+    }, 50);
 
     log('Git Go extension activated successfully');
 }
