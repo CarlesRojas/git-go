@@ -4,7 +4,7 @@ import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
 import { useAddGitRemote } from '@/hook/useGitQueries'
-import { faCircleDot, faCircleNotch } from '@fortawesome/free-solid-svg-icons'
+import { faAdd, faCircleNotch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
@@ -31,14 +31,14 @@ export const useAddRemoteDialog = () => {
           onSuccess: () => {
             showToast({
               text: `Remote "${value.name}" added successfully`,
-              icon: faCircleDot,
+              icon: faAdd,
               type: 'success',
             })
           },
           onError: (error: any) => {
             showToast({
               text: error.message || 'Failed to add remote',
-              icon: faCircleDot,
+              icon: faAdd,
               type: 'error',
             })
           },
@@ -155,7 +155,7 @@ export const useAddRemoteDialog = () => {
                     <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
                   ) : (
                     <>
-                      <FontAwesomeIcon icon={faCircleDot} className="size-3" />
+                      <FontAwesomeIcon icon={faAdd} className="size-3" />
                       Add Remote
                     </>
                   )}
