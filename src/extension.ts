@@ -56,11 +56,13 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (currentPanel) return (currentPanel as vscode.WebviewPanel).reveal(columnToShowIn);
 
-            currentPanel = vscode.window.createWebviewPanel('gitGoGraph', 'Git Go Graph', vscode.ViewColumn.One, {
+            currentPanel = vscode.window.createWebviewPanel('gitGoGraph', 'Git Go', vscode.ViewColumn.One, {
                 enableScripts: true,
                 retainContextWhenHidden: true,
                 localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
             });
+
+            currentPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'webview-icon.svg');
 
             watchGitChanges(currentPanel, log);
 
@@ -982,7 +984,7 @@ export function activate(context: vscode.ExtensionContext) {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBarItem.text = '$(git-branch) Git Go';
     statusBarItem.command = 'git-go.openGitGraph';
-    statusBarItem.tooltip = 'Open Git Go Graph';
+    statusBarItem.tooltip = 'Open Git Go';
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
@@ -1004,7 +1006,7 @@ function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, style
 \t<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${standardiseCspSource(webview.cspSource)} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src data:; img-src data: https://secure.gravatar.com https://*.gravatar.com;">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="${styleUri}" rel="stylesheet">
-	<title>Git Go Graph</title>
+	<title>Git Go</title>
 </head>
 <body>
 	<div id="root"></div>
