@@ -19,8 +19,8 @@ import { useRemoveRemoteDialog } from '@/hook/dialog/useRemoveRemoteDialog'
 import { useGitRemotes, useGitUserConfig, useOpenSettings, useRepoName, useRepoState } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
 import {
+  faAdd,
   faCheckCircle,
-  faCircleDot,
   faCircleNotch,
   faCodeBranch,
   faCog,
@@ -299,7 +299,7 @@ export const RepoSettings: FC = () => {
               {remotes.length === 0 && <div className="py-2">No remotes configured</div>}
 
               <Button variant="secondary" className="w-fit" onClick={() => addRemoteDialog.openDialog()}>
-                <FontAwesomeIcon icon={faCircleDot} className="size-3" />
+                <FontAwesomeIcon icon={faAdd} className="size-3" />
                 Add Remote
               </Button>
             </div>
