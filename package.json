@@ -2,6 +2,10 @@
     "name": "git-go",
     "displayName": "Git Go",
     "publisher": "pinya",
+    "author": {
+        "name": "Carles Rojas",
+        "email": "carlesrojas@outlook.com"
+    },
     "description": "Visual representation of your Git repository, with actions to manage commits, branches, stashes, and tags.",
     "version": "1.0.0",
     "engines": {
@@ -23,12 +27,18 @@
         "branch",
         "stash",
         "tag",
+        "diff",
+        "action",
+        "visualise",
         "pinya"
     ],
     "icon": "icon.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/CarlesRojas/git-go"
+    },
+    "bugs": {
+        "url": "https://github.com/CarlesRojas/git-go/issues"
     },
     "activationEvents": [
         "*"

@@ -1,5 +1,7 @@
 ## TODO
 
+- [ ] Global setting for things like fast fordward or no commit
+
 ### Bug
 
 ### Maybe

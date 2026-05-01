@@ -75,11 +75,11 @@ function SheetContent({
             'rounded-main-outer overflow-y-auto',
             'data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto',
             'data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4',
-            'data-[side=right]:top-11 data-[side=right]:right-4 data-[side=right]:bottom-2 data-[side=right]:h-[calc(100%-3.25rem)] data-[side=right]:w-3/4',
+            'data-[side=right]:top-11 data-[side=right]:right-4 data-[side=right]:bottom-2 data-[side=right]:h-fit data-[side=right]:max-h-[calc(100%-3.25rem)] data-[side=right]:w-3/4',
             'data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto',
             'data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm',
             // Colors & Background
-            'bg-vsc-editor-bg/80 bg-clip-padding backdrop-blur-md',
+            'bg-vsc-editor-bg bg-clip-padding',
             // Typography
             'text-vsc-editor-fg',
             // Borders
