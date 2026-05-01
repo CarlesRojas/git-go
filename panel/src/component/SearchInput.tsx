@@ -30,6 +30,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         onChange={e => setLocalValue(e.target.value)}
         placeholder="Search commits..."
         className="w-56 pl-7"
+        dataType="search"
         onClear={handleClear}
       />
 

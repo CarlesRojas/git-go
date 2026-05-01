@@ -26,15 +26,16 @@ const inputVariants = cva([
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {
   onClear?: () => void
+  dataType?: 'normal' | 'search'
 }
 
-const Input = ({ className, type = 'text', onClear, ...props }: InputProps) => {
+const Input = ({ className, dataType = 'normal', type = 'text', onClear, ...props }: InputProps) => {
   const hasValue = props.value !== undefined ? String(props.value).length > 0 : false
 
   if (onClear) {
     return (
       <div className="relative w-full">
-        <input type={type} className={cn(inputVariants({ className }), 'pr-9')} {...props} />
+        <input type={type} data-type={dataType} className={cn(inputVariants({ className }), 'pr-9')} {...props} />
 
         {hasValue && (
           <Button
@@ -51,7 +52,7 @@ const Input = ({ className, type = 'text', onClear, ...props }: InputProps) => {
     )
   }
 
-  return <input type={type} className={cn(inputVariants({ className }))} {...props} />
+  return <input type={type} data-type={dataType} className={cn(inputVariants({ className }))} {...props} />
 }
 
 export { Input }

@@ -7,7 +7,7 @@ import { ToastProvider } from '@/context/ToastContext'
 import { cn } from '@/util/cn'
 import { GitBranch } from '@git/gitService'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { FC, useState } from 'react'
+import { FC, useRef, useState } from 'react'
 import { useEventListener } from 'usehooks-ts'
 
 // Create a client
@@ -23,12 +23,22 @@ const queryClient = new QueryClient({
 export const App: FC = () => {
   const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const documentRef = useRef<Document>(document)
 
   const onGitChange = (event: MessageEvent) => {
     if (event.data.type === 'gitChanged') queryClient.invalidateQueries({ queryKey: ['git'] })
   }
 
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'f') {
+      event.preventDefault()
+      const searchInput = document.querySelector<HTMLInputElement>('input[data-type="search"]')
+      searchInput?.focus()
+    }
+  }
+
   useEventListener('message', onGitChange)
+  useEventListener('keydown', handleKeyDown, documentRef)
 
   return (
     <QueryClientProvider client={queryClient}>

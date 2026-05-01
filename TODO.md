@@ -12,7 +12,6 @@
 ### Others
 
 - [ ] Better git errors
-- [ ] CMD + F to focus search
 
 ### Bug
 
