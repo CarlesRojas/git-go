@@ -1619,3 +1619,34 @@ export const useRemoveGitRemote = () => {
     },
   })
 }
+
+// Hook to open extension settings
+export const useOpenSettings = () => {
+  return useMutation({
+    mutationFn: async (query: string = '@ext:git-go') => {
+      return new Promise<void>((resolve, reject) => {
+        const vscode = getVSCodeApi()
+
+        const messageHandler = (event: MessageEvent) => {
+          if (event.data.type === 'settingsOpened' || event.data.type === 'gitError') {
+            window.removeEventListener('message', messageHandler)
+            if (event.data.type === 'gitError') {
+              reject(new Error(event.data.error || 'Failed to open settings'))
+            } else {
+              resolve()
+            }
+          }
+        }
+
+        window.addEventListener('message', messageHandler)
+        vscode.postMessage({ type: 'openSettings', query })
+
+        // Cleanup timeout to prevent memory leaks
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler)
+          resolve() // Resolve anyway as settings likely opened successfully
+        }, 5000)
+      })
+    },
+  })
+}

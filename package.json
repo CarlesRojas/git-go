@@ -1,14 +1,35 @@
 {
     "name": "git-go",
-    "displayName": "git-go",
-    "description": "A VS Code extension that adds a status bar button to open a React+Tailwind git graph webview.",
-    "version": "0.0.1",
+    "displayName": "Git Go",
+    "publisher": "pinya",
+    "description": "Visual representation of your Git repository, with actions to manage commits, branches, stashes, and tags.",
+    "version": "1.0.0",
     "engines": {
         "vscode": "^1.116.0"
+    },
+    "galleryBanner": {
+        "color": "#1b1f23",
+        "theme": "dark"
     },
     "categories": [
         "Other"
     ],
+    "keywords": [
+        "git",
+        "graph",
+        "github",
+        "push",
+        "commit",
+        "branch",
+        "stash",
+        "tag",
+        "pinya"
+    ],
+    "icon": "icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/CarlesRojas/git-go"
+    },
     "activationEvents": [
         "*"
     ],

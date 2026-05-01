@@ -16,7 +16,7 @@ import { useAddRemoteDialog } from '@/hook/dialog/useAddRemoteDialog'
 import { useOverrideGlobalGitUserDialog } from '@/hook/dialog/useOverrideGlobalGitUserDialog'
 import { useRemoveLocalGitUserDialog } from '@/hook/dialog/useRemoveLocalGitUserDialog'
 import { useRemoveRemoteDialog } from '@/hook/dialog/useRemoveRemoteDialog'
-import { useGitRemotes, useGitUserConfig, useRepoName, useRepoState } from '@/hook/useGitQueries'
+import { useGitRemotes, useGitUserConfig, useOpenSettings, useRepoName, useRepoState } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
 import {
   faCheckCircle,
@@ -47,6 +47,7 @@ export const RepoSettings: FC = () => {
   const removeLocalGitUserDialog = useRemoveLocalGitUserDialog()
   const addRemoteDialog = useAddRemoteDialog()
   const removeRemoteDialog = useRemoveRemoteDialog()
+  const openSettingsMutation = useOpenSettings()
 
   const [, copy] = useCopyToClipboard()
   const copyText = (text: string, label: string) => {
@@ -106,8 +107,15 @@ export const RepoSettings: FC = () => {
   }
 
   const handleOpenSettings = () => {
-    const vscode = window.acquireVsCodeApi()
-    vscode.postMessage({ type: 'openSettings', query: 'git-go' })
+    openSettingsMutation.mutate('@ext:pinya.git-go', {
+      onError: error => {
+        showToast({
+          text: `Failed to open settings: ${error.message}`,
+          type: 'error',
+          icon: faCog,
+        })
+      },
+    })
   }
 
   const handleToggleRemoteVisibility = async (remoteName: string) => {

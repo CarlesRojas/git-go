@@ -950,9 +950,14 @@ export function activate(context: vscode.ExtensionContext) {
                             try {
                                 await vscode.commands.executeCommand('workbench.action.openSettings', message.query);
                                 log('Successfully opened VS Code settings');
+                                currentPanel?.webview.postMessage({ type: 'settingsOpened' });
                             } catch (error) {
                                 const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
                                 log(`Error opening VS Code settings: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
                             }
                             break;
                     }
@@ -996,7 +1001,7 @@ function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, style
 		Use a content security policy to only allow loading styles from our extension directory,
 		and only allow scripts that have a specific nonce.
 	-->
-\t<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${standardiseCspSource(webview.cspSource)}; script-src 'nonce-${nonce}'; font-src data:; img-src data: https://secure.gravatar.com https://*.gravatar.com;">
+\t<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${standardiseCspSource(webview.cspSource)} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src data:; img-src data: https://secure.gravatar.com https://*.gravatar.com;">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="${styleUri}" rel="stylesheet">
 	<title>Git Go Graph</title>
