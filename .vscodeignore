@@ -6,3 +6,8 @@ vsc-extension-quickstart.md
 **/tsconfig.json
 **/*.map
 **/*.ts
+panel/node_modules/**
+panel/src/**
+panel/*.config.*
+panel/pnpm-lock.yaml
+panel/package.json
