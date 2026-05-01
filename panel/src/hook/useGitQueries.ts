@@ -23,11 +23,11 @@ export const getVSCodeApi = (): VSCodeApi => {
   return vscodeApi
 }
 
-interface GlobalState {
+interface RepoState {
   selectedBranches: string[]
 }
 
-const defaultGlobalState: GlobalState = {
+const defaultRepoState: RepoState = {
   selectedBranches: [],
 }
 
@@ -213,7 +213,12 @@ interface GitCommitFilesProps {
   enabled?: boolean
 }
 
-export const useGitCommitFiles = ({ commitHash, isRootCommit = false, isStash = false, enabled = true }: GitCommitFilesProps) => {
+export const useGitCommitFiles = ({
+  commitHash,
+  isRootCommit = false,
+  isStash = false,
+  enabled = true,
+}: GitCommitFilesProps) => {
   return useQuery({
     queryKey: queryKeys.commitFiles(commitHash),
     queryFn: (): Promise<TreeDataItem[]> => {
@@ -1321,25 +1326,25 @@ export const useResetUncommittedChanges = () => {
   })
 }
 
-export const useGlobalState = () => {
+export const useRepoState = () => {
   const queryClient = useQueryClient()
 
   const query = useQuery({
-    queryKey: queryKeys.state('globalState'),
-    queryFn: (): Promise<GlobalState | null> => {
+    queryKey: queryKeys.state('repoState'),
+    queryFn: (): Promise<RepoState | null> => {
       return new Promise(resolve => {
         const vscode = getVSCodeApi()
 
         const handler = (event: MessageEvent) => {
           console.log('LOAD', event.data.value)
-          if (event.data.type === 'stateLoaded' && event.data.key === 'globalState') {
+          if (event.data.type === 'repoStateLoaded' && event.data.key === 'repoState') {
             window.removeEventListener('message', handler)
             resolve(event.data.value ?? null)
           }
         }
 
         window.addEventListener('message', handler)
-        vscode.postMessage({ type: 'loadState', key: 'globalState' })
+        vscode.postMessage({ type: 'loadRepoState', key: 'repoState' })
 
         setTimeout(() => {
           window.removeEventListener('message', handler)
@@ -1351,21 +1356,21 @@ export const useGlobalState = () => {
     gcTime: Infinity,
   })
 
-  const setGlobalState = useCallback(
-    (value: Partial<GlobalState>) => {
-      const currentState = query.data ?? defaultGlobalState
+  const setRepoState = useCallback(
+    (value: Partial<RepoState>) => {
+      const currentState = query.data ?? defaultRepoState
       const newState = { ...currentState, ...value }
       const vscode = getVSCodeApi()
       console.log('SAVE', newState)
-      vscode.postMessage({ type: 'saveState', key: 'globalState', value: newState })
-      queryClient.setQueryData(queryKeys.state('globalState'), newState)
+      vscode.postMessage({ type: 'saveRepoState', key: 'repoState', value: newState })
+      queryClient.setQueryData(queryKeys.state('repoState'), newState)
     },
     [query.data, queryClient],
   )
 
   return {
-    data: query.data ?? defaultGlobalState,
+    data: query.data ?? defaultRepoState,
     isLoading: query.isLoading,
-    setGlobalState,
+    setRepoState,
   }
 }

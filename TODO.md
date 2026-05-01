@@ -12,7 +12,7 @@
 ### Others
 
 - [ ] Better git errors
-- [ ] Apply and save global state for roundness theme. Rename useGlobalState, to useRepoState
+- [ ] Apply and save global state for roundness theme
 - [ ] CMD + F to focus search
 
 ### Bug

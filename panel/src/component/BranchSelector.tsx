@@ -13,7 +13,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from '@/component/ui/Combobox'
-import { useGitBranches, useGlobalState } from '@/hook/useGitQueries'
+import { useGitBranches, useRepoState } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { groupBranches } from '@/util/groupBranches'
@@ -39,9 +39,9 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   const { data: branches = [], ...branchesQuery } = useGitBranches()
   const {
     data: { selectedBranches: defaultSelectedBranches },
-    isLoading: isLoadingGlobalState,
-    setGlobalState,
-  } = useGlobalState()
+    isLoading: isLoadingRepoState,
+    setRepoState,
+  } = useRepoState()
 
   const [inputValue, setInputValue] = useState('')
 
@@ -64,13 +64,13 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
   }, [branches])
 
   useEffect(() => {
-    if (isLoadingGlobalState || !defaultBranchesSet.current) return
-    setGlobalState({ selectedBranches })
-    onBranchesChange(branches.filter(branch => selectedBranches.includes(branch.cleanName)))
-  }, [isLoadingGlobalState, selectedBranches, setGlobalState])
+    if (isLoadingRepoState || !defaultBranchesSet.current) return
+    setRepoState({ selectedBranches })
+    onBranchesChange(branches.filter(b => selectedBranches.includes(b.cleanName)))
+  }, [isLoadingRepoState, selectedBranches, setRepoState])
 
   useEffect(() => {
-    if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current || !!isLoadingGlobalState)
+    if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current || !!isLoadingRepoState)
       return
 
     defaultBranchesSet.current = true
@@ -86,7 +86,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
 
     selectLocalBranches()
-  }, [branches, selectedBranches, defaultSelectedBranches, isLoadingGlobalState, selectLocalBranches])
+  }, [branches, selectedBranches, defaultSelectedBranches, isLoadingRepoState, selectLocalBranches])
 
   const previousBranchesNamesRef = useRef<string[] | null>(null)
   useEffect(() => {
@@ -156,7 +156,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     }
   }, [selectedBranches])
 
-  if (branchesQuery.isLoading || isLoadingGlobalState) {
+  if (branchesQuery.isLoading || isLoadingRepoState) {
     return (
       <div
         className={cn(

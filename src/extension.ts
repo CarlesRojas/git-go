@@ -793,7 +793,7 @@ export function activate(context: vscode.ExtensionContext) {
                                 });
                             }
                             break;
-                        case 'saveState':
+                        case 'saveRepoState':
                             const saveRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
                             if (!saveRepoPath) {
                                 log('No workspace folder found, cannot save state');
@@ -801,12 +801,12 @@ export function activate(context: vscode.ExtensionContext) {
                             }
                             context.globalState.update(`${saveRepoPath}:${message.key}`, message.value);
                             break;
-                        case 'loadState':
+                        case 'loadRepoState':
                             const loadRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
                             if (!loadRepoPath) {
                                 log('No workspace folder found, cannot load state');
                                 currentPanel?.webview.postMessage({
-                                    type: 'stateLoaded',
+                                    type: 'repoStateLoaded',
                                     key: message.key,
                                     value: null
                                 });
@@ -815,7 +815,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                             const stateValue = context.globalState.get(`${loadRepoPath}:${message.key}`);
                             currentPanel?.webview.postMessage({
-                                type: 'stateLoaded',
+                                type: 'repoStateLoaded',
                                 key: message.key,
                                 value: stateValue ?? null
                             });
