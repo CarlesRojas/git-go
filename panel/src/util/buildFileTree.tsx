@@ -11,7 +11,12 @@ const STATUS_LABELS: Record<string, string> = {
   T: 'Type changed',
 }
 
-export function buildFileTree(files: GitFileChange[], commitHash?: string, isRootCommit?: boolean): TreeDataItem[] {
+export function buildFileTree(
+  files: GitFileChange[],
+  commitHash?: string,
+  isRootCommit?: boolean,
+  isStash?: boolean,
+): TreeDataItem[] {
   const root: Record<string, any> = {}
 
   for (const file of files) {
@@ -55,8 +60,11 @@ export function buildFileTree(files: GitFileChange[], commitHash?: string, isRoo
           className: statusClass(file.status),
           fileChange: file,
           filePath: file.path,
-          onOpenDiff: commitHash ? () => openFile(file, commitHash, isRootCommit) : undefined,
-          onOpenFile: !['D'].includes(file.status) ? () => openFile(file, undefined, isRootCommit) : undefined,
+          onOpenDiff: commitHash ? () => openFile(file, commitHash, isRootCommit, isStash) : undefined,
+          onOpenFile:
+            ['D'].includes(file.status) || (isStash && ['D', 'A'].includes(file.status))
+              ? undefined
+              : () => openFile(file, undefined, isRootCommit, isStash),
         })
       } else {
         items.push({

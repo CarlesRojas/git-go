@@ -35,6 +35,7 @@ export interface GitFileChange {
     oldPath?: string; // only for renames (R) and copies (C)
     additions: number;
     deletions: number;
+    sourceCommit?: string; // for stashes, the actual commit containing the file
 }
 
 export interface GitRemote {
@@ -756,11 +757,22 @@ export class GitService {
                     const oldPath = parts[1]?.trim() || '';
                     const newPath = parts[2]?.trim() || '';
                     const stats = statsMap.get(newPath) ?? { additions: 0, deletions: 0 };
-                    files.push({ path: newPath, status, oldPath, ...stats });
+                    files.push({
+                        path: newPath,
+                        status,
+                        oldPath,
+                        ...stats,
+                        sourceCommit: stashHash // Use main stash commit for tracked files
+                    });
                 } else {
                     const path = parts[1]?.trim() || '';
                     const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
-                    files.push({ path, status, ...stats });
+                    files.push({
+                        path,
+                        status,
+                        ...stats,
+                        sourceCommit: stashHash // Use main stash commit for tracked files
+                    });
                 }
             }
 
@@ -771,7 +783,13 @@ export class GitService {
                     workspacePath,
                     gitPath
                 );
-                files.push(...untrackedFiles);
+                // Add sourceCommit for untracked files
+                for (const file of untrackedFiles) {
+                    files.push({
+                        ...file,
+                        sourceCommit: stashParents.untrackedFilesHash // Use untracked parent for these files
+                    });
+                }
             }
 
             log(`Found ${files.length} changed files in stash ${stashHash.substring(0, 7)}`);
@@ -950,6 +968,31 @@ export class GitService {
             log(`Successfully created and checked out branch: ${localBranchName}`);
         } catch (error) {
             log(`Error creating branch from remote: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the content of a file at a specific Git revision using git show.
+     * This works with any commit hash including stash commits.
+     * @param commitHash The commit hash to get the file from
+     * @param filePath The path to the file relative to the repository root
+     * @returns The file content as a string
+     */
+    public async getCommitFile(commitHash: string, filePath: string): Promise<string> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const output = await this.spawnGit(
+                [gitExecutable.path, 'show', `${commitHash}:${filePath}`],
+                workspacePath
+            );
+            return output;
+        } catch (error) {
             throw error;
         }
     }

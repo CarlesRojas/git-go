@@ -225,7 +225,7 @@ export const useGitCommitFiles = ({ commitHash, isRootCommit = false, isStash = 
 
           if (message.type === 'gitCommitFiles') {
             window.removeEventListener('message', messageHandler)
-            resolve(buildFileTree(message.files, commitHash, isRootCommit))
+            resolve(buildFileTree(message.files, commitHash, isRootCommit, isStash))
           } else if (message.type === 'gitError') {
             window.removeEventListener('message', messageHandler)
             reject(new Error(message.error))
@@ -523,7 +523,7 @@ export const useRevertCommit = () => {
   })
 }
 
-export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean): void => {
+export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean, isStash?: boolean): void => {
   const vscode = getVSCodeApi()
 
   vscode.postMessage({
@@ -532,8 +532,10 @@ export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?
     oldPath: file.oldPath,
     status: file.status,
     commitHash,
+    sourceCommit: file.sourceCommit, // Pass the actual commit that contains the file
     isRootCommit: isRootCommit ?? false,
     isUncommitted: commitHash === 'working-changes',
+    isStash: isStash ?? false,
   })
 }
 

@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { DiffDocProvider, encodeDiffDocUri } from './diffDocProvider';
 import { GitService } from './gitService';
 
 // This method is called when your extension is activated
@@ -10,6 +11,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     const outputChannel = vscode.window.createOutputChannel('Git Go');
     context.subscriptions.push(outputChannel);
+
+    // Register our custom diff document provider
+    const diffDocProvider = new DiffDocProvider();
+    context.subscriptions.push(
+        vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, diffDocProvider),
+        diffDocProvider
+    );
 
     const log = (message: string) => {
         const timestamp = new Date().toISOString();
@@ -167,6 +175,8 @@ export function activate(context: vscode.ExtensionContext) {
                                 const status = message.status;
                                 const commitHash = message.commitHash;
                                 const isRootCommit = message.isRootCommit ?? false;
+                                const isStash = message.isStash ?? false;
+                                const sourceCommit = message.sourceCommit; // Use sourceCommit if available (for stashes)
 
                                 if (!filePath) throw new Error('File path is required');
 
@@ -178,126 +188,98 @@ export function activate(context: vscode.ExtensionContext) {
                                 const fileUri = vscode.Uri.joinPath(workspaceUri, filePath);
 
                                 if (commitHash) {
+                                    // Use sourceCommit for file content if available (important for stash untracked files)
+                                    const actualCommitHash = sourceCommit || commitHash;
+
                                     if (message.isUncommitted) {
+                                        // Handle uncommitted changes (working directory)
                                         if (status === 'A') {
                                             await vscode.commands.executeCommand(
                                                 'vscode.diff',
                                                 vscode.Uri.parse('untitled:empty'),
                                                 fileUri,
-                                                `${filePath} (new file)`
+                                                `${fileName} (new file)`
                                             );
                                         } else if (status === 'D') {
-                                            const gitUri = vscode.Uri.from({
-                                                scheme: 'git',
-                                                path: fileUri.path,
-                                                query: JSON.stringify({ ref: 'HEAD', path: fileUri.path })
-                                            });
-
+                                            const leftUri = encodeDiffDocUri(filePath, 'HEAD', true);
                                             await vscode.commands.executeCommand(
                                                 'vscode.diff',
-                                                gitUri,
+                                                leftUri,
                                                 vscode.Uri.parse('untitled:empty'),
-                                                `${filePath} (deleted)`
+                                                `${fileName} (deleted)`
                                             );
                                         } else if ((status === 'R' || status === 'C') && oldPath) {
-                                            const oldFileUri = vscode.Uri.joinPath(workspaceUri, oldPath);
-                                            const gitUri = vscode.Uri.from({
-                                                scheme: 'git',
-                                                path: oldFileUri.path,
-                                                query: JSON.stringify({ ref: 'HEAD', path: oldFileUri.path })
-                                            });
-
+                                            const leftUri = encodeDiffDocUri(oldPath, 'HEAD', true);
                                             const label =
                                                 status === 'R'
-                                                    ? `${oldPath} → ${filePath} (renamed)`
-                                                    : `${filePath} (copied from ${oldPath})`;
-
-                                            await vscode.commands.executeCommand('vscode.diff', gitUri, fileUri, label);
-                                        } else {
-                                            const gitUri = vscode.Uri.from({
-                                                scheme: 'git',
-                                                path: fileUri.path,
-                                                query: JSON.stringify({ ref: 'HEAD', path: fileUri.path })
-                                            });
-
+                                                    ? `${oldPath} → ${fileName} (renamed)`
+                                                    : `${fileName} (copied from ${oldPath})`;
                                             await vscode.commands.executeCommand(
                                                 'vscode.diff',
-                                                gitUri,
+                                                leftUri,
                                                 fileUri,
-                                                `${filePath} (uncommitted changes)`
+                                                label
+                                            );
+                                        } else {
+                                            const leftUri = encodeDiffDocUri(filePath, 'HEAD', true);
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                leftUri,
+                                                fileUri,
+                                                `${fileName} (uncommitted changes)`
                                             );
                                         }
-                                    } else if (status === 'D') {
-                                        const prevGitUri = vscode.Uri.from({
-                                            scheme: 'git',
-                                            path: fileUri.path,
-                                            query: JSON.stringify({ ref: `${commitHash}^`, path: fileUri.path })
-                                        });
-
-                                        await vscode.commands.executeCommand(
-                                            'vscode.diff',
-                                            prevGitUri,
-                                            vscode.Uri.parse('untitled:empty'),
-                                            `${fileName} (deleted in ${commitHash.substring(0, 7)})`
-                                        );
-                                    } else if (status === 'A') {
-                                        const gitUri = vscode.Uri.from({
-                                            scheme: 'git',
-                                            path: fileUri.path,
-                                            query: JSON.stringify({ ref: commitHash, path: fileUri.path })
-                                        });
-
-                                        await vscode.commands.executeCommand(
-                                            'vscode.diff',
-                                            vscode.Uri.parse('untitled:empty'),
-                                            gitUri,
-                                            `${fileName} (added in ${commitHash.substring(0, 7)})`
-                                        );
-                                    } else if ((status === 'R' || status === 'C') && oldPath) {
-                                        const oldFileUri = vscode.Uri.joinPath(workspaceUri, oldPath);
-
-                                        const prevGitUri = vscode.Uri.from({
-                                            scheme: 'git',
-                                            path: oldFileUri.path,
-                                            query: JSON.stringify({ ref: `${commitHash}^`, path: oldFileUri.path })
-                                        });
-
-                                        const gitUri = vscode.Uri.from({
-                                            scheme: 'git',
-                                            path: fileUri.path,
-                                            query: JSON.stringify({ ref: commitHash, path: fileUri.path })
-                                        });
-
-                                        const label =
-                                            status === 'R'
-                                                ? `${fileName} (${commitHash.substring(0, 7)})`
-                                                : `${fileName} (copied from ${oldPath} in ${commitHash.substring(0, 7)})`;
-
-                                        await vscode.commands.executeCommand('vscode.diff', prevGitUri, gitUri, label);
                                     } else {
-                                        const prevGitUri = isRootCommit
-                                            ? vscode.Uri.parse('untitled:empty')
-                                            : vscode.Uri.from({
-                                                  scheme: 'git',
-                                                  path: fileUri.path,
-                                                  query: JSON.stringify({ ref: `${commitHash}^`, path: fileUri.path })
-                                              });
-
-                                        const gitUri = vscode.Uri.from({
-                                            scheme: 'git',
-                                            path: fileUri.path,
-                                            query: JSON.stringify({ ref: commitHash, path: fileUri.path })
-                                        });
-
-                                        await vscode.commands.executeCommand(
-                                            'vscode.diff',
-                                            prevGitUri,
-                                            gitUri,
-                                            `${fileName} (${commitHash.substring(0, 7)})`
-                                        );
+                                        // Handle committed changes
+                                        if (status === 'D') {
+                                            const leftUri = encodeDiffDocUri(filePath, `${actualCommitHash}^`, true);
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                leftUri,
+                                                vscode.Uri.parse('untitled:empty'),
+                                                `${fileName} (deleted in ${commitHash.substring(0, 7)})`
+                                            );
+                                        } else if (status === 'A') {
+                                            const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
+                                            const label = isStash
+                                                ? `${fileName} (added in ${commitHash.substring(0, 8)})`
+                                                : `${fileName} (added in ${commitHash.substring(0, 7)})`;
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                vscode.Uri.parse('untitled:empty'),
+                                                rightUri,
+                                                label
+                                            );
+                                        } else if ((status === 'R' || status === 'C') && oldPath) {
+                                            const leftUri = encodeDiffDocUri(oldPath, `${actualCommitHash}^`, true);
+                                            const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
+                                            const label =
+                                                status === 'R'
+                                                    ? `${fileName} (renamed in ${commitHash.substring(0, 7)})`
+                                                    : `${fileName} (copied from ${oldPath} in ${commitHash.substring(0, 7)})`;
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                leftUri,
+                                                rightUri,
+                                                label
+                                            );
+                                        } else {
+                                            const leftUri = isRootCommit
+                                                ? vscode.Uri.parse('untitled:empty')
+                                                : encodeDiffDocUri(filePath, `${actualCommitHash}^`, true);
+                                            const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
+                                            await vscode.commands.executeCommand(
+                                                'vscode.diff',
+                                                leftUri,
+                                                rightUri,
+                                                `${fileName} (${commitHash.substring(0, 7)})`
+                                            );
+                                        }
                                     }
 
-                                    log(`Opened diff for ${fileName} [${status}] at ${commitHash.substring(0, 7)}`);
+                                    log(
+                                        `Opened diff for ${fileName} [${status}] at ${commitHash.substring(0, 7)}${isStash ? ' (stash)' : ''}`
+                                    );
                                 } else {
                                     const document = await vscode.workspace.openTextDocument(fileUri);
                                     await vscode.window.showTextDocument(document);
