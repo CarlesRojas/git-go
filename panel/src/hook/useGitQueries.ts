@@ -2,7 +2,7 @@ import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/util/buildFileTree'
 import type { GitBranch, GitCommit, GitFileChange, GitRemote } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -29,6 +29,14 @@ interface RepoState {
 
 const defaultRepoState: RepoState = {
   selectedBranches: [],
+}
+
+interface ConfigState {
+  rounded: boolean
+}
+
+const defaultConfigState: ConfigState = {
+  rounded: true,
 }
 
 // Query keys
@@ -1336,7 +1344,6 @@ export const useRepoState = () => {
         const vscode = getVSCodeApi()
 
         const handler = (event: MessageEvent) => {
-          console.log('LOAD', event.data.value)
           if (event.data.type === 'repoStateLoaded' && event.data.key === 'repoState') {
             window.removeEventListener('message', handler)
             resolve(event.data.value ?? null)
@@ -1361,7 +1368,6 @@ export const useRepoState = () => {
       const currentState = query.data ?? defaultRepoState
       const newState = { ...currentState, ...value }
       const vscode = getVSCodeApi()
-      console.log('SAVE', newState)
       vscode.postMessage({ type: 'saveRepoState', key: 'repoState', value: newState })
       queryClient.setQueryData(queryKeys.state('repoState'), newState)
     },
@@ -1372,5 +1378,50 @@ export const useRepoState = () => {
     data: query.data ?? defaultRepoState,
     isLoading: query.isLoading,
     setRepoState,
+  }
+}
+
+export const useConfig = () => {
+  const queryClient = useQueryClient()
+
+  const query = useQuery({
+    queryKey: queryKeys.state('config'),
+    queryFn: (): Promise<ConfigState | null> => {
+      return new Promise(resolve => {
+        const vscode = getVSCodeApi()
+
+        const handler = (event: MessageEvent) => {
+          if (event.data.type === 'config') {
+            window.removeEventListener('message', handler)
+            resolve(event.data.config ?? null)
+          }
+        }
+
+        window.addEventListener('message', handler)
+        vscode.postMessage({ type: 'getConfig' })
+
+        setTimeout(() => {
+          window.removeEventListener('message', handler)
+          resolve(null)
+        }, 3000)
+      })
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data.type === 'configChanged') queryClient.setQueryData(queryKeys.state('config'), event.data.config)
+    }
+
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [queryClient])
+
+  console.log('SETTINGS', query.data)
+  return {
+    data: query.data ?? defaultConfigState,
+    isLoading: query.isLoading,
   }
 }

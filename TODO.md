@@ -12,7 +12,6 @@
 ### Others
 
 - [ ] Better git errors
-- [ ] Apply and save global state for roundness theme
 - [ ] CMD + F to focus search
 
 ### Bug

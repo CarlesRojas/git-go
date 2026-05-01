@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { getConfig } from './config';
 import { DiffDocProvider, encodeDiffDocUri } from './diffDocProvider';
 import { GitService } from './gitService';
 
@@ -25,6 +26,25 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     log('Starting Git Go extension...');
+
+    // Listen for configuration changes
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration((event) => {
+            if (event.affectsConfiguration('git-go')) {
+                log('Configuration changed, updating webview...');
+                // Send updated config to webview if it's open
+                if (currentPanel) {
+                    const config = getConfig();
+                    currentPanel.webview.postMessage({
+                        type: 'configChanged',
+                        config: {
+                            rounded: config.rounded
+                        }
+                    });
+                }
+            }
+        })
+    );
 
     // Register the command to open the Git Graph webview
     context.subscriptions.push(
@@ -819,6 +839,25 @@ export function activate(context: vscode.ExtensionContext) {
                                 key: message.key,
                                 value: stateValue ?? null
                             });
+                            break;
+                        case 'getConfig':
+                            try {
+                                const config = getConfig();
+                                log('Successfully retrieved extension configuration');
+                                currentPanel?.webview.postMessage({
+                                    type: 'config',
+                                    config: {
+                                        rounded: config.rounded
+                                    }
+                                });
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                                log(`Error getting configuration: ${errorMessage}`);
+                                currentPanel?.webview.postMessage({
+                                    type: 'gitError',
+                                    error: errorMessage
+                                });
+                            }
                             break;
                     }
                 },

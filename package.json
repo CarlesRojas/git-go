@@ -19,7 +19,18 @@
                 "command": "git-go.openGitGraph",
                 "title": "Git Go - Open Graph"
             }
-        ]
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Git Go",
+            "properties": {
+                "git-go.graph.rounded": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Use rounded corners for all commit graph elements."
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "pnpm run build",
