@@ -39,6 +39,8 @@ export function activate(context: vscode.ExtensionContext) {
                         type: 'configChanged',
                         config: {
                             rounded: config.rounded,
+                            autoOpenEnabled: config.autoOpenEnabled,
+                            pinTabEnabled: config.pinTabEnabled,
                             branchCreateCheckout: config.branchCreateCheckout,
                             branchDeleteForce: config.branchDeleteForce,
                             branchPushSetUpstream: config.branchPushSetUpstream,
@@ -66,7 +68,15 @@ export function activate(context: vscode.ExtensionContext) {
                 ? vscode.window.activeTextEditor.viewColumn
                 : undefined;
 
-            if (currentPanel) return (currentPanel as vscode.WebviewPanel).reveal(columnToShowIn);
+            if (currentPanel) {
+                (currentPanel as vscode.WebviewPanel).reveal(columnToShowIn);
+
+                const config = getConfig();
+                if (config.pinTabEnabled) {
+                    vscode.commands.executeCommand('workbench.action.pinEditor');
+                }
+                return;
+            }
 
             currentPanel = vscode.window.createWebviewPanel('gitGoGraph', 'Git Go', vscode.ViewColumn.One, {
                 enableScripts: true,
@@ -75,6 +85,11 @@ export function activate(context: vscode.ExtensionContext) {
             });
 
             currentPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'webview-icon.svg');
+
+            const config = getConfig();
+            if (config.pinTabEnabled) {
+                vscode.commands.executeCommand('workbench.action.pinEditor');
+            }
 
             watchGitChanges(currentPanel, log);
 
@@ -862,6 +877,8 @@ export function activate(context: vscode.ExtensionContext) {
                                     type: 'config',
                                     config: {
                                         rounded: config.rounded,
+                                        autoOpenEnabled: config.autoOpenEnabled,
+                                        pinTabEnabled: config.pinTabEnabled,
                                         branchCreateCheckout: config.branchCreateCheckout,
                                         branchDeleteForce: config.branchDeleteForce,
                                         branchPushSetUpstream: config.branchPushSetUpstream,
@@ -1004,13 +1021,50 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Add a status bar button
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    statusBarItem.text = '$(git-branch) Git Go';
-    statusBarItem.command = 'git-go.openGitGraph';
-    statusBarItem.tooltip = 'Open Git Go';
-    statusBarItem.show();
-    context.subscriptions.push(statusBarItem);
+    const autoOpenGitGo = async () => {
+        const config = getConfig();
+        if (!config.autoOpenEnabled) {
+            return;
+        }
+
+        try {
+            const gitService = GitService.getInstance();
+            const isGitRepo = await gitService.isGitRepository();
+
+            if (isGitRepo) {
+                log('Auto-opening Git Go as workspace is a git repository and auto-open is enabled');
+                await vscode.commands.executeCommand('git-go.openGitGraph');
+            }
+        } catch (error) {
+            log(`Error during auto-open check: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    };
+
+    const createStatusBarIfGitRepo = async () => {
+        try {
+            const gitService = GitService.getInstance();
+            const isGitRepo = await gitService.isGitRepository();
+
+            if (isGitRepo) {
+                const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+                statusBarItem.text = '$(git-branch) Git Go';
+                statusBarItem.command = 'git-go.openGitGraph';
+                statusBarItem.tooltip = 'Open Git Go';
+                statusBarItem.show();
+                context.subscriptions.push(statusBarItem);
+                log('Status bar item created for git repository');
+            }
+        } catch (error) {
+            log(
+                `Error checking git repository for status bar: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+        }
+    };
+
+    setTimeout(async () => {
+        await autoOpenGitGo();
+        createStatusBarIfGitRepo();
+    }, 100);
 
     log('Git Go extension activated successfully');
 }

@@ -30,6 +30,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.autoOpen.pinTab` Extension Setting.
+     */
+    get pinTabEnabled(): boolean {
+        return !!this.config.get('autoOpen.pinTab', true);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

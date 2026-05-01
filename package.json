@@ -60,6 +60,11 @@
                     "default": false,
                     "description": "Automatically open Git Go when VS Code opens in a git repository."
                 },
+                "git-go.autoOpen.pinTab": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically pin the Git Go tab when opened."
+                },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
                     "default": true,
