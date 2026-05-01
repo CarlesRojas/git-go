@@ -10,6 +10,7 @@ const handleInteractOutside = (event: Event) => {
 
 import { Button } from '@/component/ui/Button'
 import { cn } from '@/util/cn'
+import { ComponentProps } from 'react'
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -70,7 +71,7 @@ function SheetContent({
             // Layout & Structure
             'fixed flex flex-col',
             // Sizing
-            'rounded-main-outer gap-4 overflow-y-auto',
+            'rounded-main-outer overflow-y-auto',
             'data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto',
             'data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4',
             'data-[side=right]:top-11 data-[side=right]:right-4 data-[side=right]:bottom-2 data-[side=right]:h-[calc(100%-3.25rem)] data-[side=right]:w-3/4',
@@ -103,8 +104,8 @@ function SheetContent({
 
         {showCloseButton && (
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
-            <Button variant="ghost" size="icon" className="absolute top-3 right-3">
-              <FontAwesomeIcon icon={faXmark} className="size-4" />
+            <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+              <FontAwesomeIcon icon={faXmark} className="size-3" />
               <span className="sr-only">Close</span>
             </Button>
           </SheetPrimitive.Close>
@@ -121,9 +122,9 @@ function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
       className={cn(
         [
           // Layout & Structure
-          'flex flex-col',
+          'border-vsc-editor-fg/15 flex flex-col border-b',
           // Spacing
-          'gap-0.5 p-4',
+          'gap-0.5 p-3',
         ],
         className,
       )}
@@ -139,9 +140,9 @@ function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
       className={cn(
         [
           // Layout & Structure
-          'mt-auto flex flex-col',
+          'border-vsc-editor-fg/15 mt-auto flex flex-col border-t',
           // Spacing
-          'gap-2 p-4',
+          'gap-2 p-3',
         ],
         className,
       )}
@@ -182,4 +183,45 @@ function SheetDescription({ className, ...props }: React.ComponentProps<typeof S
   )
 }
 
-export { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger }
+const SheetSeparator = ({ className, ref, ...props }: ComponentProps<'div'>) => (
+  <div
+    ref={ref}
+    className={cn(
+      [
+        // Layout & Structure
+        'my-main -mx-3 h-px',
+        // Colors & Background
+        'bg-vsc-editor-fg/15',
+      ],
+      className,
+    )}
+    {...props}
+  />
+)
+
+const SheetLabel = ({ className, ref, ...props }: ComponentProps<'span'>) => (
+  <span
+    ref={ref}
+    className={cn(
+      [
+        // Typography
+        'text-vsc-editor-fg/50 text-xs',
+      ],
+      className,
+    )}
+    {...props}
+  />
+)
+
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetLabel,
+  SheetSeparator,
+  SheetTitle,
+  SheetTrigger,
+}

@@ -1,24 +1,53 @@
 import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Label } from '@/component/ui/Label'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/component/ui/Sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetLabel,
+  SheetSeparator,
+  SheetTitle,
+  SheetTrigger,
+} from '@/component/ui/Sheet'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
-import { useGitUserDialog } from '@/hook/dialog/useGitUserDialog'
+import { useOverrideGlobalGitUserDialog } from '@/hook/dialog/useOverrideGlobalGitUserDialog'
 import { useRemoteConfigDialog } from '@/hook/dialog/useRemoteConfigDialog'
-import { useRepoName, useRepoState } from '@/hook/useGitQueries'
-import { faCodeBranch, faCog, faInbox, faNetworkWired, faTag, faUser } from '@fortawesome/free-solid-svg-icons'
+import { useRemoveLocalGitUserDialog } from '@/hook/dialog/useRemoveLocalGitUserDialog'
+import { useGitUserConfig, useRepoName, useRepoState } from '@/hook/useGitQueries'
+import { cn } from '@/util/cn'
+import {
+  faCheckCircle,
+  faCircleNotch,
+  faCodeBranch,
+  faCog,
+  faInbox,
+  faNetworkWired,
+  faTag,
+  faTrash,
+  faUser,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { FC } from 'react'
+import { useCopyToClipboard } from 'usehooks-ts'
 
 export const RepoSettings: FC = () => {
   const { settings } = useSettings()
   const { data: repoName } = useRepoName()
   const { setRepoState } = useRepoState()
   const { showToast } = useToast()
+  const { data: gitUserConfig } = useGitUserConfig()
 
-  const gitUserDialog = useGitUserDialog()
+  const overrideGlobalGitUserDialog = useOverrideGlobalGitUserDialog()
+  const removeLocalGitUserDialog = useRemoveLocalGitUserDialog()
   const remoteConfigDialog = useRemoteConfigDialog()
+
+  const [, copy] = useCopyToClipboard()
+  const copyText = (text: string, label: string) => {
+    copy(text)
+    showToast({ text: `${label} copied to clipboard`, icon: faCheckCircle, type: 'info' })
+  }
 
   const handleToggleStashes = async (checked: boolean) => {
     try {
@@ -79,38 +108,99 @@ export const RepoSettings: FC = () => {
             </SheetTitle>
           </SheetHeader>
 
-          <div className="flex flex-col gap-6 p-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center">
-                <Checkbox id="showStashes" checked={settings.showStashes} onCheckedChange={handleToggleStashes} />
+          <div className="flex flex-col gap-3 p-3">
+            <div className="flex items-center">
+              <Checkbox id="showStashes" checked={settings.showStashes} onCheckedChange={handleToggleStashes} />
 
-                <Label htmlFor="showStashes" className="cursor-pointer pl-2 text-sm">
-                  Show Stashes
-                </Label>
-              </div>
-
-              <div className="flex items-center">
-                <Checkbox id="showTags" checked={settings.showTags} onCheckedChange={handleToggleTags} />
-
-                <Label htmlFor="showTags" className="cursor-pointer pl-2 text-sm">
-                  Show Tags
-                </Label>
-              </div>
+              <Label htmlFor="showStashes" className="cursor-pointer pl-2 text-sm">
+                Show Stashes
+              </Label>
             </div>
+
+            <div className="flex items-center">
+              <Checkbox id="showTags" checked={settings.showTags} onCheckedChange={handleToggleTags} />
+
+              <Label htmlFor="showTags" className="cursor-pointer pl-2 text-sm">
+                Show Tags
+              </Label>
+            </div>
+
+            <SheetSeparator />
 
             <div className="flex flex-col gap-2">
-              <Button variant="secondary" className="w-fit" onClick={() => gitUserDialog.openDialog()}>
-                <FontAwesomeIcon icon={faUser} className="size-3" />
-                Git User Settings
-              </Button>
+              <SheetLabel>Current Git User</SheetLabel>
 
-              <Button variant="secondary" className="w-fit" onClick={() => remoteConfigDialog.openDialog()}>
-                <FontAwesomeIcon icon={faNetworkWired} className="size-3" />
-                Remote Configuration
-              </Button>
+              {gitUserConfig && (
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-medium">
+                    <span
+                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                      onClick={() => copyText(gitUserConfig.userName, 'Git Username')}
+                    >
+                      {gitUserConfig.userName}
+                    </span>{' '}
+                    <span
+                      className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                      onClick={() => copyText(gitUserConfig.userEmail, 'Git Email')}
+                    >
+                      ({gitUserConfig.userEmail})
+                    </span>
+                  </p>
+
+                  {gitUserConfig && (
+                    <div
+                      className={cn(
+                        'rounded-main border-vsc-editor-fg/20 bg-vsc-editor-fg/10 h-fit px-1.5 py-0.5 text-xs',
+                        // gitUserConfig.isLocal && 'bg-vsc-list-highlight-fg/10 text-vsc-list-highlight-fg',
+                      )}
+                    >
+                      {gitUserConfig.isLocal ? 'Local' : 'Global'}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {gitUserConfig && (
+                <div className="flex w-full gap-2">
+                  <Button
+                    className="w-fit"
+                    variant="secondary"
+                    onClick={() => overrideGlobalGitUserDialog.openDialog()}
+                  >
+                    <FontAwesomeIcon icon={faUser} className="size-3" />
+                    Change
+                  </Button>
+
+                  {gitUserConfig.isLocal && (
+                    <Button
+                      className="w-fit"
+                      variant="destructive"
+                      onClick={() => removeLocalGitUserDialog.openDialog()}
+                    >
+                      <FontAwesomeIcon icon={faTrash} className="size-3" />
+                      Remove Override
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {!gitUserConfig && (
+                <div className="flex items-center justify-center py-2">
+                  <FontAwesomeIcon icon={faCircleNotch} className="text-muted-foreground size-4 animate-spin" />
+                </div>
+              )}
             </div>
 
-            <Button variant="secondary" className="justify-start gap-2" onClick={handleOpenSettings}>
+            <SheetSeparator />
+
+            <Button variant="secondary" className="w-fit" onClick={() => remoteConfigDialog.openDialog()}>
+              <FontAwesomeIcon icon={faNetworkWired} className="size-3" />
+              Remote Configuration
+            </Button>
+
+            <SheetSeparator />
+
+            <Button variant="ghost" className="w-fit px-0" onClick={handleOpenSettings}>
               <FontAwesomeIcon icon={faCog} className="size-3" />
               Extension Global Settings
             </Button>
@@ -118,7 +208,8 @@ export const RepoSettings: FC = () => {
         </SheetContent>
       </Sheet>
 
-      {gitUserDialog.DialogComponent}
+      {overrideGlobalGitUserDialog.DialogComponent}
+      {removeLocalGitUserDialog.DialogComponent}
       {remoteConfigDialog.DialogComponent}
     </>
   )

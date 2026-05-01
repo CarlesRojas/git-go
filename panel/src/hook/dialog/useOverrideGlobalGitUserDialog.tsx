@@ -1,12 +1,5 @@
 import { Button } from '@/component/ui/Button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/component/ui/Dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
@@ -16,7 +9,7 @@ import { useForm } from '@tanstack/react-form'
 import { useEffect, useState } from 'react'
 import { useGitUserConfig, useSetGitUserConfig } from '../useGitQueries'
 
-export const useGitUserDialog = () => {
+export const useOverrideGlobalGitUserDialog = () => {
   const { showToast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -66,7 +59,6 @@ export const useGitUserDialog = () => {
 
   useEffect(() => {
     if (gitUserConfig && isOpen) {
-      // Pre-populate with current user data as starting point
       userForm.setFieldValue('userName', gitUserConfig.userName)
       userForm.setFieldValue('userEmail', gitUserConfig.userEmail)
     }
@@ -79,10 +71,6 @@ export const useGitUserDialog = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Override Git User Settings</DialogTitle>
-          <DialogDescription>
-            Create a local user override for this repository. This will override your global Git settings for this
-            repository only.
-          </DialogDescription>
         </DialogHeader>
 
         <form
@@ -160,7 +148,7 @@ export const useGitUserDialog = () => {
                   ) : (
                     <>
                       <FontAwesomeIcon icon={faUser} className="size-3" />
-                      Create Override
+                      Save User Override
                     </>
                   )}
                 </Button>

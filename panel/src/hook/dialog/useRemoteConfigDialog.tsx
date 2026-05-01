@@ -1,12 +1,12 @@
+import { Button } from '@/component/ui/Button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
+import { Input } from '@/component/ui/Input'
+import { Label } from '@/component/ui/Label'
+import { useToast } from '@/context/ToastContext'
 import { faCircleNotch, faNetworkWired, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
-import { Button } from '../../component/ui/Button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../component/ui/Dialog'
-import { Input } from '../../component/ui/Input'
-import { Label } from '../../component/ui/Label'
-import { useToast } from '../../context/ToastContext'
 import { useAddGitRemote, useGetGitRemotes, useRemoveGitRemote } from '../useGitQueries'
 
 export const useRemoteConfigDialog = () => {

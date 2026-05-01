@@ -72,7 +72,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
       {children}
 
       <DialogPrimitive.Close className="data-[state=open]:bg-vsc-editor-fg/10 data-[state=open]:text-vsc-editor-fg/70 absolute top-4 right-4 cursor-pointer opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
-        <FontAwesomeIcon icon={faXmark} className="size-4" />
+        <FontAwesomeIcon icon={faXmark} className="size-3" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

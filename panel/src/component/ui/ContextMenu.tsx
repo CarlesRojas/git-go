@@ -30,7 +30,7 @@ const ContextMenuSubTrigger = ({ className, inset, children, ref, ...props }: Co
         // Interactive States
         'focus:bg-vsc-editor-fg/15 data-[state=open]:bg-vsc-editor-fg/15 outline-hidden',
         // Icon Styles
-        '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+        '[&_svg]:pointer-events-none [&_svg]:size-3 [&_svg]:shrink-0',
       ],
       inset && 'pl-8',
       className,
@@ -164,7 +164,7 @@ const ContextMenuCheckboxItem = ({
         // Interactive States
         'focus:bg-vsc-editor-fg/15 outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
-        '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+        '[&_svg]:pointer-events-none [&_svg]:size-3 [&_svg]:shrink-0',
       ],
       className,
     )}
@@ -199,7 +199,7 @@ const ContextMenuRadioItem = ({
         // Interactive States
         'focus:bg-vsc-editor-fg/15 outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50',
         // Icon Styles
-        '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+        '[&_svg]:pointer-events-none [&_svg]:size-3 [&_svg]:shrink-0',
       ],
       className,
     )}
