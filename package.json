@@ -41,7 +41,7 @@
         "url": "https://github.com/CarlesRojas/git-go/issues"
     },
     "activationEvents": [
-        "*"
+        "workspaceContains:.git"
     ],
     "main": "./out/extension.js",
     "contributes": {
