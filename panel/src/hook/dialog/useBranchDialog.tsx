@@ -3,6 +3,7 @@ import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCreateBranchFromCommit } from '@/hook/useGitQueries'
 import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
@@ -19,11 +20,12 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
   const { showToast } = useToast()
   const [showBranchDialog, setShowBranchDialog] = useState(false)
   const createBranchMutation = useCreateBranchFromCommit()
+  const { settings } = useSettings()
 
   const branchForm = useForm({
     defaultValues: {
       branchName: '',
-      checkout: true,
+      checkout: settings.branchCreateCheckout,
     },
     onSubmit: async ({ value }) => {
       createBranchMutation.mutate(

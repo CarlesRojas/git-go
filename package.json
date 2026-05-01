@@ -59,6 +59,66 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Use rounded corners for all commit graph elements."
+                },
+                "git-go.branch.create.checkout": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Checkout new branch' when creating a branch."
+                },
+                "git-go.branch.delete.force": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Default value for 'Force delete' when deleting a branch."
+                },
+                "git-go.branch.push.setUpstream": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Set upstream' when pushing a branch."
+                },
+                "git-go.branch.rebase.ignoreDate": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Ignore date' when rebasing a branch."
+                },
+                "git-go.merge.fastForwardIfPossible": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Fast forward if possible' when merging branches."
+                },
+                "git-go.merge.squash": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Default value for 'Squash commits' when merging branches."
+                },
+                "git-go.merge.noCommit": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Default value for 'Don't commit automatically' when merging branches."
+                },
+                "git-go.cherryPick.recordOrigin": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Default value for 'Record origin' when cherry-picking commits."
+                },
+                "git-go.cherryPick.noCommit": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Don't commit automatically' when cherry-picking commits."
+                },
+                "git-go.revert.noCommit": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Don't commit automatically' when reverting commits."
+                },
+                "git-go.remote.fetch.forceFetch": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Default value for 'Force fetch' when fetching remote branches into local branches."
+                },
+                "git-go.stash.includeUntracked": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default value for 'Include untracked files' when creating stashes."
                 }
             }
         }

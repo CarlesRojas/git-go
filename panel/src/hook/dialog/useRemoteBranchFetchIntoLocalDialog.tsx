@@ -2,6 +2,7 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useFetchIntoLocalBranch } from '@/hook/useGitQueries'
 import { faCircleNotch, faDownload } from '@fortawesome/free-solid-svg-icons'
@@ -15,10 +16,11 @@ export const useRemoteBranchFetchIntoLocalDialog = () => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
   const [remoteBranch, setRemoteBranch] = useState<GitBranch | null>(null)
   const fetchIntoLocalBranchMutation = useFetchIntoLocalBranch()
+  const { settings } = useSettings()
 
   const fetchForm = useForm({
     defaultValues: {
-      forceFetch: false,
+      forceFetch: settings.remoteFetchForceFetch,
     },
     onSubmit: async ({ value }) => {
       if (!remoteBranch?.remoteName) {

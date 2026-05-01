@@ -2,6 +2,7 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCurrentBranch, useMergeBranch } from '@/hook/useGitQueries'
 import { faCircleNotch, faCodeMerge } from '@fortawesome/free-solid-svg-icons'
@@ -19,12 +20,13 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
   const [showMergeDialog, setShowMergeDialog] = useState(false)
   const mergeBranchMutation = useMergeBranch()
   const { data: currentBranch } = useCurrentBranch()
+  const { settings } = useSettings()
 
   const mergeForm = useForm({
     defaultValues: {
-      fastFordwardIfPossible: true,
-      squash: false,
-      noCommit: false,
+      fastFordwardIfPossible: settings.mergeFastForwardIfPossible,
+      squash: settings.mergeSquash,
+      noCommit: settings.mergeNoCommit,
     },
     onSubmit: async ({ value }) => {
       mergeBranchMutation.mutate(

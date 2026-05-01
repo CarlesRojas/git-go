@@ -5,6 +5,7 @@ import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { RadioGroup, RadioGroupItem } from '@/component/ui/RadioGroup'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/component/ui/Select'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useGitRemotes, usePushBranch } from '@/hook/useGitQueries'
 import { faCircleNotch, faUpload } from '@fortawesome/free-solid-svg-icons'
@@ -22,11 +23,12 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
   const [showPushDialog, setShowPushDialog] = useState(false)
   const pushBranchMutation = usePushBranch()
   const { data: remotes = [], isLoading: remotesLoading } = useGitRemotes()
+  const { settings } = useSettings()
 
   const pushForm = useForm({
     defaultValues: {
       remote: 'origin',
-      setUpstream: true,
+      setUpstream: settings.branchPushSetUpstream,
       pushMode: 'normal' as GitPushMode,
     },
     onSubmit: async ({ value }) => {

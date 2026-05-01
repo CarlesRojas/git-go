@@ -2,6 +2,7 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useDeleteBranch } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -18,10 +19,11 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const deleteBranchMutation = useDeleteBranch()
+  const { settings } = useSettings()
 
   const deleteForm = useForm({
     defaultValues: {
-      force: false,
+      force: settings.branchDeleteForce,
     },
     onSubmit: async ({ value }) => {
       deleteBranchMutation.mutate(

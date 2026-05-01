@@ -38,7 +38,19 @@ export function activate(context: vscode.ExtensionContext) {
                     currentPanel.webview.postMessage({
                         type: 'configChanged',
                         config: {
-                            rounded: config.rounded
+                            rounded: config.rounded,
+                            branchCreateCheckout: config.branchCreateCheckout,
+                            branchDeleteForce: config.branchDeleteForce,
+                            branchPushSetUpstream: config.branchPushSetUpstream,
+                            branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
+                            mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
+                            mergeSquash: config.mergeSquash,
+                            mergeNoCommit: config.mergeNoCommit,
+                            cherryPickRecordOrigin: config.cherryPickRecordOrigin,
+                            cherryPickNoCommit: config.cherryPickNoCommit,
+                            revertNoCommit: config.revertNoCommit,
+                            remoteFetchForceFetch: config.remoteFetchForceFetch,
+                            stashIncludeUntracked: config.stashIncludeUntracked
                         }
                     });
                 }
@@ -849,7 +861,19 @@ export function activate(context: vscode.ExtensionContext) {
                                 currentPanel?.webview.postMessage({
                                     type: 'config',
                                     config: {
-                                        rounded: config.rounded
+                                        rounded: config.rounded,
+                                        branchCreateCheckout: config.branchCreateCheckout,
+                                        branchDeleteForce: config.branchDeleteForce,
+                                        branchPushSetUpstream: config.branchPushSetUpstream,
+                                        branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
+                                        mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
+                                        mergeSquash: config.mergeSquash,
+                                        mergeNoCommit: config.mergeNoCommit,
+                                        cherryPickRecordOrigin: config.cherryPickRecordOrigin,
+                                        cherryPickNoCommit: config.cherryPickNoCommit,
+                                        revertNoCommit: config.revertNoCommit,
+                                        remoteFetchForceFetch: config.remoteFetchForceFetch,
+                                        stashIncludeUntracked: config.stashIncludeUntracked
                                     }
                                 });
                             } catch (error) {

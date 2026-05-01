@@ -41,10 +41,34 @@ const defaultRepoState: RepoState = {
 
 export interface ConfigState {
   rounded: boolean
+  branchCreateCheckout: boolean
+  branchDeleteForce: boolean
+  branchPushSetUpstream: boolean
+  branchRebaseIgnoreDate: boolean
+  mergeFastForwardIfPossible: boolean
+  mergeSquash: boolean
+  mergeNoCommit: boolean
+  cherryPickRecordOrigin: boolean
+  cherryPickNoCommit: boolean
+  revertNoCommit: boolean
+  remoteFetchForceFetch: boolean
+  stashIncludeUntracked: boolean
 }
 
 const defaultConfigState: ConfigState = {
   rounded: true,
+  branchCreateCheckout: true,
+  branchDeleteForce: false,
+  branchPushSetUpstream: true,
+  branchRebaseIgnoreDate: true,
+  mergeFastForwardIfPossible: true,
+  mergeSquash: false,
+  mergeNoCommit: false,
+  cherryPickRecordOrigin: false,
+  cherryPickNoCommit: true,
+  revertNoCommit: true,
+  remoteFetchForceFetch: false,
+  stashIncludeUntracked: true,
 }
 
 // Query keys
@@ -1424,7 +1448,9 @@ export const useConfig = () => {
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.data.type === 'configChanged') queryClient.setQueryData(queryKeys.state('config'), event.data.config)
+      if (event.data.type === 'configChanged' || event.data.type === 'config') {
+        queryClient.setQueryData(queryKeys.state('config'), event.data.config)
+      }
     }
 
     window.addEventListener('message', handler)
@@ -1432,7 +1458,7 @@ export const useConfig = () => {
   }, [queryClient])
 
   return {
-    data: query.data,
+    data: query.data ?? defaultConfigState,
     isLoading: query.isLoading,
   }
 }

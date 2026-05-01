@@ -2,6 +2,7 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useRevertCommit } from '@/hook/useGitQueries'
 import { faCircleNotch, faRotateLeft } from '@fortawesome/free-solid-svg-icons'
@@ -18,10 +19,11 @@ export const useRevertDialog = ({ commit }: UseRevertDialogProps) => {
   const { showToast } = useToast()
   const [showRevertDialog, setShowRevertDialog] = useState(false)
   const revertMutation = useRevertCommit()
+  const { settings } = useSettings()
 
   const revertForm = useForm({
     defaultValues: {
-      noCommit: true,
+      noCommit: settings.revertNoCommit,
     },
     onSubmit: async ({ value }) => {
       revertMutation.mutate(

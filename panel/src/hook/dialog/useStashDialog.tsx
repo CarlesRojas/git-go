@@ -3,6 +3,7 @@ import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCreateStash } from '@/hook/useGitQueries'
 import { faCircleNotch, faInbox } from '@fortawesome/free-solid-svg-icons'
@@ -14,11 +15,12 @@ export const useStashDialog = () => {
   const { showToast } = useToast()
   const [showStashDialog, setShowStashDialog] = useState(false)
   const createStashMutation = useCreateStash()
+  const { settings } = useSettings()
 
   const stashForm = useForm({
     defaultValues: {
       message: '',
-      includeUntracked: true,
+      includeUntracked: settings.stashIncludeUntracked,
     },
     onSubmit: async ({ value }) => {
       createStashMutation.mutate(

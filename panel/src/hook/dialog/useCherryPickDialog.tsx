@@ -2,6 +2,7 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCherryPickCommit } from '@/hook/useGitQueries'
 import { faCircleNotch, faCodeCommit } from '@fortawesome/free-solid-svg-icons'
@@ -18,11 +19,12 @@ export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {
   const { showToast } = useToast()
   const [showCherryPickDialog, setShowCherryPickDialog] = useState(false)
   const cherryPickMutation = useCherryPickCommit()
+  const { settings } = useSettings()
 
   const cherryPickForm = useForm({
     defaultValues: {
-      recordOrigin: false,
-      noCommit: true,
+      recordOrigin: settings.cherryPickRecordOrigin,
+      noCommit: settings.cherryPickNoCommit,
     },
     onSubmit: async ({ value }) => {
       cherryPickMutation.mutate(
