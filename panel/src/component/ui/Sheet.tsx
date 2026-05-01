@@ -32,6 +32,7 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Sheet
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
+      onContextMenu={event => event.preventDefault()}
       className={cn(
         [
           // Z-Index

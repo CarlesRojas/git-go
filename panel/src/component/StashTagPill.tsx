@@ -1,3 +1,4 @@
+import { useSettings } from '@/context/SettingsContext'
 import { useStashContextMenu } from '@/hook/contextMenu/useStashContextMenu'
 import { useTagContextMenu } from '@/hook/contextMenu/useTagContextMenu'
 import { cn } from '@/util/cn'
@@ -18,6 +19,11 @@ export function formatStash(ref: string): string {
 }
 
 const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
+  const { settings } = useSettings()
+
+  if (type === 'stash' && !settings.showStashes) return null
+  if (type === 'tag' && !settings.showTags) return null
+
   const icon = type === 'stash' ? faInbox : faTag
   const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
 

@@ -1,4 +1,5 @@
 import { CommitItem } from '@/component/CommitItem'
+import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
 import { ExpandedRow, useGitTree } from '@/hook/useGitTree'
@@ -17,6 +18,7 @@ interface GraphProps {
 export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => {
   const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
   const [expandedRow, setExpandedRow] = useState<ExpandedRow | undefined>()
+  const { settings } = useSettings()
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteGitCommits(selectedBranches)
@@ -36,8 +38,10 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
 
     if (workingChangesData?.commit) return [workingChangesData.commit, ...gitCommits]
 
+    if (!settings.showStashes) return gitCommits.filter(c => !c.isStash)
+
     return gitCommits
-  }, [data, workingChangesData])
+  }, [data, workingChangesData, settings.showStashes])
 
   const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
 

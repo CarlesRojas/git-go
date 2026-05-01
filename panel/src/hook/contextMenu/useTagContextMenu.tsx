@@ -37,7 +37,7 @@ export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) =
     try {
       if (!tagName) throw new Error('No tag to copy')
       await copy(tagName)
-      showToast({ text: `Copied '${tagName}' to clipboard`, type: 'success', icon: faClone })
+      showToast({ text: `Copied '${tagName}' to clipboard`, icon: faClone })
     } catch (error) {
       showToast({ text: 'Failed to copy tag name', type: 'error', icon: faClone })
     }

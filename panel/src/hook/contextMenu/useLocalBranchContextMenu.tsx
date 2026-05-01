@@ -63,7 +63,7 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
       { branchName: branch.cleanName },
       {
         onSuccess: () => {
-          showToast({ text: `Checked out to branch '${branch.cleanName}'`, icon: faCodeBranch, type: 'success' })
+          showToast({ text: `Checked out to branch '${branch.cleanName}'`, icon: faCodeBranch })
         },
         onError: error => {
           showToast({ text: error.message, type: 'error', icon: faCodeBranch })
@@ -76,7 +76,7 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
     try {
       if (!branch) throw new Error('No branch to copy')
       await copy(branch.cleanName)
-      showToast({ text: `Copied '${branch.cleanName}' to clipboard`, type: 'success', icon: faClone })
+      showToast({ text: `Copied '${branch.cleanName}' to clipboard`, icon: faClone })
     } catch (error) {
       showToast({ text: 'Failed to copy branch name', type: 'error', icon: faClone })
     }

@@ -2,6 +2,7 @@ import BranchPill from '@/component/BranchPill'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
 import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
@@ -44,6 +45,8 @@ export const CommitItem: FC<CommitItemProps> = ({
   uncommitedFiles,
   dimmed,
 }) => {
+  const { settings } = useSettings()
+
   const sectionRef = useRef<HTMLElement>(null)
   const [, copy] = useCopyToClipboard()
   const { showToast } = useToast()
@@ -103,7 +106,8 @@ export const CommitItem: FC<CommitItemProps> = ({
     useUncommittedChangesContextMenu()
 
   const hasPills =
-    !commit.isUncommitted && (Object.keys(groupedBranches).length > 0 || commit.isStash || commit.tags.length > 0)
+    !commit.isUncommitted &&
+    (Object.keys(groupedBranches).length > 0 || commit.isStash || (commit.tags.length > 0 && settings.showTags))
 
   const pills = (
     <div

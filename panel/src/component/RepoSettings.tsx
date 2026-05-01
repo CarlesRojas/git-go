@@ -57,7 +57,7 @@ export const RepoSettings: FC = () => {
       setRepoState({ showStashes: checked })
       showToast({
         text: checked ? 'Stashes are now visible' : 'Stashes are now hidden',
-        type: 'success',
+        type: 'info',
         icon: faInbox,
       })
     } catch (error) {
