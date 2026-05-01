@@ -24,6 +24,8 @@ import {
   faCircleNotch,
   faCodeBranch,
   faCog,
+  faEye,
+  faEyeSlash,
   faInbox,
   faTag,
   faTrash,
@@ -89,6 +91,29 @@ export const RepoSettings: FC = () => {
   const handleOpenSettings = () => {
     const vscode = window.acquireVsCodeApi()
     vscode.postMessage({ type: 'openSettings', query: 'git-go' })
+  }
+
+  const handleToggleRemoteVisibility = async (remoteName: string) => {
+    try {
+      const isHidden = settings.hiddenRemotes && settings.hiddenRemotes.includes(remoteName)
+      const newHiddenRemotes = isHidden
+        ? settings.hiddenRemotes.filter(name => name !== remoteName)
+        : [...(settings.hiddenRemotes || []), remoteName]
+
+      setRepoState({ hiddenRemotes: newHiddenRemotes })
+
+      showToast({
+        text: isHidden ? `Remote "${remoteName}" is now visible` : `Remote "${remoteName}" is now hidden`,
+        type: 'info',
+        icon: isHidden ? faEye : faEyeSlash,
+      })
+    } catch (error) {
+      showToast({
+        text: 'Failed to toggle remote visibility',
+        type: 'error',
+        icon: faEye,
+      })
+    }
   }
 
   return (
@@ -204,7 +229,7 @@ export const RepoSettings: FC = () => {
               )}
 
               {remotes.map(remote => (
-                <div key={remote.name} className="flex items-center justify-between">
+                <div key={remote.name} className="flex items-center justify-between gap-2">
                   <div className="flec grow flex-col">
                     <div className="font-semibold">{remote.name}</div>
 
@@ -224,6 +249,13 @@ export const RepoSettings: FC = () => {
                       Push: {remote.pushUrl}
                     </div>
                   </div>
+
+                  <Button variant="secondary" size="icon" onClick={() => handleToggleRemoteVisibility(remote.name)}>
+                    <FontAwesomeIcon
+                      icon={settings.hiddenRemotes && settings.hiddenRemotes.includes(remote.name) ? faEyeSlash : faEye}
+                      className="size-3"
+                    />
+                  </Button>
 
                   <Button variant="destructive" size="icon" onClick={() => removeRemoteDialog.openDialog(remote.name)}>
                     <FontAwesomeIcon icon={faTrash} className="size-3" />

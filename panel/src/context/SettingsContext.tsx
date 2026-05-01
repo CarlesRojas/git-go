@@ -22,7 +22,9 @@ interface SettingsProviderProps {
 export const SettingsProvider = ({ children }: SettingsProviderProps) => {
   const { data: configData, isLoading: isConfigLoading } = useConfig()
   const { data: repoData, isLoading: isRepoLoading } = useRepoState()
-  // TODO use the selected default branches from here
+
+  console.log(configData, repoData)
+
   useEffect(() => {
     if (!configData) return
 

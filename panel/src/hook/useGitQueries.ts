@@ -27,12 +27,14 @@ export interface RepoState {
   selectedBranches: string[]
   showStashes: boolean
   showTags: boolean
+  hiddenRemotes: string[]
 }
 
 const defaultRepoState: RepoState = {
   selectedBranches: [],
   showStashes: true,
   showTags: true,
+  hiddenRemotes: [],
 }
 
 export interface ConfigState {
