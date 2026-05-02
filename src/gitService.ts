@@ -72,6 +72,23 @@ export class GitService {
         return GitService.instance;
     }
 
+    private async validateRefName(refName: string, workspacePath: string, gitPath: string): Promise<void> {
+        if (!refName || refName.trim() === '') {
+            throw new Error('Ref name cannot be empty');
+        }
+
+        // Basic security check: reject names starting with -
+        if (refName.startsWith('-')) {
+            throw new Error(`Invalid ref name: '${refName}' (ref names cannot start with -)`);
+        }
+
+        try {
+            await this.spawnGit([gitPath, 'check-ref-format', '--', refName], workspacePath);
+        } catch (error) {
+            throw new Error(`Invalid ref name: '${refName}' (${error})`);
+        }
+    }
+
     public async findGitExecutable(): Promise<GitExecutable> {
         if (this.cachedGitExecutable) {
             return this.cachedGitExecutable;
@@ -271,7 +288,15 @@ export class GitService {
         gitPath: string
     ): Promise<{ baseHash: string | null; untrackedFilesHash: string | null }> {
         try {
-            const output = await this.spawnGit([gitPath, 'rev-list', '--parents', '-n', '1', stashHash], workspacePath);
+            // Basic validation for stash hash
+            if (stashHash.startsWith('-')) {
+                throw new Error(`Invalid stash hash: '${stashHash}' (hashes cannot start with -)`);
+            }
+
+            const output = await this.spawnGit(
+                [gitPath, 'rev-list', '--parents', '-n', '1', '--', stashHash],
+                workspacePath
+            );
 
             const parts = output.trim().split(' ');
             if (parts.length < 2) {
@@ -723,12 +748,12 @@ export class GitService {
 
             // Use git diff between stash and its base commit (like Git Graph)
             const statusOutput = await this.spawnGit(
-                [gitPath, 'diff', '--name-status', stashParents.baseHash, stashHash],
+                [gitPath, 'diff', '--name-status', '--', stashParents.baseHash, stashHash],
                 workspacePath
             );
 
             const numstatOutput = await this.spawnGit(
-                [gitPath, 'diff', '--numstat', stashParents.baseHash, stashHash],
+                [gitPath, 'diff', '--numstat', '--', stashParents.baseHash, stashHash],
                 workspacePath
             );
 
@@ -813,17 +838,20 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate tag name
+        await this.validateRefName(`refs/tags/${tagName}`, workspacePath, gitExecutable.path);
+
         try {
             const args = [gitExecutable.path, 'tag'];
 
             if (tagType === 'annotated') {
                 if (tagMessage) {
-                    args.push('-a', tagName, '-m', tagMessage, commitHash);
+                    args.push('-a', '-m', tagMessage, '--', tagName, commitHash);
                 } else {
-                    args.push('-a', tagName, '-m', '', commitHash);
+                    args.push('-a', '-m', '', '--', tagName, commitHash);
                 }
             } else {
-                args.push(tagName, commitHash);
+                args.push('--', tagName, commitHash);
             }
 
             await this.spawnGit(args, workspacePath);
@@ -846,14 +874,20 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
         try {
             if (checkout) {
-                await this.spawnGit([gitExecutable.path, 'checkout', '-b', branchName, commitHash], workspacePath);
+                await this.spawnGit(
+                    [gitExecutable.path, 'checkout', '-b', '--', branchName, commitHash],
+                    workspacePath
+                );
                 log(
                     `Successfully created and checked out branch '${branchName}' from commit ${commitHash.substring(0, 7)}`
                 );
             } else {
-                await this.spawnGit([gitExecutable.path, 'branch', branchName, commitHash], workspacePath);
+                await this.spawnGit([gitExecutable.path, 'branch', '--', branchName, commitHash], workspacePath);
                 log(`Successfully created branch '${branchName}' from commit ${commitHash.substring(0, 7)}`);
             }
         } catch (error) {
@@ -874,6 +908,11 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Basic validation for commit hash
+        if (commitHash.startsWith('-')) {
+            throw new Error(`Invalid commit hash: '${commitHash}' (commit hashes cannot start with -)`);
+        }
+
         try {
             const args = [gitExecutable.path, 'cherry-pick'];
 
@@ -885,7 +924,7 @@ export class GitService {
                 args.push('--no-commit');
             }
 
-            args.push(commitHash);
+            args.push('--', commitHash);
 
             await this.spawnGit(args, workspacePath);
 
@@ -912,6 +951,11 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Basic validation for commit hash
+        if (commitHash.startsWith('-')) {
+            throw new Error(`Invalid commit hash: '${commitHash}' (commit hashes cannot start with -)`);
+        }
+
         try {
             const args = [gitExecutable.path, 'revert'];
 
@@ -919,7 +963,7 @@ export class GitService {
                 args.push('--no-commit');
             }
 
-            args.push(commitHash);
+            args.push('--', commitHash);
 
             await this.spawnGit(args, workspacePath);
 
@@ -938,9 +982,12 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
         try {
             log(`Checking out local branch: ${branchName}`);
-            await this.spawnGit([gitExecutable.path, 'checkout', branchName], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'checkout', '--', branchName], workspacePath);
             log(`Successfully checked out branch: ${branchName}`);
         } catch (error) {
             log(`Error checking out branch: ${error}`);
@@ -959,10 +1006,14 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate both branch names
+        await this.validateRefName(`refs/remotes/${remoteBranchName}`, workspacePath, gitExecutable.path);
+        await this.validateRefName(`refs/heads/${localBranchName}`, workspacePath, gitExecutable.path);
+
         try {
             log(`Creating and checking out local branch '${localBranchName}' from remote '${remoteBranchName}'`);
             await this.spawnGit(
-                [gitExecutable.path, 'checkout', '-b', localBranchName, remoteBranchName],
+                [gitExecutable.path, 'checkout', '-b', '--', localBranchName, remoteBranchName],
                 workspacePath
             );
             log(`Successfully created and checked out branch: ${localBranchName}`);
@@ -1055,13 +1106,21 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
+        // Validate remote name
+        if (remote.startsWith('-')) {
+            throw new Error(`Invalid remote name: '${remote}' (remote names cannot start with -)`);
+        }
+
         try {
             log(`Pushing branch ${branchName} to ${remote}${setUpstream ? ' (setting upstream)' : ''}`);
             const args = [gitExecutable.path, 'push'];
-            args.push(remote, branchName);
             if (setUpstream) args.push('--set-upstream');
             if (pushMode === 'force-with-lease') args.push('--force-with-lease');
             else if (pushMode === 'force') args.push('--force');
+            args.push('--', remote, branchName);
 
             await this.spawnGit(args, workspacePath);
             log(`Successfully pushed branch ${branchName}`);
@@ -1078,9 +1137,13 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate both old and new branch names
+        await this.validateRefName(`refs/heads/${oldName}`, workspacePath, gitExecutable.path);
+        await this.validateRefName(`refs/heads/${newName}`, workspacePath, gitExecutable.path);
+
         try {
             log(`Renaming branch ${oldName} to ${newName}`);
-            await this.spawnGit([gitExecutable.path, 'branch', '-m', oldName, newName], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'branch', '-m', '--', oldName, newName], workspacePath);
             log(`Successfully renamed branch to ${newName}`);
         } catch (error) {
             log(`Error renaming branch: ${error}`);
@@ -1099,10 +1162,13 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
         try {
             log(`Deleting branch ${branchName}${force ? ' (force)' : ''}`);
             const deleteFlag = force ? '-D' : '-d';
-            await this.spawnGit([gitExecutable.path, 'branch', deleteFlag, branchName], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'branch', deleteFlag, '--', branchName], workspacePath);
             log(`Successfully deleted branch ${branchName}`);
         } catch (error) {
             log(`Error deleting branch: ${error}`);
@@ -1123,9 +1189,12 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
         try {
             log(`Merging branch ${branchName} into current branch`);
-            const args = [gitExecutable.path, 'merge', branchName];
+            const args = [gitExecutable.path, 'merge'];
 
             if (squash) {
                 args.push('--squash');
@@ -1136,6 +1205,8 @@ export class GitService {
             if (noCommit) {
                 args.push('--no-commit');
             }
+
+            args.push('--', branchName);
 
             await this.spawnGit(args, workspacePath);
             log(`Successfully merged branch ${branchName}`);
@@ -1156,13 +1227,18 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
         try {
             log(`Rebasing current branch onto ${branchName}`);
-            const args = [gitExecutable.path, 'rebase', branchName];
+            const args = [gitExecutable.path, 'rebase'];
 
             if (ignoreDate) {
                 args.push('--ignore-date');
             }
+
+            args.push('--', branchName);
 
             await this.spawnGit(args, workspacePath);
             log(`Successfully rebased onto ${branchName}`);
@@ -1242,10 +1318,15 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Basic validation for stash selector
+        if (stashSelector.startsWith('-')) {
+            throw new Error(`Invalid stash selector: '${stashSelector}' (stash selectors cannot start with -)`);
+        }
+
         try {
             const args = [gitExecutable.path, 'stash', 'apply'];
             if (reinstateIndex) args.push('--index');
-            args.push(stashSelector);
+            args.push('--', stashSelector);
 
             await this.spawnGit(args, workspacePath);
             log(`Successfully applied stash ${stashSelector}${reinstateIndex ? ' with index reinstatement' : ''}`);
@@ -1266,10 +1347,15 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Basic validation for stash selector
+        if (stashSelector.startsWith('-')) {
+            throw new Error(`Invalid stash selector: '${stashSelector}' (stash selectors cannot start with -)`);
+        }
+
         try {
             const args = [gitExecutable.path, 'stash', 'pop'];
             if (reinstateIndex) args.push('--index');
-            args.push(stashSelector);
+            args.push('--', stashSelector);
 
             await this.spawnGit(args, workspacePath);
             log(`Successfully popped stash ${stashSelector}${reinstateIndex ? ' with index reinstatement' : ''}`);
@@ -1286,8 +1372,13 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Basic validation for stash selector
+        if (stashSelector.startsWith('-')) {
+            throw new Error(`Invalid stash selector: '${stashSelector}' (stash selectors cannot start with -)`);
+        }
+
         try {
-            await this.spawnGit([gitExecutable.path, 'stash', 'drop', stashSelector], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'stash', 'drop', '--', stashSelector], workspacePath);
             log(`Successfully dropped stash ${stashSelector}`);
         } catch (error) {
             log(`Error dropping stash: ${error}`);
@@ -1330,8 +1421,16 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate branch name
+        await this.validateRefName(`refs/heads/${branchName}`, workspacePath, gitExecutable.path);
+
+        // Validate remote name
+        if (remote.startsWith('-')) {
+            throw new Error(`Invalid remote name: '${remote}' (remote names cannot start with -)`);
+        }
+
         try {
-            await this.spawnGit([gitExecutable.path, 'push', remote, '--delete', branchName], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'push', '--', remote, '--delete', branchName], workspacePath);
             log(`Successfully deleted remote branch ${branchName} on ${remote}`);
         } catch (error) {
             log(`Error deleting remote branch: ${error}`);
@@ -1352,6 +1451,15 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate remote name
+        if (remote.startsWith('-')) {
+            throw new Error(`Invalid remote name: '${remote}' (remote names cannot start with -)`);
+        }
+
+        // Validate both branch names
+        await this.validateRefName(`refs/remotes/${remote}/${remoteBranch}`, workspacePath, gitExecutable.path);
+        await this.validateRefName(`refs/heads/${localBranch}`, workspacePath, gitExecutable.path);
+
         try {
             // Check if the target local branch is currently checked out
             const currentBranch = await this.getCurrentBranch(log);
@@ -1363,22 +1471,22 @@ export class GitService {
 
                 if (forceFetch) {
                     // For force update: fetch then reset --hard
-                    await this.spawnGit([gitExecutable.path, 'fetch', remote, remoteBranch], workspacePath);
+                    await this.spawnGit([gitExecutable.path, 'fetch', '--', remote, remoteBranch], workspacePath);
                     await this.spawnGit(
-                        [gitExecutable.path, 'reset', '--hard', `${remote}/${remoteBranch}`],
+                        [gitExecutable.path, 'reset', '--hard', '--', `${remote}/${remoteBranch}`],
                         workspacePath
                     );
                     log(`Successfully force-updated current branch ${localBranch} from ${remote}/${remoteBranch}`);
                 } else {
                     // For normal update: use git pull
-                    await this.spawnGit([gitExecutable.path, 'pull', remote, remoteBranch], workspacePath);
+                    await this.spawnGit([gitExecutable.path, 'pull', '--', remote, remoteBranch], workspacePath);
                     log(`Successfully pulled ${remote}/${remoteBranch} into current branch ${localBranch}`);
                 }
             } else {
                 // If the target branch is not checked out, use the normal fetch approach
                 const args = [gitExecutable.path, 'fetch'];
                 if (forceFetch) args.push('--force');
-                args.push(remote, `${remoteBranch}:${localBranch}`);
+                args.push('--', remote, `${remoteBranch}:${localBranch}`);
 
                 await this.spawnGit(args, workspacePath);
                 log(
@@ -1409,11 +1517,15 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate tag name
+        await this.validateRefName(`refs/tags/${tagName}`, workspacePath, gitExecutable.path);
+
         try {
             const output = await this.spawnGit(
                 [
                     gitExecutable.path,
                     'for-each-ref',
+                    '--',
                     `refs/tags/${tagName}`,
                     '--format=%(objectname)|%(taggername)|%(taggeremail)|%(taggerdate:iso)|%(contents)'
                 ],
@@ -1442,9 +1554,19 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate tag name
+        await this.validateRefName(`refs/tags/${tagName}`, workspacePath, gitExecutable.path);
+
+        // Validate all remote names
+        for (const remote of remotes) {
+            if (remote.startsWith('-')) {
+                throw new Error(`Invalid remote name: '${remote}' (remote names cannot start with -)`);
+            }
+        }
+
         try {
             for (const remote of remotes) {
-                await this.spawnGit([gitExecutable.path, 'push', remote, tagName], workspacePath);
+                await this.spawnGit([gitExecutable.path, 'push', '--', remote, tagName], workspacePath);
                 log(`Successfully pushed tag ${tagName} to ${remote}`);
             }
         } catch (error) {
@@ -1460,14 +1582,27 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate tag name
+        await this.validateRefName(`refs/tags/${tagName}`, workspacePath, gitExecutable.path);
+
+        // Validate remote name if provided
+        if (deleteOnRemote) {
+            if (deleteOnRemote.startsWith('-')) {
+                throw new Error(`Invalid remote name: '${deleteOnRemote}' (remote names cannot start with -)`);
+            }
+        }
+
         try {
             // Delete local tag
-            await this.spawnGit([gitExecutable.path, 'tag', '-d', tagName], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'tag', '-d', '--', tagName], workspacePath);
             log(`Successfully deleted local tag ${tagName}`);
 
             // Delete remote tag if specified
             if (deleteOnRemote) {
-                await this.spawnGit([gitExecutable.path, 'push', deleteOnRemote, '--delete', tagName], workspacePath);
+                await this.spawnGit(
+                    [gitExecutable.path, 'push', '--', deleteOnRemote, '--delete', tagName],
+                    workspacePath
+                );
                 log(`Successfully deleted tag ${tagName} from remote ${deleteOnRemote}`);
             }
         } catch (error) {
@@ -1642,19 +1777,27 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate remote name
+        if (remote.name.startsWith('-')) {
+            throw new Error(`Invalid remote name: '${remote.name}' (remote names cannot start with -)`);
+        }
+
         try {
             // Add the remote with fetch URL
-            await this.spawnGit([gitExecutable.path, 'remote', 'add', remote.name, remote.fetchUrl], workspacePath);
+            await this.spawnGit(
+                [gitExecutable.path, 'remote', 'add', '--', remote.name, remote.fetchUrl],
+                workspacePath
+            );
 
             // Set push URL if different from fetch URL
             if (remote.pushUrl && remote.pushUrl !== remote.fetchUrl) {
                 await this.spawnGit(
-                    [gitExecutable.path, 'remote', 'set-url', '--push', remote.name, remote.pushUrl],
+                    [gitExecutable.path, 'remote', 'set-url', '--push', '--', remote.name, remote.pushUrl],
                     workspacePath
                 );
             }
 
-            await this.spawnGit([gitExecutable.path, 'fetch', remote.name], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'fetch', '--', remote.name], workspacePath);
         } catch (error) {
             throw new Error(`Failed to add remote: ${error}`);
         }
@@ -1667,8 +1810,13 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
+        // Validate remote name
+        if (remoteName.startsWith('-')) {
+            throw new Error(`Invalid remote name: '${remoteName}' (remote names cannot start with -)`);
+        }
+
         try {
-            await this.spawnGit([gitExecutable.path, 'remote', 'remove', remoteName], workspacePath);
+            await this.spawnGit([gitExecutable.path, 'remote', 'remove', '--', remoteName], workspacePath);
         } catch (error) {
             throw new Error(`Failed to remove remote: ${error}`);
         }
