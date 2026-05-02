@@ -2,7 +2,7 @@ import { CommitItem } from '@/component/CommitItem'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
-import { ExpandedRow, useGitTree } from '@/hook/useGitTree'
+import { useGitTree } from '@/hook/useGitTree'
 import { matchesSearch } from '@/util/searchCommits'
 import { faCircleNotch, faCodeBranch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -15,9 +15,13 @@ interface GraphProps {
   searchTerm?: string
 }
 
+interface ExpandedCommit {
+  row: number
+  hash: string
+}
+
 export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => {
-  const [expandedCommitHash, setExpandedCommitHash] = useState<string | null>(null)
-  const [expandedRow, setExpandedRow] = useState<ExpandedRow | undefined>()
+  const [expandedCommit, setExpandedCommit] = useState<ExpandedCommit | null>(null)
   const { settings } = useSettings()
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -42,7 +46,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     return filteredCommits
   }, [data, workingChangesData, settings.showStashes])
 
-  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
+  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedCommit?.row)
 
   const layoutMap = useMemo(() => {
     const map = new Map()
@@ -52,35 +56,29 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     return map
   }, [rows])
 
-  const toggleCommit = (commitHash: string) => {
-    setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
-    if (expandedCommitHash === commitHash) setExpandedRow(undefined)
-  }
-
   const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
 
   const navigateCommit = useCallback(
     (direction: 'up' | 'down') => {
-      if (!expandedRow || commits.length === 0) return
+      if (!expandedCommit || commits.length === 0) return
 
       let nextIndex: number
-      if (direction === 'up') nextIndex = expandedRow.row > 0 ? expandedRow.row - 1 : 0
-      else nextIndex = expandedRow.row < commits.length - 1 ? expandedRow.row + 1 : commits.length - 1
+      if (direction === 'up') nextIndex = expandedCommit.row > 0 ? expandedCommit.row - 1 : 0
+      else nextIndex = expandedCommit.row < commits.length - 1 ? expandedCommit.row + 1 : commits.length - 1
 
       const nextCommit = commits[nextIndex]
-      if (nextIndex === expandedRow.row || !nextCommit) return
+      if (nextIndex === expandedCommit.row || !nextCommit) return
 
-      setExpandedCommitHash(nextCommit.hash)
-      setExpandedRow({ row: nextIndex, extraHeight: expandedRow.extraHeight })
+      setExpandedCommit({ row: nextIndex, hash: nextCommit.hash })
     },
-    [expandedRow, commits],
+    [expandedCommit, commits],
   )
 
   useEventListener(
     'keydown',
     useCallback(
       (event: KeyboardEvent) => {
-        if (!expandedRow) return
+        if (!expandedCommit) return
         if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
         if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
 
@@ -94,14 +92,13 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
           target.closest(
             '[role="dialog"], [role="menu"], [role="menuitem"], [role="listbox"], [role="combobox"], [role="grid"]',
           )
-        ) {
+        )
           return
-        }
 
         event.preventDefault()
         navigateCommit(event.key === 'ArrowUp' ? 'up' : 'down')
       },
-      [expandedRow, navigateCommit],
+      [expandedCommit, navigateCommit],
     ),
   )
 
@@ -148,14 +145,15 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
             <CommitItem
               key={commit.hash}
               commit={commit}
-              isExpanded={expandedCommitHash === commit.hash}
-              onToggle={() => toggleCommit(commit.hash)}
+              isExpanded={expandedCommit?.hash === commit.hash}
+              onToggle={() =>
+                setExpandedCommit(prev => (prev?.hash === commit.hash ? null : { row, hash: commit.hash }))
+              }
               selectedBranches={selectedBranches}
               treeWidth={treeWidth}
               onCommitHover={onCommitHover}
               row={row}
               layout={layout}
-              setExpandedRow={setExpandedRow}
               uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
               dimmed={!matchesSearch(commit, branches, searchTerm)}
             />

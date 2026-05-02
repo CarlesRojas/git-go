@@ -1,0 +1,1 @@
+export const EXPANDED_COMMIT_HEIGHT = 350

@@ -4,11 +4,7 @@
 
 ## Improvements (performance / stability / maintainability)
 
-- [x] 🔴 **2. Memoize the SVG tree.** `useGitTree.tsx:142-300` builds the full SVG inline, so any parent rerender (hover, search-typing, etc.) reflows the entire graph. Wrap `treeComponent` in `useMemo` keyed on `[layout, expandedRow, treeWidth]`.
-
 - [ ] 🔴 **3. Lift dialogs and shared queries out of every row.** Currently every `CommitItem` calls `useGitBranches`, `useCurrentBranch`, four dialog hooks, and two context-menu hooks. Move dialogs to an app-level `<DialogsProvider>` exposing `openTagDialog(commit)` etc.; pass `currentBranch`/`branches` down from `Graph` as props. Cuts hook count per row from ~10 to ~2.
-
-- [ ] 🟠 **5. Build a `hash → layout` map in `Graph.tsx`.** One pass over `rows` before the render loop fixes the O(n²) lookup (Bug #14) and the related crash on missing entries.
 
 - [ ] 🟠 **6. Pre-index branches by commit hash for search.** `searchCommits.ts` filters all branches for each commit on every keystroke. Memoize `Map<hash, GitBranch[]>` once at the `Graph` level and pass to `matchesSearch`.
 

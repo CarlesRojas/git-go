@@ -2,13 +2,13 @@ import BranchPill from '@/component/BranchPill'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
+import { EXPANDED_COMMIT_HEIGHT } from '@/constant'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
 import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
 import { useCurrentBranch, useGitBranches, useGitCommitFiles } from '@/hook/useGitQueries'
-import { ExpandedRow, getColor } from '@/hook/useGitTree'
-import { useResizable } from '@/hook/useResizable'
+import { getColor } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
@@ -27,7 +27,6 @@ interface CommitItemProps {
   onCommitHover: (hash: string | null, row: number | null) => void
   row: number
   layout: CommitLayout
-  setExpandedRow?: (expandedRow?: ExpandedRow) => void
   uncommitedFiles?: GitFileChange[]
   dimmed?: boolean
 }
@@ -41,7 +40,6 @@ export const CommitItem: FC<CommitItemProps> = ({
   onCommitHover,
   row,
   layout,
-  setExpandedRow,
   uncommitedFiles,
   dimmed,
 }) => {
@@ -59,17 +57,6 @@ export const CommitItem: FC<CommitItemProps> = ({
     isStash: commit.isStash ?? false,
     enabled: isExpanded && !commit.isUncommitted,
   })
-
-  const {
-    height: panelHeight,
-    isDragging,
-    handleMouseDown,
-    containerRef,
-  } = useResizable({ initialHeight: Math.max(window.innerHeight * 0.3, 164) })
-
-  useEffect(() => {
-    if (isExpanded && panelHeight > 0) setExpandedRow?.({ row, extraHeight: panelHeight })
-  }, [isExpanded, panelHeight, setExpandedRow, row])
 
   const groupedBranches = useMemo(
     () =>
@@ -287,22 +274,14 @@ export const CommitItem: FC<CommitItemProps> = ({
                 />
 
                 <div
-                  className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px opacity-15"
-                  style={{ backgroundColor: getColor(layout.colorIndex) }}
-                />
-
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px opacity-15"
-                  style={{ backgroundColor: getColor(layout.colorIndex) }}
+                  className="pointer-events-none absolute inset-0 -z-10 border-y opacity-15"
+                  style={{ borderColor: getColor(layout.colorIndex) }}
                 />
               </>
             )}
 
             {isExpanded && !layout.isHead && (
-              <>
-                <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 top-0 -z-10 h-px max-h-px min-h-px" />
-                <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
-              </>
+              <div className="border-vsc-editor-fg/10 pointer-events-none absolute inset-0 -z-10 border-y" />
             )}
           </div>,
           commit.isUncommitted,
@@ -310,104 +289,89 @@ export const CommitItem: FC<CommitItemProps> = ({
 
         {isExpanded && (
           <div
-            ref={containerRef}
             className={cn(
               // Layout
-              'relative overflow-hidden',
+              'relative w-full max-w-full overflow-x-hidden overflow-y-auto',
               // Colors
-              'bg-vsc-editor-fg/3',
+              'bg-vsc-editor-fg/3 border-vsc-editor-fg/10 border-b',
               // Interactive
               'transition-opacity duration-500',
             )}
             data-commit-row={row}
-            style={{ height: `${panelHeight}px`, maxHeight: `${panelHeight}px`, paddingLeft: `${treeWidth + 8}px` }}
+            style={{
+              height: `${EXPANDED_COMMIT_HEIGHT}px`,
+              minHeight: `${EXPANDED_COMMIT_HEIGHT}px`,
+              maxHeight: `${EXPANDED_COMMIT_HEIGHT}px`,
+              paddingLeft: `${treeWidth + 8}px`,
+            }}
           >
-            <div className="relative size-full max-h-full min-h-full max-w-full overflow-x-hidden overflow-y-auto">
-              <div
-                className={cn('relative flex h-fit w-full flex-col gap-1 py-3 pr-2', commit.isUncommitted && 'py-0')}
-              >
-                {!commit.isUncommitted && (
-                  <div className="relative flex h-fit w-full items-center gap-3">
-                    <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
+            <div className={cn('relative flex h-fit w-full flex-col gap-1 py-3 pr-2', commit.isUncommitted && 'py-0')}>
+              {!commit.isUncommitted && (
+                <div className="relative flex h-fit w-full items-center gap-3">
+                  <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
 
-                    <div className="relative flex h-fit w-full flex-col">
-                      <p className="text-xs font-medium">
-                        <span className="opacity-50">Hash: </span>
-                        <code
-                          className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
-                          onClick={() => copyText(commit.hash, 'Hash')}
-                        >
-                          {commit.hash}
-                        </code>
-                      </p>
+                  <div className="relative flex h-fit w-full flex-col">
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Hash: </span>
+                      <code
+                        className={cn('cursor-pointer px-1 transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.hash, 'Hash')}
+                      >
+                        {commit.hash}
+                      </code>
+                    </p>
 
-                      <p className="text-xs font-medium">
-                        <span className="opacity-50">Author: </span>
-                        <span
-                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                          onClick={() => copyText(commit.author, 'Author')}
-                        >
-                          {commit.author}
-                        </span>{' '}
-                        <span
-                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                          onClick={() => copyText(commit.email, 'Email')}
-                        >
-                          ({commit.email})
-                        </span>
-                      </p>
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Author: </span>
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.author, 'Author')}
+                      >
+                        {commit.author}
+                      </span>{' '}
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.email, 'Email')}
+                      >
+                        ({commit.email})
+                      </span>
+                    </p>
 
-                      <p className="text-xs font-medium">
-                        <span className="opacity-50">Message: </span>
-                        <span
-                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                          onClick={() => copyText(commit.message, 'Message')}
-                        >
-                          {commit.message}
-                        </span>
-                      </p>
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Message: </span>
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(commit.message, 'Message')}
+                      >
+                        {commit.message}
+                      </span>
+                    </p>
 
-                      <p className="text-xs font-medium">
-                        <span className="opacity-50">Date: </span>
-                        <time dateTime={commit.date.split('T')[0]}>
-                          {new Date(commit.date).toLocaleDateString('en-CA', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </time>{' '}
-                        <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
-                          {new Date(commit.date).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                          })}
-                        </time>
-                      </p>
-                    </div>
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Date: </span>
+                      <time dateTime={commit.date.split('T')[0]}>
+                        {new Date(commit.date).toLocaleDateString('en-CA', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </time>{' '}
+                      <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
+                        {new Date(commit.date).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })}
+                      </time>
+                    </p>
                   </div>
-                )}
-
-                {fileTree.data && <TreeView data={fileTree.data} expandAll />}
-
-                {uncommitedFiles && <TreeView data={buildFileTree(uncommitedFiles, 'working-changes')} expandAll />}
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                // Position & sizing
-                'absolute right-0 bottom-0 left-0 h-1',
-                // Colors & borders
-                'border-vsc-editor-fg/15 border-b bg-transparent',
-                // Interactive
-                'hover:bg-vsc-editor-fg/20 transition-colors',
-                // State
-                isDragging && 'bg-vsc-editor-fg/30',
+                </div>
               )}
-              style={{ cursor: isDragging ? 'ns-resize' : 'ns-resize' }}
-              onMouseDown={handleMouseDown}
-            />
+
+              {fileTree.data && <TreeView data={fileTree.data} expandAll />}
+
+              {uncommitedFiles && <TreeView data={buildFileTree(uncommitedFiles, 'working-changes')} expandAll />}
+            </div>
           </div>
         )}
       </section>
