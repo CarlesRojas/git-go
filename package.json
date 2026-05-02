@@ -7,7 +7,7 @@
         "email": "carlesrojas@outlook.com"
     },
     "description": "Visual representation of your Git repository, with actions to manage commits, branches, stashes, and tags.",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "engines": {
         "vscode": "^1.116.0"
     },
