@@ -30,7 +30,7 @@
 
 - [x] 🟠 **14. `O(n²)` layout join in `Graph.tsx`.** Line 131: `rows.find(c => c.commit.hash === commit.hash)!` runs per row. For 200 commits that's 40k scans per render. The non-null assertion also crashes if working-changes-commit is in `commits` but not in `rows`. **Fix:** build a `Map<hash, CommitLayout>` once. **FIXED** - Built a `layoutMap` using `useMemo` to create a hash-to-layout mapping once, replaced the O(n²) `rows.find()` with O(1) map lookup, and added null check to prevent crashes when layout is missing.
 
-- [ ] 🟠 **15. `showStashes=false` ignored when working changes exist.** `Graph.tsx:36-44` returns early on `workingChangesData?.commit` without applying the stash filter, so toggling stashes off does nothing while you have uncommitted changes.
+- [x] 🟠 **15. `showStashes=false` ignored when working changes exist.** `Graph.tsx:36-44` returns early on `workingChangesData?.commit` without applying the stash filter, so toggling stashes off does nothing while you have uncommitted changes. **FIXED** - Restructured the commits filtering logic to apply the stash filter first, then add working changes commit, ensuring the showStashes setting is respected regardless of working changes state.
 
 - [ ] 🟠 **16. File watcher misses packed-refs.** `extension.ts:1184-1199` watches `.git/refs/**/*` and `.git/HEAD`. After `git gc`/`git pack-refs`, individual ref files vanish and updates land in `.git/packed-refs`, which isn't watched → graph stops auto-refreshing. **Fix:** also watch `.git/packed-refs`, `.git/refs`, and `.git/logs/HEAD`.
 

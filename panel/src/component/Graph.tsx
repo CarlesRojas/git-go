@@ -35,12 +35,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
 
   const commits = useMemo(() => {
     const gitCommits = data?.pages.flatMap(page => page.commits) ?? []
+    const filteredCommits = settings.showStashes ? gitCommits : gitCommits.filter(c => !c.isStash)
 
-    if (workingChangesData?.commit) return [workingChangesData.commit, ...gitCommits]
+    if (workingChangesData?.commit) return [workingChangesData.commit, ...filteredCommits]
 
-    if (!settings.showStashes) return gitCommits.filter(c => !c.isStash)
-
-    return gitCommits
+    return filteredCommits
   }, [data, workingChangesData, settings.showStashes])
 
   const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
