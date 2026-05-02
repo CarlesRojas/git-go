@@ -1,4 +1,4 @@
-import { EXPANDED_COMMIT_HEIGHT } from '@/constant'
+import { useSettings } from '@/context/SettingsContext'
 import { cn } from '@/util/cn'
 import { CommitLayout, computeGraphLayout } from '@/util/computeGraphLayout'
 import type { GitCommit } from '@git/gitService'
@@ -43,15 +43,15 @@ function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
   return `M${x1},${y1}C${x1},${(y1 + CURVE_D).toFixed(1)} ${x2},${(y2 - CURVE_D).toFixed(1)} ${x2},${y2}`
 }
 
-export function useGitTree(
-  commits: GitCommit[],
-  expandedRow?: number,
-): {
+interface Result {
   treeComponent: ReactNode
   treeWidth: number
   rows: CommitLayout[]
-} {
+}
+
+export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
+  const { settings } = useSettings()
 
   const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
@@ -61,9 +61,9 @@ export function useGitTree(
     return (row: number) => {
       const baseY = row * ROW_HEIGHT + ROW_HEIGHT / 2
       if (row <= expandedRow) return baseY
-      return baseY + EXPANDED_COMMIT_HEIGHT
+      return baseY + settings.expandedCommitHeight
     }
-  }, [expandedRow])
+  }, [expandedRow, settings.expandedCommitHeight])
 
   const buildSegmentPath = useMemo(() => {
     if (expandedRow === undefined) {
@@ -130,7 +130,7 @@ export function useGitTree(
   const isOverflowing = treeWidth > MAX_TREE_COLUMNS * COL_WIDTH
   const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH) + LEFT_PADDING
 
-  const svgHeight = commits.length * ROW_HEIGHT + (expandedRow !== undefined ? EXPANDED_COMMIT_HEIGHT : 0)
+  const svgHeight = commits.length * ROW_HEIGHT + (expandedRow !== undefined ? settings.expandedCommitHeight : 0)
 
   const treeComponent = useMemo(
     () => (

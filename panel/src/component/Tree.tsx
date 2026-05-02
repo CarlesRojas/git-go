@@ -476,7 +476,7 @@ const TreeLeaf = ({
             <Button
               variant="ghost"
               size="iconSmall"
-              className="ml-2 opacity-0 transition-opacity duration-300 group-hover:opacity-80"
+              className="ml-2 opacity-0 transition-opacity duration-200 group-hover:opacity-80"
               onClick={e => {
                 e.stopPropagation()
                 item.onOpenFile?.()
@@ -506,7 +506,7 @@ const AccordionTrigger = ({
     >
       <FontAwesomeIcon
         icon={faChevronRight}
-        className="text-vsc-editor-fg/50 mr-2 h-3 w-3 shrink-0 transition-transform duration-300 group-data-[state=open]/trigger:rotate-90"
+        className="text-vsc-editor-fg/50 mr-1 h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90"
       />
       {children}
     </AccordionPrimitive.Trigger>

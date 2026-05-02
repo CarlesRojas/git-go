@@ -126,6 +126,13 @@ export class Config {
     get stashIncludeUntracked(): boolean {
         return !!this.config.get('stash.includeUntracked', true);
     }
+
+    /**
+     * Get the value of the `git-go.graph.expandedCommitHeight` Extension Setting.
+     */
+    get expandedCommitHeight(): number {
+        return this.config.get('graph.expandedCommitHeight', 300);
+    }
 }
 
 /**

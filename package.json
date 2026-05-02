@@ -144,6 +144,13 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Use rounded corners for all commit graph elements."
+                },
+                "git-go.graph.expandedCommitHeight": {
+                    "type": "number",
+                    "default": 300,
+                    "minimum": 200,
+                    "maximum": 800,
+                    "description": "Height in pixels for expanded commit details view."
                 }
             }
         }

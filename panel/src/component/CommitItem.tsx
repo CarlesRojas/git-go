@@ -2,7 +2,6 @@ import BranchPill from '@/component/BranchPill'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
-import { EXPANDED_COMMIT_HEIGHT } from '@/constant'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
@@ -299,9 +298,9 @@ export const CommitItem: FC<CommitItemProps> = ({
             )}
             data-commit-row={row}
             style={{
-              height: `${EXPANDED_COMMIT_HEIGHT}px`,
-              minHeight: `${EXPANDED_COMMIT_HEIGHT}px`,
-              maxHeight: `${EXPANDED_COMMIT_HEIGHT}px`,
+              height: `${settings.expandedCommitHeight}px`,
+              minHeight: `${settings.expandedCommitHeight}px`,
+              maxHeight: `${settings.expandedCommitHeight}px`,
               paddingLeft: `${treeWidth + 8}px`,
             }}
           >

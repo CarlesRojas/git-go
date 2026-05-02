@@ -66,7 +66,8 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
-                            stashIncludeUntracked: config.stashIncludeUntracked
+                            stashIncludeUntracked: config.stashIncludeUntracked,
+                            expandedCommitHeight: config.expandedCommitHeight
                         }
                     });
                 }
@@ -461,7 +462,8 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
-                            stashIncludeUntracked: config.stashIncludeUntracked
+                            stashIncludeUntracked: config.stashIncludeUntracked,
+                            expandedCommitHeight: config.expandedCommitHeight
                         }
                     };
                 },
