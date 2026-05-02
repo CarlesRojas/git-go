@@ -56,7 +56,8 @@ export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export type GitResetMode = 'mixed' | 'hard';
 
-const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
+// Use ASCII character 0x1E (Record Separator) for field separation
+const GIT_LOG_SEPARATOR = '\x1E';
 const EOL_REGEX = /\r\n|\r|\n/g;
 
 export class GitService {
@@ -562,6 +563,7 @@ export class GitService {
                 '-c',
                 'log.showSignature=false',
                 'log',
+                '-z',
                 `--max-count=${maxCount + 1}`,
                 `--skip=${skip}`,
                 `--pretty=format:${format}`,
@@ -588,7 +590,7 @@ export class GitService {
 
             const gitLog = await this.spawnGit(gitArgs, workspacePath);
 
-            let lines = gitLog.split(EOL_REGEX).filter((line: string) => line.trim());
+            let lines = gitLog.split('\x00').filter((line: string) => line.trim());
 
             let hasMore = false;
             if (lines.length > maxCount) {
@@ -602,7 +604,8 @@ export class GitService {
                 if (!line.includes(GIT_LOG_SEPARATOR)) continue;
 
                 const parts = line.split(GIT_LOG_SEPARATOR);
-                if (parts.length < 6) {
+                if (parts.length < 7) {
+                    // We expect exactly 7 parts: hash, parents, author, email, date, message, refs
                     log(`Skipping malformed line: ${line}`);
                     continue;
                 }

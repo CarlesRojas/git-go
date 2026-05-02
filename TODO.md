@@ -14,8 +14,6 @@
 
 - [ ] 🟠 **17. `findGitExecutable` swallows the original error.** `gitService.ts:84-110` — when both the configured path and the `git` fallback fail, the original error is dropped (the comment "Continue to throw original error" is wrong; it isn't rethrown). User sees only the generic "Unable to find Git executable…" with no diagnostic detail.
 
-- [ ] 🟠 **18. `getGitCommits` separator can collide with subjects.** `gitService.ts:59` uses a hand-rolled separator; the format includes `%s` (subject) and `%D` (refs), both arbitrary text. A commit message containing the literal separator string corrupts parsing for that line. **Fix:** use `-z`/`%x00` with NUL-terminated records.
-
 - [ ] 🟡 **19. `getStashCommits` runs N+1 git calls sequentially.** `gitService.ts:357-380` does one `git log -1` per stash. Should be a single `git log <stash1> <stash2> …` or `for-each-ref refs/stash`.
 
 - [ ] 🟡 **20. `useResizable` reads `window.innerHeight` once.** `CommitItem.tsx:68` — viewport resize doesn't update the initial height and rows opened after a resize use stale geometry.
@@ -58,7 +56,7 @@
 
 - [ ] 🟠 **8. Consolidate file watching and reduce refresh thrash.** Today: `repo.state.onDidChange` + 3 file-system watchers (refs/HEAD) + view-state changes all funnel through a 300ms debounce that invalidates _all_ `'git'` queries. After `git fetch` you re-pull commits, branches, remotes, tags, and working changes simultaneously. Invalidate selectively: refs change → branches/commits; HEAD change → currentBranch/commits; status change → workingChanges.
 
-- [ ] 🟠 **9. Switch to `-z` + NUL parsing in gitService.** Fixes Bug #9, Bug #18, and a class of latent path bugs (filenames with tabs/newlines). Single change with broad payoff.
+- [-] 🟠 **9. Switch to `-z` + NUL parsing in gitService.** Fixes Bug #9, Bug #18, and a class of latent path bugs (filenames with tabs/newlines). Single change with broad payoff. **PARTIAL:** Fixed Bug #18 (`getGitCommits`). Still need to apply to other methods (`getCommitFiles`, `getWorkingChanges`, `getStashFiles`).
 
 - [ ] 🟠 **10. Wire `clearCache()` to `vscode.workspace.onDidChangeConfiguration` for `git.path`.** One-line fix to Bug #12.
 
