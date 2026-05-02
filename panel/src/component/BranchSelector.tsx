@@ -112,7 +112,8 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     const newSelection = [...new Set([...selectedWithoutDeletedBranches, ...newBranches.map(b => b.cleanName)])]
 
     setSelectedBranches(newSelection)
-  }, [branches, branchesQuery.isLoading, allBranches, selectedBranches])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branches, branchesQuery.isLoading])
 
   const handleValueChange = (selected: string[]) => {
     setSelectedBranches(selected)
