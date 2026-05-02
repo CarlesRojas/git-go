@@ -850,12 +850,12 @@ export const useMergeBranch = () => {
   return useMutation({
     mutationFn: async ({
       branchName,
-      fastFordwardIfPossible = false,
+      fastForwardIfPossible = false,
       squash = false,
       noCommit = false,
     }: {
       branchName: string
-      fastFordwardIfPossible?: boolean
+      fastForwardIfPossible?: boolean
       squash?: boolean
       noCommit?: boolean
     }) => {
@@ -878,7 +878,7 @@ export const useMergeBranch = () => {
         vscode.postMessage({
           type: 'mergeBranch',
           branchName,
-          fastFordwardIfPossible,
+          fastForwardIfPossible,
           squash,
           noCommit,
         })

@@ -4,23 +4,9 @@
 
 - [ ] 🔴 **1. No request/response correlation in webview ↔ extension messages.** Every query in `panel/src/hook/useGitQueries.ts` listens for the same generic `'gitError'` type. If two operations are in flight and one fails, every in-flight queryFn rejects with that one error. Same problem with success messages: a stray `getGitCommits` and a `useInfiniteGitCommits` both fire on `'gitCommits'` and may resolve with each other's payload. **Fix:** add a `requestId` to every postMessage and route by it.
 
-- [ ] 🟡 **22. Empty annotated tag.** `addTag` (`gitService.ts:822-823`) sends `-m ''` when no message is provided; some git versions reject this. **Fix:** if no message, create a lightweight tag instead, or require a message in the dialog.
-
-- [ ] 🟡 **23. Webview can't be restored across VS Code restarts.** No `WebviewPanelSerializer` registered (`extension.ts:95`). Closing the window loses the panel even though `retainContextWhenHidden` is set.
-
-- [ ] 🟡 **24. `getNonce()` uses `Math.random()`.** `extension.ts:1139` — not crypto-safe. Use `crypto.randomBytes(16).toString('base64')`.
-
-- [ ] 🟡 **25. CSP wildcard is too loose.** `extension.ts:1102` — `https://*.gravatar.com` allows any subdomain. Pin to `https://www.gravatar.com` and `https://secure.gravatar.com`.
-
 - [ ] 🟢 **26. `setTimeout` in `CommitItem.tsx:88-100` has no cleanup.** Component unmount within 100ms still runs the callback (the ref-null check papers over it).
 
-- [ ] 🟢 **27. CommitItem React keys may collide.** `Graph.tsx:123` uses `commit.hash`. The synthetic `'working-changes'` hash is unique, but two stashes with the same base hash can collide if you ever change the de-dup logic. Prefer `${hash}-${refs ?? row}`.
-
-- [ ] 🟢 **28. Vite alias `@git` resolves to a non-existent path.** `vite.config.ts:11` → `panel/@/src`. It only works because every `@git/...` import is currently a type-only import that TS erases. The first value import will break the build.
-
 - [ ] 🟢 **29. Pagination via `--skip` re-walks history.** `gitService.ts:534` — fine for small repos, slow for big ones. Use `--max-count` plus a `--before <last-seen-hash>` cursor.
-
-- [ ] 🟢 **30. `fastFordwardIfPossible` typo** carried through extension.ts and gitService.ts.
 
 ## Improvements (performance / stability / maintainability)
 
@@ -65,8 +51,6 @@
 - [ ] 🟡 **20. Replace the singleton `GitService` with one per repo.** Combined with multi-root support (Bug #13), this naturally scopes caching.
 
 - [ ] 🟡 **21. Use `Set<string>` for branch lookups.** `branches.some(...)` calls in `CommitItem.tsx:139` and similar are O(n) per pill.
-
-- [ ] 🟢 **22. Fix the `fastFordwardIfPossible` typo.** Then deprecate the misspelled config key.
 
 - [ ] 🟢 **23. Align React versions.** `panel/package.json` ships React 18 with `@types/react@19`. Upgrade React to 19 or pin types to 18.
 

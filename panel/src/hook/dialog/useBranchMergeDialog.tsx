@@ -24,7 +24,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
 
   const mergeForm = useForm({
     defaultValues: {
-      fastFordwardIfPossible: settings.mergeFastForwardIfPossible,
+      fastForwardIfPossible: settings.mergeFastForwardIfPossible,
       squash: settings.mergeSquash,
       noCommit: settings.mergeNoCommit,
     },
@@ -32,7 +32,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
       mergeBranchMutation.mutate(
         {
           branchName: branch.cleanName,
-          fastFordwardIfPossible: value.fastFordwardIfPossible,
+          fastForwardIfPossible: value.fastForwardIfPossible,
           squash: value.squash,
           noCommit: value.noCommit,
         },
@@ -78,16 +78,16 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
           }}
         >
           <div className="flex flex-col gap-3">
-            <mergeForm.Field name="fastFordwardIfPossible">
+            <mergeForm.Field name="fastForwardIfPossible">
               {field => (
                 <div className="flex items-center">
                   <Checkbox
-                    id="fastFordwardIfPossible"
+                    id="fastForwardIfPossible"
                     checked={field.state.value}
                     onCheckedChange={checked => field.handleChange(checked === true)}
                   />
 
-                  <Label htmlFor="fastFordwardIfPossible" className="cursor-pointer pl-2">
+                  <Label htmlFor="fastForwardIfPossible" className="cursor-pointer pl-2">
                     Fast forward if possible
                   </Label>
                 </div>

@@ -1239,7 +1239,7 @@ export class GitService {
     public async mergeBranch(
         log: (message: string) => void,
         branchName: string,
-        fastFordwardIfPossible: boolean = true,
+        fastForwardIfPossible: boolean = true,
         squash: boolean = false,
         noCommit: boolean = false
     ): Promise<void> {
@@ -1258,7 +1258,7 @@ export class GitService {
 
             if (squash) {
                 args.push('--squash');
-            } else if (!fastFordwardIfPossible) {
+            } else if (!fastForwardIfPossible) {
                 args.push('--no-ff');
             }
 
