@@ -139,164 +139,167 @@ export function useGitTree(
 
   const svgHeight = commits.length * ROW_HEIGHT + (expandedRow?.extraHeight ?? 0)
 
-  const treeComponent = (
-    <div
-      className={cn(
-        'pointer-events-none absolute top-0 z-10 h-fit py-3',
-        isOverflowing && 'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
-      )}
-      style={{ width: clampedTreeWidth, left: LEFT_PADDING }}
-    >
-      <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
-        <defs>
-          <mask id="commit-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={treeWidth} height={svgHeight}>
-            <rect x="0" y="0" width={treeWidth} height={svgHeight} fill="white" />
+  const treeComponent = useMemo(
+    () => (
+      <div
+        className={cn(
+          'pointer-events-none absolute top-0 z-10 h-fit py-3',
+          isOverflowing && 'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
+        )}
+        style={{ width: clampedTreeWidth, left: LEFT_PADDING }}
+      >
+        <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
+          <defs>
+            <mask id="commit-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={treeWidth} height={svgHeight}>
+              <rect x="0" y="0" width={treeWidth} height={svgHeight} fill="white" />
 
+              {layout.commits.map(c => {
+                if (c.column > maxVisibleCol) return null
+
+                const dotX = px(c.column)
+                const dotY = getY(c.row)
+
+                if (c.isStash) {
+                  const squareSize = DOT_RADIUS * 2 + LINE_WIDTH * 3
+                  const halfSize = squareSize / 2
+                  return (
+                    <rect
+                      key={`mask-${c.commit.hash}`}
+                      x={dotX - halfSize}
+                      y={dotY - halfSize}
+                      width={squareSize}
+                      height={squareSize}
+                      rx={squareSize * 0.25}
+                      ry={squareSize * 0.25}
+                      fill="black"
+                    />
+                  )
+                }
+
+                return (
+                  <circle
+                    key={`mask-${c.commit.hash}`}
+                    cx={dotX}
+                    cy={dotY}
+                    r={DOT_RADIUS + LINE_WIDTH * 1.5}
+                    fill="black"
+                  />
+                )
+              })}
+            </mask>
+          </defs>
+
+          <g mask="url(#commit-mask)">
+            {layout.branches.map((branch, bi) => {
+              const color = getColor(branch.colorIndex, branch.isStash, branch.isUncommitted)
+              let d = ''
+              for (const seg of branch.segments) {
+                if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
+                d += buildSegmentPath(seg)
+              }
+              if (!d) return null
+              return (
+                <path
+                  key={`branch-${bi}`}
+                  d={d}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={LINE_WIDTH}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity={0.7}
+                  data-rows={branch.commitRows.join(',')}
+                  className="transition-opacity duration-500"
+                />
+              )
+            })}
+          </g>
+
+          {/* Commit dots — drawn on top */}
+          <g>
             {layout.commits.map(c => {
               if (c.column > maxVisibleCol) return null
 
               const dotX = px(c.column)
               const dotY = getY(c.row)
+              const color = getColor(c.colorIndex, c.isStash, c.isUncommitted)
+
+              if (c.isUncommitted) {
+                return (
+                  <g
+                    key={c.commit.hash}
+                    data-hash={c.commit.hash}
+                    data-row={c.row}
+                    className="origin-center transition-opacity duration-500 transform-fill"
+                  >
+                    <circle
+                      cx={dotX}
+                      cy={dotY}
+                      r={DOT_RADIUS}
+                      className="fill-vsc-editor-bg"
+                      stroke={color}
+                      strokeWidth={LINE_WIDTH}
+                    />
+
+                    <circle cx={dotX} cy={dotY} r={DOT_RADIUS * 0.25} fill={color} />
+                  </g>
+                )
+              }
 
               if (c.isStash) {
-                const squareSize = DOT_RADIUS * 2 + LINE_WIDTH * 3
+                const squareSize = DOT_RADIUS * 1.8
                 const halfSize = squareSize / 2
                 return (
                   <rect
-                    key={`mask-${c.commit.hash}`}
+                    key={c.commit.hash}
                     x={dotX - halfSize}
                     y={dotY - halfSize}
                     width={squareSize}
                     height={squareSize}
                     rx={squareSize * 0.25}
                     ry={squareSize * 0.25}
-                    fill="black"
+                    stroke={color}
+                    strokeWidth={LINE_WIDTH}
+                    data-hash={c.commit.hash}
+                    data-row={c.row}
+                    className="origin-center fill-transparent transition-opacity duration-500 transform-fill"
                   />
                 )
               }
 
-              return (
-                <circle
-                  key={`mask-${c.commit.hash}`}
-                  cx={dotX}
-                  cy={dotY}
-                  r={DOT_RADIUS + LINE_WIDTH * 1.5}
-                  fill="black"
-                />
-              )
-            })}
-          </mask>
-        </defs>
-
-        <g mask="url(#commit-mask)">
-          {layout.branches.map((branch, bi) => {
-            const color = getColor(branch.colorIndex, branch.isStash, branch.isUncommitted)
-            let d = ''
-            for (const seg of branch.segments) {
-              if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
-              d += buildSegmentPath(seg)
-            }
-            if (!d) return null
-            return (
-              <path
-                key={`branch-${bi}`}
-                d={d}
-                fill="none"
-                stroke={color}
-                strokeWidth={LINE_WIDTH}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity={0.7}
-                data-rows={branch.commitRows.join(',')}
-                className="transition-opacity duration-500"
-              />
-            )
-          })}
-        </g>
-
-        {/* Commit dots — drawn on top */}
-        <g>
-          {layout.commits.map(c => {
-            if (c.column > maxVisibleCol) return null
-
-            const dotX = px(c.column)
-            const dotY = getY(c.row)
-            const color = getColor(c.colorIndex, c.isStash, c.isUncommitted)
-
-            if (c.isUncommitted) {
-              return (
-                <g
-                  key={c.commit.hash}
-                  data-hash={c.commit.hash}
-                  data-row={c.row}
-                  className="origin-center transition-opacity duration-500 transform-fill"
-                >
+              if (c.isHead)
+                return (
                   <circle
+                    key={c.commit.hash}
                     cx={dotX}
                     cy={dotY}
                     r={DOT_RADIUS}
-                    className="fill-vsc-editor-bg"
                     stroke={color}
                     strokeWidth={LINE_WIDTH}
+                    data-hash={c.commit.hash}
+                    data-row={c.row}
+                    className="fill-vsc-editor-bg origin-center transition-opacity duration-500 transform-fill"
                   />
+                )
 
-                  <circle cx={dotX} cy={dotY} r={DOT_RADIUS * 0.25} fill={color} />
-                </g>
-              )
-            }
-
-            if (c.isStash) {
-              const squareSize = DOT_RADIUS * 1.8
-              const halfSize = squareSize / 2
-              return (
-                <rect
-                  key={c.commit.hash}
-                  x={dotX - halfSize}
-                  y={dotY - halfSize}
-                  width={squareSize}
-                  height={squareSize}
-                  rx={squareSize * 0.25}
-                  ry={squareSize * 0.25}
-                  stroke={color}
-                  strokeWidth={LINE_WIDTH}
-                  data-hash={c.commit.hash}
-                  data-row={c.row}
-                  className="origin-center fill-transparent transition-opacity duration-500 transform-fill"
-                />
-              )
-            }
-
-            if (c.isHead)
               return (
                 <circle
                   key={c.commit.hash}
                   cx={dotX}
                   cy={dotY}
                   r={DOT_RADIUS}
-                  stroke={color}
-                  strokeWidth={LINE_WIDTH}
+                  fill={color}
                   data-hash={c.commit.hash}
                   data-row={c.row}
-                  className="fill-vsc-editor-bg origin-center transition-opacity duration-500 transform-fill"
+                  className="origin-center transition-opacity duration-500 transform-fill"
                 />
               )
-
-            return (
-              <circle
-                key={c.commit.hash}
-                cx={dotX}
-                cy={dotY}
-                r={DOT_RADIUS}
-                fill={color}
-                data-hash={c.commit.hash}
-                data-row={c.row}
-                className="origin-center transition-opacity duration-500 transform-fill"
-              />
-            )
-          })}
-        </g>
-      </svg>
-    </div>
+            })}
+          </g>
+        </svg>
+      </div>
+    ),
+    [layout, expandedRow, treeWidth],
   )
 
   return { treeComponent, treeWidth: clampedTreeWidth, rows: layout.commits }
