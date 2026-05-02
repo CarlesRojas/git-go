@@ -198,66 +198,79 @@ Choose from multiple color themes for the commit graph:
 #### **Vibrant** (default)
 
 Bright, energetic colors perfect for high-energy development sessions.
+
 ![Vibrant Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/vibrant.png)
 
 #### **Spring**
 
 Warm earth tones flowing into cool teals, like nature's seasonal transition.
+
 ![Spring Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/spring.png)
 
 #### **Ocean**
 
 Deep blues and teals reminiscent of deep ocean waters.
+
 ![Ocean Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/ocean.png)
 
 #### **Sunset**
 
 Warm purples, pinks, and oranges like a beautiful evening sky.
+
 ![Sunset Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/sunset.png)
 
 #### **Pastel**
 
 Soft, gentle colors that are easy on the eyes for long coding sessions.
+
 ![Pastel Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/pastel.png)
 
 #### **Coast**
 
 Cool greens and blues inspired by coastal waters and beaches.
+
 ![Coast Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/coast.png)
 
 #### **Cloud**
 
 Dreamy purples and soft tones like floating in the clouds.
+
 ![Cloud Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/cloud.png)
 
 #### **Forest**
 
 Earth-toned palette transitioning from forest greens to rich browns.
+
 ![Forest Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/forest.png)
 
 #### **Rainbow**
 
 Vibrant spectrum colors that bring joy to your commit history.
+
 ![Rainbow Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/rainbow.png)
 
 #### **Earth**
 
 Natural, muted tones inspired by soil, sand, and stone.
+
 ![Earth Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/earth.png)
 
 #### **Float**
 
 Mysterious purples and muted tones for a calming experience.
+
 ![Float Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/float.png)
 
 #### **Dusk**
 
 Warm beiges transitioning through twilight grays into cool sage greens, capturing the serene evening hour.
+
 ![Dusk Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/dusk.png)
 
 #### **Coral**
 
 Vibrant blues blending into warm coral tones.
+
 ![Coral Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/coral.png)
 
 ### Repository Settings
