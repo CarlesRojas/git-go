@@ -32,7 +32,7 @@
         "visualise",
         "pinya"
     ],
-    "icon": "icon.png",
+    "icon": "resource/icon.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/CarlesRojas/git-go"

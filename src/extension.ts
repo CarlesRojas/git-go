@@ -100,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
                 localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
             });
 
-            currentPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'webview-icon.svg');
+            currentPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'resource/webview-icon.svg');
 
             const config = getConfig();
             if (config.pinTabEnabled) {
