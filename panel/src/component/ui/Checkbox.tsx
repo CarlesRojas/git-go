@@ -25,7 +25,7 @@ const Checkbox = ({ className, ref, ...props }: ComponentProps<typeof CheckboxPr
     {...props}
   >
     <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
-      <FontAwesomeIcon icon={faCheck} className="size-3" />
+      <FontAwesomeIcon icon={faCheck} className="size-2.5 max-w-2.5" />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
 )
