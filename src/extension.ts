@@ -116,913 +116,538 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.css')
             );
 
+            type MessageHandler = (
+                message: any,
+                log: (msg: string) => void
+            ) => Promise<{ type: string; [key: string]: any }>;
+
+            const handlers: Record<string, MessageHandler> = {
+                getGitCommits: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const branches = message.branches || undefined;
+                    const maxCount = message.maxCount || 100;
+                    const skip = message.skip || 0;
+                    const result = await gitService.getGitCommits(log, branches, maxCount, skip);
+                    log(`Successfully retrieved ${result.commits.length} commits (hasMore: ${result.hasMore})`);
+                    return {
+                        type: 'gitCommits',
+                        commits: result.commits,
+                        hasMore: result.hasMore,
+                        skip: skip,
+                        maxCount: maxCount
+                    };
+                },
+
+                getGitBranches: async () => {
+                    const gitService = GitService.getInstance();
+                    const branches = await gitService.getGitBranches(log);
+                    log(`Successfully retrieved ${branches.length} branches`);
+                    return { type: 'gitBranches', branches };
+                },
+
+                getGitRemotes: async () => {
+                    const gitService = GitService.getInstance();
+                    const remotes = await gitService.getGitRemotes(log);
+                    log(`Successfully retrieved ${remotes.length} remotes`);
+                    return { type: 'gitRemotes', remotes };
+                },
+
+                getCommitFiles: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const commitHash = message.commitHash;
+                    const isStash = message.isStash ?? false;
+                    if (!commitHash) {
+                        throw new Error('Commit hash is required');
+                    }
+                    const files = await gitService.getCommitFiles(log, commitHash, isStash);
+                    const commitType = isStash ? 'stash' : 'commit';
+                    log(`Successfully retrieved ${files.length} files for ${commitType} ${commitHash.substring(0, 7)}`);
+                    return { type: 'gitCommitFiles', files, commitHash };
+                },
+
+                getWorkingChanges: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const includeFiles = message.includeFiles ?? false;
+                    const workingChanges = await gitService.getWorkingChanges(log, includeFiles);
+                    log(
+                        `Successfully retrieved working changes: ${workingChanges ? `found changes (${workingChanges.files?.length || 0} files)` : 'no changes'}`
+                    );
+                    return { type: 'workingChanges', workingChanges };
+                },
+
+                addTag: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, tagName, tagMessage, tagType } = message;
+                    if (!commitHash || !tagName) {
+                        throw new Error('Commit hash and tag name are required');
+                    }
+                    await gitService.addTag(log, commitHash, tagName, tagMessage, tagType);
+                    const typeText = tagType === 'lightweight' ? 'lightweight' : 'annotated';
+                    log(`Successfully created ${typeText} tag '${tagName}' at commit ${commitHash.substring(0, 7)}`);
+                    return { type: 'tagCreated', success: true };
+                },
+
+                createBranchFromCommit: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, branchName, checkout } = message;
+                    if (!commitHash || !branchName) {
+                        throw new Error('Commit hash and branch name are required');
+                    }
+                    await gitService.createBranchFromCommit(log, commitHash, branchName, checkout);
+                    const action = checkout ? 'created and checked out' : 'created';
+                    log(`Successfully ${action} branch '${branchName}' from commit ${commitHash.substring(0, 7)}`);
+                    return { type: 'branchCreated', success: true };
+                },
+
+                cherryPickCommit: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, recordOrigin, noCommit } = message;
+                    if (!commitHash) {
+                        throw new Error('Commit hash is required');
+                    }
+                    await gitService.cherryPickCommit(log, commitHash, recordOrigin, noCommit);
+                    const options = [];
+                    if (recordOrigin) options.push('with origin record');
+                    if (noCommit) options.push('without committing');
+                    const optionsText = options.length > 0 ? ` (${options.join(', ')})` : '';
+                    log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
+                    return { type: 'commitCherryPicked', success: true };
+                },
+
+                revertCommit: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, noCommit } = message;
+                    if (!commitHash) {
+                        throw new Error('Commit hash is required');
+                    }
+                    await gitService.revertCommit(log, commitHash, noCommit);
+                    const action = noCommit ? 'staged revert changes for' : 'reverted';
+                    log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
+                    return { type: 'commitReverted', success: true };
+                },
+
+                checkoutLocalBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { branchName } = message;
+                    if (!branchName) {
+                        throw new Error('Branch name is required');
+                    }
+                    await gitService.checkoutLocalBranch(log, branchName);
+                    log(`Successfully checked out local branch: ${branchName}`);
+                    return { type: 'branchCheckedOut', branchName, isLocal: true };
+                },
+
+                checkoutRemoteBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { remoteBranchName, localBranchName } = message;
+                    if (!remoteBranchName || !localBranchName) {
+                        throw new Error('Both remote and local branch names are required');
+                    }
+                    await gitService.checkoutRemoteBranch(log, remoteBranchName, localBranchName);
+                    log(`Successfully created and checked out branch: ${localBranchName}`);
+                    return { type: 'branchCheckedOut', branchName: localBranchName, isLocal: false, remoteBranchName };
+                },
+
+                getCurrentBranch: async () => {
+                    const gitService = GitService.getInstance();
+                    const currentBranch = await gitService.getCurrentBranch(log);
+                    log(`Successfully retrieved current branch: ${currentBranch || 'none (detached HEAD)'}`);
+                    return { type: 'currentBranch', currentBranch };
+                },
+
+                fetch: async () => {
+                    const gitService = GitService.getInstance();
+                    await gitService.fetch(log);
+                    log('Successfully fetched from remotes');
+                    return { type: 'fetchComplete', success: true };
+                },
+
+                pushBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { branchName, remote, setUpstream, pushMode } = message;
+                    await gitService.pushBranch(log, branchName, remote, setUpstream, pushMode);
+                    log(`Successfully pushed branch ${branchName}`);
+                    return { type: 'pushBranchSuccess' };
+                },
+
+                renameBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { oldName, newName } = message;
+                    await gitService.renameBranch(log, oldName, newName);
+                    log(`Successfully renamed branch ${oldName} to ${newName}`);
+                    return { type: 'renameBranchSuccess' };
+                },
+
+                deleteBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { branchName, force } = message;
+                    await gitService.deleteBranch(log, branchName, force);
+                    log(`Successfully deleted branch ${branchName}`);
+                    return { type: 'deleteBranchSuccess' };
+                },
+
+                mergeBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { branchName, fastForwardIfPossible, squash, noCommit } = message;
+                    await gitService.mergeBranch(log, branchName, fastForwardIfPossible, squash, noCommit);
+                    log(`Successfully merged branch ${branchName}`);
+                    return { type: 'mergeBranchSuccess' };
+                },
+
+                rebaseBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { branchName, ignoreDate } = message;
+                    await gitService.rebaseBranch(log, branchName, ignoreDate);
+                    log(`Successfully rebased onto ${branchName}`);
+                    return { type: 'rebaseBranchSuccess' };
+                },
+
+                applyStash: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { stashSelector, reinstateIndex } = message;
+                    if (!stashSelector) {
+                        throw new Error('Stash selector is required');
+                    }
+                    await gitService.applyStash(log, stashSelector, reinstateIndex);
+                    log(`Successfully applied stash ${stashSelector}`);
+                    return { type: 'applyStashSuccess', success: true };
+                },
+
+                popStash: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { stashSelector, reinstateIndex } = message;
+                    if (!stashSelector) {
+                        throw new Error('Stash selector is required');
+                    }
+                    await gitService.popStash(log, stashSelector, reinstateIndex);
+                    log(`Successfully popped stash ${stashSelector}`);
+                    return { type: 'popStashSuccess', success: true };
+                },
+
+                dropStash: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { stashSelector } = message;
+                    if (!stashSelector) {
+                        throw new Error('Stash selector is required');
+                    }
+                    await gitService.dropStash(log, stashSelector);
+                    log(`Successfully dropped stash ${stashSelector}`);
+                    return { type: 'dropStashSuccess', success: true };
+                },
+
+                createStash: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { message: stashMessage, includeUntracked } = message;
+                    await gitService.createStash(log, stashMessage || '', includeUntracked || false);
+                    log(`Successfully created stash${stashMessage ? ` with message: ${stashMessage}` : ''}`);
+                    return { type: 'createStashSuccess', success: true };
+                },
+
+                deleteRemoteBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { branchName, remote } = message;
+                    if (!branchName || !remote) {
+                        throw new Error('Branch name and remote are required');
+                    }
+                    await gitService.deleteRemoteBranch(log, branchName, remote);
+                    log(`Successfully deleted remote branch ${branchName} on ${remote}`);
+                    return { type: 'deleteRemoteBranchSuccess', success: true };
+                },
+
+                fetchIntoLocalBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { remote, remoteBranch, localBranch, forceFetch } = message;
+                    if (!remote || !remoteBranch || !localBranch) {
+                        throw new Error('Remote, remote branch, and local branch are required');
+                    }
+                    await gitService.fetchIntoLocalBranch(log, remote, remoteBranch, localBranch, forceFetch || false);
+                    log(`Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}`);
+                    return { type: 'fetchIntoLocalBranchSuccess', success: true };
+                },
+
+                getTagDetails: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { tagName } = message;
+                    if (!tagName) {
+                        throw new Error('Tag name is required');
+                    }
+                    const tagDetails = await gitService.getTagDetails(log, tagName);
+                    log(`Successfully retrieved details for tag ${tagName}`);
+                    return { type: 'tagDetails', details: tagDetails };
+                },
+
+                pushTag: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { tagName, remotes } = message;
+                    if (!tagName || !remotes || !Array.isArray(remotes)) {
+                        throw new Error('Tag name and remotes array are required');
+                    }
+                    await gitService.pushTag(log, tagName, remotes);
+                    log(`Successfully pushed tag ${tagName} to ${remotes.join(', ')}`);
+                    return { type: 'pushTagSuccess', success: true };
+                },
+
+                deleteTag: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { tagName, deleteOnRemote } = message;
+                    if (!tagName) {
+                        throw new Error('Tag name is required');
+                    }
+                    await gitService.deleteTag(log, tagName, deleteOnRemote);
+                    log(`Successfully deleted tag ${tagName}${deleteOnRemote ? ` from remote ${deleteOnRemote}` : ''}`);
+                    return { type: 'deleteTagSuccess', success: true };
+                },
+
+                resetUncommittedChanges: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { mode } = message;
+                    await gitService.resetUncommittedChanges(log, mode || 'mixed');
+                    log(`Successfully reset uncommitted changes and cleaned untracked files (${mode || 'mixed'} mode)`);
+                    return { type: 'resetUncommittedChangesSuccess', success: true };
+                },
+
+                getRepoName: async () => {
+                    const gitService = GitService.getInstance();
+                    const repoName = await gitService.getRepoName();
+                    log('Successfully retrieved repository name');
+                    return { type: 'repoName', name: repoName };
+                },
+
+                getGitUserConfig: async () => {
+                    const gitService = GitService.getInstance();
+                    const userConfig = await gitService.getGitUserConfig();
+                    log('Successfully retrieved git user configuration');
+                    return { type: 'gitUserConfig', config: userConfig };
+                },
+
+                setGitUserConfig: async (message) => {
+                    const gitService = GitService.getInstance();
+                    await gitService.setGitUserConfig(message.config);
+                    log('Successfully set git user configuration');
+                    return { type: 'gitUserConfigSet' };
+                },
+
+                addGitRemote: async (message) => {
+                    const gitService = GitService.getInstance();
+                    await gitService.addGitRemote(message.remote);
+                    log('Successfully added git remote');
+                    return { type: 'gitRemoteAdded' };
+                },
+
+                removeGitRemote: async (message) => {
+                    const gitService = GitService.getInstance();
+                    await gitService.removeGitRemote(message.remoteName);
+                    log('Successfully removed git remote');
+                    return { type: 'gitRemoteRemoved' };
+                },
+
+                getConfig: async () => {
+                    const config = getConfig();
+                    log('Successfully retrieved extension configuration');
+                    return {
+                        type: 'config',
+                        config: {
+                            rounded: config.rounded,
+                            autoOpenEnabled: config.autoOpenEnabled,
+                            pinTabEnabled: config.pinTabEnabled,
+                            branchCreateCheckout: config.branchCreateCheckout,
+                            branchDeleteForce: config.branchDeleteForce,
+                            branchPushSetUpstream: config.branchPushSetUpstream,
+                            branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
+                            mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
+                            mergeSquash: config.mergeSquash,
+                            mergeNoCommit: config.mergeNoCommit,
+                            cherryPickRecordOrigin: config.cherryPickRecordOrigin,
+                            cherryPickNoCommit: config.cherryPickNoCommit,
+                            revertNoCommit: config.revertNoCommit,
+                            remoteFetchForceFetch: config.remoteFetchForceFetch,
+                            stashIncludeUntracked: config.stashIncludeUntracked
+                        }
+                    };
+                },
+
+                openSettings: async (message) => {
+                    await vscode.commands.executeCommand('workbench.action.openSettings', message.query);
+                    log('Successfully opened VS Code settings');
+                    return { type: 'settingsOpened' };
+                }
+            };
+
+            // Special handlers that don't return response messages
+            const specialHandlers: Record<string, (message: any) => void> = {
+                saveRepoState: (message) => {
+                    const saveRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+                    if (!saveRepoPath) {
+                        log('No workspace folder found, cannot save state');
+                        return;
+                    }
+                    context.globalState.update(`${saveRepoPath}:${message.key}`, message.value);
+                },
+
+                loadRepoState: (message) => {
+                    const loadRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+                    if (!loadRepoPath) {
+                        log('No workspace folder found, cannot load state');
+                        currentPanel?.webview.postMessage({
+                            type: 'repoStateLoaded',
+                            key: message.key,
+                            value: null
+                        });
+                        return;
+                    }
+
+                    const stateValue = context.globalState.get(`${loadRepoPath}:${message.key}`);
+                    currentPanel?.webview.postMessage({
+                        type: 'repoStateLoaded',
+                        key: message.key,
+                        value: stateValue ?? null
+                    });
+                },
+
+                openFile: async (message) => {
+                    const filePath = message.filePath;
+                    const fileName = filePath.split('/').pop() || filePath;
+                    const oldPath = message.oldPath;
+                    const status = message.status;
+                    const commitHash = message.commitHash;
+                    const isRootCommit = message.isRootCommit ?? false;
+                    const isStash = message.isStash ?? false;
+                    const sourceCommit = message.sourceCommit;
+
+                    if (!filePath) throw new Error('File path is required');
+
+                    const workspaceFolders = vscode.workspace.workspaceFolders;
+                    if (!workspaceFolders || workspaceFolders.length === 0)
+                        throw new Error('No workspace folder found');
+
+                    const workspaceUri = workspaceFolders[0].uri;
+                    const fileUri = vscode.Uri.joinPath(workspaceUri, filePath);
+
+                    if (commitHash) {
+                        const actualCommitHash = sourceCommit || commitHash;
+
+                        if (message.isUncommitted) {
+                            if (status === 'A') {
+                                await vscode.commands.executeCommand(
+                                    'vscode.diff',
+                                    vscode.Uri.parse('untitled:empty'),
+                                    fileUri,
+                                    `${fileName} (new file)`
+                                );
+                            } else if (status === 'D') {
+                                const leftUri = encodeDiffDocUri(filePath, 'HEAD', true);
+                                await vscode.commands.executeCommand(
+                                    'vscode.diff',
+                                    leftUri,
+                                    vscode.Uri.parse('untitled:empty'),
+                                    `${fileName} (deleted)`
+                                );
+                            } else if ((status === 'R' || status === 'C') && oldPath) {
+                                const leftUri = encodeDiffDocUri(oldPath, 'HEAD', true);
+                                const label =
+                                    status === 'R'
+                                        ? `${oldPath} → ${fileName} (renamed)`
+                                        : `${fileName} (copied from ${oldPath})`;
+                                await vscode.commands.executeCommand('vscode.diff', leftUri, fileUri, label);
+                            } else {
+                                const leftUri = encodeDiffDocUri(filePath, 'HEAD', true);
+                                await vscode.commands.executeCommand(
+                                    'vscode.diff',
+                                    leftUri,
+                                    fileUri,
+                                    `${fileName} (uncommitted changes)`
+                                );
+                            }
+                        } else {
+                            if (status === 'D') {
+                                const leftUri = encodeDiffDocUri(filePath, `${actualCommitHash}^`, true);
+                                await vscode.commands.executeCommand(
+                                    'vscode.diff',
+                                    leftUri,
+                                    vscode.Uri.parse('untitled:empty'),
+                                    `${fileName} (deleted in ${commitHash.substring(0, 7)})`
+                                );
+                            } else if (status === 'A') {
+                                const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
+                                const label = isStash
+                                    ? `${fileName} (added in ${commitHash.substring(0, 8)})`
+                                    : `${fileName} (added in ${commitHash.substring(0, 7)})`;
+                                await vscode.commands.executeCommand(
+                                    'vscode.diff',
+                                    vscode.Uri.parse('untitled:empty'),
+                                    rightUri,
+                                    label
+                                );
+                            } else if ((status === 'R' || status === 'C') && oldPath) {
+                                const leftUri = encodeDiffDocUri(oldPath, `${actualCommitHash}^`, true);
+                                const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
+                                const label =
+                                    status === 'R'
+                                        ? `${fileName} (renamed in ${commitHash.substring(0, 7)})`
+                                        : `${fileName} (copied from ${oldPath} in ${commitHash.substring(0, 7)})`;
+                                await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, label);
+                            } else {
+                                const leftUri = isRootCommit
+                                    ? vscode.Uri.parse('untitled:empty')
+                                    : encodeDiffDocUri(filePath, `${actualCommitHash}^`, true);
+                                const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
+                                await vscode.commands.executeCommand(
+                                    'vscode.diff',
+                                    leftUri,
+                                    rightUri,
+                                    `${fileName} (${commitHash.substring(0, 7)})`
+                                );
+                            }
+                        }
+
+                        log(
+                            `Opened diff for ${fileName} [${status}] at ${commitHash.substring(0, 7)}${isStash ? ' (stash)' : ''}`
+                        );
+                    } else {
+                        const document = await vscode.workspace.openTextDocument(fileUri);
+                        await vscode.window.showTextDocument(document);
+                        log(`Opened file: ${fileName}`);
+                    }
+                }
+            };
+
             currentPanel.webview.onDidReceiveMessage(
                 async (message) => {
                     log(`Received message from webview: ${message.type}`);
-                    switch (message.type) {
-                        case 'getGitCommits':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const branches = message.branches || undefined;
-                                const maxCount = message.maxCount || 100;
-                                const skip = message.skip || 0;
-                                const result = await gitService.getGitCommits(log, branches, maxCount, skip);
-                                log(
-                                    `Successfully retrieved ${result.commits.length} commits (hasMore: ${result.hasMore})`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitCommits',
-                                    commits: result.commits,
-                                    hasMore: result.hasMore,
-                                    skip: skip,
-                                    maxCount: maxCount
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting git commits: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getGitBranches':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const branches = await gitService.getGitBranches(log);
-                                log(`Successfully retrieved ${branches.length} branches`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitBranches',
-                                    branches: branches
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting git branches: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getGitRemotes':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const remotes = await gitService.getGitRemotes(log);
-                                log(`Successfully retrieved ${remotes.length} remotes`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitRemotes',
-                                    remotes: remotes
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting git remotes: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getCommitFiles':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const commitHash = message.commitHash;
-                                const isStash = message.isStash ?? false;
-                                if (!commitHash) {
-                                    throw new Error('Commit hash is required');
-                                }
-                                const files = await gitService.getCommitFiles(log, commitHash, isStash);
-                                const commitType = isStash ? 'stash' : 'commit';
-                                log(
-                                    `Successfully retrieved ${files.length} files for ${commitType} ${commitHash.substring(0, 7)}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitCommitFiles',
-                                    files: files,
-                                    commitHash: commitHash
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting commit files: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getWorkingChanges':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const includeFiles = message.includeFiles ?? false;
-                                const workingChanges = await gitService.getWorkingChanges(log, includeFiles);
-                                log(
-                                    `Successfully retrieved working changes: ${workingChanges ? `found changes (${workingChanges.files?.length || 0} files)` : 'no changes'}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'workingChanges',
-                                    workingChanges: workingChanges
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting working changes: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'openFile':
-                            try {
-                                const filePath = message.filePath;
-                                const fileName = filePath.split('/').pop() || filePath;
-                                const oldPath = message.oldPath;
-                                const status = message.status;
-                                const commitHash = message.commitHash;
-                                const isRootCommit = message.isRootCommit ?? false;
-                                const isStash = message.isStash ?? false;
-                                const sourceCommit = message.sourceCommit; // Use sourceCommit if available (for stashes)
 
-                                if (!filePath) throw new Error('File path is required');
-
-                                const workspaceFolders = vscode.workspace.workspaceFolders;
-                                if (!workspaceFolders || workspaceFolders.length === 0)
-                                    throw new Error('No workspace folder found');
-
-                                const workspaceUri = workspaceFolders[0].uri;
-                                const fileUri = vscode.Uri.joinPath(workspaceUri, filePath);
-
-                                if (commitHash) {
-                                    // Use sourceCommit for file content if available (important for stash untracked files)
-                                    const actualCommitHash = sourceCommit || commitHash;
-
-                                    if (message.isUncommitted) {
-                                        // Handle uncommitted changes (working directory)
-                                        if (status === 'A') {
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                vscode.Uri.parse('untitled:empty'),
-                                                fileUri,
-                                                `${fileName} (new file)`
-                                            );
-                                        } else if (status === 'D') {
-                                            const leftUri = encodeDiffDocUri(filePath, 'HEAD', true);
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                leftUri,
-                                                vscode.Uri.parse('untitled:empty'),
-                                                `${fileName} (deleted)`
-                                            );
-                                        } else if ((status === 'R' || status === 'C') && oldPath) {
-                                            const leftUri = encodeDiffDocUri(oldPath, 'HEAD', true);
-                                            const label =
-                                                status === 'R'
-                                                    ? `${oldPath} → ${fileName} (renamed)`
-                                                    : `${fileName} (copied from ${oldPath})`;
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                leftUri,
-                                                fileUri,
-                                                label
-                                            );
-                                        } else {
-                                            const leftUri = encodeDiffDocUri(filePath, 'HEAD', true);
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                leftUri,
-                                                fileUri,
-                                                `${fileName} (uncommitted changes)`
-                                            );
-                                        }
-                                    } else {
-                                        // Handle committed changes
-                                        if (status === 'D') {
-                                            const leftUri = encodeDiffDocUri(filePath, `${actualCommitHash}^`, true);
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                leftUri,
-                                                vscode.Uri.parse('untitled:empty'),
-                                                `${fileName} (deleted in ${commitHash.substring(0, 7)})`
-                                            );
-                                        } else if (status === 'A') {
-                                            const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
-                                            const label = isStash
-                                                ? `${fileName} (added in ${commitHash.substring(0, 8)})`
-                                                : `${fileName} (added in ${commitHash.substring(0, 7)})`;
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                vscode.Uri.parse('untitled:empty'),
-                                                rightUri,
-                                                label
-                                            );
-                                        } else if ((status === 'R' || status === 'C') && oldPath) {
-                                            const leftUri = encodeDiffDocUri(oldPath, `${actualCommitHash}^`, true);
-                                            const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
-                                            const label =
-                                                status === 'R'
-                                                    ? `${fileName} (renamed in ${commitHash.substring(0, 7)})`
-                                                    : `${fileName} (copied from ${oldPath} in ${commitHash.substring(0, 7)})`;
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                leftUri,
-                                                rightUri,
-                                                label
-                                            );
-                                        } else {
-                                            const leftUri = isRootCommit
-                                                ? vscode.Uri.parse('untitled:empty')
-                                                : encodeDiffDocUri(filePath, `${actualCommitHash}^`, true);
-                                            const rightUri = encodeDiffDocUri(filePath, actualCommitHash, true);
-                                            await vscode.commands.executeCommand(
-                                                'vscode.diff',
-                                                leftUri,
-                                                rightUri,
-                                                `${fileName} (${commitHash.substring(0, 7)})`
-                                            );
-                                        }
-                                    }
-
-                                    log(
-                                        `Opened diff for ${fileName} [${status}] at ${commitHash.substring(0, 7)}${isStash ? ' (stash)' : ''}`
-                                    );
-                                } else {
-                                    const document = await vscode.workspace.openTextDocument(fileUri);
-                                    await vscode.window.showTextDocument(document);
-                                    log(`Opened file: ${fileName}`);
-                                }
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error opening file: ${errorMessage}`);
+                    if (specialHandlers[message.type]) {
+                        try {
+                            specialHandlers[message.type](message);
+                        } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                            log(`Error handling ${message.type}: ${errorMessage}`);
+                            if (message.type === 'openFile') {
                                 vscode.window.showErrorMessage(`Failed to open file: ${errorMessage}`);
                             }
-                            break;
-                        case 'addTag':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { commitHash, tagName, tagMessage, tagType } = message;
-                                if (!commitHash || !tagName) {
-                                    throw new Error('Commit hash and tag name are required');
-                                }
-                                await gitService.addTag(log, commitHash, tagName, tagMessage, tagType);
-                                const typeText = tagType === 'lightweight' ? 'lightweight' : 'annotated';
-                                log(
-                                    `Successfully created ${typeText} tag '${tagName}' at commit ${commitHash.substring(0, 7)}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'tagCreated',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error creating tag: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'createBranchFromCommit':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { commitHash, branchName, checkout } = message;
-                                if (!commitHash || !branchName) {
-                                    throw new Error('Commit hash and branch name are required');
-                                }
-                                await gitService.createBranchFromCommit(log, commitHash, branchName, checkout);
-                                const action = checkout ? 'created and checked out' : 'created';
-                                log(
-                                    `Successfully ${action} branch '${branchName}' from commit ${commitHash.substring(0, 7)}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'branchCreated',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error creating branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'cherryPickCommit':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { commitHash, recordOrigin, noCommit } = message;
-                                if (!commitHash) {
-                                    throw new Error('Commit hash is required');
-                                }
-                                await gitService.cherryPickCommit(log, commitHash, recordOrigin, noCommit);
+                        }
+                        return;
+                    }
 
-                                const options = [];
-                                if (recordOrigin) options.push('with origin record');
-                                if (noCommit) options.push('without committing');
-                                const optionsText = options.length > 0 ? ` (${options.join(', ')})` : '';
-
-                                log(`Successfully cherry-picked commit ${commitHash.substring(0, 7)}${optionsText}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'commitCherryPicked',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error cherry-picking commit: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'revertCommit':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { commitHash, noCommit } = message;
-                                if (!commitHash) {
-                                    throw new Error('Commit hash is required');
-                                }
-                                await gitService.revertCommit(log, commitHash, noCommit);
-                                const action = noCommit ? 'staged revert changes for' : 'reverted';
-                                log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'commitReverted',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error reverting commit: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'checkoutLocalBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { branchName } = message;
-                                if (!branchName) {
-                                    throw new Error('Branch name is required');
-                                }
-                                await gitService.checkoutLocalBranch(log, branchName);
-                                log(`Successfully checked out local branch: ${branchName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'branchCheckedOut',
-                                    branchName: branchName,
-                                    isLocal: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error checking out local branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'checkoutRemoteBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { remoteBranchName, localBranchName } = message;
-                                if (!remoteBranchName || !localBranchName) {
-                                    throw new Error('Both remote and local branch names are required');
-                                }
-                                await gitService.checkoutRemoteBranch(log, remoteBranchName, localBranchName);
-                                log(`Successfully created and checked out branch: ${localBranchName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'branchCheckedOut',
-                                    branchName: localBranchName,
-                                    isLocal: false,
-                                    remoteBranchName: remoteBranchName
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error creating branch from remote: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getCurrentBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const currentBranch = await gitService.getCurrentBranch(log);
-                                log(
-                                    `Successfully retrieved current branch: ${currentBranch || 'none (detached HEAD)'}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'currentBranch',
-                                    currentBranch: currentBranch
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting current branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'fetch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                await gitService.fetch(log);
-                                log('Successfully fetched from remotes');
-                                currentPanel?.webview.postMessage({
-                                    type: 'fetchComplete',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error fetching from remotes: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'pushBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { branchName, remote, setUpstream, pushMode } = message;
-                                await gitService.pushBranch(log, branchName, remote, setUpstream, pushMode);
-                                log(`Successfully pushed branch ${branchName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'pushBranchSuccess'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error pushing branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'renameBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { oldName, newName } = message;
-                                await gitService.renameBranch(log, oldName, newName);
-                                log(`Successfully renamed branch ${oldName} to ${newName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'renameBranchSuccess'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error renaming branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'deleteBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { branchName, force } = message;
-                                await gitService.deleteBranch(log, branchName, force);
-                                log(`Successfully deleted branch ${branchName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'deleteBranchSuccess'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error deleting branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'mergeBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { branchName, fastForwardIfPossible, squash, noCommit } = message;
-                                await gitService.mergeBranch(log, branchName, fastForwardIfPossible, squash, noCommit);
-                                log(`Successfully merged branch ${branchName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'mergeBranchSuccess'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error merging branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'rebaseBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { branchName, ignoreDate } = message;
-                                await gitService.rebaseBranch(log, branchName, ignoreDate);
-                                log(`Successfully rebased onto ${branchName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'rebaseBranchSuccess'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error rebasing branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'applyStash':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { stashSelector, reinstateIndex } = message;
-                                if (!stashSelector) {
-                                    throw new Error('Stash selector is required');
-                                }
-                                await gitService.applyStash(log, stashSelector, reinstateIndex);
-                                log(`Successfully applied stash ${stashSelector}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'applyStashSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error applying stash: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'popStash':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { stashSelector, reinstateIndex } = message;
-                                if (!stashSelector) {
-                                    throw new Error('Stash selector is required');
-                                }
-                                await gitService.popStash(log, stashSelector, reinstateIndex);
-                                log(`Successfully popped stash ${stashSelector}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'popStashSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error popping stash: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'dropStash':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { stashSelector } = message;
-                                if (!stashSelector) {
-                                    throw new Error('Stash selector is required');
-                                }
-                                await gitService.dropStash(log, stashSelector);
-                                log(`Successfully dropped stash ${stashSelector}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'dropStashSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error dropping stash: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'createStash':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { message: stashMessage, includeUntracked } = message;
-                                await gitService.createStash(log, stashMessage || '', includeUntracked || false);
-                                log(
-                                    `Successfully created stash${stashMessage ? ` with message: ${stashMessage}` : ''}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'createStashSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error creating stash: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'deleteRemoteBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { branchName, remote } = message;
-                                if (!branchName || !remote) {
-                                    throw new Error('Branch name and remote are required');
-                                }
-                                await gitService.deleteRemoteBranch(log, branchName, remote);
-                                log(`Successfully deleted remote branch ${branchName} on ${remote}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'deleteRemoteBranchSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error deleting remote branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'fetchIntoLocalBranch':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { remote, remoteBranch, localBranch, forceFetch } = message;
-                                if (!remote || !remoteBranch || !localBranch) {
-                                    throw new Error('Remote, remote branch, and local branch are required');
-                                }
-                                await gitService.fetchIntoLocalBranch(
-                                    log,
-                                    remote,
-                                    remoteBranch,
-                                    localBranch,
-                                    forceFetch || false
-                                );
-                                log(`Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'fetchIntoLocalBranchSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error fetching into local branch: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getTagDetails':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { tagName } = message;
-                                if (!tagName) {
-                                    throw new Error('Tag name is required');
-                                }
-                                const tagDetails = await gitService.getTagDetails(log, tagName);
-                                log(`Successfully retrieved details for tag ${tagName}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'tagDetails',
-                                    details: tagDetails
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting tag details: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'pushTag':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { tagName, remotes } = message;
-                                if (!tagName || !remotes || !Array.isArray(remotes)) {
-                                    throw new Error('Tag name and remotes array are required');
-                                }
-                                await gitService.pushTag(log, tagName, remotes);
-                                log(`Successfully pushed tag ${tagName} to ${remotes.join(', ')}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'pushTagSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error pushing tag: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'deleteTag':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { tagName, deleteOnRemote } = message;
-                                if (!tagName) {
-                                    throw new Error('Tag name is required');
-                                }
-                                await gitService.deleteTag(log, tagName, deleteOnRemote);
-                                log(
-                                    `Successfully deleted tag ${tagName}${deleteOnRemote ? ` from remote ${deleteOnRemote}` : ''}`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'deleteTagSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error deleting tag: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'resetUncommittedChanges':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const { mode } = message;
-                                await gitService.resetUncommittedChanges(log, mode || 'mixed');
-                                log(
-                                    `Successfully reset uncommitted changes and cleaned untracked files (${mode || 'mixed'} mode)`
-                                );
-                                currentPanel?.webview.postMessage({
-                                    type: 'resetUncommittedChangesSuccess',
-                                    success: true
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error resetting uncommitted changes: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'saveRepoState':
-                            const saveRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
-                            if (!saveRepoPath) {
-                                log('No workspace folder found, cannot save state');
-                                return;
-                            }
-                            context.globalState.update(`${saveRepoPath}:${message.key}`, message.value);
-                            break;
-                        case 'loadRepoState':
-                            const loadRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
-                            if (!loadRepoPath) {
-                                log('No workspace folder found, cannot load state');
-                                currentPanel?.webview.postMessage({
-                                    type: 'repoStateLoaded',
-                                    key: message.key,
-                                    value: null
-                                });
-                                return;
-                            }
-
-                            const stateValue = context.globalState.get(`${loadRepoPath}:${message.key}`);
+                    const handler = handlers[message.type];
+                    if (handler) {
+                        try {
+                            const response = await handler(message, log);
+                            currentPanel?.webview.postMessage(response);
+                        } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                            log(`Error ${message.type}: ${errorMessage}`);
                             currentPanel?.webview.postMessage({
-                                type: 'repoStateLoaded',
-                                key: message.key,
-                                value: stateValue ?? null
+                                type: 'gitError',
+                                error: errorMessage
                             });
-                            break;
-                        case 'getConfig':
-                            try {
-                                const config = getConfig();
-                                log('Successfully retrieved extension configuration');
-                                currentPanel?.webview.postMessage({
-                                    type: 'config',
-                                    config: {
-                                        rounded: config.rounded,
-                                        autoOpenEnabled: config.autoOpenEnabled,
-                                        pinTabEnabled: config.pinTabEnabled,
-                                        branchCreateCheckout: config.branchCreateCheckout,
-                                        branchDeleteForce: config.branchDeleteForce,
-                                        branchPushSetUpstream: config.branchPushSetUpstream,
-                                        branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
-                                        mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
-                                        mergeSquash: config.mergeSquash,
-                                        mergeNoCommit: config.mergeNoCommit,
-                                        cherryPickRecordOrigin: config.cherryPickRecordOrigin,
-                                        cherryPickNoCommit: config.cherryPickNoCommit,
-                                        revertNoCommit: config.revertNoCommit,
-                                        remoteFetchForceFetch: config.remoteFetchForceFetch,
-                                        stashIncludeUntracked: config.stashIncludeUntracked
-                                    }
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting configuration: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getRepoName':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const repoName = await gitService.getRepoName();
-                                log('Successfully retrieved repository name');
-                                currentPanel?.webview.postMessage({
-                                    type: 'repoName',
-                                    name: repoName
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting repository name: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'getGitUserConfig':
-                            try {
-                                const gitService = GitService.getInstance();
-                                const userConfig = await gitService.getGitUserConfig();
-                                log('Successfully retrieved git user configuration');
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitUserConfig',
-                                    config: userConfig
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error getting git user config: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'setGitUserConfig':
-                            try {
-                                const gitService = GitService.getInstance();
-                                await gitService.setGitUserConfig(message.config);
-                                log('Successfully set git user configuration');
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitUserConfigSet'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error setting git user config: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'addGitRemote':
-                            try {
-                                const gitService = GitService.getInstance();
-                                await gitService.addGitRemote(message.remote);
-                                log('Successfully added git remote');
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitRemoteAdded'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error adding git remote: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'removeGitRemote':
-                            try {
-                                const gitService = GitService.getInstance();
-                                await gitService.removeGitRemote(message.remoteName);
-                                log('Successfully removed git remote');
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitRemoteRemoved'
-                                });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error removing git remote: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
-                        case 'openSettings':
-                            try {
-                                await vscode.commands.executeCommand('workbench.action.openSettings', message.query);
-                                log('Successfully opened VS Code settings');
-                                currentPanel?.webview.postMessage({ type: 'settingsOpened' });
-                            } catch (error) {
-                                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                                log(`Error opening VS Code settings: ${errorMessage}`);
-                                currentPanel?.webview.postMessage({
-                                    type: 'gitError',
-                                    error: errorMessage
-                                });
-                            }
-                            break;
+                        }
+                    } else {
+                        log(`Unknown message type: ${message.type}`);
                     }
                 },
                 undefined,
                 context.subscriptions
             );
-
             currentPanel.webview.html = getWebviewContent(currentPanel.webview, scriptUri, styleUri);
 
             currentPanel.onDidDispose(
