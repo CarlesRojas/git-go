@@ -14,6 +14,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
     private readonly gitService: GitService;
     private readonly docs = new Map<string, DiffDocument>();
     private readonly onDidChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>();
+    private readonly onDidCloseTextDocumentDisposable: vscode.Disposable;
 
     /**
      * Creates the Git Go Diff Document Provider.
@@ -22,7 +23,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
         this.gitService = GitService.getInstance();
 
         // Clean up cached documents when they're closed
-        vscode.workspace.onDidCloseTextDocument((doc) => {
+        this.onDidCloseTextDocumentDisposable = vscode.workspace.onDidCloseTextDocument((doc) => {
             this.docs.delete(doc.uri.toString());
         });
     }
@@ -66,11 +67,32 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
     }
 
     /**
+     * Invalidate cached diff documents and notify VS Code so any open diff editors
+     * re-fetch their content. Call this whenever git state changes in a way that
+     * could affect already-rendered diffs (amend, rebase, reset, force-push, etc.).
+     *
+     * @param uri Optional specific URI to invalidate. If omitted, invalidates all cached documents.
+     */
+    public invalidate(uri?: vscode.Uri) {
+        if (uri) {
+            this.docs.delete(uri.toString());
+            this.onDidChangeEventEmitter.fire(uri);
+        } else {
+            // Fire change events for every cached doc, then drop them all
+            for (const key of this.docs.keys()) {
+                this.onDidChangeEventEmitter.fire(vscode.Uri.parse(key));
+            }
+            this.docs.clear();
+        }
+    }
+
+    /**
      * Dispose of resources used by the provider.
      */
     public dispose() {
         this.docs.clear();
         this.onDidChangeEventEmitter.dispose();
+        this.onDidCloseTextDocumentDisposable.dispose();
     }
 }
 

@@ -105,7 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.commands.executeCommand('workbench.action.pinEditor');
             }
 
-            watchGitChanges(currentPanel, log);
+            watchGitChanges(currentPanel, log, diffDocProvider);
 
             if (!currentPanel) return;
 
@@ -1154,7 +1154,7 @@ export function getNonce() {
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
-function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void) {
+function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void, diffDocProvider: DiffDocProvider) {
     const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
     if (!gitExtension) {
         log('Git extension not found');
@@ -1170,6 +1170,7 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void)
 
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
+            diffDocProvider.invalidate();
             panel.webview.postMessage({ type: 'gitChanged' });
             log('Git state changed — notified webview');
         }, 300);

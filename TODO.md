@@ -14,7 +14,7 @@
 
 - [ ] 🟠 **6. Per-row context menus and dialogs are catastrophic for performance/correctness.** `useCommitContextMenu.tsx:27` defines `ContextMenuWrapper` _inside_ the hook — every parent render makes a new component identity, remounting the whole subtree for every commit. Worse, each `CommitItem` instantiates `useTagDialog` + `useBranchDialog` + `useCherryPickDialog` + `useRevertDialog`, each with `useState` + `@tanstack/react-form` + `useMutation`. With 200 visible commits that's ~800 form/mutation instances. **Fix:** lift dialogs to a single app-level provider keyed by `targetCommit`; move `ContextMenuWrapper` out of the hook.
 
-- [ ] 🟠 **7. `DiffDocProvider` leaks a workspace listener.** `diffDocProvider.ts:25` registers `vscode.workspace.onDidCloseTextDocument` and never stores/disposes the `Disposable`. **Fix:** push the disposable into a list and dispose in `dispose()`.
+- [x] 🟠 **7. `DiffDocProvider` leaks a workspace listener.** `diffDocProvider.ts:25` registers `vscode.workspace.onDidCloseTextDocument` and never stores/disposes the `Disposable`. **Fix:** push the disposable into a list and dispose in `dispose()`. **FIXED** - Added `onDidCloseTextDocumentDisposable` field to store the disposable and dispose it in the `dispose()` method.
 
 - [ ] 🟠 **8. Diff views show stale content after history rewrites.** `DiffDocProvider` caches by URI but never fires `onDidChangeEventEmitter`. After amend/rebase/reset/force-push, diffs render the old file content until the document is closed. **Fix:** fire `onDidChange(uri)` for every cached URI when git state changes.
 
