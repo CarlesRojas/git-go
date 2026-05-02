@@ -74,10 +74,25 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     useCallback(
       (event: KeyboardEvent) => {
         if (!expandedRow) return
-        event.preventDefault()
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+        if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
 
-        if (event.key === 'ArrowUp') navigateCommit('up')
-        else if (event.key === 'ArrowDown') navigateCommit('down')
+        const target = event.target as HTMLElement | null
+        if (!target) return
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable ||
+          target.closest(
+            '[role="dialog"], [role="menu"], [role="menuitem"], [role="listbox"], [role="combobox"], [role="grid"]',
+          )
+        ) {
+          return
+        }
+
+        event.preventDefault()
+        navigateCommit(event.key === 'ArrowUp' ? 'up' : 'down')
       },
       [expandedRow, navigateCommit],
     ),
