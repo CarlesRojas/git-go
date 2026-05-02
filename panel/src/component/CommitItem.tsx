@@ -87,7 +87,7 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   useEffect(() => {
     if (isExpanded && sectionRef.current) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const element = sectionRef.current
         if (!element) return
 
@@ -96,6 +96,8 @@ export const CommitItem: FC<CommitItemProps> = ({
 
         if (!isInView) element.scrollIntoView({ behavior: 'smooth', block: 'end' })
       }, 100)
+
+      return () => clearTimeout(timeoutId)
     }
   }, [isExpanded])
 

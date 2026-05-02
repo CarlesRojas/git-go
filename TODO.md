@@ -4,10 +4,6 @@
 
 - [ ] 🔴 **1. No request/response correlation in webview ↔ extension messages.** Every query in `panel/src/hook/useGitQueries.ts` listens for the same generic `'gitError'` type. If two operations are in flight and one fails, every in-flight queryFn rejects with that one error. Same problem with success messages: a stray `getGitCommits` and a `useInfiniteGitCommits` both fire on `'gitCommits'` and may resolve with each other's payload. **Fix:** add a `requestId` to every postMessage and route by it.
 
-- [ ] 🟢 **26. `setTimeout` in `CommitItem.tsx:88-100` has no cleanup.** Component unmount within 100ms still runs the callback (the ref-null check papers over it).
-
-- [ ] 🟢 **29. Pagination via `--skip` re-walks history.** `gitService.ts:534` — fine for small repos, slow for big ones. Use `--max-count` plus a `--before <last-seen-hash>` cursor.
-
 ## Improvements (performance / stability / maintainability)
 
 - [ ] 🔴 **1. Replace the 880-line switch in `extension.ts` with a dispatch table.** Each case is the same `try / await gitService.X / postMessage / catch / postMessage 'gitError'` shape. Define `const handlers: Record<string, (msg, log) => Promise<{type, …}>>` and have a single 10-line wrapper that runs them, attaches `requestId`, logs, and forwards errors. Eliminates ~700 lines of boilerplate and gives you one place to fix message correlation (Bug #1).
