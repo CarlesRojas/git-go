@@ -234,21 +234,22 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   return (
     <>
-      <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
+      <section
+        ref={sectionRef}
+        className={cn('flex scroll-mb-8 flex-col transition-opacity duration-500', dimmed && 'opacity-10')}
+        data-commit-row={row}
+      >
         {uncommittedChangesContextMenuWrapper(
           <div
             className={cn(
               'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
               // Interactive
-              'transition-opacity duration-500',
               isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
               'hover:bg-vsc-editor-fg/10 cursor-pointer',
-              dimmed && 'opacity-10',
             )}
             style={{ paddingLeft: `${treeWidth + 8}px` }}
             onMouseEnter={() => onCommitHover(commit.hash, row)}
             onMouseLeave={() => onCommitHover(null, null)}
-            data-commit-row={row}
           >
             {commitContextMenuWrapper(
               <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />,
@@ -293,10 +294,7 @@ export const CommitItem: FC<CommitItemProps> = ({
               'relative w-full max-w-full overflow-x-hidden overflow-y-auto',
               // Colors
               'bg-vsc-editor-fg/3 border-vsc-editor-fg/10 border-b',
-              // Interactive
-              'transition-opacity duration-500',
             )}
-            data-commit-row={row}
             style={{
               height: `${settings.expandedCommitHeight}px`,
               minHeight: `${settings.expandedCommitHeight}px`,

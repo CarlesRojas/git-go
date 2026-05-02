@@ -64,7 +64,8 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
               'border-vsc-editor-fg/20 bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20 text-vsc-editor-fg border',
             )}
           >
-            <FontAwesomeIcon icon={icon} className={cn('size-3', iconColor)} />
+            <FontAwesomeIcon icon={icon} className={cn('size-3 max-w-3', iconColor)} />
+
             <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
               {type === 'stash' ? formatStash(label) : label}
             </span>

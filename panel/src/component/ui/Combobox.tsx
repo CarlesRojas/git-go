@@ -35,7 +35,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       {...props}
     >
       <div className="flex min-w-0 flex-row items-center gap-2">
-        <FontAwesomeIcon icon={faCodeBranch} className="text-vsc-editor-fg/70 size-2.5 min-w-2.5" />
+        <FontAwesomeIcon icon={faCodeBranch} className="text-vsc-editor-fg size-2.5 min-w-2.5" />
         {children}
       </div>
 
