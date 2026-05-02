@@ -102,7 +102,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     ),
   )
 
-  if (isLoading || isBranchesLoading) {
+  if ((isLoading || isBranchesLoading) && !data) {
     return (
       <div className="flex size-full w-full flex-col items-center justify-center gap-2 bg-transparent p-8 opacity-80">
         <FontAwesomeIcon icon={faCircleNotch} className="size-4 animate-spin" />

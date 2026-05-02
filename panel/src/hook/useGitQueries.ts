@@ -158,6 +158,7 @@ export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number =
     getNextPageParam: lastPage => {
       return lastPage.hasMore ? lastPage.skip + maxCount : undefined
     },
+    placeholderData: previousData => previousData,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     enabled: branches && branches.length > 0,
