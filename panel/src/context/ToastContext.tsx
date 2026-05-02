@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 
 interface Toast {
   text: string
-  icon?: IconDefinition
+  icon: IconDefinition
   type?: 'info' | 'warning' | 'error' | 'success'
   className?: string
 }
@@ -33,8 +33,16 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
   const showToast = (toastData: Toast) => {
     const { text, type = 'info', icon } = toastData
 
-    const content = icon ? (
-      <div className="flex gap-3 px-3">
+    const content = (
+      <div
+        className={cn(
+          'rounded-main-outer flex w-full gap-3 px-3',
+          'pointer-events-auto',
+          type === 'success' && 'bg-vsc-git-added-fg/5 pointer-events-auto',
+          type === 'error' && 'bg-vsc-git-deleted-fg/5 pointer-events-auto',
+          type === 'warning' && 'bg-vsc-git-modified-fg/5 pointer-events-auto',
+        )}
+      >
         <div className="flex h-fit min-h-10 w-fit items-center justify-center">
           <FontAwesomeIcon
             icon={icon}
@@ -49,8 +57,6 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
 
         <span className="py-3 text-xs leading-tight">{text}</span>
       </div>
-    ) : (
-      <span className="py-3 text-xs leading-tight">{text}</span>
     )
 
     switch (type) {

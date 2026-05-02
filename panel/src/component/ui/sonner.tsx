@@ -20,11 +20,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            'rounded-main-outer! pointer-events-auto! p-0! poborder-vsc-editor-fg/15! bg-vsc-editor-bg/80! border! backdrop-blur-lg!',
-          success: 'pointer-events-auto! border-vsc-git-added-fg/30! bg-vsc-git-added-fg/10!',
-          error: 'pointer-events-auto! border-vsc-git-deleted-fg/30! bg-vsc-git-deleted-fg/10!',
-          warning: 'pointer-events-auto! border-vsc-git-modified-fg/30! bg-vsc-git-modified-fg/10!',
-          info: 'pointer-events-auto! border-vsc-editor-fg/15! bg-vsc-editor-bg/80!',
+            'rounded-main-outer! pointer-events-auto! p-0! bg-vsc-editor-bg/80! backdrop-blur-lg! border! border-vsc-editor-fg/15!',
+          success: 'pointer-events-auto! border-vsc-git-added-fg/30! ',
+          error: 'pointer-events-auto! border-vsc-git-deleted-fg/30! ',
+          warning: 'pointer-events-auto! border-vsc-git-modified-fg/30! ',
+          info: 'pointer-events-auto! border-vsc-editor-fg/15!',
+          content: 'w-full!',
+          title: 'w-full!',
         },
         style: {
           maxWidth: '32rem !important',

@@ -1,5 +1,6 @@
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
+import { formatGitError } from './util/formatGitError';
 
 export interface GitCommit {
     hash: string;
@@ -169,7 +170,7 @@ export class GitService {
                 if (code === 0) {
                     resolve(stdout);
                 } else {
-                    reject(new Error(`Git command failed with exit code ${code}: ${stderr || stdout}`));
+                    reject(new Error(formatGitError(stderr || stdout)));
                 }
             });
 
