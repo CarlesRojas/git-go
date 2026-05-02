@@ -4,20 +4,6 @@
 
 - [ ] 🔴 **1. No request/response correlation in webview ↔ extension messages.** Every query in `panel/src/hook/useGitQueries.ts` listens for the same generic `'gitError'` type. If two operations are in flight and one fails, every in-flight queryFn rejects with that one error. Same problem with success messages: a stray `getGitCommits` and a `useInfiniteGitCommits` both fire on `'gitCommits'` and may resolve with each other's payload. **Fix:** add a `requestId` to every postMessage and route by it.
 
-- [-] 🟠 **9. Numstat lookup mismatch for renamed files.** Status output (with `-M`) gives `R100\told\tnew`; numstat gives `5\t3\told => new` (or `5\t3\t{old => new}/sub`). Current parsing in `getCommitFiles`/`getWorkingChanges`/`getStashFiles` keys statsMap by the literal `"old => new"` string but looks it up with the new path → renames always show 0/0 additions/deletions. **Fix:** use `-z` (NUL-separated) and parse the dual-name rename format properly.
-
-- [-] 🟠 **10. `getStashFiles` shows only unstaged stashed changes.** A stash has up to 3 parents (base, index, untracked). `git diff baseHash stashHash` (`gitService.ts:725-728`) only captures the working-tree-vs-base diff. Files staged at the time of `git stash` are missed. **Fix:** use `git stash show -u --raw stash@{N}` or diff against parents 1 and 2 separately.
-
-- [-] 🟠 **12. `cachedGitExecutable` is never invalidated.** `gitService.ts:64,1536` defines `clearCache()` but nothing calls it. Changing `git.path` requires VS Code restart. The config-change handler in `extension.ts:40-75` only refreshes the status bar.
-
-- [-] 🟠 **13. Multi-root workspaces operate on the wrong repo.** Every method uses `vscode.workspace.workspaceFolders?.[0]`. Users with several folders in one workspace always see folder #0. **Fix:** track the active repo (e.g. by the active editor's URI) or scope the panel to a chosen workspace folder.
-
-- [-] 🟠 **17. `findGitExecutable` swallows the original error.** `gitService.ts:84-110` — when both the configured path and the `git` fallback fail, the original error is dropped (the comment "Continue to throw original error" is wrong; it isn't rethrown). User sees only the generic "Unable to find Git executable…" with no diagnostic detail.
-
-- [-] 🟡 **20. `useResizable` reads `window.innerHeight` once.** `CommitItem.tsx:68` — viewport resize doesn't update the initial height and rows opened after a resize use stale geometry.
-
-- [ ] 🟡 **21. `searchCommits` strips non-ASCII letters.** `searchCommits.ts:9` regex `[^a-zA-Z0-9\s]` removes everything outside ASCII alphanumerics, so commits in any non-Latin script can't be searched. Diacritic stripping above only helps Latin-1.
-
 - [ ] 🟡 **22. Empty annotated tag.** `addTag` (`gitService.ts:822-823`) sends `-m ''` when no message is provided; some git versions reject this. **Fix:** if no message, create a lightweight tag instead, or require a message in the dialog.
 
 - [ ] 🟡 **23. Webview can't be restored across VS Code restarts.** No `WebviewPanelSerializer` registered (`extension.ts:95`). Closing the window loses the panel even though `retainContextWhenHidden` is set.

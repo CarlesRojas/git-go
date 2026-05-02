@@ -907,10 +907,11 @@ export class GitService {
             const args = [gitExecutable.path, 'tag'];
 
             if (tagType === 'annotated') {
-                if (tagMessage) {
+                if (tagMessage?.trim()) {
                     args.push('-a', '-m', tagMessage, '--', tagName, commitHash);
                 } else {
-                    args.push('-a', '-m', '', '--', tagName, commitHash);
+                    args.push('--', tagName, commitHash);
+                    tagType = 'lightweight';
                 }
             } else {
                 args.push('--', tagName, commitHash);
