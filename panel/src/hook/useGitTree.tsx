@@ -16,7 +16,7 @@ const COLOR_THEMES = {
   forest: ['#2e5c3d', '#4b7c4e', '#6f9b6f', '#a3d9a1', '#f1c2a2', '#e6a55c', '#d57a48', '#c45b3b'],
   float: ['#80558c', '#af7ab3', '#cba0ae', '#d8b9a0', '#dbcfaa', '#cdd4a8', '#9dad7f', '#557174'],
   coast: ['#95f9ab', '#8ee5b0', '#88d2b5', '#81beba', '#7babbf', '#7497c4', '#6e84c9', '#6770ce'],
-  boreal: ['#f1ddbf', '#cabead', '#a29e9a', '#525e75', '#657980', '#78938a', '#85a78e', '#92ba92'],
+  dusk: ['#f1ddbf', '#cabead', '#a29e9a', '#525e75', '#657980', '#78938a', '#85a78e', '#92ba92'],
   coral: ['#6895d2', '#8eaab8', '#c2e38e', '#fde767', '#f8d063', '#f3b95f', '#d9654e', '#d04848'],
 }
 

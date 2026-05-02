@@ -198,67 +198,67 @@ Choose from multiple color themes for the commit graph:
 #### **Vibrant** (default)
 
 Bright, energetic colors perfect for high-energy development sessions.
-![Vibrant Theme](resources/vibrant.png)
-
-#### **Forest**
-
-Earth-toned palette transitioning from forest greens to rich browns.
-![Forest Theme](resources/forest.png)
-
-#### **Ocean**
-
-Deep blues and teals reminiscent of deep ocean waters.
-![Ocean Theme](resources/ocean.png)
-
-#### **Sunset**
-
-Warm purples, pinks, and oranges like a beautiful evening sky.
-![Sunset Theme](resources/sunset.png)
-
-#### **Rainbow**
-
-Vibrant spectrum colors that bring joy to your commit history.
-![Rainbow Theme](resources/rainbow.png)
-
-#### **Earth**
-
-Natural, muted tones inspired by soil, sand, and stone.
-![Earth Theme](resources/earth.png)
-
-#### **Pastel**
-
-Soft, gentle colors that are easy on the eyes for long coding sessions.
-![Pastel Theme](resources/pastel.png)
-
-#### **Cloud**
-
-Dreamy purples and soft tones like floating in the clouds.
-![Cloud Theme](resources/cloud.png)
+![Vibrant Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/vibrant.png)
 
 #### **Spring**
 
 Warm earth tones flowing into cool teals, like nature's seasonal transition.
-![Spring Theme](resources/spring.png)
+![Spring Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/spring.png)
 
-#### **Float**
+#### **Ocean**
 
-Mysterious purples and muted tones for a calming experience.
-![Float Theme](resources/float.png)
+Deep blues and teals reminiscent of deep ocean waters.
+![Ocean Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/ocean.png)
+
+#### **Sunset**
+
+Warm purples, pinks, and oranges like a beautiful evening sky.
+![Sunset Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/sunset.png)
+
+#### **Pastel**
+
+Soft, gentle colors that are easy on the eyes for long coding sessions.
+![Pastel Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/pastel.png)
 
 #### **Coast**
 
 Cool greens and blues inspired by coastal waters and beaches.
-![Coast Theme](resources/coast.png)
+![Coast Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/coast.png)
 
-#### **Boreal**
+#### **Cloud**
 
-Nordic-inspired palette with cool grays and forest greens.
-![Boreal Theme](resources/boreal.png)
+Dreamy purples and soft tones like floating in the clouds.
+![Cloud Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/cloud.png)
+
+#### **Forest**
+
+Earth-toned palette transitioning from forest greens to rich browns.
+![Forest Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/forest.png)
+
+#### **Rainbow**
+
+Vibrant spectrum colors that bring joy to your commit history.
+![Rainbow Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/rainbow.png)
+
+#### **Earth**
+
+Natural, muted tones inspired by soil, sand, and stone.
+![Earth Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/earth.png)
+
+#### **Float**
+
+Mysterious purples and muted tones for a calming experience.
+![Float Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/float.png)
+
+#### **Dusk**
+
+Warm beiges transitioning through twilight grays into cool sage greens, capturing the serene evening hour.
+![Dusk Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/dusk.png)
 
 #### **Coral**
 
 Vibrant blues blending into warm coral tones.
-![Coral Theme](resources/coral.png)
+![Coral Theme](https://github.com/CarlesRojas/git-go/raw/main/resources/coral.png)
 
 ### Repository Settings
 
