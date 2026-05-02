@@ -12,19 +12,30 @@ import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { faCodeBranch, faCodeCommit, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
-import { ReactNode } from 'react'
+import { ReactNode, memo } from 'react'
 
 interface UseCommitContextMenuProps {
   commit: GitCommit
 }
 
-export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
-  const tagDialog = useTagDialog({ commit })
-  const branchDialog = useBranchDialog({ commit })
-  const cherryPickDialog = useCherryPickDialog({ commit })
-  const revertDialog = useRevertDialog({ commit })
+interface CommitContextMenuWrapperProps {
+  children: ReactNode
+  enabled: boolean
+  onBranchClick: () => void
+  onTagClick: () => void
+  onCherryPickClick: () => void
+  onRevertClick: () => void
+}
 
-  const ContextMenuWrapper = ({ children, enabled }: { children: ReactNode; enabled: boolean }) => {
+const CommitContextMenuWrapper = memo(
+  ({
+    children,
+    enabled,
+    onBranchClick,
+    onTagClick,
+    onCherryPickClick,
+    onRevertClick,
+  }: CommitContextMenuWrapperProps) => {
     if (!enabled) return <>{children}</>
 
     return (
@@ -41,32 +52,53 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
         >
           <ContextMenuLabel>Commit actions</ContextMenuLabel>
 
-          <ContextMenuItem onClick={branchDialog.openDialog}>
+          <ContextMenuItem onClick={onBranchClick}>
             <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
             Create Branch
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={tagDialog.openDialog}>
+          <ContextMenuItem onClick={onTagClick}>
             <FontAwesomeIcon icon={faTag} className="size-3" />
             Add Tag
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={cherryPickDialog.openDialog}>
+          <ContextMenuItem onClick={onCherryPickClick}>
             <FontAwesomeIcon icon={faCodeCommit} className="size-3" />
             Cherry Pick
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={revertDialog.openDialog} variant="destructive">
+          <ContextMenuItem onClick={onRevertClick} variant="destructive">
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
             Revert
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     )
-  }
+  },
+)
+
+CommitContextMenuWrapper.displayName = 'CommitContextMenuWrapper'
+
+export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
+  const tagDialog = useTagDialog({ commit })
+  const branchDialog = useBranchDialog({ commit })
+  const cherryPickDialog = useCherryPickDialog({ commit })
+  const revertDialog = useRevertDialog({ commit })
+
+  const commitContextMenuWrapper = (children: ReactNode, enabled: boolean) => (
+    <CommitContextMenuWrapper
+      enabled={enabled}
+      onBranchClick={branchDialog.openDialog}
+      onTagClick={tagDialog.openDialog}
+      onCherryPickClick={cherryPickDialog.openDialog}
+      onRevertClick={revertDialog.openDialog}
+    >
+      {children}
+    </CommitContextMenuWrapper>
+  )
 
   return {
-    ContextMenuWrapper,
+    commitContextMenuWrapper,
     dialogs: (
       <>
         {tagDialog.DialogComponent}

@@ -27,18 +27,18 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
   const icon = type === 'stash' ? faInbox : faTag
   const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
 
-  const { ContextMenuWrapper: StashContextMenuWrapper, dialogs: stashDialogs } = useStashContextMenu({
+  const { stashContextMenuWrapper, dialogs: stashDialogs } = useStashContextMenu({
     stash: type === 'stash' ? label : undefined,
   })
 
-  const { ContextMenuWrapper: TagContextMenuWrapper, dialogs: tagDialogs } = useTagContextMenu({
+  const { tagContextMenuWrapper, dialogs: tagDialogs } = useTagContextMenu({
     tagName: type === 'tag' ? label : undefined,
     commit,
   })
 
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
-    if (type === 'tag') return <TagContextMenuWrapper>{children}</TagContextMenuWrapper>
-    return <StashContextMenuWrapper>{children}</StashContextMenuWrapper>
+    if (type === 'tag') return tagContextMenuWrapper(children)
+    return stashContextMenuWrapper(children)
   }
 
   return (

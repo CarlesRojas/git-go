@@ -24,11 +24,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
 
-  const { ContextMenuWrapper: LocalBranchContextMenu, dialogs: localDialogs } = useLocalBranchContextMenu({
+  const { localBranchContextMenuWrapper, dialogs: localDialogs } = useLocalBranchContextMenu({
     branch: branch.local ?? undefined,
   })
 
-  const { ContextMenuWrapper: RemoteBranchContextMenu, dialogs: remoteDialogs } = useRemoteBranchContextMenu()
+  const { remoteBranchContextMenuWrapper, dialogs: remoteDialogs } = useRemoteBranchContextMenu()
 
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
@@ -63,8 +63,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   })
 
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
-    if (onlyRemote) return <RemoteBranchContextMenu branch={remotes[0]!}>{children}</RemoteBranchContextMenu>
-    return <LocalBranchContextMenu>{children}</LocalBranchContextMenu>
+    if (onlyRemote) return remoteBranchContextMenuWrapper(children, true, remotes[0]!)
+    return localBranchContextMenuWrapper(children)
   }
 
   return (
@@ -81,8 +81,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
         style={{ borderColor: isCurrent ? getColor(layout.colorIndex, false) : undefined }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
       >
-        {!onlyRemote && (
-          <LocalBranchContextMenu>
+        {!onlyRemote &&
+          localBranchContextMenuWrapper(
             <div
               className={cn(
                 // Layout & sizing
@@ -105,9 +105,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                 black: !!local,
                 white: !local,
               })}
-            </div>
-          </LocalBranchContextMenu>
-        )}
+            </div>,
+          )}
 
         <ContextMenuToUse>
           <div
@@ -139,8 +138,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
 
         {remotes
           .filter(({ remoteName }) => !!remoteName)
-          .map((remote, i) => (
-            <RemoteBranchContextMenu key={`remote-${i}-${remote.remoteName}`} enabled branch={remote}>
+          .map((remote, i) =>
+            remoteBranchContextMenuWrapper(
               <div
                 key={`remote-${i}-${remote.remoteName}`}
                 className={cn(
@@ -156,9 +155,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                 <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">
                   {remote.remoteName}
                 </span>
-              </div>
-            </RemoteBranchContextMenu>
-          ))}
+              </div>,
+              true,
+              remote,
+            ),
+          )}
       </button>
 
       {checkoutDialog.DialogComponent}

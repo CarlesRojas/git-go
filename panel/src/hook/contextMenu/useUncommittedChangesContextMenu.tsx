@@ -9,21 +9,17 @@ import { useResetUncommittedChangesDialog } from '@/hook/dialog/useResetUncommit
 import { useStashDialog } from '@/hook/dialog/useStashDialog'
 import { faInbox, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ReactNode } from 'react'
+import { ReactNode, memo } from 'react'
 
-export const useUncommittedChangesContextMenu = () => {
-  const stashDialog = useStashDialog()
-  const resetDialog = useResetUncommittedChangesDialog()
+interface UncommittedChangesContextMenuWrapperProps {
+  children: ReactNode
+  enabled?: boolean
+  onStash: () => void
+  onDiscardAll: () => void
+}
 
-  const handleStash = () => {
-    stashDialog.openDialog()
-  }
-
-  const handleDiscardAll = () => {
-    resetDialog.openDialog()
-  }
-
-  const ContextMenuWrapper = ({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) => {
+const UncommittedChangesContextMenuWrapper = memo(
+  ({ children, enabled = true, onStash, onDiscardAll }: UncommittedChangesContextMenuWrapperProps) => {
     if (!enabled) return <>{children}</>
 
     return (
@@ -40,22 +36,43 @@ export const useUncommittedChangesContextMenu = () => {
         >
           <ContextMenuLabel>Uncommitted changes actions</ContextMenuLabel>
 
-          <ContextMenuItem onClick={handleStash}>
+          <ContextMenuItem onClick={onStash}>
             <FontAwesomeIcon icon={faInbox} className="size-3" />
             Stash
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={handleDiscardAll} variant="destructive">
+          <ContextMenuItem onClick={onDiscardAll} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
             Discard all changes
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     )
+  },
+)
+
+UncommittedChangesContextMenuWrapper.displayName = 'UncommittedChangesContextMenuWrapper'
+
+export const useUncommittedChangesContextMenu = () => {
+  const stashDialog = useStashDialog()
+  const resetDialog = useResetUncommittedChangesDialog()
+
+  const handleStash = () => {
+    stashDialog.openDialog()
   }
 
+  const handleDiscardAll = () => {
+    resetDialog.openDialog()
+  }
+
+  const uncommittedChangesContextMenuWrapper = (children: ReactNode, enabled = true) => (
+    <UncommittedChangesContextMenuWrapper enabled={enabled} onStash={handleStash} onDiscardAll={handleDiscardAll}>
+      {children}
+    </UncommittedChangesContextMenuWrapper>
+  )
+
   return {
-    ContextMenuWrapper,
+    uncommittedChangesContextMenuWrapper,
     dialogs: {
       stashDialog,
       resetDialog,

@@ -24,7 +24,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
-import { ReactNode } from 'react'
+import { memo, ReactNode } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface UseLocalBranchContextMenuProps {
@@ -82,74 +82,82 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
     }
   }
 
-  const ContextMenuWrapper = ({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) => {
-    if (!branch || !enabled) return <>{children}</>
+  const LocalBranchContextMenuWrapper = memo(
+    ({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) => {
+      if (!branch || !enabled) return <>{children}</>
 
-    return (
-      <ContextMenu>
-        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      return (
+        <ContextMenu>
+          <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
 
-        <ContextMenuContent
-          onClick={e => e.stopPropagation()}
-          onMouseDown={e => e.stopPropagation()}
-          onMouseUp={e => e.stopPropagation()}
-          onMouseEnter={e => e.stopPropagation()}
-          onMouseLeave={e => e.stopPropagation()}
-          data-disable-commit-highlight
-        >
-          <ContextMenuLabel>Local Branch actions</ContextMenuLabel>
+          <ContextMenuContent
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onMouseUp={e => e.stopPropagation()}
+            onMouseEnter={e => e.stopPropagation()}
+            onMouseLeave={e => e.stopPropagation()}
+            data-disable-commit-highlight
+          >
+            <ContextMenuLabel>Local Branch actions</ContextMenuLabel>
 
-          {!branch.current && (
-            <ContextMenuItem onClick={handleCheckout}>
-              <FontAwesomeIcon icon={faCheck} className="size-3" />
-              Checkout
+            {!branch.current && (
+              <ContextMenuItem onClick={handleCheckout}>
+                <FontAwesomeIcon icon={faCheck} className="size-3" />
+                Checkout
+              </ContextMenuItem>
+            )}
+
+            <ContextMenuItem onClick={renameDialog.openDialog}>
+              <FontAwesomeIcon icon={faPen} className="size-3" />
+              Rename
             </ContextMenuItem>
-          )}
 
-          <ContextMenuItem onClick={renameDialog.openDialog}>
-            <FontAwesomeIcon icon={faPen} className="size-3" />
-            Rename
-          </ContextMenuItem>
+            {remotes.length > 0 && (
+              <ContextMenuItem onClick={pushDialog.openDialog}>
+                <FontAwesomeIcon icon={faUpload} className="size-3" />
+                Push
+              </ContextMenuItem>
+            )}
 
-          {remotes.length > 0 && (
-            <ContextMenuItem onClick={pushDialog.openDialog}>
-              <FontAwesomeIcon icon={faUpload} className="size-3" />
-              Push
+            {!branch.current && (
+              <>
+                <ContextMenuItem onClick={mergeDialog.openDialog}>
+                  <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
+                  Merge into Current
+                </ContextMenuItem>
+
+                <ContextMenuItem onClick={rebaseDialog.openDialog}>
+                  <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+                  Rebase Current Branch Here
+                </ContextMenuItem>
+
+                <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
+                  <FontAwesomeIcon icon={faTrash} className="size-3" />
+                  Delete
+                </ContextMenuItem>
+              </>
+            )}
+
+            <ContextMenuSeparator />
+
+            <ContextMenuItem onClick={handleCopyBranchName}>
+              <FontAwesomeIcon icon={faClone} className="size-3" />
+              Copy Branch Name
             </ContextMenuItem>
-          )}
+          </ContextMenuContent>
+        </ContextMenu>
+      )
+    },
+  )
 
-          {!branch.current && (
-            <>
-              <ContextMenuItem onClick={mergeDialog.openDialog}>
-                <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
-                Merge into Current
-              </ContextMenuItem>
+  LocalBranchContextMenuWrapper.displayName = 'LocalBranchContextMenuWrapper'
 
-              <ContextMenuItem onClick={rebaseDialog.openDialog}>
-                <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
-                Rebase Current Branch Here
-              </ContextMenuItem>
-
-              <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
-                <FontAwesomeIcon icon={faTrash} className="size-3" />
-                Delete
-              </ContextMenuItem>
-            </>
-          )}
-
-          <ContextMenuSeparator />
-
-          <ContextMenuItem onClick={handleCopyBranchName}>
-            <FontAwesomeIcon icon={faClone} className="size-3" />
-            Copy Branch Name
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-    )
-  }
+  const localBranchContextMenuWrapper = (children: ReactNode, enabled = true) => (
+    <LocalBranchContextMenuWrapper enabled={enabled}>{children}</LocalBranchContextMenuWrapper>
+  )
 
   return {
-    ContextMenuWrapper,
+    localBranchContextMenuWrapper,
     dialogs: (
       <>
         {renameDialog.DialogComponent}

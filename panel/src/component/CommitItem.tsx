@@ -101,9 +101,8 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
-  const { ContextMenuWrapper: CommitContextMenu, dialogs: commitDialogs } = useCommitContextMenu({ commit })
-  const { ContextMenuWrapper: UncommittedChangesContextMenu, dialogs: uncommittedDialogs } =
-    useUncommittedChangesContextMenu()
+  const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({ commit })
+  const { uncommittedChangesContextMenuWrapper, dialogs: uncommittedDialogs } = useUncommittedChangesContextMenu()
 
   const hasPills =
     !commit.isUncommitted &&
@@ -248,7 +247,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   return (
     <>
       <section ref={sectionRef} className="flex scroll-mb-8 flex-col">
-        <UncommittedChangesContextMenu enabled={commit.isUncommitted}>
+        {uncommittedChangesContextMenuWrapper(
           <div
             className={cn(
               'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
@@ -263,19 +262,20 @@ export const CommitItem: FC<CommitItemProps> = ({
             onMouseLeave={() => onCommitHover(null, null)}
             data-commit-row={row}
           >
-            <CommitContextMenu enabled={!commit.isUncommitted}>
-              <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />
-            </CommitContextMenu>
+            {commitContextMenuWrapper(
+              <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />,
+              !commit.isUncommitted,
+            )}
 
             <div
               className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
             >
               {!!hasPills && pills}
 
-              <CommitContextMenu enabled={!commit.isUncommitted}>{message}</CommitContextMenu>
+              {commitContextMenuWrapper(message, !commit.isUncommitted)}
             </div>
 
-            <CommitContextMenu enabled={!commit.isUncommitted}>{timeAndAuthor}</CommitContextMenu>
+            {commitContextMenuWrapper(timeAndAuthor, !commit.isUncommitted)}
 
             {layout.isHead && (
               <>
@@ -302,8 +302,9 @@ export const CommitItem: FC<CommitItemProps> = ({
                 <div className="bg-vsc-editor-fg/10 pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px max-h-px min-h-px" />
               </>
             )}
-          </div>
-        </UncommittedChangesContextMenu>
+          </div>,
+          commit.isUncommitted,
+        )}
 
         {isExpanded && (
           <div

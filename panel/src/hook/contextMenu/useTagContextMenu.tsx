@@ -13,13 +13,80 @@ import { useTagPushDialog } from '@/hook/dialog/useTagPushDialog'
 import { faClone, faEye, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
-import { ReactNode } from 'react'
+import { ReactNode, memo } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface UseTagContextMenuProps {
   commit: GitCommit
   tagName?: string
 }
+
+interface TagContextMenuWrapperProps {
+  children: ReactNode
+  enabled?: boolean
+  commit?: GitCommit
+  tagName?: string
+  onViewDetails: () => void
+  onPush: () => void
+  onDelete: () => void
+  onCopy: () => void
+}
+
+const TagContextMenuWrapper = memo(
+  ({
+    children,
+    enabled = true,
+    commit,
+    tagName,
+    onViewDetails,
+    onPush,
+    onDelete,
+    onCopy,
+  }: TagContextMenuWrapperProps) => {
+    if (!commit || !tagName || !enabled) return <>{children}</>
+
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+
+        <ContextMenuContent
+          onClick={e => e.stopPropagation()}
+          onMouseDown={e => e.stopPropagation()}
+          onMouseUp={e => e.stopPropagation()}
+          onMouseEnter={e => e.stopPropagation()}
+          onMouseLeave={e => e.stopPropagation()}
+          data-disable-commit-highlight
+        >
+          <ContextMenuLabel>Tag actions</ContextMenuLabel>
+
+          <ContextMenuItem onClick={onViewDetails}>
+            <FontAwesomeIcon icon={faEye} className="size-3" />
+            View details
+          </ContextMenuItem>
+
+          <ContextMenuItem onClick={onPush}>
+            <FontAwesomeIcon icon={faUpload} className="size-3" />
+            Push
+          </ContextMenuItem>
+
+          <ContextMenuItem onClick={onDelete} variant="destructive">
+            <FontAwesomeIcon icon={faTrash} className="size-3" />
+            Delete
+          </ContextMenuItem>
+
+          <ContextMenuSeparator />
+
+          <ContextMenuItem onClick={onCopy}>
+            <FontAwesomeIcon icon={faClone} className="size-3" />
+            Copy Tag Name
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    )
+  },
+)
+
+TagContextMenuWrapper.displayName = 'TagContextMenuWrapper'
 
 export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) => {
   const { showToast } = useToast()
@@ -43,51 +110,22 @@ export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) =
     }
   }
 
-  const ContextMenuWrapper = ({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) => {
-    if (!commit || !tagName || !enabled) return <>{children}</>
-
-    return (
-      <ContextMenu>
-        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-
-        <ContextMenuContent
-          onClick={e => e.stopPropagation()}
-          onMouseDown={e => e.stopPropagation()}
-          onMouseUp={e => e.stopPropagation()}
-          onMouseEnter={e => e.stopPropagation()}
-          onMouseLeave={e => e.stopPropagation()}
-          data-disable-commit-highlight
-        >
-          <ContextMenuLabel>Tag actions</ContextMenuLabel>
-
-          <ContextMenuItem onClick={handleViewDetails}>
-            <FontAwesomeIcon icon={faEye} className="size-3" />
-            View details
-          </ContextMenuItem>
-
-          <ContextMenuItem onClick={() => tagName && pushDialog.openDialog(commit, tagName)}>
-            <FontAwesomeIcon icon={faUpload} className="size-3" />
-            Push
-          </ContextMenuItem>
-
-          <ContextMenuItem onClick={() => tagName && deleteDialog.openDialog(tagName)} variant="destructive">
-            <FontAwesomeIcon icon={faTrash} className="size-3" />
-            Delete
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          <ContextMenuItem onClick={handleCopyTagName}>
-            <FontAwesomeIcon icon={faClone} className="size-3" />
-            Copy Tag Name
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-    )
-  }
+  const tagContextMenuWrapper = (children: ReactNode, enabled = true) => (
+    <TagContextMenuWrapper
+      enabled={enabled}
+      commit={commit}
+      tagName={tagName}
+      onViewDetails={handleViewDetails}
+      onPush={() => tagName && pushDialog.openDialog(commit, tagName)}
+      onDelete={() => tagName && deleteDialog.openDialog(tagName)}
+      onCopy={handleCopyTagName}
+    >
+      {children}
+    </TagContextMenuWrapper>
+  )
 
   return {
-    ContextMenuWrapper,
+    tagContextMenuWrapper,
     dialogs: {
       detailsDialog,
       pushDialog,
