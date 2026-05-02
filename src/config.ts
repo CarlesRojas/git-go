@@ -140,6 +140,13 @@ export class Config {
     get theme(): string {
         return this.config.get('graph.theme', 'vibrant');
     }
+
+    /**
+     * Get the value of the `git-go.graph.customColors` Extension Setting.
+     */
+    get customColors(): string[] {
+        return this.config.get('graph.customColors', []);
+    }
 }
 
 /**

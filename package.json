@@ -85,10 +85,21 @@
                         "earth",
                         "float",
                         "dusk",
-                        "coral"
+                        "coral",
+                        "custom"
                     ],
                     "default": "vibrant",
                     "markdownDescription": "**Graph Appearance:** Color theme for the commit graph branches and dots."
+                },
+                "git-go.graph.customColors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+                    },
+                    "default": [],
+                    "maxItems": 16,
+                    "markdownDescription": "**Graph Appearance:** Custom color palette for branches. Theme needs to be set to 'custom'. Use hex color codes (e.g., #3b82f6)."
                 },
                 "git-go.graph.expandedCommitHeight": {
                     "type": "number",

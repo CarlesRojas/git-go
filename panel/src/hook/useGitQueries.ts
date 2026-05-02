@@ -58,6 +58,7 @@ export interface ConfigState {
   stashIncludeUntracked: boolean
   expandedCommitHeight: number
   theme: string
+  customColors: string[]
 }
 
 const defaultConfigState: ConfigState = {
@@ -78,6 +79,7 @@ const defaultConfigState: ConfigState = {
   stashIncludeUntracked: true,
   expandedCommitHeight: 300,
   theme: 'vibrant',
+  customColors: [],
 }
 
 export const queryKeys = {

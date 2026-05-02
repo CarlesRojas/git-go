@@ -32,9 +32,20 @@ const DOT_RADIUS = 5
 const LINE_WIDTH = 2
 const CURVE_D = ROW_HEIGHT * 0.8
 
-export const getColor = (index: number, theme: string, isStash?: boolean, isUncommitted?: boolean) => {
+export const getColor = (
+  index: number,
+  theme: string,
+  customColors: string[],
+  isStash?: boolean,
+  isUncommitted?: boolean,
+) => {
   if (isStash) return STASH_COLOR
   if (isUncommitted) return UNCOMMITTED_COLOR
+
+  if (theme === 'custom') {
+    const colors = customColors.length > 0 ? customColors : COLOR_THEMES.vibrant
+    return colors[index % colors.length]
+  }
 
   const themeColors = COLOR_THEMES[theme as keyof typeof COLOR_THEMES] || COLOR_THEMES.vibrant
   return themeColors[index % themeColors.length]
@@ -191,7 +202,13 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
 
           <g mask="url(#commit-mask)">
             {layout.branches.map((branch, bi) => {
-              const color = getColor(branch.colorIndex, settings.theme, branch.isStash, branch.isUncommitted)
+              const color = getColor(
+                branch.colorIndex,
+                settings.theme,
+                settings.customColors,
+                branch.isStash,
+                branch.isUncommitted,
+              )
               let d = ''
               for (const seg of branch.segments) {
                 if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
@@ -222,7 +239,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
 
               const dotX = px(c.column)
               const dotY = getY(c.row)
-              const color = getColor(c.colorIndex, settings.theme, c.isStash, c.isUncommitted)
+              const color = getColor(c.colorIndex, settings.theme, settings.customColors, c.isStash, c.isUncommitted)
 
               if (c.isUncommitted) {
                 return (
@@ -309,6 +326,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
       maxVisibleCol,
       getY,
       settings.theme,
+      settings.customColors,
       buildSegmentPath,
     ],
   )
