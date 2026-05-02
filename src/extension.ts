@@ -1190,9 +1190,15 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
     if (workspaceFolder) {
         const gitRefsPattern = new vscode.RelativePattern(workspaceFolder, '.git/refs/**/*');
         const headPattern = new vscode.RelativePattern(workspaceFolder, '.git/HEAD');
+        const packedRefsPattern = new vscode.RelativePattern(workspaceFolder, '.git/packed-refs');
+        const refsDirectoryPattern = new vscode.RelativePattern(workspaceFolder, '.git/refs');
+        const headLogPattern = new vscode.RelativePattern(workspaceFolder, '.git/logs/HEAD');
 
         const refsWatcher = vscode.workspace.createFileSystemWatcher(gitRefsPattern);
         const headWatcher = vscode.workspace.createFileSystemWatcher(headPattern);
+        const packedRefsWatcher = vscode.workspace.createFileSystemWatcher(packedRefsPattern);
+        const refsDirectoryWatcher = vscode.workspace.createFileSystemWatcher(refsDirectoryPattern);
+        const headLogWatcher = vscode.workspace.createFileSystemWatcher(headLogPattern);
 
         const onRefChange = () => notifyChange();
 
@@ -1201,8 +1207,18 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
             refsWatcher.onDidChange(onRefChange),
             refsWatcher.onDidDelete(onRefChange),
             headWatcher.onDidChange(onRefChange),
+            packedRefsWatcher.onDidCreate(onRefChange),
+            packedRefsWatcher.onDidChange(onRefChange),
+            packedRefsWatcher.onDidDelete(onRefChange),
+            refsDirectoryWatcher.onDidCreate(onRefChange),
+            refsDirectoryWatcher.onDidChange(onRefChange),
+            refsDirectoryWatcher.onDidDelete(onRefChange),
+            headLogWatcher.onDidChange(onRefChange),
             refsWatcher,
-            headWatcher
+            headWatcher,
+            packedRefsWatcher,
+            refsDirectoryWatcher,
+            headLogWatcher
         );
     }
 
