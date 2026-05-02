@@ -24,11 +24,11 @@
 
 - [x] 🟠 **11. Merge-commit file lists incomplete.** `getCommitFiles` (`gitService.ts:662`) calls `diff-tree --root` without `-c`/`--cc`, so for merge commits only the first-parent diff is shown — actual merge-resolution edits are invisible. **Fix:** add `-m --first-parent` or `--cc` when the commit has >1 parent. **FIXED** - Modified `getCommitFiles` to detect merge commits and use `--cc` flag to show combined diff including merge resolution changes.
 
-- [ ] 🟠 **12. `cachedGitExecutable` is never invalidated.** `gitService.ts:64,1536` defines `clearCache()` but nothing calls it. Changing `git.path` requires VS Code restart. The config-change handler in `extension.ts:40-75` only refreshes the status bar.
+- [-] 🟠 **12. `cachedGitExecutable` is never invalidated.** `gitService.ts:64,1536` defines `clearCache()` but nothing calls it. Changing `git.path` requires VS Code restart. The config-change handler in `extension.ts:40-75` only refreshes the status bar.
 
-- [ ] 🟠 **13. Multi-root workspaces operate on the wrong repo.** Every method uses `vscode.workspace.workspaceFolders?.[0]`. Users with several folders in one workspace always see folder #0. **Fix:** track the active repo (e.g. by the active editor's URI) or scope the panel to a chosen workspace folder.
+- [-] 🟠 **13. Multi-root workspaces operate on the wrong repo.** Every method uses `vscode.workspace.workspaceFolders?.[0]`. Users with several folders in one workspace always see folder #0. **Fix:** track the active repo (e.g. by the active editor's URI) or scope the panel to a chosen workspace folder.
 
-- [ ] 🟠 **14. `O(n²)` layout join in `Graph.tsx`.** Line 131: `rows.find(c => c.commit.hash === commit.hash)!` runs per row. For 200 commits that's 40k scans per render. The non-null assertion also crashes if working-changes-commit is in `commits` but not in `rows`. **Fix:** build a `Map<hash, CommitLayout>` once.
+- [x] 🟠 **14. `O(n²)` layout join in `Graph.tsx`.** Line 131: `rows.find(c => c.commit.hash === commit.hash)!` runs per row. For 200 commits that's 40k scans per render. The non-null assertion also crashes if working-changes-commit is in `commits` but not in `rows`. **Fix:** build a `Map<hash, CommitLayout>` once. **FIXED** - Built a `layoutMap` using `useMemo` to create a hash-to-layout mapping once, replaced the O(n²) `rows.find()` with O(1) map lookup, and added null check to prevent crashes when layout is missing.
 
 - [ ] 🟠 **15. `showStashes=false` ignored when working changes exist.** `Graph.tsx:36-44` returns early on `workingChangesData?.commit` without applying the stash filter, so toggling stashes off does nothing while you have uncommitted changes.
 

@@ -45,6 +45,14 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
 
   const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
 
+  const layoutMap = useMemo(() => {
+    const map = new Map()
+
+    for (const row of rows) map.set(row.commit.hash, row)
+
+    return map
+  }, [rows])
+
   const toggleCommit = (commitHash: string) => {
     setExpandedCommitHash(expandedCommitHash === commitHash ? null : commitHash)
     if (expandedCommitHash === commitHash) setExpandedRow(undefined)
@@ -133,22 +141,27 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
       {commits.length > 0 && treeComponent}
 
       <div className="flex w-full flex-col py-3">
-        {commits.map((commit, row) => (
-          <CommitItem
-            key={commit.hash}
-            commit={commit}
-            isExpanded={expandedCommitHash === commit.hash}
-            onToggle={() => toggleCommit(commit.hash)}
-            selectedBranches={selectedBranches}
-            treeWidth={treeWidth}
-            onCommitHover={onCommitHover}
-            row={row}
-            layout={rows.find(c => c.commit.hash === commit.hash)!}
-            setExpandedRow={setExpandedRow}
-            uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
-            dimmed={!matchesSearch(commit, branches, searchTerm)}
-          />
-        ))}
+        {commits.map((commit, row) => {
+          const layout = layoutMap.get(commit.hash)
+          if (!layout) return null
+
+          return (
+            <CommitItem
+              key={commit.hash}
+              commit={commit}
+              isExpanded={expandedCommitHash === commit.hash}
+              onToggle={() => toggleCommit(commit.hash)}
+              selectedBranches={selectedBranches}
+              treeWidth={treeWidth}
+              onCommitHover={onCommitHover}
+              row={row}
+              layout={layout}
+              setExpandedRow={setExpandedRow}
+              uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
+              dimmed={!matchesSearch(commit, branches, searchTerm)}
+            />
+          )
+        })}
 
         {hasNextPage && !isFetchingNextPage && (
           <div ref={loadMoreRef} className="flex h-8 min-h-8 w-full items-center justify-center gap-2 opacity-80" />
