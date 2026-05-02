@@ -384,18 +384,30 @@ export class GitService {
         gitPath: string,
         stashMap: Map<string, string>
     ): Promise<GitCommit[]> {
+        if (stashMap.size === 0) return [];
+
         const format = ['%H', '%P', '%an', '%ae', '%ai', '%s'].join(GIT_LOG_SEPARATOR);
         const stashes: GitCommit[] = [];
+        const hashes = Array.from(stashMap.keys());
 
-        for (const [hash, ref] of stashMap) {
-            try {
-                const output = await this.spawnGit(
-                    [gitPath, 'log', '-1', `--pretty=format:${format}`, hash],
-                    workspacePath
-                );
-                const parts = output.trim().split(GIT_LOG_SEPARATOR);
+        try {
+            const output = await this.spawnGit(
+                [gitPath, 'log', '--no-walk', `--pretty=format:${format}`, ...hashes],
+                workspacePath
+            );
+
+            const lines = output
+                .trim()
+                .split('\n')
+                .filter((line) => line.trim());
+            for (const line of lines) {
+                const parts = line.split(GIT_LOG_SEPARATOR);
                 if (parts.length < 6) continue;
-                const [, parentHashes, author, email, date, message] = parts;
+                const [hash, parentHashes, author, email, date, message] = parts;
+
+                if (!hash) continue;
+                const ref = stashMap.get(hash);
+                if (!ref) continue;
 
                 stashes.push({
                     hash,
@@ -408,9 +420,32 @@ export class GitService {
                     isStash: true,
                     refs: ref
                 });
-            } catch {
-                // Skip this stash
             }
+        } catch (error) {
+            // for (const [hash, ref] of stashMap) {
+            //     try {
+            //         const output = await this.spawnGit(
+            //             [gitPath, 'log', '-1', `--pretty=format:${format}`, hash],
+            //             workspacePath
+            //         );
+            //         const parts = output.trim().split(GIT_LOG_SEPARATOR);
+            //         if (parts.length < 6) continue;
+            //         const [, parentHashes, author, email, date, message] = parts;
+            //         stashes.push({
+            //             hash,
+            //             parents: parentHashes?.trim() ? [parentHashes.trim().split(' ')[0]!] : [],
+            //             author: author?.trim() || '',
+            //             email: email?.trim() || '',
+            //             date: date?.trim() || '',
+            //             message: message?.trim() || '',
+            //             tags: [],
+            //             isStash: true,
+            //             refs: ref
+            //         });
+            //     } catch {
+            //         // Skip this stash
+            //     }
+            // }
         }
 
         return stashes;

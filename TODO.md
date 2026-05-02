@@ -12,11 +12,9 @@
 
 - [-] 🟠 **13. Multi-root workspaces operate on the wrong repo.** Every method uses `vscode.workspace.workspaceFolders?.[0]`. Users with several folders in one workspace always see folder #0. **Fix:** track the active repo (e.g. by the active editor's URI) or scope the panel to a chosen workspace folder.
 
-- [ ] 🟠 **17. `findGitExecutable` swallows the original error.** `gitService.ts:84-110` — when both the configured path and the `git` fallback fail, the original error is dropped (the comment "Continue to throw original error" is wrong; it isn't rethrown). User sees only the generic "Unable to find Git executable…" with no diagnostic detail.
+- [-] 🟠 **17. `findGitExecutable` swallows the original error.** `gitService.ts:84-110` — when both the configured path and the `git` fallback fail, the original error is dropped (the comment "Continue to throw original error" is wrong; it isn't rethrown). User sees only the generic "Unable to find Git executable…" with no diagnostic detail.
 
-- [ ] 🟡 **19. `getStashCommits` runs N+1 git calls sequentially.** `gitService.ts:357-380` does one `git log -1` per stash. Should be a single `git log <stash1> <stash2> …` or `for-each-ref refs/stash`.
-
-- [ ] 🟡 **20. `useResizable` reads `window.innerHeight` once.** `CommitItem.tsx:68` — viewport resize doesn't update the initial height and rows opened after a resize use stale geometry.
+- [-] 🟡 **20. `useResizable` reads `window.innerHeight` once.** `CommitItem.tsx:68` — viewport resize doesn't update the initial height and rows opened after a resize use stale geometry.
 
 - [ ] 🟡 **21. `searchCommits` strips non-ASCII letters.** `searchCommits.ts:9` regex `[^a-zA-Z0-9\s]` removes everything outside ASCII alphanumerics, so commits in any non-Latin script can't be searched. Diacritic stripping above only helps Latin-1.
 
