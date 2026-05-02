@@ -18,11 +18,11 @@
 
 - [x] 🟠 **8. Diff views show stale content after history rewrites.** `DiffDocProvider` caches by URI but never fires `onDidChangeEventEmitter`. After amend/rebase/reset/force-push, diffs render the old file content until the document is closed. **Fix:** fire `onDidChange(uri)` for every cached URI when git state changes.
 
-- [ ] 🟠 **9. Numstat lookup mismatch for renamed files.** Status output (with `-M`) gives `R100\told\tnew`; numstat gives `5\t3\told => new` (or `5\t3\t{old => new}/sub`). Current parsing in `getCommitFiles`/`getWorkingChanges`/`getStashFiles` keys statsMap by the literal `"old => new"` string but looks it up with the new path → renames always show 0/0 additions/deletions. **Fix:** use `-z` (NUL-separated) and parse the dual-name rename format properly.
+- [-] 🟠 **9. Numstat lookup mismatch for renamed files.** Status output (with `-M`) gives `R100\told\tnew`; numstat gives `5\t3\told => new` (or `5\t3\t{old => new}/sub`). Current parsing in `getCommitFiles`/`getWorkingChanges`/`getStashFiles` keys statsMap by the literal `"old => new"` string but looks it up with the new path → renames always show 0/0 additions/deletions. **Fix:** use `-z` (NUL-separated) and parse the dual-name rename format properly.
 
 - [-] 🟠 **10. `getStashFiles` shows only unstaged stashed changes.** A stash has up to 3 parents (base, index, untracked). `git diff baseHash stashHash` (`gitService.ts:725-728`) only captures the working-tree-vs-base diff. Files staged at the time of `git stash` are missed. **Fix:** use `git stash show -u --raw stash@{N}` or diff against parents 1 and 2 separately.
 
-- [ ] 🟠 **11. Merge-commit file lists incomplete.** `getCommitFiles` (`gitService.ts:662`) calls `diff-tree --root` without `-c`/`--cc`, so for merge commits only the first-parent diff is shown — actual merge-resolution edits are invisible. **Fix:** add `-m --first-parent` or `--cc` when the commit has >1 parent.
+- [x] 🟠 **11. Merge-commit file lists incomplete.** `getCommitFiles` (`gitService.ts:662`) calls `diff-tree --root` without `-c`/`--cc`, so for merge commits only the first-parent diff is shown — actual merge-resolution edits are invisible. **Fix:** add `-m --first-parent` or `--cc` when the commit has >1 parent. **FIXED** - Modified `getCommitFiles` to detect merge commits and use `--cc` flag to show combined diff including merge resolution changes.
 
 - [ ] 🟠 **12. `cachedGitExecutable` is never invalidated.** `gitService.ts:64,1536` defines `clearCache()` but nothing calls it. Changing `git.path` requires VS Code restart. The config-change handler in `extension.ts:40-75` only refreshes the status bar.
 

@@ -690,15 +690,33 @@ export class GitService {
         try {
             if (isStash) return await this.getStashFiles(log, commitHash, workspacePath, gitExecutable.path);
 
-            const statusOutput = await this.spawnGit(
-                [gitExecutable.path, 'diff-tree', '--no-commit-id', '--name-status', '-r', '-M', '--root', commitHash],
-                workspacePath
-            );
+            // Guard against argument injection — same as cherryPickCommit / revertCommit
+            this.validatePositional(commitHash, 'commit hash');
 
-            const numstatOutput = await this.spawnGit(
-                [gitExecutable.path, 'diff-tree', '--no-commit-id', '--numstat', '-r', '-M', '--root', commitHash],
+            // Determine parent count to choose the right diff-tree invocation
+            const parentOutput = await this.spawnGit(
+                [gitExecutable.path, 'log', '-1', '--pretty=format:%P', commitHash],
                 workspacePath
             );
+            const parents = parentOutput.trim().split(' ').filter(Boolean);
+
+            // Build the trailing args for diff-tree based on parent count:
+            //   0 parents (root)  -> --root <commit>
+            //   1 parent (normal) -> <commit>
+            //   2+ parents (merge) -> <commit>^1 <commit>  (diff against first parent)
+            // --cc is NOT what we want — it only shows files with non-trivial conflict
+            // resolution, so clean merges would render an empty file list.
+            const revArgs: string[] =
+                parents.length === 0
+                    ? ['--root', commitHash]
+                    : parents.length === 1
+                      ? [commitHash]
+                      : [`${commitHash}^1`, commitHash];
+
+            const baseArgs = [gitExecutable.path, 'diff-tree', '--no-commit-id', '-r', '-M'];
+
+            const statusOutput = await this.spawnGit([...baseArgs, '--name-status', ...revArgs], workspacePath);
+            const numstatOutput = await this.spawnGit([...baseArgs, '--numstat', ...revArgs], workspacePath);
 
             const statsMap = new Map<string, { additions: number; deletions: number }>();
             for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
@@ -706,7 +724,6 @@ export class GitService {
                 if (parts.length < 3) continue;
                 const additions = parts[0] === '-' ? 0 : parseInt(parts[0]!, 10);
                 const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]!, 10);
-                // For renames: numstat shows "oldPath => newPath" or just the new path
                 const path = parts[parts.length - 1]!.trim();
                 statsMap.set(path, { additions, deletions });
             }
