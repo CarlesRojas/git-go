@@ -133,6 +133,13 @@ export class Config {
     get expandedCommitHeight(): number {
         return this.config.get('graph.expandedCommitHeight', 300);
     }
+
+    /**
+     * Get the value of the `git-go.graph.theme` Extension Setting.
+     */
+    get theme(): string {
+        return this.config.get('graph.theme', 'vibrant');
+    }
 }
 
 /**

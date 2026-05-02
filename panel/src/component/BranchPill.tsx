@@ -1,3 +1,4 @@
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchContextMenu'
 import { useRemoteBranchContextMenu } from '@/hook/contextMenu/useRemoteBranchContextMenu'
@@ -23,6 +24,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   const { local, remotes } = branch
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
+  const { settings } = useSettings()
 
   const { localBranchContextMenuWrapper, dialogs: localDialogs } = useLocalBranchContextMenu({
     branch: branch.local ?? undefined,
@@ -78,7 +80,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
           isCurrent && 'border',
           (onlyLocal || onlyRemote) && 'group/branch',
         )}
-        style={{ borderColor: isCurrent ? getColor(layout.colorIndex, false) : undefined }}
+        style={{ borderColor: isCurrent ? getColor(layout.colorIndex, settings.theme, false) : undefined }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
       >
         {!onlyRemote &&
@@ -94,8 +96,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                 !!local && !isCurrent && 'rounded-l-main border-y border-l',
               )}
               style={{
-                backgroundColor: local ? getColor(layout.colorIndex, false) : undefined,
-                borderColor: getColor(layout.colorIndex, false),
+                backgroundColor: local ? getColor(layout.colorIndex, settings.theme, false) : undefined,
+                borderColor: getColor(layout.colorIndex, settings.theme, false),
               }}
               onClick={localAndRemote ? handleLocalDoubleClick : undefined}
             >
@@ -132,7 +134,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
 
             <span
               className={cn('line-clamp-1 text-xs leading-tight font-medium text-nowrap', isCurrent && 'font-bold')}
-              style={{ color: isCurrent ? getColor(layout.colorIndex, false) : undefined }}
+              style={{ color: isCurrent ? getColor(layout.colorIndex, settings.theme, false) : undefined }}
             >
               {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
             </span>

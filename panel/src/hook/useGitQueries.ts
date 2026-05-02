@@ -57,6 +57,7 @@ export interface ConfigState {
   remoteFetchForceFetch: boolean
   stashIncludeUntracked: boolean
   expandedCommitHeight: number
+  theme: string
 }
 
 const defaultConfigState: ConfigState = {
@@ -76,6 +77,7 @@ const defaultConfigState: ConfigState = {
   remoteFetchForceFetch: false,
   stashIncludeUntracked: true,
   expandedCommitHeight: 300,
+  theme: 'vibrant',
 }
 
 export const queryKeys = {

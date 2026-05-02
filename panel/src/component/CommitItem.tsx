@@ -154,7 +154,7 @@ export const CommitItem: FC<CommitItemProps> = ({
           layout?.isMerge && !layout?.isHead && 'opacity-50',
           layout?.isHead && 'font-bold',
         )}
-        style={{ color: layout?.isHead ? getColor(layout.colorIndex, commit.isStash) : undefined }}
+        style={{ color: layout?.isHead ? getColor(layout.colorIndex, settings.theme, commit.isStash) : undefined }}
       >
         {commit.message}
       </h3>
@@ -270,12 +270,12 @@ export const CommitItem: FC<CommitItemProps> = ({
               <>
                 <div
                   className="pointer-events-none absolute inset-0 -z-20 opacity-10"
-                  style={{ backgroundColor: getColor(layout.colorIndex) }}
+                  style={{ backgroundColor: getColor(layout.colorIndex, settings.theme) }}
                 />
 
                 <div
                   className="pointer-events-none absolute inset-0 -z-10 border-y opacity-15"
-                  style={{ borderColor: getColor(layout.colorIndex) }}
+                  style={{ borderColor: getColor(layout.colorIndex, settings.theme) }}
                 />
               </>
             )}

@@ -108,13 +108,106 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 
 ## ⚙️ Configuration
 
-Git Go can be customized through VS Code settings:
+Git Go can be customized through VS Code settings. Here are all available configuration options:
+
+### 🎨 Graph Appearance
 
 ```json
 {
-    "git-go.graph.rounded": true // Use rounded corners for graph elements
+    "git-go.graph.rounded": true, // Use rounded corners for graph elements
+    "git-go.graph.theme": "vibrant", // Color theme for branch visualization
+    "git-go.graph.expandedCommitHeight": 300 // Height in pixels for expanded commit details (200-800)
 }
 ```
+
+### 🚀 Auto-Open Behavior
+
+```json
+{
+    "git-go.autoOpen.enabled": false, // Automatically open Git Go when VS Code opens in a git repository
+    "git-go.autoOpen.pinTab": true // Automatically pin the Git Go tab when opened
+}
+```
+
+### 📊 Interface Elements
+
+```json
+{
+    "git-go.statusBar.enabled": true // Show a Status Bar Item that opens Git Go when clicked
+}
+```
+
+### 🌿 Branch Operations
+
+```json
+{
+    "git-go.branch.create.checkout": true, // Default 'Checkout new branch' when creating a branch
+    "git-go.branch.delete.force": false, // Default 'Force delete' when deleting a branch
+    "git-go.branch.push.setUpstream": true, // Default 'Set upstream' when pushing a branch
+    "git-go.branch.rebase.ignoreDate": true // Default 'Ignore date' when rebasing a branch
+}
+```
+
+### 🔄 Merge Operations
+
+```json
+{
+    "git-go.merge.fastForwardIfPossible": true, // Default 'Fast forward if possible' when merging
+    "git-go.merge.squash": false, // Default 'Squash commits' when merging branches
+    "git-go.merge.noCommit": false // Default 'Don't commit automatically' when merging
+}
+```
+
+### 🍒 Cherry-Pick Operations
+
+```json
+{
+    "git-go.cherryPick.recordOrigin": false, // Default 'Record origin' when cherry-picking
+    "git-go.cherryPick.noCommit": true // Default 'Don't commit automatically' when cherry-picking
+}
+```
+
+### ↩️ Revert Operations
+
+```json
+{
+    "git-go.revert.noCommit": true // Default 'Don't commit automatically' when reverting commits
+}
+```
+
+### 🌐 Remote Operations
+
+```json
+{
+    "git-go.remote.fetch.forceFetch": false // Default 'Force fetch' when fetching remote branches
+}
+```
+
+### 📦 Stash Operations
+
+```json
+{
+    "git-go.stash.includeUntracked": true // Default 'Include untracked files' when creating stashes
+}
+```
+
+### Theme Options
+
+Choose from multiple color themes for the commit graph:
+
+- **Vibrant** (default) - Bright, energetic colors
+- **Forest** - Cozy brown to teal palette
+
+vibrant - -
+forest - 4
+ocean - -
+sunset - -
+rainbow - 23
+earth - 2
+pastel - -
+cloud - -
+spring - 4
+float - 6
 
 ### Repository Settings
 
