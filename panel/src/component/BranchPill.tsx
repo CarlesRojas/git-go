@@ -130,7 +130,10 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
                 white: !local,
               })}
 
-            <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
+            <span
+              className={cn('line-clamp-1 text-xs leading-tight font-medium text-nowrap', isCurrent && 'font-bold')}
+              style={{ color: isCurrent ? getColor(layout.colorIndex, false) : undefined }}
+            >
               {local?.cleanName ?? remotes.find(({ cleanName }) => !!cleanName)?.cleanName ?? baseName}
             </span>
           </div>
