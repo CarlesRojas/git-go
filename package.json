@@ -82,7 +82,10 @@
                         "pastel",
                         "cloud",
                         "spring",
-                        "float"
+                        "float",
+                        "coast",
+                        "boreal",
+                        "coral"
                     ],
                     "default": "vibrant",
                     "markdownDescription": "**Graph Appearance:** Color theme for the commit graph branches and dots."

@@ -6,15 +6,18 @@ import { ReactNode, useMemo } from 'react'
 
 const COLOR_THEMES = {
   vibrant: ['#3b82f6', '#ec4899', '#84cc16', '#f97316', '#a855f7', '#f43f5e', '#14b8a6', '#eab308'],
-  forest: ['#c7522a', '#d68a58', '#e5c185', '#e0d49f', '#b8cdab', '#74a892', '#3a978c', '#008585'],
+  spring: ['#c7522a', '#d68a58', '#e5c185', '#e0d49f', '#b8cdab', '#74a892', '#3a978c', '#008585'],
   ocean: ['#555d8e', '#566f94', '#56819b', '#5494a1', '#62a4a7', '#7db2ac', '#97c0b0', '#b1ceb5'],
   sunset: ['#2c4875', '#58508d', '#8a508f', '#bc5090', '#de5a79', '#ff6361', '#ff8531', '#ffa600'],
-  rainbow: ['#fb7b77', '#fdc170', '#f3f87f', '#98f786', '#69ebfc', '#6d9efc', '#937df8', '#f78ef0'],
+  rainbow: ['#fb7b77', '#fdc170', '#e3dd71', '#88e875', '#61ddeb', '#6d9efc', '#937df8', '#f78ef0'],
   earth: ['#f0ead2', '#dde5b4', '#c5d396', '#adc178', '#aba370', '#a98467', '#8b6e5a', '#6c584c'],
   pastel: ['#80a7fe', '#90c6c4', '#9fe58a', '#f6d897', '#ffa875', '#f77d8c', '#df8fc1', '#c6a0f6'],
   cloud: ['#535fcc', '#6b6ac5', '#8375be', '#9b81b8', '#b38cb1', '#cb97aa', '#e2a2a3', '#faad9c'],
-  spring: ['#2e5c3d', '#4b7c4e', '#6f9b6f', '#a3d9a1', '#f1c2a2', '#e6a55c', '#d57a48', '#c45b3b'],
-  float: ['#80558c', '#af7ab3', '#cba0ae', '#d8b9a0', '#dbcfaa', '#dde5b4', '#9dad7f', '#557174'],
+  forest: ['#2e5c3d', '#4b7c4e', '#6f9b6f', '#a3d9a1', '#f1c2a2', '#e6a55c', '#d57a48', '#c45b3b'],
+  float: ['#80558c', '#af7ab3', '#cba0ae', '#d8b9a0', '#dbcfaa', '#cdd4a8', '#9dad7f', '#557174'],
+  coast: ['#95f9ab', '#8ee5b0', '#88d2b5', '#81beba', '#7babbf', '#7497c4', '#6e84c9', '#6770ce'],
+  boreal: ['#f1ddbf', '#cabead', '#a29e9a', '#525e75', '#657980', '#78938a', '#85a78e', '#92ba92'],
+  coral: ['#6895d2', '#8eaab8', '#c2e38e', '#fde767', '#f8d063', '#f3b95f', '#d9654e', '#d04848'],
 }
 
 const STASH_COLOR = 'var(--color-vsc-editor-fg)'

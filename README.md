@@ -195,19 +195,70 @@ Git Go can be customized through VS Code settings. Here are all available config
 
 Choose from multiple color themes for the commit graph:
 
-- **Vibrant** (default) - Bright, energetic colors
-- **Forest** - Cozy brown to teal palette
+#### **Vibrant** (default)
 
-vibrant - -
-forest - 4
-ocean - -
-sunset - -
-rainbow - 23
-earth - 2
-pastel - -
-cloud - -
-spring - 4
-float - 6
+Bright, energetic colors perfect for high-energy development sessions.
+![Vibrant Theme](resources/vibrant.png)
+
+#### **Forest**
+
+Earth-toned palette transitioning from forest greens to rich browns.
+![Forest Theme](resources/forest.png)
+
+#### **Ocean**
+
+Deep blues and teals reminiscent of deep ocean waters.
+![Ocean Theme](resources/ocean.png)
+
+#### **Sunset**
+
+Warm purples, pinks, and oranges like a beautiful evening sky.
+![Sunset Theme](resources/sunset.png)
+
+#### **Rainbow**
+
+Vibrant spectrum colors that bring joy to your commit history.
+![Rainbow Theme](resources/rainbow.png)
+
+#### **Earth**
+
+Natural, muted tones inspired by soil, sand, and stone.
+![Earth Theme](resources/earth.png)
+
+#### **Pastel**
+
+Soft, gentle colors that are easy on the eyes for long coding sessions.
+![Pastel Theme](resources/pastel.png)
+
+#### **Cloud**
+
+Dreamy purples and soft tones like floating in the clouds.
+![Cloud Theme](resources/cloud.png)
+
+#### **Spring**
+
+Warm earth tones flowing into cool teals, like nature's seasonal transition.
+![Spring Theme](resources/spring.png)
+
+#### **Float**
+
+Mysterious purples and muted tones for a calming experience.
+![Float Theme](resources/float.png)
+
+#### **Coast**
+
+Cool greens and blues inspired by coastal waters and beaches.
+![Coast Theme](resources/coast.png)
+
+#### **Boreal**
+
+Nordic-inspired palette with cool grays and forest greens.
+![Boreal Theme](resources/boreal.png)
+
+#### **Coral**
+
+Vibrant blues blending into warm coral tones.
+![Coral Theme](resources/coral.png)
 
 ### Repository Settings
 
