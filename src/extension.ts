@@ -1066,23 +1066,29 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    // Auto-open with retry logic for Git extension activation
     let retryCount = 0;
-    const maxRetries = 100; // 5 seconds total (100 * 50ms)
+    const maxRetries = 100; // 10 seconds total (100 * 100ms)
 
-    const interval = setInterval(async () => {
-        const completed = await autoOpenGitGo();
-        if (completed) {
-            clearInterval(interval);
-            return;
-        }
+    const scheduleRetry = () => {
+        setTimeout(async () => {
+            try {
+                const completed = await autoOpenGitGo();
+                if (completed) return;
 
-        retryCount++;
-        if (retryCount >= maxRetries) {
-            clearInterval(interval);
-            log('Auto-open retry limit reached, Git extension may not be available');
-        }
-    }, 50);
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    log('Auto-open retry limit reached, Git extension may not be available');
+                    return;
+                }
+
+                scheduleRetry();
+            } catch (err) {
+                log(`Auto-open retry crashed: ${err instanceof Error ? err.message : String(err)}`);
+            }
+        }, 100);
+    };
+
+    scheduleRetry();
 
     log('Git Go extension activated successfully');
 }
