@@ -10,43 +10,9 @@
 
 - [ ] 🟠 **7. Memoize per-commit derived strings.** `cleanSearchTerm(commit.message)` etc. run for every commit on every render. Compute a `searchableFields` blob alongside each commit once after fetch.
 
-- [ ] 🟠 **8. Consolidate file watching and reduce refresh thrash.** Today: `repo.state.onDidChange` + 3 file-system watchers (refs/HEAD) + view-state changes all funnel through a 300ms debounce that invalidates _all_ `'git'` queries. After `git fetch` you re-pull commits, branches, remotes, tags, and working changes simultaneously. Invalidate selectively: refs change → branches/commits; HEAD change → currentBranch/commits; status change → workingChanges.
-
-- [-] 🟠 **9. Switch to `-z` + NUL parsing in gitService.** Fixes Bug #9, Bug #18, and a class of latent path bugs (filenames with tabs/newlines). Single change with broad payoff. **PARTIAL:** Fixed Bug #18 (`getGitCommits`). Still need to apply to other methods (`getCommitFiles`, `getWorkingChanges`, `getStashFiles`).
-
-- [ ] 🟠 **10. Wire `clearCache()` to `vscode.workspace.onDidChangeConfiguration` for `git.path`.** One-line fix to Bug #12.
-
-- [ ] 🟠 **11. Trim `.vscodeignore`.** The packaged `.vsix` currently includes `git-go-demo.mov` (12M), `git-go-demo.gif` (3.6M), `git-go-graph.png`, `icon.af`, `output.txt`, `TODO.md`, `PUBLISH.md`, `.instructions.md`. Add them to `.vscodeignore` — should drop the bundle by ~16M.
-
-- [ ] 🟡 **12. Register a `WebviewPanelSerializer`.** Needed to make `retainContextWhenHidden` actually mean something across VS Code restarts.
-
-- [ ] 🟡 **13. Replace `setInterval` polling with `extension.activate()`.** Cleaner and removes the re-entrancy bug.
-
-- [ ] 🟡 **14. Single batched git log for stashes.** Replaces N+1 calls in `getStashCommits`.
-
 - [ ] 🟡 **15. Mutation deduplication.** Wrap `useMutation` calls so a second click is ignored while one is pending. Today, hammering "Fetch" runs N sequential `git fetch --all` calls.
 
-- [ ] 🟡 **16. Move BRANCH_COLORS to CSS variables.** Hardcoded hex colors in `useGitTree.tsx:6-15` ignore VS Code themes. Use `--vscode-charts-*` tokens.
-
-- [ ] 🟡 **17. Memoize `buildFileTree`.** `CommitItem.tsx:390` rebuilds the tree per render.
-
-- [ ] 🟡 **18. Type the webview message protocol.** Define `type ExtToWebMessage = { type: 'gitCommits'; commits: …; requestId: … } | …` and `type WebToExtMessage = …`. Today the message envelope is `any`-typed on both sides; renames silently miss handlers.
-
-- [ ] 🟡 **19. Use `import type` consistently.** Webview imports interfaces from `@git/gitService`; some are `import type`, some plain `import`. Make them all `import type` so a future value import doesn't trip Vite's broken alias (Bug #28). Or fix the alias to `path.resolve(__dirname, '../src')`.
-
-- [ ] 🟡 **20. Replace the singleton `GitService` with one per repo.** Combined with multi-root support (Bug #13), this naturally scopes caching.
-
 - [ ] 🟡 **21. Use `Set<string>` for branch lookups.** `branches.some(...)` calls in `CommitItem.tsx:139` and similar are O(n) per pill.
-
-- [ ] 🟢 **23. Align React versions.** `panel/package.json` ships React 18 with `@types/react@19`. Upgrade React to 19 or pin types to 18.
-
-- [ ] 🟢 **24. Replace inline `new Date()` in `CommitItem`.** Compute the formatter outside the component; reuse `Intl.DateTimeFormat` instances.
-
-- [ ] 🟢 **25. Remove dev artifacts from the repo.** `output.txt`, `TODO.md`, `.instructions.md` either belong in `.gitignore` or in `docs/`.
-
-- [ ] 🟢 **26. ESLint/typescript versions in `package.json`** — `eslint ^10.2.1` and `typescript ^6.0.3` look like fictional versions. Pin to a real installable range.
-
-- [ ] 🟢 **27. Status-bar item global singleton.** `statusBarItem.ts:5` keeps a module-level `existingStatusBarItem` to deduplicate across activations. With one-instance-per-extension that's unnecessary; the disposal pattern in `activate` already handles it.
 
 ### Maybe
 

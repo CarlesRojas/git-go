@@ -10,11 +10,11 @@ import {
 import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
+import { useGitUserConfig, useSetGitUserConfig } from '@/hook/useGitQueries'
 import { faCircleNotch, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useForm } from '@tanstack/react-form'
 import { useEffect, useState } from 'react'
-import { useGitUserConfig, useSetGitUserConfig } from '../useGitQueries'
 
 export const useGitUserDialog = () => {
   const { showToast } = useToast()

@@ -11,3 +11,19 @@ panel/src/**
 panel/*.config.*
 panel/pnpm-lock.yaml
 panel/package.json
+
+# Development artifacts and documentation
+.instructions.md
+TODO.md
+PUBLISH.md
+output.txt
+eslint.config.mjs
+
+# Media and demo files
+*.gif
+*.mov
+git-go-graph.png
+*.af
+
+# Pattern-based exclusions for demo content
+*demo*

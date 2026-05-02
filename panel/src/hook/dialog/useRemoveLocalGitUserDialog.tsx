@@ -1,10 +1,10 @@
 import { Button } from '@/component/ui/Button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { useToast } from '@/context/ToastContext'
+import { useSetGitUserConfig } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
-import { useSetGitUserConfig } from '../useGitQueries'
 
 export const useRemoveLocalGitUserDialog = () => {
   const { showToast } = useToast()
