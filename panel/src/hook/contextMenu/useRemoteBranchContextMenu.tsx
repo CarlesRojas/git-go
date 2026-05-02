@@ -104,15 +104,14 @@ const RemoteBranchContextMenuWrapper = memo(
 RemoteBranchContextMenuWrapper.displayName = 'RemoteBranchContextMenuWrapper'
 
 export const useRemoteBranchContextMenu = () => {
+  const { showToast } = useToast()
+  const [, copy] = useCopyToClipboard()
   const checkoutDialog = useRemoteBranchCheckoutDialog()
   const mergeDialog = useRemoteBranchMergeDialog()
   const fetchIntoLocalDialog = useRemoteBranchFetchIntoLocalDialog()
   const deleteDialog = useRemoteBranchDeleteDialog()
 
   const remoteBranchContextMenuWrapper = (children: ReactNode, enabled = true, branch?: GitBranch) => {
-    const { showToast } = useToast()
-    const [, copy] = useCopyToClipboard()
-
     const handleCopyBranchName = async () => {
       try {
         if (!branch) throw new Error('No branch to copy')

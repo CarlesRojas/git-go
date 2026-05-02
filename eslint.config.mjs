@@ -1,3 +1,4 @@
+import reactHooks from 'eslint-plugin-react-hooks';
 import typescriptEslint from 'typescript-eslint';
 
 export default [
@@ -6,7 +7,8 @@ export default [
     },
     {
         plugins: {
-            '@typescript-eslint': typescriptEslint.plugin
+            '@typescript-eslint': typescriptEslint.plugin,
+            'react-hooks': reactHooks
         },
 
         languageOptions: {
@@ -23,6 +25,10 @@ export default [
                     format: ['camelCase', 'PascalCase']
                 }
             ],
+
+            // React Hooks Rules - catch conditional hooks and other violations
+            'react-hooks/rules-of-hooks': 'error', // Checks rules of Hooks
+            'react-hooks/exhaustive-deps': 'warn', // Checks effect dependencies
 
             curly: 'off',
             eqeqeq: 'warn',

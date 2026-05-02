@@ -74,7 +74,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     if (!defaultBranchesSet.current) return
     setRepoState({ selectedBranches })
     onBranchesChange(branches.filter(b => selectedBranches.includes(b.cleanName)))
-  }, [selectedBranches, setRepoState, branches])
+  }, [selectedBranches, setRepoState, branches, onBranchesChange])
 
   useEffect(() => {
     if (branches.length <= 0 || selectedBranches.length !== 0 || !!defaultBranchesSet.current) return
@@ -112,7 +112,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     const newSelection = [...new Set([...selectedWithoutDeletedBranches, ...newBranches.map(b => b.cleanName)])]
 
     setSelectedBranches(newSelection)
-  }, [branches, branchesQuery.isLoading])
+  }, [branches, branchesQuery.isLoading, allBranches, selectedBranches])
 
   const handleValueChange = (selected: string[]) => {
     setSelectedBranches(selected)

@@ -292,7 +292,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
         </svg>
       </div>
     ),
-    [layout, expandedRow, treeWidth],
+    [layout, treeWidth, buildSegmentPath, clampedTreeWidth, getY, isOverflowing, maxVisibleCol, svgHeight],
   )
 
   return { treeComponent, treeWidth: clampedTreeWidth, rows: layout.commits }

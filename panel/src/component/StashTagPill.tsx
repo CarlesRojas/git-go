@@ -21,12 +21,7 @@ export function formatStash(ref: string): string {
 const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
   const { settings } = useSettings()
 
-  if (type === 'stash' && !settings.showStashes) return null
-  if (type === 'tag' && !settings.showTags) return null
-
-  const icon = type === 'stash' ? faInbox : faTag
-  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
-
+  // Move hooks before any early returns to comply with React rules
   const { stashContextMenuWrapper, dialogs: stashDialogs } = useStashContextMenu({
     stash: type === 'stash' ? label : undefined,
   })
@@ -35,6 +30,13 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
     tagName: type === 'tag' ? label : undefined,
     commit,
   })
+
+  // Early returns after hooks
+  if (type === 'stash' && !settings.showStashes) return null
+  if (type === 'tag' && !settings.showTags) return null
+
+  const icon = type === 'stash' ? faInbox : faTag
+  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
 
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
     if (type === 'tag') return tagContextMenuWrapper(children)

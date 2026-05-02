@@ -12,5 +12,5 @@ export const useOnMount = (callback: () => void) => {
       hasRunRef.current = true
       callback()
     }
-  }, [])
+  }, [callback])
 }
