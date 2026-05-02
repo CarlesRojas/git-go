@@ -473,7 +473,6 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             };
 
-            // Special handlers that don't return response messages
             const specialHandlers: Record<string, (message: any) => void> = {
                 saveRepoState: (message) => {
                     const saveRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
@@ -491,7 +490,8 @@ export function activate(context: vscode.ExtensionContext) {
                         currentPanel?.webview.postMessage({
                             type: 'repoStateLoaded',
                             key: message.key,
-                            value: null
+                            value: null,
+                            requestId: message.requestId
                         });
                         return;
                     }
@@ -500,7 +500,8 @@ export function activate(context: vscode.ExtensionContext) {
                     currentPanel?.webview.postMessage({
                         type: 'repoStateLoaded',
                         key: message.key,
-                        value: stateValue ?? null
+                        value: stateValue ?? null,
+                        requestId: message.requestId
                     });
                 },
 
@@ -613,7 +614,9 @@ export function activate(context: vscode.ExtensionContext) {
 
             currentPanel.webview.onDidReceiveMessage(
                 async (message) => {
-                    log(`Received message from webview: ${message.type}`);
+                    log(
+                        `Received message from webview: ${message.type}${message.requestId ? ` (${message.requestId})` : ''}`
+                    );
 
                     if (specialHandlers[message.type]) {
                         try {
@@ -632,13 +635,16 @@ export function activate(context: vscode.ExtensionContext) {
                     if (handler) {
                         try {
                             const response = await handler(message, log);
+                            if (message.requestId) response.requestId = message.requestId;
+
                             currentPanel?.webview.postMessage(response);
                         } catch (error) {
                             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
                             log(`Error ${message.type}: ${errorMessage}`);
                             currentPanel?.webview.postMessage({
                                 type: 'gitError',
-                                error: errorMessage
+                                error: errorMessage,
+                                requestId: message.requestId
                             });
                         }
                     } else {

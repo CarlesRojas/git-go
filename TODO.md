@@ -2,17 +2,11 @@
 
 ## Bugs
 
-- [ ] 🔴 **1. No request/response correlation in webview ↔ extension messages.** Every query in `panel/src/hook/useGitQueries.ts` listens for the same generic `'gitError'` type. If two operations are in flight and one fails, every in-flight queryFn rejects with that one error. Same problem with success messages: a stray `getGitCommits` and a `useInfiniteGitCommits` both fire on `'gitCommits'` and may resolve with each other's payload. **Fix:** add a `requestId` to every postMessage and route by it.
-
 ## Improvements (performance / stability / maintainability)
-
-- [ ] 🔴 **1. Replace the 880-line switch in `extension.ts` with a dispatch table.** Each case is the same `try / await gitService.X / postMessage / catch / postMessage 'gitError'` shape. Define `const handlers: Record<string, (msg, log) => Promise<{type, …}>>` and have a single 10-line wrapper that runs them, attaches `requestId`, logs, and forwards errors. Eliminates ~700 lines of boilerplate and gives you one place to fix message correlation (Bug #1).
 
 - [ ] 🔴 **2. Memoize the SVG tree.** `useGitTree.tsx:142-300` builds the full SVG inline, so any parent rerender (hover, search-typing, etc.) reflows the entire graph. Wrap `treeComponent` in `useMemo` keyed on `[layout, expandedRow, treeWidth]`.
 
 - [ ] 🔴 **3. Lift dialogs and shared queries out of every row.** Currently every `CommitItem` calls `useGitBranches`, `useCurrentBranch`, four dialog hooks, and two context-menu hooks. Move dialogs to an app-level `<DialogsProvider>` exposing `openTagDialog(commit)` etc.; pass `currentBranch`/`branches` down from `Graph` as props. Cuts hook count per row from ~10 to ~2.
-
-- [ ] 🟠 **4. Add a stable webview RPC layer.** Wrap the postMessage dance once: `rpc.call('getGitCommits', payload, { timeout })` returns a Promise; reuses a single `'message'` listener and routes by `requestId`. Removes the boilerplate from every `useGitQueries` hook (~1500 of 1683 lines) and fixes Bug #1.
 
 - [ ] 🟠 **5. Build a `hash → layout` map in `Graph.tsx`.** One pass over `rows` before the render loop fixes the O(n²) lookup (Bug #14) and the related crash on missing entries.
 
