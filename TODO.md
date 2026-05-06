@@ -1,5 +1,7 @@
 ## TODO
 
+- [ ] If there is only one remote, on the push menu, do not show the remote dropdown
+
 ## Bugs
 
 ### Maybe
