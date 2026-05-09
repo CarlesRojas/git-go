@@ -1,7 +1,6 @@
 import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
-import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { RadioGroup, RadioGroupItem } from '@/component/ui/RadioGroup'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/component/ui/Select'
@@ -12,7 +11,7 @@ import { faCircleNotch, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch, GitPushMode } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface UseBranchPushDialogProps {
   branch: GitBranch
@@ -59,6 +58,11 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
     },
   })
 
+  useEffect(() => {
+    const firstRemote = remotes[0]
+    if (!!firstRemote) pushForm.setFieldValue('remote', firstRemote.name)
+  }, [pushForm, remotes])
+
   const openDialog = () => {
     setShowPushDialog(true)
   }
@@ -69,6 +73,8 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
         <DialogHeader>
           <DialogTitle>
             Push branch <strong>{branch.cleanName}</strong>
+            {remotes.length === 1 ? ` to ` : ''}
+            {remotes.length === 1 && <strong>{remotes[0]!.name}</strong>}
           </DialogTitle>
         </DialogHeader>
 
@@ -80,15 +86,17 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
           }}
         >
           <div className="flex flex-col gap-3">
-            {remotes.length > 1 ? (
+            {remotes.length > 1 && (
               <pushForm.Field name="remote">
                 {field => (
                   <div>
                     <Label htmlFor="remote">Remote</Label>
+
                     <Select value={field.state.value} onValueChange={value => field.handleChange(value)}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select remote" />
                       </SelectTrigger>
+
                       <SelectContent>
                         {remotes.map(remote => (
                           <SelectItem key={remote.name} value={remote.name}>
@@ -100,11 +108,6 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
                   </div>
                 )}
               </pushForm.Field>
-            ) : (
-              <div>
-                <Label>Remote</Label>
-                <Input value={remotes[0]?.name || 'origin'} disabled className="mt-1" />
-              </div>
             )}
 
             <pushForm.Field name="setUpstream">
