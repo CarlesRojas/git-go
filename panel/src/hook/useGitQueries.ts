@@ -96,6 +96,7 @@ export const queryKeys = {
   gitUserConfig: ['git', 'user-config'] as const,
   tagDetails: (tagName: string) => ['git', 'tag-details', tagName] as const,
   state: (key: string) => ['state', key] as const,
+  theme: ['theme'] as const,
 }
 
 export const useGitBranches = () => {
@@ -703,6 +704,45 @@ export const useConfig = () => {
 
   return {
     data: query.data ?? defaultConfigState,
+    isLoading: query.isLoading,
+  }
+}
+
+enum ThemeKind {
+  LIGHT = 'light',
+  DARK = 'dark',
+}
+
+export const useThemeKind = () => {
+  const queryClient = useQueryClient()
+
+  const query = useQuery({
+    queryKey: queryKeys.theme,
+    queryFn: async (): Promise<{ isDark?: boolean } | null> => {
+      try {
+        const response = await sendCorrelatedMessage<{ isDark: boolean }>('getTheme', {}, 3000)
+        return { isDark: response.isDark }
+      } catch (error) {
+        return null
+      }
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data.type === 'themeChanged') {
+        queryClient.setQueryData(queryKeys.theme, { isDark: event.data.isDark })
+      }
+    }
+
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [queryClient])
+
+  return {
+    isDark: query.data?.isDark ?? undefined,
     isLoading: query.isLoading,
   }
 }

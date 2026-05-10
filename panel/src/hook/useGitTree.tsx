@@ -4,7 +4,23 @@ import { CommitLayout, computeGraphLayout } from '@/util/computeGraphLayout'
 import type { GitCommit } from '@git/gitService'
 import { ReactNode, useMemo } from 'react'
 
-const COLOR_THEMES = {
+const COLOR_THEMES_DARK = {
+  vibrant: ['#3b82f6', '#ec4899', '#84cc16', '#f97316', '#a855f7', '#f43f5e', '#14b8a6', '#eab308'],
+  spring: ['#c7522a', '#d68a58', '#e5c185', '#e0d49f', '#b8cdab', '#74a892', '#3a978c', '#008585'],
+  ocean: ['#555d8e', '#566f94', '#56819b', '#5494a1', '#62a4a7', '#7db2ac', '#97c0b0', '#b1ceb5'],
+  sunset: ['#2c4875', '#58508d', '#8a508f', '#bc5090', '#de5a79', '#ff6361', '#ff8531', '#ffa600'],
+  rainbow: ['#fb7b77', '#fdc170', '#e3dd71', '#88e875', '#61ddeb', '#6d9efc', '#937df8', '#f78ef0'],
+  earth: ['#f0ead2', '#dde5b4', '#c5d396', '#adc178', '#aba370', '#a98467', '#8b6e5a', '#6c584c'],
+  pastel: ['#80a7fe', '#90c6c4', '#9fe58a', '#f6d897', '#ffa875', '#f77d8c', '#df8fc1', '#c6a0f6'],
+  cloud: ['#535fcc', '#6b6ac5', '#8375be', '#9b81b8', '#b38cb1', '#cb97aa', '#e2a2a3', '#faad9c'],
+  forest: ['#2e5c3d', '#4b7c4e', '#6f9b6f', '#a3d9a1', '#f1c2a2', '#e6a55c', '#d57a48', '#c45b3b'],
+  float: ['#80558c', '#af7ab3', '#cba0ae', '#d8b9a0', '#dbcfaa', '#cdd4a8', '#9dad7f', '#557174'],
+  coast: ['#95f9ab', '#8ee5b0', '#88d2b5', '#81beba', '#7babbf', '#7497c4', '#6e84c9', '#6770ce'],
+  dusk: ['#f1ddbf', '#cabead', '#a29e9a', '#525e75', '#657980', '#78938a', '#85a78e', '#92ba92'],
+  coral: ['#6895d2', '#8eaab8', '#c2e38e', '#fde767', '#f8d063', '#f3b95f', '#d9654e', '#d04848'],
+}
+
+const COLOR_THEMES_LIGHT = {
   vibrant: ['#3b82f6', '#ec4899', '#84cc16', '#f97316', '#a855f7', '#f43f5e', '#14b8a6', '#eab308'],
   spring: ['#c7522a', '#d68a58', '#e5c185', '#e0d49f', '#b8cdab', '#74a892', '#3a978c', '#008585'],
   ocean: ['#555d8e', '#566f94', '#56819b', '#5494a1', '#62a4a7', '#7db2ac', '#97c0b0', '#b1ceb5'],
@@ -32,22 +48,32 @@ const DOT_RADIUS = 5
 const LINE_WIDTH = 2
 const CURVE_D = ROW_HEIGHT * 0.8
 
-export const getColor = (
-  index: number,
-  theme: string,
-  customColors: string[],
-  isStash?: boolean,
-  isUncommitted?: boolean,
-) => {
+export const getColor = ({
+  index,
+  theme,
+  isDark,
+  customColors,
+  isStash = false,
+  isUncommitted = false,
+}: {
+  index: number
+  theme: string
+  isDark: boolean
+  customColors: string[]
+  isStash?: boolean
+  isUncommitted?: boolean
+}) => {
   if (isStash) return STASH_COLOR
   if (isUncommitted) return UNCOMMITTED_COLOR
 
+  const THEMES = isDark ? COLOR_THEMES_DARK : COLOR_THEMES_LIGHT
+
   if (theme === 'custom') {
-    const colors = customColors.length > 0 ? customColors : COLOR_THEMES.vibrant
+    const colors = customColors.length > 0 ? customColors : THEMES.vibrant
     return colors[index % colors.length]
   }
 
-  const themeColors = COLOR_THEMES[theme as keyof typeof COLOR_THEMES] || COLOR_THEMES.vibrant
+  const themeColors = THEMES[theme as keyof typeof THEMES] || THEMES.vibrant
   return themeColors[index % themeColors.length]
 }
 
@@ -202,13 +228,14 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
 
           <g mask="url(#commit-mask)">
             {layout.branches.map((branch, bi) => {
-              const color = getColor(
-                branch.colorIndex,
-                settings.theme,
-                settings.customColors,
-                branch.isStash,
-                branch.isUncommitted,
-              )
+              const color = getColor({
+                index: branch.colorIndex,
+                theme: settings.theme,
+                isDark: settings.isDark,
+                customColors: settings.customColors,
+                isStash: branch.isStash,
+                isUncommitted: branch.isUncommitted,
+              })
               let d = ''
               for (const seg of branch.segments) {
                 if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
@@ -239,7 +266,14 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
 
               const dotX = px(c.column)
               const dotY = getY(c.row)
-              const color = getColor(c.colorIndex, settings.theme, settings.customColors, c.isStash, c.isUncommitted)
+              const color = getColor({
+                index: c.colorIndex,
+                theme: settings.theme,
+                isDark: settings.isDark,
+                customColors: settings.customColors,
+                isStash: c.isStash,
+                isUncommitted: c.isUncommitted,
+              })
 
               if (c.isUncommitted) {
                 return (
@@ -326,6 +360,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
       maxVisibleCol,
       getY,
       settings.theme,
+      settings.isDark,
       settings.customColors,
       buildSegmentPath,
     ],

@@ -82,7 +82,12 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
         )}
         style={{
           borderColor: isCurrent
-            ? getColor(layout.colorIndex, settings.theme, settings.customColors, false)
+            ? getColor({
+                index: layout.colorIndex,
+                isDark: settings.isDark,
+                theme: settings.theme,
+                customColors: settings.customColors,
+              })
             : undefined,
         }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
@@ -101,9 +106,19 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
               )}
               style={{
                 backgroundColor: local
-                  ? getColor(layout.colorIndex, settings.theme, settings.customColors, false)
+                  ? getColor({
+                      index: layout.colorIndex,
+                      theme: settings.theme,
+                      isDark: settings.isDark,
+                      customColors: settings.customColors,
+                    })
                   : undefined,
-                borderColor: getColor(layout.colorIndex, settings.theme, settings.customColors, false),
+                borderColor: getColor({
+                  index: layout.colorIndex,
+                  theme: settings.theme,
+                  isDark: settings.isDark,
+                  customColors: settings.customColors,
+                }),
               }}
               onClick={localAndRemote ? handleLocalDoubleClick : undefined}
             >
@@ -142,7 +157,12 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
               className={cn('line-clamp-1 text-xs leading-tight font-medium text-nowrap', isCurrent && 'font-bold')}
               style={{
                 color: isCurrent
-                  ? getColor(layout.colorIndex, settings.theme, settings.customColors, false)
+                  ? getColor({
+                      index: layout.colorIndex,
+                      theme: settings.theme,
+                      isDark: settings.isDark,
+                      customColors: settings.customColors,
+                    })
                   : undefined,
               }}
             >

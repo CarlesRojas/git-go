@@ -156,7 +156,13 @@ export const CommitItem: FC<CommitItemProps> = ({
         )}
         style={{
           color: layout?.isHead
-            ? getColor(layout.colorIndex, settings.theme, settings.customColors, commit.isStash)
+            ? getColor({
+                index: layout.colorIndex,
+                theme: settings.theme,
+                isDark: settings.isDark,
+                customColors: settings.customColors,
+                isStash: commit.isStash,
+              })
             : undefined,
         }}
       >
@@ -274,12 +280,26 @@ export const CommitItem: FC<CommitItemProps> = ({
               <>
                 <div
                   className="pointer-events-none absolute inset-0 -z-20 opacity-10"
-                  style={{ backgroundColor: getColor(layout.colorIndex, settings.theme, settings.customColors) }}
+                  style={{
+                    backgroundColor: getColor({
+                      index: layout.colorIndex,
+                      theme: settings.theme,
+                      isDark: settings.isDark,
+                      customColors: settings.customColors,
+                    }),
+                  }}
                 />
 
                 <div
                   className="pointer-events-none absolute inset-0 -z-10 border-y opacity-15"
-                  style={{ borderColor: getColor(layout.colorIndex, settings.theme, settings.customColors) }}
+                  style={{
+                    borderColor: getColor({
+                      index: layout.colorIndex,
+                      theme: settings.theme,
+                      isDark: settings.isDark,
+                      customColors: settings.customColors,
+                    }),
+                  }}
                 />
               </>
             )}

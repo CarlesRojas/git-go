@@ -1,8 +1,8 @@
-import { ConfigState, RepoState, useConfig, useRepoState } from '@/hook/useGitQueries'
+import { ConfigState, RepoState, useConfig, useRepoState, useThemeKind } from '@/hook/useGitQueries'
 import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
 interface SettingsContextType {
-  settings: RepoState & ConfigState
+  settings: RepoState & ConfigState & { isDark: boolean }
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
@@ -22,6 +22,7 @@ interface SettingsProviderProps {
 export const SettingsProvider = ({ children }: SettingsProviderProps) => {
   const { data: configData, isLoading: isConfigLoading } = useConfig()
   const { data: repoData, isLoading: isRepoLoading } = useRepoState()
+  const { isDark, isLoading: isThemeLoading } = useThemeKind()
 
   useEffect(() => {
     if (!configData) return
@@ -32,9 +33,10 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
     else htmlElement.setAttribute('data-theme-sharp', '')
   }, [configData, configData?.rounded])
 
-  if (isConfigLoading || !configData || isRepoLoading || !repoData) return null
+  if (isConfigLoading || !configData || isRepoLoading || !repoData || isThemeLoading || isDark === undefined)
+    return null
 
-  const combinedSettings = { ...configData, ...repoData }
+  const combinedSettings = { ...configData, ...repoData, isDark }
 
   return <SettingsContext.Provider value={{ settings: combinedSettings }}>{children}</SettingsContext.Provider>
 }

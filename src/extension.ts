@@ -110,6 +110,14 @@ export function activate(context: vscode.ExtensionContext) {
 
             watchGitChanges(currentPanel, log, diffDocProvider);
 
+            context.subscriptions.push(
+                vscode.window.onDidChangeActiveColorTheme((theme) => {
+                    const isDark =
+                        theme.kind === vscode.ColorThemeKind.Dark || theme.kind === vscode.ColorThemeKind.HighContrast;
+                    currentPanel?.webview.postMessage({ type: 'themeChanged', isDark });
+                })
+            );
+
             if (!currentPanel) return;
 
             const scriptUri = currentPanel.webview.asWebviewUri(
@@ -476,6 +484,13 @@ export function activate(context: vscode.ExtensionContext) {
                     await vscode.commands.executeCommand('workbench.action.openSettings', message.query);
                     log('Successfully opened VS Code settings');
                     return { type: 'settingsOpened' };
+                },
+
+                getTheme: async () => {
+                    const isDark =
+                        vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
+                        vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
+                    return { type: 'theme', isDark };
                 }
             };
 
