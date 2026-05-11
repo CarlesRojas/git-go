@@ -211,7 +211,7 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
 
       <ComboboxContent>
         <div className="gap-main p-main border-vsc-editor-fg/15 flex flex-col border-b">
-          <ComboboxInput className="w-full" onClear={() => setInputValue('')} placeholder="Search..." />
+          <ComboboxInput autoFocus className="w-full" onClear={() => setInputValue('')} placeholder="Search..." />
 
           <div className="gap-main grid w-full grid-cols-2">
             <Button variant="secondary" onClick={selectLocalBranches} className="w-full">
