@@ -3,7 +3,7 @@ import { cn } from '@/util/cn'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { InputHTMLAttributes } from 'react'
+import { ComponentProps } from 'react'
 
 const inputVariants = cva([
   // Layout & Structure
@@ -24,7 +24,7 @@ const inputVariants = cva([
   'disabled:cursor-not-allowed disabled:opacity-50',
 ])
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {
+export interface InputProps extends ComponentProps<'input'>, VariantProps<typeof inputVariants> {
   onClear?: () => void
   dataType?: 'normal' | 'search'
 }

@@ -3,7 +3,7 @@ import { cn } from '@/util/cn'
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
 import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useRef } from 'react'
+import { Ref, useRef } from 'react'
 
 const Combobox = ComboboxPrimitive.Root
 
@@ -53,14 +53,16 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   onClear,
+  inputRef,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   onClear?: () => void
+  inputRef?: Ref<HTMLInputElement>
 }) {
   return (
     <ComboboxPrimitive.Input
-      render={<Input disabled={disabled} onClear={onClear} />}
+      render={<Input disabled={disabled} onClear={onClear} ref={inputRef} />}
       className={cn(className)}
       {...props}
     />
