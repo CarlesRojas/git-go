@@ -54,6 +54,7 @@ export interface ConfigState {
   cherryPickRecordOrigin: boolean
   cherryPickNoCommit: boolean
   revertNoCommit: boolean
+  resetMode: 'soft' | 'mixed' | 'hard'
   remoteFetchForceFetch: boolean
   stashIncludeUntracked: boolean
   expandedCommitHeight: number
@@ -75,6 +76,7 @@ const defaultConfigState: ConfigState = {
   cherryPickRecordOrigin: false,
   cherryPickNoCommit: true,
   revertNoCommit: true,
+  resetMode: 'mixed',
   remoteFetchForceFetch: false,
   stashIncludeUntracked: true,
   expandedCommitHeight: 300,
@@ -304,6 +306,19 @@ export const useRevertCommit = () => {
   return useMutation({
     mutationFn: async ({ commitHash, noCommit }: { commitHash: string; noCommit?: boolean }) => {
       return await sendCorrelatedMessage('revertCommit', { commitHash, noCommit })
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useResetBranchToCommit = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ commitHash, mode }: { commitHash: string; mode: 'soft' | 'mixed' | 'hard' }) => {
+      return await sendCorrelatedMessage('resetBranchToCommit', { commitHash, mode }, 10_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)

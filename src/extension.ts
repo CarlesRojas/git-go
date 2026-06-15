@@ -65,6 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
+                            resetMode: config.resetMode,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             stashIncludeUntracked: config.stashIncludeUntracked,
                             expandedCommitHeight: config.expandedCommitHeight,
@@ -235,6 +236,17 @@ export function activate(context: vscode.ExtensionContext) {
                     const action = noCommit ? 'staged revert changes for' : 'reverted';
                     log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
                     return { type: 'commitReverted', success: true };
+                },
+
+                resetBranchToCommit: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, mode } = message;
+                    if (!commitHash) {
+                        throw new Error('Commit hash is required');
+                    }
+                    await gitService.resetBranchToCommit(log, commitHash, mode || 'mixed');
+                    log(`Successfully reset current branch to commit ${commitHash.substring(0, 7)} (${mode || 'mixed'} mode)`);
+                    return { type: 'branchResetToCommit', success: true };
                 },
 
                 checkoutLocalBranch: async (message) => {
@@ -471,6 +483,7 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
+                            resetMode: config.resetMode,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             stashIncludeUntracked: config.stashIncludeUntracked,
                             expandedCommitHeight: config.expandedCommitHeight,

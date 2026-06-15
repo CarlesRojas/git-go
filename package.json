@@ -173,6 +173,16 @@
                     "default": true,
                     "markdownDescription": "**Revert Operations:** Default value for 'Don't commit automatically' when reverting commits."
                 },
+                "git-go.reset.mode": {
+                    "type": "string",
+                    "enum": [
+                        "soft",
+                        "mixed",
+                        "hard"
+                    ],
+                    "default": "mixed",
+                    "markdownDescription": "**Reset Operations:** Default reset mode when resetting the current branch to a commit."
+                },
                 "git-go.remote.fetch.forceFetch": {
                     "type": "boolean",
                     "default": false,
@@ -199,5 +209,6 @@
         "eslint-plugin-react-hooks": "^7.1.1",
         "typescript": "^6.0.3",
         "typescript-eslint": "^8.59.0"
-    }
+    },
+    "packageManager": "pnpm@10.31.0+sha512.e3927388bfaa8078ceb79b748ffc1e8274e84d75163e67bc22e06c0d3aed43dd153151cbf11d7f8301ff4acb98c68bdc5cadf6989532801ffafe3b3e4a63c268"
 }

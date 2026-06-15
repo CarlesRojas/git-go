@@ -114,6 +114,17 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.reset.mode` Extension Setting.
+     */
+    get resetMode(): 'soft' | 'mixed' | 'hard' {
+        const value = this.config.get<string>('reset.mode', 'mixed');
+        if (value === 'soft' || value === 'mixed' || value === 'hard') {
+            return value;
+        }
+        return 'mixed';
+    }
+
+    /**
      * Get the value of the `git-go.remote.fetch.forceFetch` Extension Setting.
      */
     get remoteFetchForceFetch(): boolean {

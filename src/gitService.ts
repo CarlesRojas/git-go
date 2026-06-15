@@ -55,7 +55,7 @@ export interface GitTagDetails {
 
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
-export type GitResetMode = 'mixed' | 'hard';
+export type GitResetMode = 'soft' | 'mixed' | 'hard';
 
 // Use ASCII character 0x1E (Record Separator) for field separation
 const GIT_LOG_SEPARATOR = '\x1E';
@@ -1692,6 +1692,27 @@ export class GitService {
             }
         } catch (error) {
             log(`Error resetting uncommitted changes: ${error}`);
+            throw error;
+        }
+    }
+
+    public async resetBranchToCommit(
+        log: (message: string) => void,
+        commitHash: string,
+        mode: GitResetMode = 'mixed'
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            this.validatePositional(commitHash, 'commit hash');
+            await this.spawnGit([gitExecutable.path, 'reset', `--${mode}`, commitHash], workspacePath);
+            log(`Successfully reset current branch to commit ${commitHash.substring(0, 7)} (${mode} mode)`);
+        } catch (error) {
+            log(`Error resetting branch to commit: ${error}`);
             throw error;
         }
     }
