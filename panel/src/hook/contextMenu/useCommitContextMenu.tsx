@@ -8,6 +8,7 @@ import {
 } from '@/component/ui/ContextMenu'
 import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
+import { useRebaseOntoCommitDialog } from '@/hook/dialog/useRebaseOntoCommitDialog'
 import { useResetBranchDialog } from '@/hook/dialog/useResetBranchDialog'
 import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
@@ -27,6 +28,7 @@ interface CommitContextMenuWrapperProps {
   onTagClick: () => void
   onCherryPickClick: () => void
   onRevertClick: () => void
+  onRebaseClick: () => void
   onResetClick: () => void
 }
 
@@ -38,6 +40,7 @@ const CommitContextMenuWrapper = memo(
     onTagClick,
     onCherryPickClick,
     onRevertClick,
+    onRebaseClick,
     onResetClick,
   }: CommitContextMenuWrapperProps) => {
     if (!enabled) return <>{children}</>
@@ -80,9 +83,14 @@ const CommitContextMenuWrapper = memo(
 
           <ContextMenuLabel>Branch actions</ContextMenuLabel>
 
+          <ContextMenuItem onClick={onRebaseClick}>
+            <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+            Rebase current branch here
+          </ContextMenuItem>
+
           <ContextMenuItem onClick={onResetClick} variant="destructive">
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
-            Reset current branch to this commit
+            Reset current branch here
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -97,6 +105,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
   const branchDialog = useBranchDialog({ commit })
   const cherryPickDialog = useCherryPickDialog({ commit })
   const revertDialog = useRevertDialog({ commit })
+  const rebaseDialog = useRebaseOntoCommitDialog({ commit })
   const resetDialog = useResetBranchDialog({ commit })
 
   const commitContextMenuWrapper = (children: ReactNode, enabled: boolean) => (
@@ -106,6 +115,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
       onTagClick={tagDialog.openDialog}
       onCherryPickClick={cherryPickDialog.openDialog}
       onRevertClick={revertDialog.openDialog}
+      onRebaseClick={rebaseDialog.openDialog}
       onResetClick={resetDialog.openDialog}
     >
       {children}
@@ -120,6 +130,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
         {branchDialog.DialogComponent}
         {cherryPickDialog.DialogComponent}
         {revertDialog.DialogComponent}
+        {rebaseDialog.DialogComponent}
         {resetDialog.DialogComponent}
       </>
     ),

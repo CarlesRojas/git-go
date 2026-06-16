@@ -1309,6 +1309,36 @@ export class GitService {
         }
     }
 
+    public async rebaseBranchToCommit(
+        log: (message: string) => void,
+        commitHash: string,
+        ignoreDate: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            this.validatePositional(commitHash, 'commit hash');
+            log(`Rebasing current branch onto commit ${commitHash.substring(0, 7)}`);
+            const args = [gitExecutable.path, 'rebase'];
+
+            if (ignoreDate) {
+                args.push('--ignore-date');
+            }
+
+            args.push(commitHash);
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully rebased current branch onto commit ${commitHash.substring(0, 7)}`);
+        } catch (error) {
+            log(`Error rebasing branch onto commit: ${error}`);
+            throw error;
+        }
+    }
+
     public async getGitRemotes(log: (message: string) => void): Promise<GitRemote[]> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');

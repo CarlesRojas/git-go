@@ -249,6 +249,17 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'branchResetToCommit', success: true };
                 },
 
+                rebaseBranchToCommit: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, ignoreDate } = message;
+                    if (!commitHash) {
+                        throw new Error('Commit hash is required');
+                    }
+                    await gitService.rebaseBranchToCommit(log, commitHash, ignoreDate || false);
+                    log(`Successfully rebased current branch onto commit ${commitHash.substring(0, 7)}`);
+                    return { type: 'branchRebasedToCommit', success: true };
+                },
+
                 checkoutLocalBranch: async (message) => {
                     const gitService = GitService.getInstance();
                     const { branchName } = message;

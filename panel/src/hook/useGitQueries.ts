@@ -326,6 +326,19 @@ export const useResetBranchToCommit = () => {
   })
 }
 
+export const useRebaseBranchToCommit = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ commitHash, ignoreDate = false }: { commitHash: string; ignoreDate?: boolean }) => {
+      return await sendCorrelatedMessage('rebaseBranchToCommit', { commitHash, ignoreDate }, 30_000)
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
 export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean, isStash?: boolean): void => {
   const vscode = getVSCodeApi()
 
