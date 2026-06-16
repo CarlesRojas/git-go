@@ -1277,6 +1277,44 @@ export class GitService {
         }
     }
 
+    public async mergeCommitIntoCurrentBranch(
+        log: (message: string) => void,
+        commitHash: string,
+        fastForwardIfPossible: boolean = true,
+        squash: boolean = false,
+        noCommit: boolean = false
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            this.validatePositional(commitHash, 'commit hash');
+            log(`Merging commit ${commitHash.substring(0, 7)} into current branch`);
+            const args = [gitExecutable.path, 'merge'];
+
+            if (squash) {
+                args.push('--squash');
+            } else if (!fastForwardIfPossible) {
+                args.push('--no-ff');
+            }
+
+            if (noCommit) {
+                args.push('--no-commit');
+            }
+
+            args.push(commitHash);
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully merged commit ${commitHash.substring(0, 7)} into current branch`);
+        } catch (error) {
+            log(`Error merging commit into current branch: ${error}`);
+            throw error;
+        }
+    }
+
     public async rebaseBranch(
         log: (message: string) => void,
         branchName: string,

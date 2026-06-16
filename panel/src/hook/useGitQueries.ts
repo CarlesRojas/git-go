@@ -339,6 +339,33 @@ export const useRebaseBranchToCommit = () => {
   })
 }
 
+export const useMergeCommitIntoCurrentBranch = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      commitHash,
+      fastForwardIfPossible = true,
+      squash = false,
+      noCommit = false,
+    }: {
+      commitHash: string
+      fastForwardIfPossible?: boolean
+      squash?: boolean
+      noCommit?: boolean
+    }) => {
+      return await sendCorrelatedMessage(
+        'mergeCommitIntoCurrentBranch',
+        { commitHash, fastForwardIfPossible, squash, noCommit },
+        30_000,
+      )
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
 export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?: boolean, isStash?: boolean): void => {
   const vscode = getVSCodeApi()
 

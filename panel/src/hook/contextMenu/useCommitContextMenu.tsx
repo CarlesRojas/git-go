@@ -8,11 +8,12 @@ import {
 } from '@/component/ui/ContextMenu'
 import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
+import { useMergeCommitIntoCurrentBranchDialog } from '@/hook/dialog/useMergeCommitIntoCurrentBranchDialog'
 import { useRebaseOntoCommitDialog } from '@/hook/dialog/useRebaseOntoCommitDialog'
 import { useResetBranchDialog } from '@/hook/dialog/useResetBranchDialog'
 import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
-import { faCodeBranch, faCodeCommit, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
+import { faCodeBranch, faCodeCommit, faCodeMerge, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode, memo } from 'react'
@@ -28,6 +29,7 @@ interface CommitContextMenuWrapperProps {
   onTagClick: () => void
   onCherryPickClick: () => void
   onRevertClick: () => void
+  onMergeClick: () => void
   onRebaseClick: () => void
   onResetClick: () => void
 }
@@ -40,6 +42,7 @@ const CommitContextMenuWrapper = memo(
     onTagClick,
     onCherryPickClick,
     onRevertClick,
+    onMergeClick,
     onRebaseClick,
     onResetClick,
   }: CommitContextMenuWrapperProps) => {
@@ -81,7 +84,12 @@ const CommitContextMenuWrapper = memo(
 
           <ContextMenuSeparator />
 
-          <ContextMenuLabel>Branch actions</ContextMenuLabel>
+          <ContextMenuLabel>Current branch actions</ContextMenuLabel>
+
+          <ContextMenuItem onClick={onMergeClick}>
+            <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
+            Merge into current branch
+          </ContextMenuItem>
 
           <ContextMenuItem onClick={onRebaseClick}>
             <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
@@ -105,6 +113,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
   const branchDialog = useBranchDialog({ commit })
   const cherryPickDialog = useCherryPickDialog({ commit })
   const revertDialog = useRevertDialog({ commit })
+  const mergeDialog = useMergeCommitIntoCurrentBranchDialog({ commit })
   const rebaseDialog = useRebaseOntoCommitDialog({ commit })
   const resetDialog = useResetBranchDialog({ commit })
 
@@ -115,6 +124,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
       onTagClick={tagDialog.openDialog}
       onCherryPickClick={cherryPickDialog.openDialog}
       onRevertClick={revertDialog.openDialog}
+      onMergeClick={mergeDialog.openDialog}
       onRebaseClick={rebaseDialog.openDialog}
       onResetClick={resetDialog.openDialog}
     >
@@ -130,6 +140,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
         {branchDialog.DialogComponent}
         {cherryPickDialog.DialogComponent}
         {revertDialog.DialogComponent}
+        {mergeDialog.DialogComponent}
         {rebaseDialog.DialogComponent}
         {resetDialog.DialogComponent}
       </>

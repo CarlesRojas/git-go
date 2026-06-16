@@ -260,6 +260,23 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'branchRebasedToCommit', success: true };
                 },
 
+                mergeCommitIntoCurrentBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, fastForwardIfPossible, squash, noCommit } = message;
+                    if (!commitHash) {
+                        throw new Error('Commit hash is required');
+                    }
+                    await gitService.mergeCommitIntoCurrentBranch(
+                        log,
+                        commitHash,
+                        fastForwardIfPossible,
+                        squash,
+                        noCommit
+                    );
+                    log(`Successfully merged commit ${commitHash.substring(0, 7)} into current branch`);
+                    return { type: 'commitMergedIntoCurrentBranch', success: true };
+                },
+
                 checkoutLocalBranch: async (message) => {
                     const gitService = GitService.getInstance();
                     const { branchName } = message;
