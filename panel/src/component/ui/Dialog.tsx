@@ -50,9 +50,9 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           // Layout & Position
           'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           // Layout & Structure
-          'rounded-main-outer grid w-full gap-3',
-          // Sizing
-          'max-w-[min(calc(100%-2rem),20rem)]',
+          'rounded-main-outer grid gap-3',
+          // Sizing (grow with content up to the viewport minus side padding, never below the base width)
+          'min-w-[min(20rem,calc(100vw-4rem))] max-w-[calc(100vw-4rem)]',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border',
           // Spacing
@@ -115,7 +115,7 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
     className={cn(
       [
         // Typography
-        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold',
+        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold break-words',
       ],
       className,
     )}
