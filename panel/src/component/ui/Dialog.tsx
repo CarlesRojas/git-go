@@ -50,10 +50,12 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           // Layout & Position
           'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           // Layout & Structure
-          'rounded-main-outer grid gap-3',
-          // Sizing: keep the 20rem base width, but let a long unbreakable branch name
-          // grow the modal up to the viewport minus 4rem of side padding.
-          'w-[20rem] min-w-[min-content] max-w-[calc(100vw-4rem)]',
+          // Grid children default to min-width:auto (min-content), which stops a long
+          // unbreakable branch name from shrinking; min-w-0 lets them wrap instead.
+          'rounded-main-outer grid gap-3 [&>*]:min-w-0',
+          // Sizing: 20rem base, grow to fit longer content up to the viewport minus 4rem
+          // of side padding, then wrap (see DialogTitle) so it never overflows.
+          'w-fit min-w-[min(20rem,calc(100vw-4rem))] max-w-[calc(100vw-4rem)]',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border',
           // Spacing
@@ -116,7 +118,8 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
     className={cn(
       [
         // Typography
-        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold break-words',
+        // overflow-wrap:anywhere so a single long branch name wraps instead of overflowing.
+        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold [overflow-wrap:anywhere]',
       ],
       className,
     )}
