@@ -51,8 +51,9 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           // Layout & Structure
           'rounded-main-outer grid gap-3',
-          // Sizing (grow with content up to the viewport minus side padding, never below the base width)
-          'min-w-[min(20rem,calc(100vw-4rem))] max-w-[calc(100vw-4rem)]',
+          // Sizing: keep the 20rem base width, but let a long unbreakable branch name
+          // grow the modal up to the viewport minus 4rem of side padding.
+          'w-[20rem] min-w-[min-content] max-w-[calc(100vw-4rem)]',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border',
           // Spacing
