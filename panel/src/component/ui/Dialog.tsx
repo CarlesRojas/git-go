@@ -119,7 +119,9 @@ const DialogTitle = ({ className, ref, ...props }: ComponentProps<typeof DialogP
       [
         // Typography
         // overflow-wrap:anywhere so a single long branch name wraps instead of overflowing.
-        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold [overflow-wrap:anywhere]',
+        // The global `strong` style sets white-space:nowrap, which would keep an emphasised
+        // branch name on one line; reset it here so the name can wrap within the title.
+        'text-vsc-editor-fg pr-8 text-sm leading-tight font-semibold [overflow-wrap:anywhere] [&_strong]:whitespace-normal',
       ],
       className,
     )}
