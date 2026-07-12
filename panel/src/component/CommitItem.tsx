@@ -117,13 +117,15 @@ export const CommitItem: FC<CommitItemProps> = ({
         })
         .map(([baseName, { local, remotes }]) => {
           const name = local?.cleanName ?? remotes?.[0]?.cleanName ?? baseName
+          const localBranch = branches.find(branch => branch.cleanName === name && !branch.remote)
           return (
             <BranchPill
               key={baseName}
               branch={{ local, remotes }}
               baseName={baseName}
               layout={layout}
-              hasLocalBranch={branches.some(branch => branch.cleanName === name && !branch.remote)}
+              hasLocalBranch={!!localBranch}
+              localBranchOnDifferentCommit={!!localBranch && localBranch.hash !== commit.hash}
             />
           )
         })}

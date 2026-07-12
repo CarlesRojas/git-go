@@ -18,9 +18,10 @@ interface Props {
   baseName: string
   layout: CommitLayout
   hasLocalBranch: boolean
+  localBranchOnDifferentCommit: boolean
 }
 
-const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => {
+const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, localBranchOnDifferentCommit }) => {
   const { local, remotes } = branch
   const { showToast } = useToast()
   const { data: currentBranch } = useCurrentBranch()
@@ -61,6 +62,12 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch }) => 
   })
 
   const handleRemoteDoubleClick = useDoubleClick(() => {
+    const remoteBranch = remotes[0]
+    if (localBranchOnDifferentCommit && remoteBranch) {
+      remoteDialogs.fetchIntoLocalDialog.openDialog(remoteBranch)
+      return
+    }
+
     checkoutDialog.openDialog()
   })
 
