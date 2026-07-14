@@ -225,7 +225,7 @@ export const CommitItem: FC<CommitItemProps> = ({
         email={commit.email}
         author={commit.author}
         size={20}
-        className={cn(commit.isUncommitted && 'opacity-0')}
+        className={cn(!settings.showCommitterName && 'mr-2', commit.isUncommitted && 'opacity-0')}
       />
 
       {settings.showCommitterName && (
