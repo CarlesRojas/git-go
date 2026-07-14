@@ -108,6 +108,11 @@
                     "maximum": 800,
                     "markdownDescription": "**Graph Appearance:** Height in pixels for expanded commit details view."
                 },
+                "git-go.graph.showCommitterName": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Graph Appearance:** Show the committer name next to each commit in the graph."
+                },
                 "git-go.autoOpen.enabled": {
                     "type": "boolean",
                     "default": false,

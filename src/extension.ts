@@ -69,6 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             stashIncludeUntracked: config.stashIncludeUntracked,
                             expandedCommitHeight: config.expandedCommitHeight,
+                            showCommitterName: config.showCommitterName,
                             theme: config.theme,
                             customColors: config.customColors
                         }
@@ -515,6 +516,7 @@ export function activate(context: vscode.ExtensionContext) {
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             stashIncludeUntracked: config.stashIncludeUntracked,
                             expandedCommitHeight: config.expandedCommitHeight,
+                            showCommitterName: config.showCommitterName,
                             theme: config.theme,
                             customColors: config.customColors
                         }

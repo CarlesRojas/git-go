@@ -146,6 +146,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.graph.showCommitterName` Extension Setting.
+     */
+    get showCommitterName(): boolean {
+        return !!this.config.get('graph.showCommitterName', true);
+    }
+
+    /**
      * Get the value of the `git-go.graph.theme` Extension Setting.
      */
     get theme(): string {

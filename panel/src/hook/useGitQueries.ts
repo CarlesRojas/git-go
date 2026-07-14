@@ -58,6 +58,7 @@ export interface ConfigState {
   remoteFetchForceFetch: boolean
   stashIncludeUntracked: boolean
   expandedCommitHeight: number
+  showCommitterName: boolean
   theme: string
   customColors: string[]
 }
@@ -80,6 +81,7 @@ const defaultConfigState: ConfigState = {
   remoteFetchForceFetch: false,
   stashIncludeUntracked: true,
   expandedCommitHeight: 300,
+  showCommitterName: true,
   theme: 'vibrant',
   customColors: [],
 }

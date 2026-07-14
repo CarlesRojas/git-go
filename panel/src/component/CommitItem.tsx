@@ -221,26 +221,30 @@ export const CommitItem: FC<CommitItemProps> = ({
         })}
       </time>
 
-      <Avatar
-        email={commit.email}
-        author={commit.author}
-        size={20}
-        className={cn(commit.isUncommitted && 'opacity-0')}
-      />
+      {settings.showCommitterName && (
+        <>
+          <Avatar
+            email={commit.email}
+            author={commit.author}
+            size={20}
+            className={cn(commit.isUncommitted && 'opacity-0')}
+          />
 
-      <span
-        className={cn(
-          // Layout & sizing
-          'w-20 max-w-20 min-w-20',
-          // Typography
-          'line-clamp-1 truncate text-xs leading-tight font-medium',
-          // Appearance
-          'opacity-50',
-          commit.isUncommitted && 'opacity-0',
-        )}
-      >
-        {commit.author}
-      </span>
+          <span
+            className={cn(
+              // Layout & sizing
+              'w-20 max-w-20 min-w-20',
+              // Typography
+              'line-clamp-1 truncate text-xs leading-tight font-medium',
+              // Appearance
+              'opacity-50',
+              commit.isUncommitted && 'opacity-0',
+            )}
+          >
+            {commit.author}
+          </span>
+        </>
+      )}
     </div>
   )
 
