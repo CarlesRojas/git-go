@@ -1,9 +1,15 @@
 import { Toaster } from '@/component/ui/sonner'
 import { cn } from '@/util/cn'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { createContext, FC, ReactNode, useContext } from 'react'
 import { toast } from 'sonner'
+
+const TOAST_DURATION = 4_000
+const MAX_ERROR_TEXT_LENGTH = 300
+
+let toastCount = 0
 
 interface Toast {
   text: string
@@ -33,10 +39,14 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
   const showToast = (toastData: Toast) => {
     const { text, type = 'info', icon } = toastData
 
+    const id = `git-go-toast-${++toastCount}`
+    const displayText =
+      type === 'error' && text.length > MAX_ERROR_TEXT_LENGTH ? `${text.slice(0, MAX_ERROR_TEXT_LENGTH)}…` : text
+
     const content = (
       <div
         className={cn(
-          'rounded-main-outer flex w-full gap-3 px-3',
+          'rounded-main-outer relative flex w-full gap-3 pr-8 pl-3',
           'pointer-events-auto',
           type === 'success' && 'bg-vsc-git-added-fg/5 pointer-events-auto',
           type === 'error' && 'bg-vsc-git-deleted-fg/5 pointer-events-auto',
@@ -55,23 +65,32 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
           />
         </div>
 
-        <span className="py-3 text-xs leading-tight">{text}</span>
+        <span className="py-3 text-xs leading-tight">{displayText}</span>
+
+        <button
+          type="button"
+          aria-label="Dismiss notification"
+          onClick={() => toast.dismiss(id)}
+          className="text-vsc-editor-fg/50 hover:text-vsc-editor-fg absolute top-1 right-1 flex size-6 cursor-pointer items-center justify-center"
+        >
+          <FontAwesomeIcon icon={faXmark} className="m-0! size-3 max-h-3 min-h-3 p-0!" />
+        </button>
       </div>
     )
 
     switch (type) {
       case 'success':
-        toast.success(content, { duration: 4_000 })
+        toast.success(content, { duration: TOAST_DURATION, id })
         break
       case 'error':
-        toast.error(content, { duration: 15_000 })
+        toast.error(content, { duration: TOAST_DURATION, id })
         break
       case 'warning':
-        toast.warning(content, { duration: 15_000 })
+        toast.warning(content, { duration: TOAST_DURATION, id })
         break
       case 'info':
       default:
-        toast.info(content, { duration: 4_000 })
+        toast.info(content, { duration: TOAST_DURATION, id })
         break
     }
   }
