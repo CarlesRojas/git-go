@@ -15,13 +15,8 @@ interface GraphProps {
   searchTerm?: string
 }
 
-interface ExpandedCommit {
-  row: number
-  hash: string
-}
-
 export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => {
-  const [expandedCommit, setExpandedCommit] = useState<ExpandedCommit | null>(null)
+  const [expandedHash, setExpandedHash] = useState<string | null>(null)
   const { settings } = useSettings()
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -46,7 +41,14 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     return filteredCommits
   }, [data, workingChangesData, settings.showStashes])
 
-  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedCommit?.row)
+  // Derived from the current list so the expanded gap tracks the commit when new rows appear (e.g. after a fetch)
+  const expandedRow = useMemo(() => {
+    if (expandedHash === null) return undefined
+    const row = commits.findIndex(commit => commit.hash === expandedHash)
+    return row === -1 ? undefined : row
+  }, [commits, expandedHash])
+
+  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
 
   const layoutMap = useMemo(() => {
     const map = new Map()
@@ -60,25 +62,25 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
 
   const navigateCommit = useCallback(
     (direction: 'up' | 'down') => {
-      if (!expandedCommit || commits.length === 0) return
+      if (expandedRow === undefined || commits.length === 0) return
 
       let nextIndex: number
-      if (direction === 'up') nextIndex = expandedCommit.row > 0 ? expandedCommit.row - 1 : 0
-      else nextIndex = expandedCommit.row < commits.length - 1 ? expandedCommit.row + 1 : commits.length - 1
+      if (direction === 'up') nextIndex = expandedRow > 0 ? expandedRow - 1 : 0
+      else nextIndex = expandedRow < commits.length - 1 ? expandedRow + 1 : commits.length - 1
 
       const nextCommit = commits[nextIndex]
-      if (nextIndex === expandedCommit.row || !nextCommit) return
+      if (nextIndex === expandedRow || !nextCommit) return
 
-      setExpandedCommit({ row: nextIndex, hash: nextCommit.hash })
+      setExpandedHash(nextCommit.hash)
     },
-    [expandedCommit, commits],
+    [expandedRow, commits],
   )
 
   useEventListener(
     'keydown',
     useCallback(
       (event: KeyboardEvent) => {
-        if (!expandedCommit) return
+        if (expandedHash === null) return
         if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
         if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
 
@@ -98,7 +100,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
         event.preventDefault()
         navigateCommit(event.key === 'ArrowUp' ? 'up' : 'down')
       },
-      [expandedCommit, navigateCommit],
+      [expandedHash, navigateCommit],
     ),
   )
 
@@ -145,10 +147,8 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
             <CommitItem
               key={commit.hash}
               commit={commit}
-              isExpanded={expandedCommit?.hash === commit.hash}
-              onToggle={() =>
-                setExpandedCommit(prev => (prev?.hash === commit.hash ? null : { row, hash: commit.hash }))
-              }
+              isExpanded={expandedHash === commit.hash}
+              onToggle={() => setExpandedHash(prev => (prev === commit.hash ? null : commit.hash))}
               selectedBranches={selectedBranches}
               treeWidth={treeWidth}
               onCommitHover={onCommitHover}
