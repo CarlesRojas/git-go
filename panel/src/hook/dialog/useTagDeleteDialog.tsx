@@ -24,6 +24,9 @@ export const useTagDeleteDialog = () => {
     return status ? status.tags.some(({ name }) => name === tagName) : undefined
   }
 
+  // Hide remotes known not to have the tag; keep unknown-status remotes (unreachable or still loading)
+  const candidateRemotes = remotes.filter(remote => isTagOnRemote(remote.name) !== false)
+
   const deleteForm = useForm({
     defaultValues: {
       deleteOnRemotes: [] as string[],
@@ -85,43 +88,33 @@ export const useTagDeleteDialog = () => {
         >
           {deleteLocal && <p className="text-xs opacity-75">The local tag will be deleted.</p>}
 
-          {remotes.length > 0 && (
+          {candidateRemotes.length > 0 && (
             <div className="flex flex-col gap-2">
               <Label>{deleteLocal ? 'Also delete from these remotes:' : 'Delete from these remotes:'}</Label>
 
-              {remotes.map(remote => {
-                const onRemote = isTagOnRemote(remote.name)
-                const knownAbsent = onRemote === false
+              {candidateRemotes.map(remote => (
+                <deleteForm.Field key={remote.name} name="deleteOnRemotes">
+                  {field => (
+                    <div className="flex items-center">
+                      <Checkbox
+                        id={`delete-remote-${remote.name}`}
+                        checked={field.state.value.includes(remote.name)}
+                        onCheckedChange={checked => {
+                          if (checked) {
+                            field.handleChange([...field.state.value, remote.name])
+                          } else {
+                            field.handleChange(field.state.value.filter(r => r !== remote.name))
+                          }
+                        }}
+                      />
 
-                return (
-                  <deleteForm.Field key={remote.name} name="deleteOnRemotes">
-                    {field => (
-                      <div className="flex items-center">
-                        <Checkbox
-                          id={`delete-remote-${remote.name}`}
-                          disabled={knownAbsent}
-                          checked={field.state.value.includes(remote.name)}
-                          onCheckedChange={checked => {
-                            if (checked) {
-                              field.handleChange([...field.state.value, remote.name])
-                            } else {
-                              field.handleChange(field.state.value.filter(r => r !== remote.name))
-                            }
-                          }}
-                        />
-
-                        <Label
-                          htmlFor={`delete-remote-${remote.name}`}
-                          className={knownAbsent ? 'pl-2 opacity-50' : 'cursor-pointer pl-2'}
-                        >
-                          {remote.name}
-                          {knownAbsent && <span className="pl-1 opacity-75">(tag not on this remote)</span>}
-                        </Label>
-                      </div>
-                    )}
-                  </deleteForm.Field>
-                )
-              })}
+                      <Label htmlFor={`delete-remote-${remote.name}`} className="cursor-pointer pl-2">
+                        {remote.name}
+                      </Label>
+                    </div>
+                  )}
+                </deleteForm.Field>
+              ))}
             </div>
           )}
 
