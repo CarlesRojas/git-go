@@ -41,7 +41,7 @@ export const WorktreeMenu: FC = () => {
   return (
     <>
       <Combobox items={items} value={currentWorktree?.path ?? ''} onValueChange={handleValueChange}>
-        <ComboboxTrigger icon={faFolderTree} className="w-fit max-w-56">
+        <ComboboxTrigger icon={faFolderTree} className="min-w-0 shrink">
           <ComboboxValue>
             <span className="truncate">{currentWorktree ? getWorktreeLabel(currentWorktree) : 'Worktrees'}</span>
           </ComboboxValue>
