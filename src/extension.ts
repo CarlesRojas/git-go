@@ -480,12 +480,15 @@ export function activate(context: vscode.ExtensionContext) {
 
                 deleteTag: async (message) => {
                     const gitService = GitService.getInstance();
-                    const { tagName, deleteOnRemote } = message;
+                    const { tagName, deleteOnRemotes, deleteLocal } = message;
                     if (!tagName) {
                         throw new Error('Tag name is required');
                     }
-                    await gitService.deleteTag(log, tagName, deleteOnRemote);
-                    log(`Successfully deleted tag ${tagName}${deleteOnRemote ? ` from remote ${deleteOnRemote}` : ''}`);
+                    const remotes: string[] = Array.isArray(deleteOnRemotes) ? deleteOnRemotes : [];
+                    await gitService.deleteTag(log, tagName, remotes, deleteLocal !== false);
+                    log(
+                        `Successfully deleted tag ${tagName}${remotes.length > 0 ? ` from remote(s) ${remotes.join(', ')}` : ''}`
+                    );
                     return { type: 'deleteTagSuccess', success: true };
                 },
 

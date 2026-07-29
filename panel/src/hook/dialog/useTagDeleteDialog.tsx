@@ -1,40 +1,48 @@
 import { Button } from '@/component/ui/Button'
+import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/component/ui/Select'
+import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
-import { useDeleteTag, useGitRemotes } from '@/hook/useGitQueries'
+import { useDeleteTag, useGitRemotes, useTagRemotes } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
-const LOCAL_ONLY = 'local-only-4dde2026-6e1a-429d-8541-e144511e87b3'
-
 export const useTagDeleteDialog = () => {
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [tagName, setTagName] = useState<string>('')
+  const [deleteLocal, setDeleteLocal] = useState(true)
   const { data: remotes = [] } = useGitRemotes()
+  const { data: tagRemotes } = useTagRemotes(showDeleteDialog)
   const deleteTagMutation = useDeleteTag()
+
+  // true/false when the remote was successfully queried, undefined when its status is unknown
+  const isTagOnRemote = (remoteName: string): boolean | undefined => {
+    const status = tagRemotes?.find(({ remote }) => remote === remoteName)
+    return status ? status.tags.some(({ name }) => name === tagName) : undefined
+  }
 
   const deleteForm = useForm({
     defaultValues: {
-      deleteOnRemote: LOCAL_ONLY,
+      deleteOnRemotes: [] as string[],
     },
     onSubmit: async ({ value }) => {
       deleteTagMutation.mutate(
         {
           tagName,
-          deleteOnRemote: value.deleteOnRemote === LOCAL_ONLY ? undefined : value.deleteOnRemote,
+          deleteOnRemotes: value.deleteOnRemotes,
+          deleteLocal,
         },
         {
           onSuccess: () => {
-            const message =
-              value.deleteOnRemote !== LOCAL_ONLY
-                ? `Tag '${tagName}' deleted locally and from '${value.deleteOnRemote}' remote`
-                : `Local tag '${tagName}' deleted successfully`
+            const deletedFrom = [
+              ...(deleteLocal ? ['locally'] : []),
+              ...value.deleteOnRemotes.map(remote => `from '${remote}' remote`),
+            ]
             showToast({
-              text: message,
+              text: `Tag '${tagName}' deleted ${deletedFrom.join(' and ')}`,
               icon: faTrash,
               type: 'success',
             })
@@ -51,8 +59,9 @@ export const useTagDeleteDialog = () => {
     },
   })
 
-  const openDialog = (tag: string) => {
+  const openDialog = (tag: string, options?: { deleteLocal?: boolean }) => {
     setTagName(tag)
+    setDeleteLocal(options?.deleteLocal ?? true)
     deleteForm.reset()
     setShowDeleteDialog(true)
   }
@@ -74,43 +83,71 @@ export const useTagDeleteDialog = () => {
           }}
           className="flex flex-col gap-3"
         >
-          <deleteForm.Field name="deleteOnRemote">
-            {field => (
-              <div className="flex flex-col gap-1">
-                <Select value={field.state.value} onValueChange={value => field.handleChange(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Only delete local tag" />
-                  </SelectTrigger>
+          {deleteLocal && <p className="text-xs opacity-75">The local tag will be deleted.</p>}
 
-                  <SelectContent>
-                    <SelectItem value={LOCAL_ONLY}>Only delete local tag</SelectItem>
+          {remotes.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Label>{deleteLocal ? 'Also delete from these remotes:' : 'Delete from these remotes:'}</Label>
 
-                    {remotes.map(remote => (
-                      <SelectItem key={remote.name} value={remote.name}>
-                        Also delete from {remote.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </deleteForm.Field>
+              {remotes.map(remote => {
+                const onRemote = isTagOnRemote(remote.name)
+                const knownAbsent = onRemote === false
+
+                return (
+                  <deleteForm.Field key={remote.name} name="deleteOnRemotes">
+                    {field => (
+                      <div className="flex items-center">
+                        <Checkbox
+                          id={`delete-remote-${remote.name}`}
+                          disabled={knownAbsent}
+                          checked={field.state.value.includes(remote.name)}
+                          onCheckedChange={checked => {
+                            if (checked) {
+                              field.handleChange([...field.state.value, remote.name])
+                            } else {
+                              field.handleChange(field.state.value.filter(r => r !== remote.name))
+                            }
+                          }}
+                        />
+
+                        <Label
+                          htmlFor={`delete-remote-${remote.name}`}
+                          className={knownAbsent ? 'pl-2 opacity-50' : 'cursor-pointer pl-2'}
+                        >
+                          {remote.name}
+                          {knownAbsent && <span className="pl-1 opacity-75">(tag not on this remote)</span>}
+                        </Label>
+                      </div>
+                    )}
+                  </deleteForm.Field>
+                )
+              })}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => setShowDeleteDialog(false)}>
               Cancel
             </Button>
 
-            <Button type="submit" variant="destructive" disabled={deleteTagMutation.isPending}>
-              {deleteTagMutation.isPending ? (
-                <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faTrash} className="size-3" />
-                  Delete Tag
-                </>
+            <deleteForm.Field name="deleteOnRemotes">
+              {field => (
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  disabled={deleteTagMutation.isPending || (!deleteLocal && field.state.value.length === 0)}
+                >
+                  {deleteTagMutation.isPending ? (
+                    <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faTrash} className="size-3" />
+                      Delete Tag
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </deleteForm.Field>
           </DialogFooter>
         </form>
       </DialogContent>

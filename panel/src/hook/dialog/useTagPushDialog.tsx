@@ -20,7 +20,7 @@ export const useTagPushDialog = () => {
   const pushTagMutation = usePushTag()
 
   const isTagOnRemote = (remoteName: string) =>
-    !!tagRemotes?.some(({ remote, tags }) => remote === remoteName && tags.includes(tagName))
+    !!tagRemotes?.some(({ remote, tags }) => remote === remoteName && tags.some(({ name }) => name === tagName))
 
   const pushForm = useForm({
     defaultValues: {

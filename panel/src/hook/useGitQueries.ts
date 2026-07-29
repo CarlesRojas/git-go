@@ -737,8 +737,16 @@ export const useDeleteTag = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ tagName, deleteOnRemote }: { tagName: string; deleteOnRemote?: string }) => {
-      return await sendCorrelatedMessage('deleteTag', { tagName, deleteOnRemote }, 10_000)
+    mutationFn: async ({
+      tagName,
+      deleteOnRemotes = [],
+      deleteLocal = true,
+    }: {
+      tagName: string
+      deleteOnRemotes?: string[]
+      deleteLocal?: boolean
+    }) => {
+      return await sendCorrelatedMessage('deleteTag', { tagName, deleteOnRemotes, deleteLocal }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)

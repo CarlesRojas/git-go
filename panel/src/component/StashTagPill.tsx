@@ -12,6 +12,7 @@ interface StashTagPillProps {
   type: 'stash' | 'tag'
   label: string
   commit: GitCommit
+  remoteOnly?: boolean
 }
 
 export function formatStash(ref: string): string {
@@ -19,7 +20,7 @@ export function formatStash(ref: string): string {
   return match ? `Stash ${match[1]}` : ref
 }
 
-const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
+const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly = false }) => {
   const { settings } = useSettings()
 
   // Move hooks before any early returns to comply with React rules
@@ -30,6 +31,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
   const { tagContextMenuWrapper, dialogs: tagDialogs } = useTagContextMenu({
     tagName: type === 'tag' ? label : undefined,
     commit,
+    remoteOnly,
   })
 
   const { data: tagRemotes } = useTagRemotes(type === 'tag' && settings.showTags)
@@ -38,13 +40,16 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
   if (type === 'stash' && !settings.showStashes) return null
   if (type === 'tag' && !settings.showTags) return null
 
+  // Only remotes whose tag points at this commit — a moved remote tag shows on its own commit
   const remotesWithTag =
     type === 'tag' && tagRemotes
-      ? tagRemotes.filter(({ tags }) => tags.includes(label)).map(({ remote }) => remote)
+      ? tagRemotes
+          .filter(({ tags }) => tags.some(({ name, hash }) => name === label && hash === commit.hash))
+          .map(({ remote }) => remote)
       : []
 
   const icon = type === 'stash' ? faInbox : faTag
-  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
+  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : remoteOnly ? 'text-vsc-editor-fg/50' : 'text-amber-500'
 
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
     if (type === 'tag') return tagContextMenuWrapper(children)

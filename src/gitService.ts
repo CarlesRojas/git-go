@@ -68,9 +68,14 @@ export interface GitTagDetails {
     message: string;
 }
 
+export interface GitRemoteTag {
+    name: string;
+    hash: string; // commit the tag points at (peeled for annotated tags)
+}
+
 export interface GitTagRemoteStatus {
     remote: string;
-    tags: string[];
+    tags: GitRemoteTag[];
 }
 
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
@@ -1916,7 +1921,12 @@ export class GitService {
         }
     }
 
-    public async deleteTag(log: (message: string) => void, tagName: string, deleteOnRemote?: string): Promise<void> {
+    public async deleteTag(
+        log: (message: string) => void,
+        tagName: string,
+        deleteOnRemotes: string[] = [],
+        deleteLocal: boolean = true
+    ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -1926,23 +1936,20 @@ export class GitService {
         // Validate tag name
         this.validateRefName(`refs/tags/${tagName}`);
 
-        // Validate remote name if provided
-        if (deleteOnRemote) {
-            this.validatePositional(deleteOnRemote, 'remote name');
+        // Validate all remote names
+        for (const remote of deleteOnRemotes) {
+            this.validatePositional(remote, 'remote name');
         }
 
         try {
-            // Delete local tag
-            await this.spawnGit([gitExecutable.path, 'tag', '-d', '--', tagName], workspacePath);
-            log(`Successfully deleted local tag ${tagName}`);
+            if (deleteLocal) {
+                await this.spawnGit([gitExecutable.path, 'tag', '-d', '--', tagName], workspacePath);
+                log(`Successfully deleted local tag ${tagName}`);
+            }
 
-            // Delete remote tag if specified
-            if (deleteOnRemote) {
-                await this.spawnGit(
-                    [gitExecutable.path, 'push', '--delete', '--', deleteOnRemote, tagName],
-                    workspacePath
-                );
-                log(`Successfully deleted tag ${tagName} from remote ${deleteOnRemote}`);
+            for (const remote of deleteOnRemotes) {
+                await this.spawnGit([gitExecutable.path, 'push', '--delete', '--', remote, tagName], workspacePath);
+                log(`Successfully deleted tag ${tagName} from remote ${remote}`);
             }
         } catch (error) {
             log(`Error deleting tag: ${error}`);
@@ -1979,16 +1986,32 @@ export class GitService {
                     this.validatePositional(remote, 'remote name');
 
                     const output = await this.spawnGit(
-                        [gitExecutable.path, 'ls-remote', '--tags', '--refs', '--', remote],
+                        [gitExecutable.path, 'ls-remote', '--tags', '--', remote],
                         workspacePath,
                         GitService.LS_REMOTE_TIMEOUT_MS
                     );
 
-                    const tags = output
-                        .split(EOL_REGEX)
-                        .map((line) => line.trim().split('\t')[1])
-                        .filter((ref): ref is string => !!ref && ref.startsWith('refs/tags/'))
-                        .map((ref) => ref.replace('refs/tags/', ''));
+                    // Annotated tags appear twice: refs/tags/x (tag object) and the
+                    // peeled refs/tags/x^{} (the commit) — prefer the peeled hash
+                    const tagHashes = new Map<string, { direct?: string; peeled?: string }>();
+                    for (const line of output.split(EOL_REGEX)) {
+                        const [hash, ref] = line.trim().split('\t');
+                        if (!hash || !ref || !ref.startsWith('refs/tags/')) continue;
+
+                        if (ref.endsWith('^{}')) {
+                            const name = ref.slice('refs/tags/'.length, -'^{}'.length);
+                            tagHashes.set(name, { ...tagHashes.get(name), peeled: hash });
+                        } else {
+                            const name = ref.slice('refs/tags/'.length);
+                            tagHashes.set(name, { ...tagHashes.get(name), direct: hash });
+                        }
+                    }
+
+                    const tags: GitRemoteTag[] = [];
+                    for (const [name, { direct, peeled }] of tagHashes) {
+                        const hash = peeled ?? direct;
+                        if (hash) tags.push({ name, hash });
+                    }
 
                     return { remote, tags };
                 })
