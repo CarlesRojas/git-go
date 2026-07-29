@@ -460,6 +460,13 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'tagDetails', details: tagDetails };
                 },
 
+                getTagRemotes: async () => {
+                    const gitService = GitService.getInstance();
+                    const tagRemotes = await gitService.getTagRemotes(log);
+                    log(`Successfully retrieved remote tag status for ${tagRemotes.length} remote(s)`);
+                    return { type: 'tagRemotes', tagRemotes };
+                },
+
                 pushTag: async (message) => {
                     const gitService = GitService.getInstance();
                     const { tagName, remotes } = message;

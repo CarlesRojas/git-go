@@ -3,7 +3,7 @@ import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
 import { useToast } from '@/context/ToastContext'
-import { useGitRemotes, usePushTag } from '@/hook/useGitQueries'
+import { useGitRemotes, usePushTag, useTagRemotes } from '@/hook/useGitQueries'
 import { faCircleNotch, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
@@ -16,7 +16,11 @@ export const useTagPushDialog = () => {
   const [commit, setCommit] = useState<GitCommit | null>(null)
   const [tagName, setTagName] = useState<string>('')
   const { data: remotes = [] } = useGitRemotes()
+  const { data: tagRemotes } = useTagRemotes(showPushDialog)
   const pushTagMutation = usePushTag()
+
+  const isTagOnRemote = (remoteName: string) =>
+    !!tagRemotes?.some(({ remote, tags }) => remote === remoteName && tags.includes(tagName))
 
   const pushForm = useForm({
     defaultValues: {
@@ -92,6 +96,7 @@ export const useTagPushDialog = () => {
 
                     <Label htmlFor={`remote-${remote.name}`} className="cursor-pointer pl-2">
                       {remote.name}
+                      {isTagOnRemote(remote.name) && <span className="pl-1 opacity-50">(already pushed)</span>}
                     </Label>
                   </div>
                 )}

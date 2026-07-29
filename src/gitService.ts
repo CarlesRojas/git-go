@@ -68,6 +68,11 @@ export interface GitTagDetails {
     message: string;
 }
 
+export interface GitTagRemoteStatus {
+    remote: string;
+    tags: string[];
+}
+
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
@@ -78,6 +83,7 @@ const EOL_REGEX = /\r\n|\r|\n/g;
 
 export class GitService {
     private static instance: GitService;
+    private static readonly LS_REMOTE_TIMEOUT_MS = 15_000;
     private cachedGitExecutable: GitExecutable | null = null;
 
     private constructor() {}
@@ -158,7 +164,7 @@ export class GitService {
         throw new Error('Unable to find Git executable. Please install Git or configure the git.path setting.');
     }
 
-    private spawnGit(args: string[], cwd: string): Promise<string> {
+    private spawnGit(args: string[], cwd: string, timeoutMs?: number): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!args.length || !args[0]) {
                 reject(new Error('No command provided'));
@@ -172,6 +178,13 @@ export class GitService {
 
             let stdout = '';
             let stderr = '';
+            let timedOut = false;
+            const timeout = timeoutMs
+                ? setTimeout(() => {
+                      timedOut = true;
+                      gitProcess.kill();
+                  }, timeoutMs)
+                : undefined;
 
             gitProcess.stdout?.on('data', (data: Buffer) => {
                 stdout += data.toString();
@@ -182,7 +195,10 @@ export class GitService {
             });
 
             gitProcess.on('close', (code: number | null) => {
-                if (code === 0) {
+                if (timeout) clearTimeout(timeout);
+                if (timedOut) {
+                    reject(new Error(`Git command timed out after ${timeoutMs}ms`));
+                } else if (code === 0) {
                     resolve(stdout);
                 } else {
                     reject(new Error(formatGitError(stderr || stdout)));
@@ -190,6 +206,7 @@ export class GitService {
             });
 
             gitProcess.on('error', (error: Error) => {
+                if (timeout) clearTimeout(timeout);
                 reject(error);
             });
         });
@@ -1929,6 +1946,64 @@ export class GitService {
             }
         } catch (error) {
             log(`Error deleting tag: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the tags that exist on each remote. Git keeps no local record of remote tags
+     * (there is no refs/remotes/<remote>/tags namespace), so this queries each remote
+     * over the network with `git ls-remote`. Remotes that cannot be reached are omitted
+     * from the result rather than failing the whole call.
+     */
+    public async getTagRemotes(log: (message: string) => void): Promise<GitTagRemoteStatus[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const remoteOutput = await this.spawnGit([gitExecutable.path, 'remote'], workspacePath);
+            const remoteNames = remoteOutput
+                .split(EOL_REGEX)
+                .map((name) => name.trim())
+                .filter((name) => !!name);
+
+            if (remoteNames.length === 0) return [];
+
+            log(`Querying tags on ${remoteNames.length} remote(s): ${remoteNames.join(', ')}`);
+
+            const results = await Promise.allSettled(
+                remoteNames.map(async (remote): Promise<GitTagRemoteStatus> => {
+                    this.validatePositional(remote, 'remote name');
+
+                    const output = await this.spawnGit(
+                        [gitExecutable.path, 'ls-remote', '--tags', '--refs', '--', remote],
+                        workspacePath,
+                        GitService.LS_REMOTE_TIMEOUT_MS
+                    );
+
+                    const tags = output
+                        .split(EOL_REGEX)
+                        .map((line) => line.trim().split('\t')[1])
+                        .filter((ref): ref is string => !!ref && ref.startsWith('refs/tags/'))
+                        .map((ref) => ref.replace('refs/tags/', ''));
+
+                    return { remote, tags };
+                })
+            );
+
+            const statuses: GitTagRemoteStatus[] = [];
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') statuses.push(result.value);
+                else log(`Could not list tags on remote '${remoteNames[index]}': ${result.reason}`);
+            });
+
+            log(`Retrieved tags from ${statuses.length}/${remoteNames.length} remote(s)`);
+            return statuses;
+        } catch (error) {
+            log(`Error getting remote tags: ${error}`);
             throw error;
         }
     }
