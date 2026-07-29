@@ -74,14 +74,16 @@ export const App: FC = () => {
                 'px-2',
               ])}
             >
-              <BranchSelector onBranchesChange={setSelectedBranches} />
+              <div className="flex min-w-0 items-center gap-2">
+                <BranchSelector onBranchesChange={setSelectedBranches} />
+
+                <WorktreeMenu />
+              </div>
 
               <div className="flex items-center gap-2">
                 <SearchInput value={searchTerm} onChange={setSearchTerm} />
 
                 <RefetchButton />
-
-                <WorktreeMenu />
 
                 <RepoSettings />
               </div>

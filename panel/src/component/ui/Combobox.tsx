@@ -1,6 +1,7 @@
 import { Input } from '@/component/ui/Input'
 import { cn } from '@/util/cn'
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCheck, faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Ref, useRef } from 'react'
@@ -11,7 +12,12 @@ function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
 }
 
-function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Trigger.Props) {
+function ComboboxTrigger({
+  className,
+  children,
+  icon = faCodeBranch,
+  ...props
+}: ComboboxPrimitive.Trigger.Props & { icon?: IconDefinition }) {
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
@@ -35,7 +41,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       {...props}
     >
       <div className="flex min-w-0 flex-row items-center gap-2">
-        <FontAwesomeIcon icon={faCodeBranch} className="text-vsc-editor-fg size-2.5 min-w-2.5" />
+        <FontAwesomeIcon icon={icon} className="text-vsc-editor-fg size-2.5 min-w-2.5" />
         {children}
       </div>
 
