@@ -3,6 +3,7 @@ import { useToast } from '@/context/ToastContext'
 import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchContextMenu'
 import { useRemoteBranchContextMenu } from '@/hook/contextMenu/useRemoteBranchContextMenu'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
+import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
 import { useDoubleClick } from '@/hook/useDoubleClick'
 import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
 import { getColor } from '@/hook/useGitTree'
@@ -35,6 +36,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
 
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
+  const worktreeOpenDialog = useWorktreeOpenDialog()
 
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
@@ -43,6 +45,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
 
   const handleLocalDoubleClick = useDoubleClick(() => {
     if (!local || isCurrent) return
+
+    if (local.worktreePath) {
+      worktreeOpenDialog.openDialog({ worktreePath: local.worktreePath, branchName: local.cleanName })
+      return
+    }
 
     checkoutLocalMutation.mutate(
       { branchName: local.cleanName },
@@ -98,6 +105,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
             : undefined,
         }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
+        title={local?.worktreePath ? `Checked out in worktree ${local.worktreePath}` : undefined}
       >
         {!onlyRemote &&
           localBranchContextMenuWrapper(
@@ -132,6 +140,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               {getBranchIcons({
                 isLocal: !!local,
                 hasRemote: !local && !!remotes.length,
+                inWorktree: !!local?.worktreePath,
                 black: !!local,
                 white: !local,
               })}
@@ -205,6 +214,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
       </button>
 
       {checkoutDialog.DialogComponent}
+      {worktreeOpenDialog.DialogComponent}
       {localDialogs}
       {remoteDialogs.checkoutDialog.DialogComponent}
       {remoteDialogs.mergeDialog.DialogComponent}

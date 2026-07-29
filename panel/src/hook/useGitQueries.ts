@@ -1,7 +1,7 @@
 import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { sendCorrelatedMessage } from '@/util/sendCorrelatedMessage'
-import type { GitBranch, GitCommit, GitFileChange, GitRemote } from '@git/gitService'
+import type { GitBranch, GitCommit, GitFileChange, GitRemote, GitWorktree } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 
@@ -57,6 +57,8 @@ export interface ConfigState {
   resetMode: 'soft' | 'mixed' | 'hard'
   remoteFetchForceFetch: boolean
   stashIncludeUntracked: boolean
+  worktreeDefaultPath: string
+  worktreeOpenNewWindow: boolean
   expandedCommitHeight: number
   showCommitterName: boolean
   theme: string
@@ -80,6 +82,8 @@ const defaultConfigState: ConfigState = {
   resetMode: 'mixed',
   remoteFetchForceFetch: false,
   stashIncludeUntracked: true,
+  worktreeDefaultPath: '../{repo}.worktrees/{branch}',
+  worktreeOpenNewWindow: true,
   expandedCommitHeight: 300,
   showCommitterName: true,
   theme: 'vibrant',
@@ -95,6 +99,7 @@ export const queryKeys = {
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
+  worktrees: ['git', 'worktrees'] as const,
   remotes: ['git', 'remotes'] as const,
   repoName: ['git', 'repo-name'] as const,
   gitUserConfig: ['git', 'user-config'] as const,
@@ -426,6 +431,61 @@ export const useCurrentBranch = () => {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })
+}
+
+export const useWorktrees = () => {
+  return useQuery({
+    queryKey: queryKeys.worktrees,
+    queryFn: async (): Promise<GitWorktree[]> => {
+      const response = await sendCorrelatedMessage<{ worktrees: GitWorktree[] }>('getWorktrees')
+      return response.worktrees
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
+export const useAddWorktree = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ worktreePath, branchName }: { worktreePath: string; branchName: string }) => {
+      return await sendCorrelatedMessage<{ worktreePath: string }>(
+        'addWorktree',
+        { worktreePath, branchName },
+        30_000,
+      )
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useRemoveWorktree = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      worktreePath,
+      force = false,
+      deleteBranch,
+    }: {
+      worktreePath: string
+      force?: boolean
+      deleteBranch?: string
+    }) => {
+      return await sendCorrelatedMessage('removeWorktree', { worktreePath, force, deleteBranch }, 30_000)
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const openWorktree = (worktreePath: string, newWindow: boolean): void => {
+  const vscode = getVSCodeApi()
+  vscode.postMessage({ type: 'openWorktree', worktreePath, newWindow })
 }
 
 export const usePushBranch = () => {

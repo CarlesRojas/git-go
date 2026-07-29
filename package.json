@@ -197,6 +197,16 @@
                     "type": "boolean",
                     "default": true,
                     "markdownDescription": "**Stash Operations:** Default value for 'Include untracked files' when creating stashes."
+                },
+                "git-go.worktree.defaultPath": {
+                    "type": "string",
+                    "default": "../{repo}.worktrees/{branch}",
+                    "markdownDescription": "**Worktree Operations:** Default path template for new worktrees, relative to the repository root. `{repo}` is replaced with the repository name and `{branch}` with the branch name."
+                },
+                "git-go.worktree.openNewWindow": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Worktree Operations:** Default value for 'Open in new window' when creating or opening a worktree."
                 }
             }
         }

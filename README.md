@@ -51,6 +51,15 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **View tag details** and associated commits
 - **Visual tag indicators** in the commit graph
 
+### 🪾 Worktree Support
+
+- **Worktree indicators** on branches checked out in other worktrees
+- **Create worktrees** from any local branch, with a configurable path template
+- **Open worktrees** in a new window or the current one
+- **Remove worktrees** with optional force and branch deletion
+- **Worktree list** in the toolbar showing main, current, locked, and missing worktrees
+- **Full support** for working inside a linked worktree, including live graph updates
+
 ### 🔄 Commit Operations
 
 - **Cherry-pick commits** with origin tracking options
@@ -206,6 +215,15 @@ Git Go can be customized through VS Code settings. Here are all available config
 ```json
 {
     "git-go.stash.includeUntracked": true // Default 'Include untracked files' when creating stashes
+}
+```
+
+### 🪾 Worktree Operations
+
+```json
+{
+    "git-go.worktree.defaultPath": "../{repo}.worktrees/{branch}", // Path template for new worktrees
+    "git-go.worktree.openNewWindow": true // Open worktrees in a new window by default
 }
 ```
 

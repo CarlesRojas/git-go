@@ -68,6 +68,8 @@ export function activate(context: vscode.ExtensionContext) {
                             resetMode: config.resetMode,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             stashIncludeUntracked: config.stashIncludeUntracked,
+                            worktreeDefaultPath: config.worktreeDefaultPath,
+                            worktreeOpenNewWindow: config.worktreeOpenNewWindow,
                             expandedCommitHeight: config.expandedCommitHeight,
                             showCommitterName: config.showCommitterName,
                             theme: config.theme,
@@ -307,6 +309,35 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'currentBranch', currentBranch };
                 },
 
+                getWorktrees: async () => {
+                    const gitService = GitService.getInstance();
+                    const worktrees = await gitService.getWorktrees(log);
+                    log(`Successfully retrieved ${worktrees.length} worktrees`);
+                    return { type: 'worktrees', worktrees };
+                },
+
+                addWorktree: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { worktreePath, branchName } = message;
+                    if (!worktreePath || !branchName) {
+                        throw new Error('Worktree path and branch name are required');
+                    }
+                    const resolvedPath = await gitService.addWorktree(log, worktreePath, branchName);
+                    log(`Successfully created worktree at '${resolvedPath}' for branch '${branchName}'`);
+                    return { type: 'worktreeAdded', worktreePath: resolvedPath };
+                },
+
+                removeWorktree: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { worktreePath, force, deleteBranch } = message;
+                    if (!worktreePath) {
+                        throw new Error('Worktree path is required');
+                    }
+                    await gitService.removeWorktree(log, worktreePath, force || false, deleteBranch);
+                    log(`Successfully removed worktree at '${worktreePath}'`);
+                    return { type: 'worktreeRemoved', success: true };
+                },
+
                 fetch: async () => {
                     const gitService = GitService.getInstance();
                     await gitService.fetch(log);
@@ -515,6 +546,8 @@ export function activate(context: vscode.ExtensionContext) {
                             resetMode: config.resetMode,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             stashIncludeUntracked: config.stashIncludeUntracked,
+                            worktreeDefaultPath: config.worktreeDefaultPath,
+                            worktreeOpenNewWindow: config.worktreeOpenNewWindow,
                             expandedCommitHeight: config.expandedCommitHeight,
                             showCommitterName: config.showCommitterName,
                             theme: config.theme,
@@ -567,6 +600,23 @@ export function activate(context: vscode.ExtensionContext) {
                         value: stateValue ?? null,
                         requestId: message.requestId
                     });
+                },
+
+                openWorktree: async (message) => {
+                    const worktreePath = message.worktreePath;
+                    if (!worktreePath || typeof worktreePath !== 'string') throw new Error('Worktree path is required');
+
+                    const newWindow = message.newWindow !== false;
+                    log(`Opening worktree '${worktreePath}'${newWindow ? ' in a new window' : ''}`);
+                    try {
+                        await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(worktreePath), {
+                            forceNewWindow: newWindow
+                        });
+                    } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                        log(`Error opening worktree: ${errorMessage}`);
+                        vscode.window.showErrorMessage(`Failed to open worktree: ${errorMessage}`);
+                    }
                 },
 
                 openFile: async (message) => {
@@ -891,42 +941,50 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
     );
 
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    let disposed = false;
+
     if (workspaceFolder) {
-        const gitRefsPattern = new vscode.RelativePattern(workspaceFolder, '.git/refs/**/*');
-        const headPattern = new vscode.RelativePattern(workspaceFolder, '.git/HEAD');
-        const packedRefsPattern = new vscode.RelativePattern(workspaceFolder, '.git/packed-refs');
-        const refsDirectoryPattern = new vscode.RelativePattern(workspaceFolder, '.git/refs');
-        const headLogPattern = new vscode.RelativePattern(workspaceFolder, '.git/logs/HEAD');
-
-        const refsWatcher = vscode.workspace.createFileSystemWatcher(gitRefsPattern);
-        const headWatcher = vscode.workspace.createFileSystemWatcher(headPattern);
-        const packedRefsWatcher = vscode.workspace.createFileSystemWatcher(packedRefsPattern);
-        const refsDirectoryWatcher = vscode.workspace.createFileSystemWatcher(refsDirectoryPattern);
-        const headLogWatcher = vscode.workspace.createFileSystemWatcher(headLogPattern);
-
         const onRefChange = () => notifyChange();
 
-        disposables.push(
-            refsWatcher.onDidCreate(onRefChange),
-            refsWatcher.onDidChange(onRefChange),
-            refsWatcher.onDidDelete(onRefChange),
-            headWatcher.onDidChange(onRefChange),
-            packedRefsWatcher.onDidCreate(onRefChange),
-            packedRefsWatcher.onDidChange(onRefChange),
-            packedRefsWatcher.onDidDelete(onRefChange),
-            refsDirectoryWatcher.onDidCreate(onRefChange),
-            refsDirectoryWatcher.onDidChange(onRefChange),
-            refsDirectoryWatcher.onDidDelete(onRefChange),
-            headLogWatcher.onDidChange(onRefChange),
-            refsWatcher,
-            headWatcher,
-            packedRefsWatcher,
-            refsDirectoryWatcher,
-            headLogWatcher
-        );
+        const watchAll = (base: vscode.Uri, glob: string) => {
+            const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(base, glob));
+            disposables.push(
+                watcher.onDidCreate(onRefChange),
+                watcher.onDidChange(onRefChange),
+                watcher.onDidDelete(onRefChange),
+                watcher
+            );
+        };
+
+        const addGitDirWatchers = (gitDir: vscode.Uri, commonDir: vscode.Uri) => {
+            if (disposed) return;
+
+            // Refs live in the common git dir (shared across worktrees); HEAD is per-worktree
+            watchAll(commonDir, 'refs/**/*');
+            watchAll(commonDir, 'refs');
+            watchAll(commonDir, 'packed-refs');
+            watchAll(commonDir, 'worktrees/**');
+            watchAll(gitDir, 'HEAD');
+            watchAll(gitDir, 'logs/HEAD');
+        };
+
+        // Resolve the real git dirs so watching works when the workspace is a linked worktree
+        // (where .git is a file pointing at <main>/.git/worktrees/<name>)
+        GitService.getInstance()
+            .getGitDirs()
+            .then(({ gitDir, commonDir }) => {
+                addGitDirWatchers(vscode.Uri.file(gitDir), vscode.Uri.file(commonDir));
+                log(`Watching git dirs (git-dir: ${gitDir}, common-dir: ${commonDir})`);
+            })
+            .catch((error) => {
+                log(`Could not resolve git dirs, falling back to workspace .git watchers: ${error}`);
+                const fallback = vscode.Uri.joinPath(workspaceFolder.uri, '.git');
+                addGitDirWatchers(fallback, fallback);
+            });
     }
 
     panel.onDidDispose(() => {
+        disposed = true;
         if (debounceTimer) clearTimeout(debounceTimer);
         disposables.forEach((d) => d.dispose());
     });

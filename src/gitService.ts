@@ -1,4 +1,5 @@
 import * as cp from 'child_process';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { formatGitError } from './util/formatGitError';
 
@@ -23,6 +24,20 @@ export interface GitBranch {
     current: boolean;
     remote: boolean;
     remoteName?: string;
+    worktreePath?: string;
+}
+
+export interface GitWorktree {
+    path: string;
+    name: string;
+    head: string;
+    branch: string | null;
+    cleanBranch: string | null;
+    isMain: boolean;
+    isCurrent: boolean;
+    detached: boolean;
+    locked: boolean;
+    prunable: boolean;
 }
 
 export interface GitExecutable {
@@ -262,12 +277,204 @@ export class GitService {
                 }
             }
 
+            try {
+                const worktrees = await this.getWorktrees(log);
+                const branchToWorktree = new Map<string, string>();
+                for (const worktree of worktrees) {
+                    if (!worktree.isCurrent && worktree.branch) branchToWorktree.set(worktree.branch, worktree.path);
+                }
+
+                if (branchToWorktree.size > 0) {
+                    for (const branch of branches) {
+                        if (branch.remote) continue;
+                        const worktreePath = branchToWorktree.get(branch.name);
+                        if (worktreePath) branch.worktreePath = worktreePath;
+                    }
+                }
+            } catch {
+                // Worktree info is best-effort — branches still work without it
+            }
+
             log(`Found ${branches.length} branches`);
             return branches;
         } catch (error) {
             log(`Error getting git branches: ${error}`);
             throw error;
         }
+    }
+
+    // Worktree operations
+
+    private validateWorktreePath(worktreePath: string): void {
+        if (!worktreePath || worktreePath.trim() === '') throw new Error('Worktree path cannot be empty');
+        if (worktreePath.startsWith('-')) {
+            throw new Error(`Invalid worktree path: '${worktreePath}' (paths cannot start with -)`);
+        }
+        if (/[\x00-\x1f\x7f]/.test(worktreePath)) throw new Error(`Invalid worktree path: '${worktreePath}'`);
+    }
+
+    private normalizeFsPath(fsPath: string): string {
+        const resolved = path.resolve(fsPath);
+        return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+    }
+
+    public async getWorktrees(log: (message: string) => void): Promise<GitWorktree[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const output = await this.spawnGit(
+                [gitExecutable.path, 'worktree', 'list', '--porcelain'],
+                workspacePath
+            );
+
+            let toplevel = workspacePath;
+            try {
+                const toplevelOutput = await this.spawnGit(
+                    [gitExecutable.path, 'rev-parse', '--show-toplevel'],
+                    workspacePath
+                );
+                toplevel = toplevelOutput.trim() || workspacePath;
+            } catch {
+                // Fall back to the workspace path (e.g. bare repositories)
+            }
+            const currentPath = this.normalizeFsPath(toplevel);
+
+            const worktrees: GitWorktree[] = [];
+            const records = output.split(/\r?\n\r?\n/).filter((record) => record.trim());
+
+            records.forEach((record, index) => {
+                const lines = record.split(EOL_REGEX).filter((line) => line.trim());
+
+                let worktreePath = '';
+                let head = '';
+                let branch: string | null = null;
+                let detached = false;
+                let locked = false;
+                let prunable = false;
+                let bare = false;
+
+                for (const line of lines) {
+                    if (line.startsWith('worktree ')) worktreePath = line.substring('worktree '.length);
+                    else if (line.startsWith('HEAD ')) head = line.substring('HEAD '.length).trim();
+                    else if (line.startsWith('branch ')) branch = line.substring('branch '.length).trim();
+                    else if (line === 'detached') detached = true;
+                    else if (line === 'bare') bare = true;
+                    else if (line === 'locked' || line.startsWith('locked ')) locked = true;
+                    else if (line === 'prunable' || line.startsWith('prunable ')) prunable = true;
+                }
+
+                if (!worktreePath || bare) return;
+
+                worktrees.push({
+                    path: worktreePath,
+                    name: path.basename(worktreePath),
+                    head,
+                    branch,
+                    cleanBranch: branch ? branch.replace(/^refs\/heads\//, '') : null,
+                    isMain: index === 0,
+                    isCurrent: this.normalizeFsPath(worktreePath) === currentPath,
+                    detached,
+                    locked,
+                    prunable
+                });
+            });
+
+            log(`Found ${worktrees.length} worktree(s)`);
+            return worktrees;
+        } catch (error) {
+            log(`Error getting worktrees: ${error}`);
+            throw error;
+        }
+    }
+
+    public async addWorktree(
+        log: (message: string) => void,
+        worktreePath: string,
+        branchName: string
+    ): Promise<string> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        // Validate branch name and worktree path
+        this.validateRefName(`refs/heads/${branchName}`);
+        this.validateWorktreePath(worktreePath);
+
+        try {
+            log(`Creating worktree at '${worktreePath}' for branch '${branchName}'`);
+            await this.spawnGit(
+                [gitExecutable.path, 'worktree', 'add', '--', worktreePath, branchName],
+                workspacePath
+            );
+
+            const resolvedPath = path.resolve(workspacePath, worktreePath);
+            log(`Successfully created worktree at '${resolvedPath}'`);
+            return resolvedPath;
+        } catch (error) {
+            log(`Error creating worktree: ${error}`);
+            throw error;
+        }
+    }
+
+    public async removeWorktree(
+        log: (message: string) => void,
+        worktreePath: string,
+        force: boolean = false,
+        deleteBranch?: string
+    ): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        // Validate worktree path
+        this.validateWorktreePath(worktreePath);
+
+        try {
+            log(`Removing worktree at '${worktreePath}'${force ? ' (force)' : ''}`);
+            const args = [gitExecutable.path, 'worktree', 'remove'];
+            if (force) args.push('--force');
+            args.push('--', worktreePath);
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully removed worktree at '${worktreePath}'`);
+        } catch (error) {
+            log(`Error removing worktree: ${error}`);
+            throw error;
+        }
+
+        if (deleteBranch) {
+            await this.deleteBranch(log, deleteBranch, force);
+        }
+    }
+
+    public async getGitDirs(): Promise<{ gitDir: string; commonDir: string }> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        const output = await this.spawnGit(
+            [gitExecutable.path, 'rev-parse', '--git-dir', '--git-common-dir'],
+            workspacePath
+        );
+
+        const [gitDirRaw, commonDirRaw] = output
+            .split(EOL_REGEX)
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+        const gitDir = path.resolve(workspacePath, gitDirRaw ?? '.git');
+        const commonDir = path.resolve(workspacePath, commonDirRaw ?? gitDirRaw ?? '.git');
+        return { gitDir, commonDir };
     }
 
     private async getStashInfo(workspacePath: string, gitPath: string): Promise<Map<string, string>> {

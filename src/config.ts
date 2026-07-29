@@ -139,6 +139,20 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.worktree.defaultPath` Extension Setting.
+     */
+    get worktreeDefaultPath(): string {
+        return this.config.get('worktree.defaultPath', '../{repo}.worktrees/{branch}');
+    }
+
+    /**
+     * Get the value of the `git-go.worktree.openNewWindow` Extension Setting.
+     */
+    get worktreeOpenNewWindow(): boolean {
+        return !!this.config.get('worktree.openNewWindow', true);
+    }
+
+    /**
      * Get the value of the `git-go.graph.expandedCommitHeight` Extension Setting.
      */
     get expandedCommitHeight(): number {

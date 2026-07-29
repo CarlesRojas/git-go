@@ -2,6 +2,7 @@ import { BranchSelector } from '@/component/BranchSelector'
 import { Graph } from '@/component/Graph'
 import { RefetchButton } from '@/component/RefreshButton'
 import { SearchInput } from '@/component/SearchInput'
+import { WorktreeMenu } from '@/component/WorktreeMenu'
 import { SettingsProvider } from '@/context/SettingsContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { cn } from '@/util/cn'
@@ -79,6 +80,9 @@ export const App: FC = () => {
                 <SearchInput value={searchTerm} onChange={setSearchTerm} />
 
                 <RefetchButton />
+
+                <WorktreeMenu />
+
                 <RepoSettings />
               </div>
             </div>

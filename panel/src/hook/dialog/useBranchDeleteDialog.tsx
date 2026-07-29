@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/component/ui/Label'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
-import { useDeleteBranch } from '@/hook/useGitQueries'
-import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { useDeleteBranch, useRemoveWorktree } from '@/hook/useGitQueries'
+import { faCircleNotch, faFolderTree, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
@@ -19,35 +19,42 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const deleteBranchMutation = useDeleteBranch()
+  const removeWorktreeMutation = useRemoveWorktree()
   const { settings } = useSettings()
+
+  const isPending = deleteBranchMutation.isPending || removeWorktreeMutation.isPending
 
   const deleteForm = useForm({
     defaultValues: {
       force: settings.branchDeleteForce,
     },
     onSubmit: async ({ value }) => {
-      deleteBranchMutation.mutate(
-        {
-          branchName: branch.cleanName,
-          force: value.force,
+      const callbacks = {
+        onSuccess: () => {
+          showToast({
+            text: `Branch '${branch.cleanName}' deleted successfully`,
+            icon: faTrash,
+            type: 'success' as const,
+          })
         },
-        {
-          onSuccess: () => {
-            showToast({
-              text: `Branch '${branch.cleanName}' deleted successfully`,
-              icon: faTrash,
-              type: 'success',
-            })
-          },
-          onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faTrash })
-          },
-          onSettled: () => {
-            setShowDeleteDialog(false)
-            deleteForm.reset()
-          },
+        onError: (error: Error) => {
+          showToast({ text: error.message, type: 'error', icon: faTrash })
         },
-      )
+        onSettled: () => {
+          setShowDeleteDialog(false)
+          deleteForm.reset()
+        },
+      }
+
+      if (branch.worktreePath) {
+        removeWorktreeMutation.mutate(
+          { worktreePath: branch.worktreePath, force: value.force, deleteBranch: branch.cleanName },
+          callbacks,
+        )
+        return
+      }
+
+      deleteBranchMutation.mutate({ branchName: branch.cleanName, force: value.force }, callbacks)
     },
   })
 
@@ -72,6 +79,16 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
           }}
         >
           <div className="flex flex-col gap-3">
+            {branch.worktreePath && (
+              <div className="flex items-center gap-2 text-xs">
+                <FontAwesomeIcon icon={faFolderTree} className="size-3 opacity-70" />
+
+                <span className="opacity-70">
+                  This branch is checked out in worktree {branch.worktreePath}. The worktree will be removed too.
+                </span>
+              </div>
+            )}
+
             <deleteForm.Field name="force">
               {field => (
                 <div className="flex items-center">
@@ -93,8 +110,8 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
               Cancel
             </Button>
 
-            <Button type="submit" variant="destructive" disabled={deleteBranchMutation.isPending}>
-              {deleteBranchMutation.isPending ? (
+            <Button type="submit" variant="destructive" disabled={isPending}>
+              {isPending ? (
                 <FontAwesomeIcon icon={faCircleNotch} className="size-3 animate-spin" />
               ) : (
                 <>

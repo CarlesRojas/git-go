@@ -138,7 +138,12 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
         const item = {
           value: baseName,
           label: baseName,
-          icon: getBranchIcons({ isLocal: !!local, hasRemote: remotes.length > 0, isCurrent: local?.current }),
+          icon: getBranchIcons({
+            isLocal: !!local,
+            hasRemote: remotes.length > 0,
+            isCurrent: local?.current,
+            inWorktree: !!local?.worktreePath,
+          }),
         }
 
         if (selectedBranches.includes(baseName)) selectedBranchesGroup.push(item)

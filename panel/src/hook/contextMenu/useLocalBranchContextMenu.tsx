@@ -12,12 +12,15 @@ import { useBranchMergeIntoCurrentDialog } from '@/hook/dialog/useBranchMergeDia
 import { useBranchPushDialog } from '@/hook/dialog/useBranchPushDialog'
 import { useRebaseCurrentBranchIntoBranch } from '@/hook/dialog/useBranchRebaseDialog'
 import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
+import { useWorktreeCreateDialog } from '@/hook/dialog/useWorktreeCreateDialog'
+import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
 import {
   faCheck,
   faClone,
   faCodeBranch,
   faCodeMerge,
+  faFolderTree,
   faPen,
   faTrash,
   faUpload,
@@ -50,12 +53,24 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
   const pushDialog = useBranchPushDialog({ branch: branch ?? EMPTY_BRANCH })
   const mergeDialog = useBranchMergeIntoCurrentDialog({ branch: branch ?? EMPTY_BRANCH })
   const rebaseDialog = useRebaseCurrentBranchIntoBranch({ branch: branch ?? EMPTY_BRANCH })
+  const worktreeCreateDialog = useWorktreeCreateDialog({ branch })
+  const worktreeOpenDialog = useWorktreeOpenDialog()
+
+  const handleOpenWorktree = () => {
+    if (!branch?.worktreePath) return
+    worktreeOpenDialog.openDialog({ worktreePath: branch.worktreePath, branchName: branch.cleanName })
+  }
 
   const handleCheckout = () => {
     if (!branch) return
 
     if (branch.remote) {
       showToast({ text: 'Cannot checkout remote branches directly', type: 'error', icon: faCodeBranch })
+      return
+    }
+
+    if (branch.worktreePath) {
+      handleOpenWorktree()
       return
     }
 
@@ -100,10 +115,24 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
           >
             <ContextMenuLabel>Local Branch actions</ContextMenuLabel>
 
-            {!branch.current && (
+            {!branch.current && !branch.worktreePath && (
               <ContextMenuItem onClick={handleCheckout}>
                 <FontAwesomeIcon icon={faCheck} className="size-3" />
                 Checkout
+              </ContextMenuItem>
+            )}
+
+            {!branch.current && !!branch.worktreePath && (
+              <ContextMenuItem onClick={handleOpenWorktree}>
+                <FontAwesomeIcon icon={faFolderTree} className="size-3" />
+                Open Worktree
+              </ContextMenuItem>
+            )}
+
+            {!branch.current && !branch.worktreePath && (
+              <ContextMenuItem onClick={worktreeCreateDialog.openDialog}>
+                <FontAwesomeIcon icon={faFolderTree} className="size-3" />
+                Create Worktree
               </ContextMenuItem>
             )}
 
@@ -165,6 +194,8 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
         {pushDialog.DialogComponent}
         {mergeDialog.DialogComponent}
         {rebaseDialog.DialogComponent}
+        {worktreeCreateDialog.DialogComponent}
+        {worktreeOpenDialog.DialogComponent}
       </>
     ),
   }

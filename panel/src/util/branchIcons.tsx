@@ -1,11 +1,12 @@
 import { cn } from '@/util/cn'
-import { faCloud, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { faCloud, faCodeBranch, faFolderTree } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 interface Props {
   isLocal?: boolean
   hasRemote?: boolean
   isCurrent?: boolean
+  inWorktree?: boolean
   black?: boolean
   white?: boolean
 }
@@ -14,10 +15,24 @@ export const getBranchIcons = ({
   isLocal = false,
   hasRemote = false,
   isCurrent = false,
+  inWorktree = false,
   black = false,
   white = false,
 }: Props) => {
   const icons = []
+
+  if (inWorktree)
+    icons.push(
+      <FontAwesomeIcon
+        key="worktree"
+        icon={faFolderTree}
+        className={cn(
+          'text-vsc-editor-fg/70 size-2.5 max-w-2.5',
+          black && 'text-vsc-editor-bg/80',
+          white && 'text-vsc-editor-fg/80',
+        )}
+      />,
+    )
 
   if (isCurrent)
     icons.push(
