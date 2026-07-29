@@ -49,7 +49,7 @@ export const getBranchIcons = ({
       </svg>,
     )
 
-  if (isLocal)
+  if (isLocal && !inWorktree)
     icons.push(
       <FontAwesomeIcon
         key="local"

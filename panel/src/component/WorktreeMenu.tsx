@@ -7,11 +7,13 @@ import {
   ComboboxValue,
 } from '@/component/ui/Combobox'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
+import { useWorktreeRemoveDialog } from '@/hook/dialog/useWorktreeRemoveDialog'
 import { useWorktrees } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/util/branchIcons'
-import { faFolderTree } from '@fortawesome/free-solid-svg-icons'
+import { faFolderTree, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitWorktree } from '@git/gitService'
-import { FC, useMemo } from 'react'
+import { FC, MouseEvent, PointerEvent, useMemo } from 'react'
 
 const getWorktreeLabel = (worktree: GitWorktree) =>
   worktree.cleanBranch ?? (worktree.detached ? `${worktree.head.substring(0, 7)} (detached)` : worktree.name)
@@ -19,6 +21,7 @@ const getWorktreeLabel = (worktree: GitWorktree) =>
 export const WorktreeMenu: FC = () => {
   const { data: worktrees = [] } = useWorktrees()
   const openDialog = useWorktreeOpenDialog()
+  const removeDialog = useWorktreeRemoveDialog()
 
   const currentWorktree = worktrees.find(worktree => worktree.isCurrent)
 
@@ -38,16 +41,16 @@ export const WorktreeMenu: FC = () => {
   return (
     <>
       <Combobox items={items} value={currentWorktree?.path ?? ''} onValueChange={handleValueChange}>
-        <ComboboxTrigger icon={faFolderTree} className="w-fit max-w-48 min-w-32">
+        <ComboboxTrigger icon={faFolderTree} className="w-fit max-w-56">
           <ComboboxValue>
             <span className="truncate">{currentWorktree ? getWorktreeLabel(currentWorktree) : 'Worktrees'}</span>
           </ComboboxValue>
         </ComboboxTrigger>
 
         <ComboboxContent>
-          <ComboboxList className="p-1">
+          <ComboboxList>
             {(item: { value: string; worktree: GitWorktree }) => (
-              <ComboboxItem key={item.value} value={item.value}>
+              <ComboboxItem key={item.value} value={item.value} className="group/worktree">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   {getBranchIcons({ inWorktree: true })}
 
@@ -59,6 +62,28 @@ export const WorktreeMenu: FC = () => {
                     </span>
                   )}
                 </div>
+
+                {!item.worktree.isCurrent && !item.worktree.isMain && (
+                  <button
+                    className="text-vsc-error-fg absolute right-2 hidden size-3 cursor-pointer items-center justify-center opacity-70 group-data-highlighted/worktree:flex hover:opacity-100"
+                    title="Remove worktree"
+                    onPointerDown={(e: PointerEvent) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                    }}
+                    onMouseDown={(e: MouseEvent) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                    }}
+                    onClick={(e: MouseEvent) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      removeDialog.openDialog(item.worktree)
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faTrash} className="size-3" />
+                  </button>
+                )}
               </ComboboxItem>
             )}
           </ComboboxList>
@@ -66,6 +91,7 @@ export const WorktreeMenu: FC = () => {
       </Combobox>
 
       {openDialog.DialogComponent}
+      {removeDialog.DialogComponent}
     </>
   )
 }
