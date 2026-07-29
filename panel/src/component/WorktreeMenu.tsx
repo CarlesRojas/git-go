@@ -48,7 +48,7 @@ export const WorktreeMenu: FC = () => {
         </ComboboxTrigger>
 
         <ComboboxContent>
-          <ComboboxList>
+          <ComboboxList className="pt-radius">
             {(item: { value: string; worktree: GitWorktree }) => (
               <ComboboxItem key={item.value} value={item.value} className="group/worktree">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
