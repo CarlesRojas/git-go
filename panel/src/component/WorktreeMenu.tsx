@@ -49,15 +49,9 @@ export const WorktreeMenu: FC = () => {
             {(item: { value: string; worktree: GitWorktree }) => (
               <ComboboxItem key={item.value} value={item.value}>
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  {getBranchIcons({ inWorktree: true, isCurrent: item.worktree.isCurrent })}
+                  {getBranchIcons({ inWorktree: true })}
 
                   <span className="truncate">{getWorktreeLabel(item.worktree)}</span>
-
-                  {item.worktree.isMain && (
-                    <span className="rounded-main border-vsc-editor-fg/20 bg-vsc-editor-fg/10 border px-1 text-[0.65rem] opacity-70">
-                      main
-                    </span>
-                  )}
 
                   {item.worktree.prunable && (
                     <span className="rounded-main border-vsc-editor-fg/20 bg-vsc-editor-fg/10 border px-1 text-[0.65rem] opacity-70">
