@@ -223,7 +223,8 @@ Git Go can be customized through VS Code settings. Here are all available config
 ```json
 {
     "git-go.worktree.defaultPath": "../{repo}.worktrees/{branch}", // Path template for new worktrees
-    "git-go.worktree.openNewWindow": true // Open worktrees in a new window by default
+    "git-go.worktree.openNewWindow": true, // Open worktrees in a new window by default
+    "git-go.worktree.openBehavior": "ask" // 'ask' | 'newWindow' | 'currentWindow' when opening a worktree
 }
 ```
 

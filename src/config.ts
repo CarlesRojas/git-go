@@ -153,6 +153,17 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.worktree.openBehavior` Extension Setting.
+     */
+    get worktreeOpenBehavior(): 'ask' | 'newWindow' | 'currentWindow' {
+        const value = this.config.get<string>('worktree.openBehavior', 'ask');
+        if (value === 'ask' || value === 'newWindow' || value === 'currentWindow') {
+            return value;
+        }
+        return 'ask';
+    }
+
+    /**
      * Get the value of the `git-go.graph.expandedCommitHeight` Extension Setting.
      */
     get expandedCommitHeight(): number {

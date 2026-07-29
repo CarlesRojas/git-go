@@ -207,6 +207,21 @@
                     "type": "boolean",
                     "default": true,
                     "markdownDescription": "**Worktree Operations:** Default value for 'Open in new window' when creating or opening a worktree."
+                },
+                "git-go.worktree.openBehavior": {
+                    "type": "string",
+                    "enum": [
+                        "ask",
+                        "newWindow",
+                        "currentWindow"
+                    ],
+                    "enumDescriptions": [
+                        "Ask every time whether to open the worktree in a new window or the current one",
+                        "Always open worktrees in a new window",
+                        "Always open worktrees in the current window"
+                    ],
+                    "default": "ask",
+                    "markdownDescription": "**Worktree Operations:** What to do when opening a worktree."
                 }
             }
         }

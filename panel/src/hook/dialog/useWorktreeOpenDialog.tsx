@@ -1,5 +1,6 @@
 import { Button } from '@/component/ui/Button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
+import { useSettings } from '@/context/SettingsContext'
 import { openWorktree } from '@/hook/useGitQueries'
 import { faFolderTree, faWindowRestore } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -11,10 +12,16 @@ interface WorktreeOpenTarget {
 }
 
 export const useWorktreeOpenDialog = () => {
+  const { settings } = useSettings()
   const [showOpenDialog, setShowOpenDialog] = useState(false)
   const [target, setTarget] = useState<WorktreeOpenTarget | null>(null)
 
   const openDialog = (newTarget: WorktreeOpenTarget) => {
+    if (settings.worktreeOpenBehavior !== 'ask') {
+      openWorktree(newTarget.worktreePath, settings.worktreeOpenBehavior === 'newWindow')
+      return
+    }
+
     setTarget(newTarget)
     setShowOpenDialog(true)
   }

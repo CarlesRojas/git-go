@@ -59,6 +59,7 @@ export interface ConfigState {
   stashIncludeUntracked: boolean
   worktreeDefaultPath: string
   worktreeOpenNewWindow: boolean
+  worktreeOpenBehavior: 'ask' | 'newWindow' | 'currentWindow'
   expandedCommitHeight: number
   showCommitterName: boolean
   theme: string
@@ -84,6 +85,7 @@ const defaultConfigState: ConfigState = {
   stashIncludeUntracked: true,
   worktreeDefaultPath: '../{repo}.worktrees/{branch}',
   worktreeOpenNewWindow: true,
+  worktreeOpenBehavior: 'ask',
   expandedCommitHeight: 300,
   showCommitterName: true,
   theme: 'vibrant',
