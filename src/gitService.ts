@@ -1130,7 +1130,9 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
-        // Validate tag name
+        // Validate tag name. Git allows commas in refs, but the extension parses
+        // comma-separated decorations and branch listings, so commas are banned
+        if (tagName.includes(',')) throw new Error('Tag names cannot contain commas');
         this.validateRefName(`refs/tags/${tagName}`);
 
         try {

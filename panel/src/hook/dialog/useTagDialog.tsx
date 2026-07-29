@@ -75,7 +75,8 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
           <tagForm.Field
             name="tagName"
             validators={{
-              onChange: ({ value }) => (!value ? 'Tag name is required' : undefined),
+              onChange: ({ value }) =>
+                !value ? 'Tag name is required' : value.includes(',') ? 'Tag name cannot contain commas' : undefined,
             }}
             children={field => (
               <div className="flex flex-col gap-1">
