@@ -1,6 +1,7 @@
 import { useSettings } from '@/context/SettingsContext'
 import { useStashContextMenu } from '@/hook/contextMenu/useStashContextMenu'
 import { useTagContextMenu } from '@/hook/contextMenu/useTagContextMenu'
+import { useTagRemotes } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
 import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -11,6 +12,7 @@ interface StashTagPillProps {
   type: 'stash' | 'tag'
   label: string
   commit: GitCommit
+  remoteOnly?: boolean
 }
 
 export function formatStash(ref: string): string {
@@ -18,7 +20,7 @@ export function formatStash(ref: string): string {
   return match ? `Stash ${match[1]}` : ref
 }
 
-const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
+const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly = false }) => {
   const { settings } = useSettings()
 
   // Move hooks before any early returns to comply with React rules
@@ -29,14 +31,25 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
   const { tagContextMenuWrapper, dialogs: tagDialogs } = useTagContextMenu({
     tagName: type === 'tag' ? label : undefined,
     commit,
+    remoteOnly,
   })
+
+  const { data: tagRemotes } = useTagRemotes(type === 'tag' && settings.showTags)
 
   // Early returns after hooks
   if (type === 'stash' && !settings.showStashes) return null
   if (type === 'tag' && !settings.showTags) return null
 
+  // Only remotes whose tag points at this commit — a moved remote tag shows on its own commit
+  const remotesWithTag =
+    type === 'tag' && tagRemotes
+      ? tagRemotes
+          .filter(({ tags }) => tags.some(({ name, hash }) => name === label && hash === commit.hash))
+          .map(({ remote }) => remote)
+      : []
+
   const icon = type === 'stash' ? faInbox : faTag
-  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : 'text-amber-500'
+  const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : remoteOnly ? 'text-vsc-editor-fg/50' : 'text-amber-500'
 
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
     if (type === 'tag') return tagContextMenuWrapper(children)
@@ -57,18 +70,29 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit }) => {
           <div
             className={cn(
               // Layout & sizing
-              'flex h-5 max-h-5 min-h-5 min-w-fit items-center',
+              'flex h-5 max-h-5 min-h-5 min-w-fit items-center overflow-hidden',
               // Spacing
-              'rounded-main gap-1.5 px-1',
+              'rounded-main',
               // Colors
               'border-vsc-editor-fg/20 bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20 text-vsc-editor-fg border',
             )}
           >
-            <FontAwesomeIcon icon={icon} className={cn('size-3 max-w-3', iconColor)} />
+            <div className="flex h-full min-w-fit items-center gap-1.5 px-1">
+              <FontAwesomeIcon icon={icon} className={cn('size-3 max-w-3', iconColor)} />
 
-            <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
-              {type === 'stash' ? formatStash(label) : label}
-            </span>
+              <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
+                {type === 'stash' ? formatStash(label) : label}
+              </span>
+            </div>
+
+            {remotesWithTag.map(remote => (
+              <div
+                key={remote}
+                className="border-vsc-editor-fg/20 flex h-full w-fit min-w-fit items-center border-l px-1.5"
+              >
+                <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">{remote}</span>
+              </div>
+            ))}
           </div>
         </div>
       </ContextMenuToUse>

@@ -1,7 +1,7 @@
 import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { sendCorrelatedMessage } from '@/util/sendCorrelatedMessage'
-import type { GitBranch, GitCommit, GitFileChange, GitRemote, GitWorktree } from '@git/gitService'
+import type { GitBranch, GitCommit, GitFileChange, GitRemote, GitTagRemoteStatus, GitWorktree } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 
@@ -106,6 +106,9 @@ export const queryKeys = {
   repoName: ['git', 'repo-name'] as const,
   gitUserConfig: ['git', 'user-config'] as const,
   tagDetails: (tagName: string) => ['git', 'tag-details', tagName] as const,
+  // Deliberately outside the 'git' namespace: resolving it hits the network (ls-remote),
+  // so it must not be refetched by the blanket 'git' invalidation after every mutation
+  tagRemotes: ['remote-tags'] as const,
   state: (key: string) => ['state', key] as const,
   theme: ['theme'] as const,
 }
@@ -222,6 +225,7 @@ export const useFetchFromGit = (options?: { onSuccess?: () => void; onError?: (e
     },
     onSuccess: () => {
       refreshGitData(queryClient)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tagRemotes })
       options?.onSuccess?.()
     },
     onError: (error: Error) => {
@@ -452,11 +456,7 @@ export const useAddWorktree = () => {
 
   return useMutation({
     mutationFn: async ({ worktreePath, branchName }: { worktreePath: string; branchName: string }) => {
-      return await sendCorrelatedMessage<{ worktreePath: string }>(
-        'addWorktree',
-        { worktreePath, branchName },
-        30_000,
-      )
+      return await sendCorrelatedMessage<{ worktreePath: string }>('addWorktree', { worktreePath, branchName }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)
@@ -706,6 +706,19 @@ export const useGetTagDetails = (tagName: string, enabled: boolean = true) => {
   })
 }
 
+export const useTagRemotes = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: queryKeys.tagRemotes,
+    queryFn: async (): Promise<GitTagRemoteStatus[]> => {
+      const response = await sendCorrelatedMessage<{ tagRemotes: GitTagRemoteStatus[] }>('getTagRemotes', {}, 30_000)
+      return response.tagRemotes
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
 export const usePushTag = () => {
   const queryClient = useQueryClient()
 
@@ -715,6 +728,7 @@ export const usePushTag = () => {
     },
     onSuccess: () => {
       refreshGitData(queryClient)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tagRemotes })
     },
   })
 }
@@ -723,11 +737,20 @@ export const useDeleteTag = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ tagName, deleteOnRemote }: { tagName: string; deleteOnRemote?: string }) => {
-      return await sendCorrelatedMessage('deleteTag', { tagName, deleteOnRemote }, 10_000)
+    mutationFn: async ({
+      tagName,
+      deleteOnRemotes = [],
+      deleteLocal = true,
+    }: {
+      tagName: string
+      deleteOnRemotes?: string[]
+      deleteLocal?: boolean
+    }) => {
+      return await sendCorrelatedMessage('deleteTag', { tagName, deleteOnRemotes, deleteLocal }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tagRemotes })
     },
   })
 }
@@ -914,6 +937,7 @@ export const useAddGitRemote = () => {
     },
     onSuccess: () => {
       refreshGitData(queryClient)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tagRemotes })
     },
   })
 }
@@ -927,6 +951,7 @@ export const useRemoveGitRemote = () => {
     },
     onSuccess: () => {
       refreshGitData(queryClient)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tagRemotes })
     },
   })
 }

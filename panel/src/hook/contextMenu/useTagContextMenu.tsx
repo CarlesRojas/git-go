@@ -19,6 +19,7 @@ import { useCopyToClipboard } from 'usehooks-ts'
 interface UseTagContextMenuProps {
   commit: GitCommit
   tagName?: string
+  remoteOnly?: boolean
 }
 
 interface TagContextMenuWrapperProps {
@@ -26,6 +27,7 @@ interface TagContextMenuWrapperProps {
   enabled?: boolean
   commit?: GitCommit
   tagName?: string
+  remoteOnly?: boolean
   onViewDetails: () => void
   onPush: () => void
   onDelete: () => void
@@ -38,6 +40,7 @@ const TagContextMenuWrapper = memo(
     enabled = true,
     commit,
     tagName,
+    remoteOnly = false,
     onViewDetails,
     onPush,
     onDelete,
@@ -59,15 +62,19 @@ const TagContextMenuWrapper = memo(
         >
           <ContextMenuLabel>Tag actions</ContextMenuLabel>
 
-          <ContextMenuItem onClick={onViewDetails}>
-            <FontAwesomeIcon icon={faEye} className="size-3" />
-            View details
-          </ContextMenuItem>
+          {!remoteOnly && (
+            <ContextMenuItem onClick={onViewDetails}>
+              <FontAwesomeIcon icon={faEye} className="size-3" />
+              View details
+            </ContextMenuItem>
+          )}
 
-          <ContextMenuItem onClick={onPush}>
-            <FontAwesomeIcon icon={faUpload} className="size-3" />
-            Push
-          </ContextMenuItem>
+          {!remoteOnly && (
+            <ContextMenuItem onClick={onPush}>
+              <FontAwesomeIcon icon={faUpload} className="size-3" />
+              Push
+            </ContextMenuItem>
+          )}
 
           <ContextMenuItem onClick={onDelete} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
@@ -88,7 +95,7 @@ const TagContextMenuWrapper = memo(
 
 TagContextMenuWrapper.displayName = 'TagContextMenuWrapper'
 
-export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) => {
+export const useTagContextMenu = ({ commit, tagName, remoteOnly = false }: UseTagContextMenuProps) => {
   const { showToast } = useToast()
   const [, copy] = useCopyToClipboard()
 
@@ -115,9 +122,10 @@ export const useTagContextMenu = ({ commit, tagName }: UseTagContextMenuProps) =
       enabled={enabled}
       commit={commit}
       tagName={tagName}
+      remoteOnly={remoteOnly}
       onViewDetails={handleViewDetails}
       onPush={() => tagName && pushDialog.openDialog(commit, tagName)}
-      onDelete={() => tagName && deleteDialog.openDialog(tagName)}
+      onDelete={() => tagName && deleteDialog.openDialog(tagName, { deleteLocal: !remoteOnly })}
       onCopy={handleCopyTagName}
     >
       {children}

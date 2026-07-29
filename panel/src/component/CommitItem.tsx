@@ -6,7 +6,7 @@ import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
 import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
-import { useCurrentBranch, useGitBranches, useGitCommitFiles } from '@/hook/useGitQueries'
+import { useCurrentBranch, useGitBranches, useGitCommitFiles, useTagRemotes } from '@/hook/useGitQueries'
 import { getColor } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
@@ -66,6 +66,19 @@ export const CommitItem: FC<CommitItemProps> = ({
     [selectedBranches, commit.hash],
   )
 
+  const { data: tagRemotes = [] } = useTagRemotes(settings.showTags)
+
+  // Tags that exist on a remote at this commit but have no local counterpart here
+  const remoteOnlyTags = useMemo(() => {
+    const names = new Set<string>()
+    for (const { tags } of tagRemotes) {
+      for (const tag of tags) {
+        if (tag.hash === commit.hash && !commit.tags.includes(tag.name)) names.add(tag.name)
+      }
+    }
+    return [...names]
+  }, [tagRemotes, commit.hash, commit.tags])
+
   const copyText = (text: string, label: string) => {
     copy(text)
     showToast({ text: `${label} copied to clipboard`, icon: faCheckCircle, type: 'info' })
@@ -94,7 +107,9 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const hasPills =
     !commit.isUncommitted &&
-    (Object.keys(groupedBranches).length > 0 || commit.isStash || (commit.tags.length > 0 && settings.showTags))
+    (Object.keys(groupedBranches).length > 0 ||
+      commit.isStash ||
+      ((commit.tags.length > 0 || remoteOnlyTags.length > 0) && settings.showTags))
 
   const pills = (
     <div
@@ -134,6 +149,10 @@ export const CommitItem: FC<CommitItemProps> = ({
 
       {commit.tags.length > 0 &&
         commit.tags.map(tag => <StashTagPill key={tag} type="tag" label={tag} commit={commit} />)}
+
+      {remoteOnlyTags.map(tag => (
+        <StashTagPill key={`remote-${tag}`} type="tag" label={tag} commit={commit} remoteOnly />
+      ))}
     </div>
   )
 

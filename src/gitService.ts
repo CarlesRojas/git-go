@@ -68,6 +68,16 @@ export interface GitTagDetails {
     message: string;
 }
 
+export interface GitRemoteTag {
+    name: string;
+    hash: string; // commit the tag points at (peeled for annotated tags)
+}
+
+export interface GitTagRemoteStatus {
+    remote: string;
+    tags: GitRemoteTag[];
+}
+
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
@@ -78,6 +88,7 @@ const EOL_REGEX = /\r\n|\r|\n/g;
 
 export class GitService {
     private static instance: GitService;
+    private static readonly LS_REMOTE_TIMEOUT_MS = 15_000;
     private cachedGitExecutable: GitExecutable | null = null;
 
     private constructor() {}
@@ -158,7 +169,7 @@ export class GitService {
         throw new Error('Unable to find Git executable. Please install Git or configure the git.path setting.');
     }
 
-    private spawnGit(args: string[], cwd: string): Promise<string> {
+    private spawnGit(args: string[], cwd: string, timeoutMs?: number): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!args.length || !args[0]) {
                 reject(new Error('No command provided'));
@@ -172,6 +183,13 @@ export class GitService {
 
             let stdout = '';
             let stderr = '';
+            let timedOut = false;
+            const timeout = timeoutMs
+                ? setTimeout(() => {
+                      timedOut = true;
+                      gitProcess.kill();
+                  }, timeoutMs)
+                : undefined;
 
             gitProcess.stdout?.on('data', (data: Buffer) => {
                 stdout += data.toString();
@@ -182,7 +200,10 @@ export class GitService {
             });
 
             gitProcess.on('close', (code: number | null) => {
-                if (code === 0) {
+                if (timeout) clearTimeout(timeout);
+                if (timedOut) {
+                    reject(new Error(`Git command timed out after ${timeoutMs}ms`));
+                } else if (code === 0) {
                     resolve(stdout);
                 } else {
                     reject(new Error(formatGitError(stderr || stdout)));
@@ -190,6 +211,7 @@ export class GitService {
             });
 
             gitProcess.on('error', (error: Error) => {
+                if (timeout) clearTimeout(timeout);
                 reject(error);
             });
         });
@@ -1108,7 +1130,9 @@ export class GitService {
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();
 
-        // Validate tag name
+        // Validate tag name. Git allows commas in refs, but the extension parses
+        // comma-separated decorations and branch listings, so commas are banned
+        if (tagName.includes(',')) throw new Error('Tag names cannot contain commas');
         this.validateRefName(`refs/tags/${tagName}`);
 
         try {
@@ -1899,7 +1923,12 @@ export class GitService {
         }
     }
 
-    public async deleteTag(log: (message: string) => void, tagName: string, deleteOnRemote?: string): Promise<void> {
+    public async deleteTag(
+        log: (message: string) => void,
+        tagName: string,
+        deleteOnRemotes: string[] = [],
+        deleteLocal: boolean = true
+    ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -1909,26 +1938,97 @@ export class GitService {
         // Validate tag name
         this.validateRefName(`refs/tags/${tagName}`);
 
-        // Validate remote name if provided
-        if (deleteOnRemote) {
-            this.validatePositional(deleteOnRemote, 'remote name');
+        // Validate all remote names
+        for (const remote of deleteOnRemotes) {
+            this.validatePositional(remote, 'remote name');
         }
 
         try {
-            // Delete local tag
-            await this.spawnGit([gitExecutable.path, 'tag', '-d', '--', tagName], workspacePath);
-            log(`Successfully deleted local tag ${tagName}`);
+            if (deleteLocal) {
+                await this.spawnGit([gitExecutable.path, 'tag', '-d', '--', tagName], workspacePath);
+                log(`Successfully deleted local tag ${tagName}`);
+            }
 
-            // Delete remote tag if specified
-            if (deleteOnRemote) {
-                await this.spawnGit(
-                    [gitExecutable.path, 'push', '--delete', '--', deleteOnRemote, tagName],
-                    workspacePath
-                );
-                log(`Successfully deleted tag ${tagName} from remote ${deleteOnRemote}`);
+            for (const remote of deleteOnRemotes) {
+                await this.spawnGit([gitExecutable.path, 'push', '--delete', '--', remote, tagName], workspacePath);
+                log(`Successfully deleted tag ${tagName} from remote ${remote}`);
             }
         } catch (error) {
             log(`Error deleting tag: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the tags that exist on each remote. Git keeps no local record of remote tags
+     * (there is no refs/remotes/<remote>/tags namespace), so this queries each remote
+     * over the network with `git ls-remote`. Remotes that cannot be reached are omitted
+     * from the result rather than failing the whole call.
+     */
+    public async getTagRemotes(log: (message: string) => void): Promise<GitTagRemoteStatus[]> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            const remoteOutput = await this.spawnGit([gitExecutable.path, 'remote'], workspacePath);
+            const remoteNames = remoteOutput
+                .split(EOL_REGEX)
+                .map((name) => name.trim())
+                .filter((name) => !!name);
+
+            if (remoteNames.length === 0) return [];
+
+            log(`Querying tags on ${remoteNames.length} remote(s): ${remoteNames.join(', ')}`);
+
+            const results = await Promise.allSettled(
+                remoteNames.map(async (remote): Promise<GitTagRemoteStatus> => {
+                    this.validatePositional(remote, 'remote name');
+
+                    const output = await this.spawnGit(
+                        [gitExecutable.path, 'ls-remote', '--tags', '--', remote],
+                        workspacePath,
+                        GitService.LS_REMOTE_TIMEOUT_MS
+                    );
+
+                    // Annotated tags appear twice: refs/tags/x (tag object) and the
+                    // peeled refs/tags/x^{} (the commit) — prefer the peeled hash
+                    const tagHashes = new Map<string, { direct?: string; peeled?: string }>();
+                    for (const line of output.split(EOL_REGEX)) {
+                        const [hash, ref] = line.trim().split('\t');
+                        if (!hash || !ref || !ref.startsWith('refs/tags/')) continue;
+
+                        if (ref.endsWith('^{}')) {
+                            const name = ref.slice('refs/tags/'.length, -'^{}'.length);
+                            tagHashes.set(name, { ...tagHashes.get(name), peeled: hash });
+                        } else {
+                            const name = ref.slice('refs/tags/'.length);
+                            tagHashes.set(name, { ...tagHashes.get(name), direct: hash });
+                        }
+                    }
+
+                    const tags: GitRemoteTag[] = [];
+                    for (const [name, { direct, peeled }] of tagHashes) {
+                        const hash = peeled ?? direct;
+                        if (hash) tags.push({ name, hash });
+                    }
+
+                    return { remote, tags };
+                })
+            );
+
+            const statuses: GitTagRemoteStatus[] = [];
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') statuses.push(result.value);
+                else log(`Could not list tags on remote '${remoteNames[index]}': ${result.reason}`);
+            });
+
+            log(`Retrieved tags from ${statuses.length}/${remoteNames.length} remote(s)`);
+            return statuses;
+        } catch (error) {
+            log(`Error getting remote tags: ${error}`);
             throw error;
         }
     }
