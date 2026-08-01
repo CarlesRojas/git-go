@@ -8,7 +8,7 @@ import { faCircleNotch, faRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitUndoActionKind, GitUndoableAction } from '@git/gitService'
 import { useForm } from '@tanstack/react-form'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 export const undoActionLabel: Record<GitUndoActionKind, string> = {
   commit: 'Commit',
@@ -64,7 +64,7 @@ export const useUndoDialog = ({ action }: UseUndoDialogProps) => {
     },
   })
 
-  const openDialog = () => setShowUndoDialog(true)
+  const openDialog = useCallback(() => setShowUndoDialog(true), [])
 
   const DialogComponent = (
     <Dialog open={showUndoDialog} onOpenChange={setShowUndoDialog}>

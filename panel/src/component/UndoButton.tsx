@@ -4,7 +4,10 @@ import { useUndoableAction } from '@/hook/useGitQueries'
 import { faRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitUndoableAction } from '@git/gitService'
-import { FC } from 'react'
+import { FC, useCallback } from 'react'
+import { useEventListener } from 'usehooks-ts'
+
+const undoShortcutLabel = navigator.userAgent.includes('Mac') ? '⌘Z' : 'Ctrl+Z'
 
 interface UndoButtonContentProps {
   action: GitUndoableAction
@@ -15,12 +18,40 @@ const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
 
   const label = undoActionLabel[action.kind]
 
+  useEventListener(
+    'keydown',
+    useCallback(
+      (event: KeyboardEvent) => {
+        if (event.key.toLowerCase() !== 'z') return
+        if (!event.metaKey && !event.ctrlKey) return
+        if (event.altKey || event.shiftKey) return
+
+        const target = event.target as HTMLElement | null
+        if (!target) return
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable ||
+          target.closest(
+            '[role="dialog"], [role="menu"], [role="menuitem"], [role="listbox"], [role="combobox"], [role="grid"]',
+          )
+        )
+          return
+
+        event.preventDefault()
+        openDialog()
+      },
+      [openDialog],
+    ),
+  )
+
   return (
     <>
       <Button
         variant="secondary"
         onClick={openDialog}
-        title={`Undo '${action.description}' on ${action.branch}${action.when ? ` — ${action.when}` : ''}`}
+        title={`Undo '${action.description}' on ${action.branch}${action.when ? ` — ${action.when}` : ''} (${undoShortcutLabel})`}
       >
         <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
         Undo {label}
