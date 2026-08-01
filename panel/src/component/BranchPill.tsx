@@ -13,7 +13,10 @@ import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
+import { FC, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useState } from 'react'
+
+/** Matches the pill's scale transition, so the row stays unclipped until it has finished. */
+const SCALE_TRANSITION_MS = 150
 
 interface Props {
   branch: GroupedBranch
@@ -54,6 +57,22 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   // reacts exactly like any other target rather than being singled out.
   const isDraggedPill = !!local && dragPayload?.kind === 'branch' && dragPayload.branch.cleanName === local.cleanName
   const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && hoveredSource)
+
+  // The row stops clipping so the scaled pill is not cut off. Dropping that the moment the
+  // pointer leaves would clip the scale-down instead, so it outlives the transition.
+  const [unclipRow, setUnclipRow] = useState(false)
+
+  useEffect(() => {
+    if (isHoveredTarget) {
+      setUnclipRow(true)
+      return
+    }
+
+    if (!unclipRow) return
+
+    const timeout = window.setTimeout(() => setUnclipRow(false), SCALE_TRANSITION_MS)
+    return () => window.clearTimeout(timeout)
+  }, [isHoveredTarget, unclipRow])
 
   const handlePointerDown = (event: ReactPointerEvent) => {
     if (!settings.dragAndDropEnabled || !local) return
@@ -108,7 +127,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
       <button
         data-drop-target={local ? local.cleanName : undefined}
         data-drag-dimmable={onlyRemote ? '' : undefined}
-        data-drag-hovered={isHoveredTarget ? '' : undefined}
+        data-drag-hovered={unclipRow ? '' : undefined}
         onPointerDown={handlePointerDown}
         className={cn(
           // Layout & sizing
