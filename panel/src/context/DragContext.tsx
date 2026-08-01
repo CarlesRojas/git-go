@@ -89,6 +89,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   /** Whether the pointer is physically over the source, as opposed to its stack being shown. */
   const inSourceRegion = useRef(false)
   const sourceHoldTimer = useRef<number | null>(null)
+  const payloadKind = useRef<DragPayload['kind'] | null>(null)
   const defaultAction = useRef<DragActionId | null>(null)
   const suppressNextClick = useRef(false)
 
@@ -139,6 +140,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     currentActionDisabled.current = false
     currentSourceHovered.current = false
     inSourceRegion.current = false
+    payloadKind.current = null
     defaultAction.current = null
     isAutoScrolling.current = false
     scrollContainer.current = null
@@ -183,16 +185,21 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
     // The dragged item's actions are shown from pickup, but coming back to it later costs the
     // same hold as any other pill. Evaluated every frame rather than on transitions so the
-    // initial show can survive until its stack has actually mounted.
+    // initial show can survive until its stack has actually mounted. A commit has no actions
+    // of its own, so it has no stack to track at all.
     const inRegion = !!element?.closest('[data-drag-source-active], [data-drag-source-zone]')
     const stackMounted = !!document.querySelector('[data-drag-source-zone]')
     inSourceRegion.current = inRegion
 
-    if (!inRegion) {
+    if (payloadKind.current === 'commit') {
+      // Nothing to show or hide.
+    } else if (!inRegion) {
       clearSourceHoldTimer()
-      // A fast opening gesture leaves the source before the stack exists; dismissing then
-      // would hide boxes that were never rendered.
-      if (currentSourceHovered.current && stackMounted) {
+      // A tag has no valid drop target, so its own actions are the only ones it will ever
+      // offer and they stay up for the whole drag.
+      // A fast opening gesture also leaves the source before the stack exists; dismissing
+      // then would hide boxes that were never rendered.
+      if (currentSourceHovered.current && stackMounted && payloadKind.current !== 'tag') {
         currentSourceHovered.current = false
         setHoveredSource(false)
       }
@@ -253,7 +260,6 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const resolveDrop = useCallback((dragPayload: DragPayload): PendingDrop | null => {
     if (currentActionId.current !== null) {
       if (currentActionDisabled.current) return null
-      if (currentActionId.current === 'cancel') return null
 
       const actionId = currentActionId.current
       const needsTarget = !SOURCE_ACTION_IDS.includes(actionId)
@@ -295,10 +301,14 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
         started = true
         suppressNextClick.current = true
 
+        payloadKind.current = dragPayload.kind
+
         // Visible from the moment it is picked up; only returning to it later costs a hold.
-        currentSourceHovered.current = true
-        inSourceRegion.current = true
-        setHoveredSource(true)
+        if (dragPayload.kind !== 'commit') {
+          currentSourceHovered.current = true
+          inSourceRegion.current = true
+          setHoveredSource(true)
+        }
 
         sourceElement.current = element
         element.setAttribute(SOURCE_ATTRIBUTE, '')

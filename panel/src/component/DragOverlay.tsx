@@ -256,7 +256,6 @@ export const DragOverlay: FC = () => {
       (hoveredActionId === null ? (defaultTargetAction ?? undefined) : undefined)
 
     if (!hovered) return null
-    if (hovered.id === 'cancel') return 'Cancel — nothing changes'
     if (hovered.disabledReason) return hovered.disabledReason
 
     return `${hovered.verb} ${hovered.effect}`

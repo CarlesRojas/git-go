@@ -1,9 +1,9 @@
 import { ConfigState } from '@/hook/useGitQueries'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faCodeBranch, faCodeCommit, faCodeMerge, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCodeBranch, faCodeCommit, faCodeMerge, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { GitBranch, GitCommit } from '@git/gitService'
 
-export type DragActionId = 'merge' | 'rebase' | 'cherryPick' | 'push' | 'delete' | 'cancel'
+export type DragActionId = 'merge' | 'rebase' | 'cherryPick' | 'push' | 'delete'
 
 export type DragPayload =
   | { kind: 'branch'; branch: GitBranch; colorIndex: number }
@@ -102,7 +102,7 @@ export const resolveTargetActions = ({
 
 /**
  * Actions that operate on the dragged item itself, shown beneath it rather than on a target.
- * Cancel is always present.
+ * Empty for a commit, which has no action that does not need a target.
  */
 export const resolveSourceActions = ({
   payload,
@@ -142,15 +142,6 @@ export const resolveSourceActions = ({
       disabledReason: isCurrentBranch ? 'The checked-out branch cannot be deleted' : undefined,
     })
   }
-
-  actions.push({
-    id: 'cancel',
-    verb: 'Cancel',
-    effect: 'nothing changes',
-    icon: faXmark,
-    destructive: false,
-    isDefault: false,
-  })
 
   return actions
 }
