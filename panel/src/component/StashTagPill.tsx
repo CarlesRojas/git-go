@@ -1,3 +1,4 @@
+import { useDragActions } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useStashContextMenu } from '@/hook/contextMenu/useStashContextMenu'
 import { useTagContextMenu } from '@/hook/contextMenu/useTagContextMenu'
@@ -6,7 +7,7 @@ import { cn } from '@/util/cn'
 import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
-import { FC, ReactNode } from 'react'
+import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 interface StashTagPillProps {
   type: 'stash' | 'tag'
@@ -35,6 +36,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
   })
 
   const { data: tagRemotes } = useTagRemotes(type === 'tag' && settings.showTags)
+  const { beginPress } = useDragActions()
 
   // Early returns after hooks
   if (type === 'stash' && !settings.showStashes) return null
@@ -51,6 +53,11 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
   const icon = type === 'stash' ? faInbox : faTag
   const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : remoteOnly ? 'text-vsc-editor-fg/50' : 'text-amber-500'
 
+  const handlePointerDown = (event: ReactPointerEvent) => {
+    if (!settings.dragAndDropEnabled || type !== 'tag') return
+    beginPress({ kind: 'tag', name: label, commit }, event)
+  }
+
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {
     if (type === 'tag') return tagContextMenuWrapper(children)
     return stashContextMenuWrapper(children)
@@ -60,6 +67,8 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
     <>
       <ContextMenuToUse>
         <div
+          data-drag-dimmable
+          onPointerDown={handlePointerDown}
           className={cn(
             // Layout & sizing
             'rounded-main h-5 max-h-5 min-h-5 min-w-fit',

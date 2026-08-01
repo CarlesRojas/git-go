@@ -86,3 +86,40 @@
   --radius-small: 0px;
   --radius-main-outer: 0px;
 }
+
+/*
+ * Drag dimming. Driven by a single attribute on the root so that starting a drag never
+ * re-renders the graph — the whole tier system is static CSS keyed on the payload kind.
+ */
+
+/* Search dimming is suspended for the duration, so the two never multiply. */
+[data-dragging] [data-commit-row] {
+  opacity: 1 !important;
+}
+
+/* Tier 1: anything that cannot accept the dragged item. */
+[data-dragging] [data-drag-dimmable] {
+  opacity: 0.6;
+}
+
+/* Tier 2 is the absence of a rule — valid targets keep full opacity. Tags have no valid
+   pill targets, so during a tag drag branch pills drop to tier 1 as well. */
+[data-dragging='tag'] [data-drop-target] {
+  opacity: 0.6;
+}
+
+/* The picked-up item stays where it is; its position still encodes what its ref points at. */
+[data-dragging] [data-drag-source-active] {
+  opacity: 0.5;
+  outline: 1px dashed currentColor;
+  outline-offset: 1px;
+}
+
+[data-dragging] body {
+  user-select: none;
+}
+
+/* Universal so it beats the cursor utilities the pills and rows set on themselves. */
+[data-dragging] * {
+  cursor: grabbing !important;
+}

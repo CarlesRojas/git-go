@@ -51,6 +51,48 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.dragAndDrop.enabled` Extension Setting.
+     */
+    get dragAndDropEnabled(): boolean {
+        return !!this.config.get('dragAndDrop.enabled', true);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.branchOnBranch.defaultAction` Extension Setting.
+     */
+    get dragAndDropBranchDefaultAction(): 'merge' | 'rebase' | 'none' {
+        const value = this.config.get<string>('dragAndDrop.branchOnBranch.defaultAction', 'merge');
+        if (value === 'merge' || value === 'rebase' || value === 'none') {
+            return value;
+        }
+        return 'merge';
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.branchOnBranch.actions` Extension Setting.
+     */
+    get dragAndDropBranchActions(): ('merge' | 'rebase')[] {
+        const value = this.config.get<string[]>('dragAndDrop.branchOnBranch.actions', ['merge', 'rebase']);
+        return value.filter((action): action is 'merge' | 'rebase' => action === 'merge' || action === 'rebase');
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.commitOnBranch.defaultAction` Extension Setting.
+     */
+    get dragAndDropCommitDefaultAction(): 'cherryPick' | 'none' {
+        const value = this.config.get<string>('dragAndDrop.commitOnBranch.defaultAction', 'cherryPick');
+        return value === 'none' ? 'none' : 'cherryPick';
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.sourceActions` Extension Setting.
+     */
+    get dragAndDropSourceActions(): ('push' | 'delete')[] {
+        const value = this.config.get<string[]>('dragAndDrop.sourceActions', ['push', 'delete']);
+        return value.filter((action): action is 'push' | 'delete' => action === 'push' || action === 'delete');
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

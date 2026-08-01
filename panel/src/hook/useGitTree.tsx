@@ -179,6 +179,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
   const treeComponent = useMemo(
     () => (
       <div
+        data-drag-dimmable
         className={cn(
           'pointer-events-none absolute top-0 z-10 h-fit py-3',
           isOverflowing && 'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',

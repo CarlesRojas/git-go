@@ -1,3 +1,4 @@
+import { useDragActions, useDragState } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchContextMenu'
@@ -12,7 +13,7 @@ import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FC, ReactNode } from 'react'
+import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 interface Props {
   branch: GroupedBranch
@@ -44,6 +45,20 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   // %(HEAD) from git itself is the authoritative per-worktree marker; the name comparison only
   // covers branch data that predates it
   const isCurrent = !!local && (local.current || currentBranch === local.cleanName)
+
+  const { beginPress } = useDragActions()
+  const { payload: dragPayload, hoveredTargetKey } = useDragState()
+
+  const isDropTarget = !!dragPayload && !!local
+  const isHoveredTarget = isDropTarget && hoveredTargetKey === local.cleanName
+
+  const handlePointerDown = (event: ReactPointerEvent) => {
+    if (!settings.dragAndDropEnabled || !local) return
+    // Only the local part of a pill is a drag handle — the remote segments are not draggable.
+    if ((event.target as HTMLElement).closest('[data-branch-remote-segment]')) return
+
+    beginPress({ kind: 'branch', branch: local, colorIndex: layout.colorIndex }, event)
+  }
 
   const handleLocalDoubleClick = useDoubleClick(() => {
     if (!local || isCurrent) return
@@ -88,6 +103,9 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   return (
     <>
       <button
+        data-drop-target={local ? local.cleanName : undefined}
+        data-drag-dimmable={onlyRemote ? '' : undefined}
+        onPointerDown={handlePointerDown}
         className={cn(
           // Layout & sizing
           'bg-vsc-editor-bg rounded-main relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center overflow-hidden',
@@ -95,6 +113,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
           onlyRemote && 'border-vsc-editor-fg/30 border',
           isCurrent && 'border',
           (onlyLocal || onlyRemote) && 'group/branch',
+          // Drag targeting
+          isHoveredTarget && 'ring-vsc-editor-fg/70 ring-2',
         )}
         style={{
           borderColor: isCurrent
@@ -195,6 +215,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
             remoteBranchContextMenuWrapper(
               <div
                 key={`remote-${i}-${remote.remoteName}`}
+                data-branch-remote-segment
                 className={cn(
                   'flex h-full w-fit min-w-fit items-center px-1.5',
                   // Colors
