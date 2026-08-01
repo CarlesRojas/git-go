@@ -89,6 +89,35 @@ export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 
+export type GitUndoActionKind =
+    | 'commit'
+    | 'amend'
+    | 'merge'
+    | 'rebase'
+    | 'cherry-pick'
+    | 'revert'
+    | 'reset'
+    | 'pull'
+    | 'other';
+
+export interface GitUndoableAction {
+    kind: GitUndoActionKind;
+    /** The reflog subject of the action, e.g. 'commit: fix the parser' */
+    description: string;
+    branch: string;
+    /** Where the branch is now */
+    currentHash: string;
+    /** Where the branch was before the action, and where undoing it returns the branch to */
+    previousHash: string;
+    /** How long ago the action happened, e.g. '2 hours ago' */
+    when: string;
+    /** Whether the action changed the working tree, so undoing it faithfully needs a hard reset */
+    changedWorkingTree: boolean;
+}
+
+/** Actions that wrote their result into the working tree, rather than only recording what was in it */
+const WORKING_TREE_UNDO_KINDS: GitUndoActionKind[] = ['merge', 'rebase', 'cherry-pick', 'reset', 'pull', 'other'];
+
 // Use ASCII character 0x1E (Record Separator) for field separation
 const GIT_LOG_SEPARATOR = '\x1E';
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -1765,6 +1794,146 @@ export class GitService {
             log(`Successfully aborted the ${operation}`);
         } catch (error) {
             log(`Error aborting the ${operation}: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Git has no 'undo' command: what it has is the reflog, a per-ref record of every position a
+     * ref has held. Undoing an action is therefore moving the branch back to the position it held
+     * before that action, which is what this reads out of the reflog.
+     */
+    private static parseUndoActionKind(subject: string): GitUndoActionKind | null {
+        if (subject.startsWith('commit (amend)')) return 'amend';
+        if (subject.startsWith('commit (merge)')) return 'merge';
+        if (subject.startsWith('commit (cherry-pick)')) return 'cherry-pick';
+        if (subject.startsWith('commit')) return 'commit';
+        if (subject.startsWith('revert')) return 'revert';
+        if (subject.startsWith('merge')) return 'merge';
+        if (subject.startsWith('rebase')) return 'rebase';
+        if (subject.startsWith('pull --rebase')) return 'rebase';
+        if (subject.startsWith('pull')) return 'pull';
+        if (subject.startsWith('reset')) return 'reset';
+        if (subject.startsWith('cherry-pick')) return 'cherry-pick';
+
+        // The branch coming into existence: there is no earlier position to return it to, and
+        // undoing it would mean deleting the branch rather than moving it
+        if (subject.startsWith('branch:') || subject.startsWith('clone:') || subject.startsWith('checkout:')) {
+            return null;
+        }
+
+        return 'other';
+    }
+
+    /**
+     * The last action that moved the current branch, if it is one that can be undone by moving the
+     * branch back. Reads the branch's own reflog rather than HEAD's: HEAD also records checkouts,
+     * where the entry before belongs to a different branch entirely, and resetting to it would move
+     * the wrong branch to the wrong place.
+     */
+    public async getUndoableAction(log: (message: string) => void): Promise<GitUndoableAction | null> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return null;
+
+        try {
+            // A halted merge, rebase or cherry-pick ends by aborting it, not by moving the branch
+            if (await this.getOperationInProgress(log)) return null;
+
+            // A detached HEAD has no branch reflog to walk back through
+            const branch = await this.getCurrentBranch(log);
+            if (!branch) return null;
+            this.validateRefName(branch);
+
+            const workspacePath = workspaceFolder.uri.fsPath;
+            const gitExecutable = await this.findGitExecutable();
+
+            const output = await this.spawnGit(
+                [
+                    gitExecutable.path,
+                    'reflog',
+                    'show',
+                    '--date=relative',
+                    `--format=%H${GIT_LOG_SEPARATOR}%gd${GIT_LOG_SEPARATOR}%gs`,
+                    '-n',
+                    '2',
+                    `refs/heads/${branch}`
+                ],
+                workspacePath
+            );
+
+            const entries = output
+                .split(EOL_REGEX)
+                .filter((line) => line.trim())
+                .map((line) => line.split(GIT_LOG_SEPARATOR));
+
+            // Each reflog entry records the position the ref moved *to*, so the entry before the
+            // current one holds the position to return to. Without it there is nothing to undo.
+            const current = entries[0];
+            const previous = entries[1];
+            if (!current || !previous) return null;
+
+            const currentHash = (current[0] ?? '').trim();
+            const previousHash = (previous[0] ?? '').trim();
+            const description = (current[2] ?? '').trim();
+            if (!currentHash || !previousHash || !description) return null;
+            if (currentHash === previousHash) return null;
+
+            const kind = GitService.parseUndoActionKind(description);
+            if (!kind) return null;
+
+            // With --date=relative the selector reads 'refs/heads/main@{2 hours ago}'
+            const when = (current[1] ?? '').match(/@\{(.*)\}$/)?.[1] ?? '';
+
+            log(`Undoable action on ${branch}: ${description}`);
+            return {
+                kind,
+                description,
+                branch,
+                currentHash,
+                previousHash,
+                when,
+                changedWorkingTree: WORKING_TREE_UNDO_KINDS.includes(kind)
+            };
+        } catch (error) {
+            log(`Error looking for an action to undo: ${error}`);
+            return null;
+        }
+    }
+
+    /**
+     * Move the current branch back to where it was before its last action. 'previousHash' is the
+     * position the caller was shown, and the undo is refused when it no longer matches, so an undo
+     * prepared against a stale view of the repository cannot land somewhere unintended.
+     */
+    public async undoLastAction(
+        log: (message: string) => void,
+        previousHash: string,
+        discardChanges: boolean
+    ): Promise<GitUndoableAction> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const action = await this.getUndoableAction(log);
+        if (!action) throw new Error('There is no action to undo');
+        if (action.previousHash !== previousHash) {
+            throw new Error('The repository changed since this undo was prepared, refresh and try again');
+        }
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        // A soft reset moves the branch and nothing else, leaving what the undone action produced
+        // in the working tree and index; a hard reset also returns the tree to how it was
+        const mode: GitResetMode = discardChanges ? 'hard' : 'soft';
+
+        try {
+            this.validatePositional(action.previousHash, 'commit hash');
+            log(`Undoing '${action.description}' on ${action.branch} (${mode} reset)`);
+            await this.spawnGit([gitExecutable.path, 'reset', `--${mode}`, action.previousHash], workspacePath);
+            log(`Successfully moved ${action.branch} back to ${action.previousHash.substring(0, 7)}`);
+            return action;
+        } catch (error) {
+            log(`Error undoing the last action: ${error}`);
             throw error;
         }
     }

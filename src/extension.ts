@@ -387,6 +387,24 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'abortOperationSuccess', success: true };
                 },
 
+                getUndoableAction: async () => {
+                    const gitService = GitService.getInstance();
+                    const undoableAction = await gitService.getUndoableAction(log);
+                    log(`Undoable action: ${undoableAction ? undoableAction.description : 'none'}`);
+                    return { type: 'undoableAction', undoableAction };
+                },
+
+                undoLastAction: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { previousHash, discardChanges } = message;
+                    if (!previousHash) {
+                        throw new Error('Previous hash is required');
+                    }
+                    const action = await gitService.undoLastAction(log, previousHash, discardChanges === true);
+                    log(`Successfully undid '${action.description}' on ${action.branch}`);
+                    return { type: 'undoLastActionSuccess', success: true };
+                },
+
                 getWorktrees: async () => {
                     const gitService = GitService.getInstance();
                     const worktrees = await gitService.getWorktrees(log);

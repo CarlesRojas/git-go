@@ -9,6 +9,7 @@ import type {
   GitPushMode,
   GitRemote,
   GitTagRemoteStatus,
+  GitUndoableAction,
   GitWorktree,
 } from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -165,6 +166,7 @@ export const queryKeys = {
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
   operationInProgress: ['git', 'operation-in-progress'] as const,
+  undoableAction: ['git', 'undoable-action'] as const,
   worktrees: ['git', 'worktrees'] as const,
   remotes: ['git', 'remotes'] as const,
   repoName: ['git', 'repo-name'] as const,
@@ -552,6 +554,31 @@ export const useAbortOperation = () => {
   return useMutation({
     mutationFn: async ({ operation }: { operation: GitOperationInProgress }) => {
       return await sendCorrelatedMessage('abortOperation', { operation }, 30_000)
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useUndoableAction = () => {
+  return useQuery({
+    queryKey: queryKeys.undoableAction,
+    queryFn: async (): Promise<GitUndoableAction | null> => {
+      const response = await sendCorrelatedMessage<{ undoableAction: GitUndoableAction | null }>('getUndoableAction')
+      return response.undoableAction
+    },
+    staleTime: 5 * 1000,
+    gcTime: 60 * 1000,
+  })
+}
+
+export const useUndoLastAction = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ previousHash, discardChanges }: { previousHash: string; discardChanges: boolean }) => {
+      return await sendCorrelatedMessage('undoLastAction', { previousHash, discardChanges }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)

@@ -4,6 +4,7 @@ import { DragOverlay } from '@/component/DragOverlay'
 import { Graph } from '@/component/Graph'
 import { RefetchButton } from '@/component/RefreshButton'
 import { SearchInput } from '@/component/SearchInput'
+import { UndoButton } from '@/component/UndoButton'
 import { WorktreeMenu } from '@/component/WorktreeMenu'
 import { DragProvider } from '@/context/DragContext'
 import { SettingsProvider } from '@/context/SettingsContext'
@@ -86,6 +87,8 @@ export const App: FC = () => {
 
                 <div className="flex items-center gap-2">
                   <AbortOperationButton />
+
+                  <UndoButton />
 
                   <SearchInput value={searchTerm} onChange={setSearchTerm} />
 
