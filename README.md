@@ -27,7 +27,6 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Filter by branches** - view specific branches or all at once
 - **Toggle visibility** of stashes, tags, and remote branches
 - **Advanced branch selector** with grouping
-- **Collapsible search** that opens from its icon, with `Ctrl+F` / `Cmd+F` and `Esc` to clear it
 
 ### 🌿 Branch Management
 
