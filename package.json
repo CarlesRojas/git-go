@@ -162,7 +162,7 @@
                 },
                 "git-go.dragAndDrop.hideDelay": {
                     "type": "number",
-                    "default": 1000,
+                    "default": 300,
                     "minimum": 0,
                     "maximum": 5000,
                     "markdownDescription": "**Drag and Drop:** Milliseconds the actions linger after the pointer moves away, so returning within that time keeps them open."

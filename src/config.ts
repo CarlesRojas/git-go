@@ -79,7 +79,7 @@ export class Config {
      * Get the value of the `git-go.dragAndDrop.hideDelay` Extension Setting.
      */
     get dragAndDropHideDelay(): number {
-        return this.config.get('dragAndDrop.hideDelay', 1000);
+        return this.config.get('dragAndDrop.hideDelay', 300);
     }
 
     /**

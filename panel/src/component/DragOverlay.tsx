@@ -10,11 +10,13 @@ import { useRebaseCurrentBranchIntoBranch } from '@/hook/dialog/useBranchRebaseD
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
 import { useTagDeleteDialog } from '@/hook/dialog/useTagDeleteDialog'
 import { useTagPushDialog } from '@/hook/dialog/useTagPushDialog'
+import { useFadePresence } from '@/hook/useFadePresence'
 import { useCheckoutLocalBranch, useCurrentBranch, useGitBranches, useGitRemotes } from '@/hook/useGitQueries'
+import { cn } from '@/util/cn'
 import { DragAction, resolveSourceActions, resolveTargetActions } from '@/util/dragAndDrop'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { GitBranch, GitCommit } from '@git/gitService'
-import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 const EMPTY_BRANCH: GitBranch = { name: '', cleanName: '', current: false, remote: false, hash: '' }
 
@@ -32,6 +34,8 @@ const STACK_GAP_PX = 8
 const BOX_HEIGHT_ESTIMATE_PX = 52
 const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
+/** Matches the opacity transition on the stacks, so they stay mounted until it finishes. */
+const FADE_MS = 150
 
 /**
  * Places a stack below the pill it belongs to, flipping above it and sliding left as needed so
@@ -248,6 +252,22 @@ export const DragOverlay: FC = () => {
     [sourceRect, sourceActions],
   )
 
+  const targetStackVisible = revealed && !!targetStackPosition && !!hoveredTargetKey && targetActions.length > 0
+  const sourceStackVisible = hoveredSource && !!sourceStackPosition && sourceActions.length > 0
+
+  // The position and actions are cleared the moment a stack stops being visible, so the last
+  // ones are held on to for the duration of the fade.
+  const targetSnapshot = useRef<{ position: object; actions: DragAction[]; key: string } | null>(null)
+  if (targetStackVisible) {
+    targetSnapshot.current = { position: targetStackPosition, actions: targetActions, key: hoveredTargetKey }
+  }
+
+  const sourceSnapshot = useRef<{ position: object; actions: DragAction[] } | null>(null)
+  if (sourceStackVisible) sourceSnapshot.current = { position: sourceStackPosition, actions: sourceActions }
+
+  const targetFade = useFadePresence(targetStackVisible, FADE_MS)
+  const sourceFade = useFadePresence(sourceStackVisible, FADE_MS)
+
   const pendingLabel = useMemo(() => {
     if (!payload) return null
 
@@ -281,27 +301,35 @@ export const DragOverlay: FC = () => {
 
       <div className="pointer-events-none fixed inset-0 z-50">
         {/* Actions on the dragged item itself, shown under it whenever the pointer is on it. */}
-        {hoveredSource && sourceStackPosition && (
+        {sourceFade.mounted && sourceSnapshot.current && (
           <div
-            data-drag-source-zone
-            className="pointer-events-auto absolute z-10 flex flex-col gap-1.5"
-            style={sourceStackPosition}
+            data-drag-source-zone={sourceFade.shown ? '' : undefined}
+            className={cn(
+              'absolute z-10 flex flex-col gap-1.5 transition-opacity duration-150',
+              // Untargetable while fading out, so a release cannot land on a stale box.
+              sourceFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+            )}
+            style={sourceSnapshot.current.position}
           >
-            {sourceActions.map(action => (
+            {sourceSnapshot.current.actions.map(action => (
               <DragActionBox key={action.id} action={action} hovered={hoveredActionId === action.id} />
             ))}
           </div>
         )}
 
-        {revealed && targetStackPosition && hoveredTargetKey && targetActions.length > 0 && (
+        {targetFade.mounted && targetSnapshot.current && (
           <div
             // Carries the target key so the padded bridge back to the pill counts as the same
             // target, keeping the stack open while the pointer travels to a box.
-            data-drop-target={hoveredTargetKey}
-            className="pointer-events-auto absolute z-10 flex flex-col gap-1.5"
-            style={targetStackPosition}
+            data-drop-target={targetFade.shown ? targetSnapshot.current.key : undefined}
+            className={cn(
+              'absolute z-10 flex flex-col gap-1.5 transition-opacity duration-150',
+              // Untargetable while fading out, so a release cannot land on a stale box.
+              targetFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+            )}
+            style={targetSnapshot.current.position}
           >
-            {targetActions.map(action => (
+            {targetSnapshot.current.actions.map(action => (
               <DragActionBox
                 key={action.id}
                 action={action}
