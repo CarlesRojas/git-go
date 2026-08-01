@@ -76,10 +76,7 @@ export const useUndoDialog = ({ action }: UseUndoDialogProps) => {
         </DialogHeader>
 
         <div className="flex flex-col gap-1 opacity-60">
-          <span className="break-all">
-            {action.description}
-            {!!action.when && ` — ${action.when}`}
-          </span>
+          <span className="break-all">{action.description}</span>
 
           <span>
             <strong>{action.branch}</strong> moves back from {action.currentHash.substring(0, 7)} to{' '}
