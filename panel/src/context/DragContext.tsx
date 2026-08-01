@@ -1,5 +1,5 @@
 import { useSettings } from '@/context/SettingsContext'
-import { DragActionId, DragPayload } from '@/util/dragAndDrop'
+import { DragActionId, DragPayload, SOURCE_ACTION_IDS, TARGETLESS_KINDS } from '@/util/dragAndDrop'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 const DRAG_THRESHOLD_PX = 5
@@ -10,9 +10,6 @@ const GHOST_CURSOR_OFFSET_PX = 16
 
 /** Set on the dragged item so it can be styled as picked-up without a React re-render. */
 export const SOURCE_ATTRIBUTE = 'data-drag-source-active'
-
-/** Actions that operate on the dragged item itself and therefore have no target. */
-const SOURCE_ACTION_IDS: DragActionId[] = ['push', 'delete']
 
 export interface PendingDrop {
   payload: DragPayload
@@ -236,14 +233,14 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
       // Nothing to show or hide.
     } else if (!inRegion) {
       clearSourceHoldTimer()
-      // A tag has no valid drop target, so its own actions are the only ones it will ever
-      // offer and they stay up for the whole drag.
+      // A tag or stash has no valid drop target, so its own actions are the only ones it
+      // will ever offer and they stay up for the whole drag.
       // A fast opening gesture also leaves the source before the stack exists; dismissing
       // then would hide boxes that were never rendered.
       if (
         currentSourceHovered.current &&
         stackMounted &&
-        payloadKind.current !== 'tag' &&
+        !TARGETLESS_KINDS.includes(payloadKind.current!) &&
         sourceHideTimer.current === null
       ) {
         sourceHideTimer.current = window.setTimeout(() => {

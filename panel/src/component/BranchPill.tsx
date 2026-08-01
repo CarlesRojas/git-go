@@ -63,7 +63,12 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const isDropTarget = !!dragPayload && !!local
   // The pill being dragged is hoverable too — returning to it reveals its own actions — so it
   // reacts exactly like any other target rather than being singled out.
-  const isDraggedPill = !!local && dragPayload?.kind === 'branch' && dragPayload.branch.cleanName === local.cleanName
+  // A remote branch shares its name with the local one, so the kind of ref has to match too.
+  const isDraggedPill =
+    !!local &&
+    dragPayload?.kind === 'branch' &&
+    !dragPayload.branch.remote &&
+    dragPayload.branch.cleanName === local.cleanName
   const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && pointerOverSource)
 
   // The row stops clipping so the scaled pill is not cut off. Dropping that the moment the
@@ -94,11 +99,16 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   }, [isHoveredTarget, unclipRow])
 
   const handlePointerDown = (event: ReactPointerEvent) => {
-    if (!settings.dragAndDropEnabled || !local) return
-    // Only the local part of a pill is a drag handle — the remote segments are not draggable.
-    if ((event.target as HTMLElement).closest('[data-branch-remote-segment]')) return
+    if (!settings.dragAndDropEnabled) return
 
-    beginPress({ kind: 'branch', branch: local, colorIndex: layout.colorIndex }, event)
+    // Each half of a pill drags what it depicts: the remote segment carries its own branch,
+    // which offers fetch and delete rather than push.
+    const segment = (event.target as HTMLElement).closest<HTMLElement>('[data-branch-remote-segment]')
+    const remoteIndex = segment ? Number(segment.getAttribute('data-branch-remote-segment')) : -1
+    const dragged = remoteIndex >= 0 ? remotes[remoteIndex] : (local ?? remotes[0])
+    if (!dragged) return
+
+    beginPress({ kind: 'branch', branch: dragged, colorIndex: layout.colorIndex }, event)
   }
 
   const handleLocalDoubleClick = useDoubleClick(() => {
@@ -260,7 +270,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
             remoteBranchContextMenuWrapper(
               <div
                 key={`remote-${i}-${remote.remoteName}`}
-                data-branch-remote-segment
+                data-branch-remote-segment={i}
                 className={cn(
                   'flex h-full w-fit min-w-fit items-center px-1.5',
                   // Colors

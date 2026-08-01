@@ -54,8 +54,10 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
   const iconColor = type === 'stash' ? 'text-vsc-editor-fg/80' : remoteOnly ? 'text-vsc-editor-fg/50' : 'text-amber-500'
 
   const handlePointerDown = (event: ReactPointerEvent) => {
-    if (!settings.dragAndDropEnabled || type !== 'tag') return
-    beginPress({ kind: 'tag', name: label, commit }, event)
+    if (!settings.dragAndDropEnabled) return
+
+    if (type === 'stash') beginPress({ kind: 'stash', ref: label, commit }, event)
+    else beginPress({ kind: 'tag', name: label, commit }, event)
   }
 
   const ContextMenuToUse: FC<{ children: ReactNode }> = ({ children }) => {

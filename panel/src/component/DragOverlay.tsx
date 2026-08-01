@@ -8,13 +8,25 @@ import { useBranchMergeIntoCurrentDialog } from '@/hook/dialog/useBranchMergeDia
 import { useBranchPushDialog } from '@/hook/dialog/useBranchPushDialog'
 import { useRebaseCurrentBranchIntoBranch } from '@/hook/dialog/useBranchRebaseDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
+import { useMergeCommitIntoCurrentBranchDialog } from '@/hook/dialog/useMergeCommitIntoCurrentBranchDialog'
+import { useRemoteBranchDeleteDialog } from '@/hook/dialog/useRemoteBranchDeleteDialog'
+import { useRemoteBranchFetchIntoLocalDialog } from '@/hook/dialog/useRemoteBranchFetchIntoLocalDialog'
+import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
+import { useStashDropDialog } from '@/hook/dialog/useStashDropDialog'
 import { useTagDeleteDialog } from '@/hook/dialog/useTagDeleteDialog'
 import { useTagPushDialog } from '@/hook/dialog/useTagPushDialog'
 import { useFadePresence } from '@/hook/useFadePresence'
-import { useCheckoutLocalBranch, useCurrentBranch, useGitBranches, useGitRemotes } from '@/hook/useGitQueries'
+import {
+  useApplyStash,
+  useCheckoutLocalBranch,
+  useCurrentBranch,
+  useGitBranches,
+  useGitRemotes,
+  usePopStash,
+} from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
 import { DragAction, resolveSourceActions, resolveTargetActions } from '@/util/dragAndDrop'
-import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { faCodeBranch, faInbox } from '@fortawesome/free-solid-svg-icons'
 import { GitBranch, GitCommit } from '@git/gitService'
 import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
@@ -73,6 +85,7 @@ export const DragOverlay: FC = () => {
 
   const [dropBranch, setDropBranch] = useState<GitBranch | null>(null)
   const [dropCommit, setDropCommit] = useState<GitCommit | null>(null)
+  const [dropStashRef, setDropStashRef] = useState('')
   const [stackRect, setStackRect] = useState<DOMRect | null>(null)
   const [sourceRect, setSourceRect] = useState<DOMRect | null>(null)
 
@@ -83,6 +96,13 @@ export const DragOverlay: FC = () => {
   const cherryPickDialog = useCherryPickDialog({ commit: dropCommit ?? EMPTY_COMMIT })
   const tagPushDialog = useTagPushDialog()
   const tagDeleteDialog = useTagDeleteDialog()
+  const mergeCommitDialog = useMergeCommitIntoCurrentBranchDialog({ commit: dropCommit ?? EMPTY_COMMIT })
+  const revertDialog = useRevertDialog({ commit: dropCommit ?? EMPTY_COMMIT })
+  const stashDropDialog = useStashDropDialog({ stash: dropStashRef })
+  const remoteFetchDialog = useRemoteBranchFetchIntoLocalDialog()
+  const remoteDeleteDialog = useRemoteBranchDeleteDialog()
+  const applyStashMutation = useApplyStash()
+  const popStashMutation = usePopStash()
 
   const targetBranch = useMemo(
     () => branches.find(branch => !branch.remote && branch.cleanName === hoveredTargetKey) ?? null,
@@ -108,6 +128,17 @@ export const DragOverlay: FC = () => {
     [targetActions],
   )
 
+  /** The action a release would run if it were not blocked — used only to explain why it is. */
+  const blockedDefaultAction = useMemo(
+    () => targetActions.find(action => action.isDefault && action.disabledReason) ?? null,
+    [targetActions],
+  )
+
+  // With nothing to perform on release there is no reason to make the user hold: the boxes are
+  // the only way to act, so they open on contact. This covers a target that cannot be checked
+  // out — one held by a worktree, say — as well as a default action turned off in settings.
+  const revealOnContact = targetActions.length > 0 && !defaultTargetAction
+
   // Layout effect so the default lands in the same frame as the hover that produced it —
   // a plain effect can miss a hover-and-release inside one frame.
   useLayoutEffect(() => {
@@ -117,7 +148,10 @@ export const DragOverlay: FC = () => {
   // Both stacks anchor to a pill the same way: measure it, and re-measure while the graph
   // scrolls under it.
   useLayoutEffect(() => {
-    const selector = revealed && hoveredTargetKey ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]` : undefined
+    const selector =
+      (revealed || revealOnContact) && hoveredTargetKey
+        ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]`
+        : undefined
 
     if (!selector) {
       setStackRect(null)
@@ -130,7 +164,7 @@ export const DragOverlay: FC = () => {
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
     container?.addEventListener('scroll', measure)
     return () => container?.removeEventListener('scroll', measure)
-  }, [revealed, hoveredTargetKey])
+  }, [revealed, revealOnContact, hoveredTargetKey])
 
   useLayoutEffect(() => {
     if (!hoveredSource) {
@@ -155,12 +189,13 @@ export const DragOverlay: FC = () => {
 
       // Merging moves the target so the target is checked out; rebasing moves the source so
       // the source is. Both then run the existing HEAD-relative command.
-      const checkoutSubject =
-        drop.actionId === 'merge' || drop.actionId === 'cherryPick'
-          ? target
-          : drop.actionId === 'rebase' && drop.payload.kind === 'branch'
-            ? drop.payload.branch
-            : null
+      const checkoutSubject = (['merge', 'cherryPick', 'mergeCommit', 'revert'] as const).some(
+        id => id === drop.actionId,
+      )
+        ? target
+        : drop.actionId === 'rebase' && drop.payload.kind === 'branch'
+          ? drop.payload.branch
+          : null
 
       if (checkoutSubject && checkoutSubject.cleanName !== currentBranch) {
         try {
@@ -208,14 +243,68 @@ export const DragOverlay: FC = () => {
           pushDialog.openDialog()
           return
 
+        case 'mergeCommit':
+          if (drop.payload.kind !== 'commit') return
+          setDropCommit(drop.payload.commit)
+          mergeCommitDialog.openDialog()
+          return
+
+        case 'revert':
+          if (drop.payload.kind !== 'commit') return
+          setDropCommit(drop.payload.commit)
+          revertDialog.openDialog()
+          return
+
         case 'delete':
           if (drop.payload.kind === 'tag') {
             tagDeleteDialog.openDialog(drop.payload.name)
             return
           }
           if (drop.payload.kind !== 'branch') return
+          // Deleting a remote branch deletes it on the remote, which is its own dialog.
+          if (drop.payload.branch.remote) {
+            remoteDeleteDialog.openDialog(drop.payload.branch)
+            return
+          }
           setDropBranch(drop.payload.branch)
           deleteDialog.openDialog()
+          return
+
+        case 'fetchIntoLocal':
+          if (drop.payload.kind !== 'branch') return
+          void remoteFetchDialog.openDialog(drop.payload.branch)
+          return
+
+        case 'applyStash': {
+          if (drop.payload.kind !== 'stash') return
+          const stashSelector = drop.payload.ref
+          applyStashMutation.mutate(
+            { stashSelector, reinstateIndex: false },
+            {
+              onSuccess: () => showToast({ text: `Applied '${stashSelector}'`, icon: faInbox, type: 'success' }),
+              onError: error => showToast({ text: error.message, type: 'error', icon: faInbox }),
+            },
+          )
+          return
+        }
+
+        case 'popStash': {
+          if (drop.payload.kind !== 'stash') return
+          const stashSelector = drop.payload.ref
+          popStashMutation.mutate(
+            { stashSelector, reinstateIndex: false },
+            {
+              onSuccess: () => showToast({ text: `Popped '${stashSelector}'`, icon: faInbox, type: 'success' }),
+              onError: error => showToast({ text: error.message, type: 'error', icon: faInbox }),
+            },
+          )
+          return
+        }
+
+        case 'dropStash':
+          if (drop.payload.kind !== 'stash') return
+          setDropStashRef(drop.payload.ref)
+          stashDropDialog.openDialog()
           return
       }
     },
@@ -231,6 +320,13 @@ export const DragOverlay: FC = () => {
       deleteDialog,
       tagPushDialog,
       tagDeleteDialog,
+      mergeCommitDialog,
+      revertDialog,
+      stashDropDialog,
+      remoteFetchDialog,
+      remoteDeleteDialog,
+      applyStashMutation,
+      popStashMutation,
     ],
   )
 
@@ -253,7 +349,8 @@ export const DragOverlay: FC = () => {
     [sourceRect, sourceActions],
   )
 
-  const targetStackVisible = revealed && !!targetStackPosition && !!hoveredTargetKey && targetActions.length > 0
+  const targetStackVisible =
+    (revealed || revealOnContact) && !!targetStackPosition && !!hoveredTargetKey && targetActions.length > 0
   const sourceStackVisible = hoveredSource && !!sourceStackPosition && sourceActions.length > 0
 
   // The position and actions are cleared the moment a stack stops being visible, so the last
@@ -272,15 +369,25 @@ export const DragOverlay: FC = () => {
   const pendingLabel = useMemo(() => {
     if (!payload) return null
 
+    const onTargetDefault = pointerOverTarget ? (defaultTargetAction ?? blockedDefaultAction) : null
+
     const hovered: DragAction | undefined =
       [...targetActions, ...sourceActions].find(action => action.id === hoveredActionId) ??
-      (hoveredActionId === null ? (defaultTargetAction ?? undefined) : undefined)
+      (hoveredActionId === null ? (onTargetDefault ?? undefined) : undefined)
 
     if (!hovered) return null
     if (hovered.disabledReason) return hovered.disabledReason
 
     return `${hovered.verb} ${hovered.effect}`
-  }, [payload, targetActions, sourceActions, hoveredActionId, defaultTargetAction])
+  }, [
+    payload,
+    targetActions,
+    sourceActions,
+    hoveredActionId,
+    defaultTargetAction,
+    blockedDefaultAction,
+    pointerOverTarget,
+  ])
 
   const dialogs = (
     <>
@@ -291,6 +398,11 @@ export const DragOverlay: FC = () => {
       {cherryPickDialog.DialogComponent}
       {tagPushDialog.DialogComponent}
       {tagDeleteDialog.DialogComponent}
+      {mergeCommitDialog.DialogComponent}
+      {revertDialog.DialogComponent}
+      {stashDropDialog.DialogComponent}
+      {remoteFetchDialog.DialogComponent}
+      {remoteDeleteDialog.DialogComponent}
     </>
   )
 
