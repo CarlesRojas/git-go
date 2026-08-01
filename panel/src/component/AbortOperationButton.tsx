@@ -9,6 +9,7 @@ import { FC } from 'react'
 const operationLabel = {
   merge: 'Merge',
   rebase: 'Rebase',
+  'cherry-pick': 'Cherry-pick',
 } as const
 
 export const AbortOperationButton: FC = () => {

@@ -79,7 +79,9 @@ export interface GitTagRemoteStatus {
     tags: GitRemoteTag[];
 }
 
-export type GitOperationInProgress = 'merge' | 'rebase';
+export type GitOperationInProgress = 'merge' | 'rebase' | 'cherry-pick';
+
+const ABORTABLE_OPERATIONS: GitOperationInProgress[] = ['merge', 'rebase', 'cherry-pick'];
 
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
@@ -1627,6 +1629,24 @@ export class GitService {
     }
 
     /**
+     * Whether the sequencer still holds queued cherry-picks. Its todo list is shared with revert,
+     * which lists its commits as 'revert' rather than 'pick' and needs its own abort.
+     */
+    private async hasQueuedCherryPicks(gitDir: string): Promise<boolean> {
+        try {
+            const todo = await fs.promises.readFile(path.join(gitDir, 'sequencer', 'todo'), 'utf8');
+            const firstCommand = todo
+                .split(EOL_REGEX)
+                .map((line) => line.trim())
+                .find((line) => line && !line.startsWith('#'));
+
+            return firstCommand?.startsWith('pick ') ?? false;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
      * The operation the working tree is halted in the middle of, if any. Git records these as
      * marker files in the per-worktree git dir, which is also how 'git status' reports them.
      */
@@ -1645,6 +1665,12 @@ export class GitService {
                 return isApplyingPatches ? null : 'rebase';
             }
 
+            if (await this.gitDirEntryExists(gitDir, 'CHERRY_PICK_HEAD')) return 'cherry-pick';
+
+            // Committing a resolved pick by hand clears CHERRY_PICK_HEAD but leaves the rest of the
+            // sequence queued, and git keeps reporting the cherry-pick as being in progress
+            if (await this.hasQueuedCherryPicks(gitDir)) return 'cherry-pick';
+
             // Checked after the rebase markers: a rebase stopping on a conflicted merge commit
             // writes MERGE_HEAD too, and there 'git merge --abort' is not what ends the operation
             if (await this.gitDirEntryExists(gitDir, 'MERGE_HEAD')) return 'merge';
@@ -1660,7 +1686,7 @@ export class GitService {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
-        if (operation !== 'merge' && operation !== 'rebase') throw new Error(`Cannot abort '${operation}'`);
+        if (!ABORTABLE_OPERATIONS.includes(operation)) throw new Error(`Cannot abort '${operation}'`);
 
         const workspacePath = workspaceFolder.uri.fsPath;
         const gitExecutable = await this.findGitExecutable();

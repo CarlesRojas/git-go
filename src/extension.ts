@@ -1100,6 +1100,9 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
 
             // Markers for an operation halted mid-way, so the abort button appears and clears promptly
             watchAll(gitDir, 'MERGE_HEAD');
+            watchAll(gitDir, 'CHERRY_PICK_HEAD');
+            watchAll(gitDir, 'sequencer');
+            watchAll(gitDir, 'sequencer/**');
             watchAll(gitDir, 'rebase-merge');
             watchAll(gitDir, 'rebase-merge/**');
             watchAll(gitDir, 'rebase-apply');
