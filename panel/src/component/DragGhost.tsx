@@ -2,7 +2,7 @@ import { useSettings } from '@/context/SettingsContext'
 import { getColor } from '@/hook/useGitTree'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
-import { DragPayload, shortHash } from '@/util/dragAndDrop'
+import { DragAction, DragPayload, shortHash } from '@/util/dragAndDrop'
 import { faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { FC } from 'react'
@@ -10,14 +10,14 @@ import { FC } from 'react'
 interface Props {
   payload: DragPayload
   /** What a release would do right now, or null when the pointer is over nothing actionable. */
-  pendingLabel: string | null
+  pendingAction: DragAction | null
 }
 
 /**
  * The item under the cursor while dragging. The real pill never moves — in this graph a pill's
  * position encodes which commit its ref points at, so moving it would claim the ref already moved.
  */
-export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
+export const DragGhost: FC<Props> = ({ payload, pendingAction }) => {
   const { settings } = useSettings()
 
   const color = (index: number) =>
@@ -81,9 +81,14 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
         </div>
       )}
 
-      {pendingLabel && (
+      {pendingAction && (
         <div className={cn('border-vsc-editor-fg/15 flex flex-col border-t px-1.5 py-1')}>
-          <span className="text-[11px] leading-tight font-medium whitespace-nowrap opacity-80">{pendingLabel}</span>
+          <span className="text-[11px] leading-tight font-medium whitespace-nowrap opacity-80">
+            {pendingAction.disabledReason ??
+              pendingAction.description.map((part, index) =>
+                typeof part === 'string' ? <span key={index}>{part}</span> : <strong key={index}>{part.ref}</strong>,
+              )}
+          </span>
         </div>
       )}
     </div>

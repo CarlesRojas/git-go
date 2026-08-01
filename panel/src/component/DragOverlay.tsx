@@ -372,19 +372,15 @@ export const DragOverlay: FC = () => {
   const targetFade = useFadePresence(targetStackVisible, FADE_MS)
   const sourceFade = useFadePresence(sourceStackVisible, FADE_MS)
 
-  const pendingLabel = useMemo(() => {
+  const pendingAction = useMemo<DragAction | null>(() => {
     if (!payload) return null
 
     const onTargetDefault = pointerOverTarget ? (defaultTargetAction ?? blockedDefaultAction) : null
 
-    const hovered: DragAction | undefined =
+    return (
       [...targetActions, ...sourceActions].find(action => action.id === hoveredActionId) ??
-      (hoveredActionId === null ? (onTargetDefault ?? undefined) : undefined)
-
-    if (!hovered) return null
-    if (hovered.disabledReason) return hovered.disabledReason
-
-    return `${hovered.verb} ${hovered.effect}`
+      (hoveredActionId === null ? onTargetDefault : null)
+    )
   }, [
     payload,
     targetActions,
@@ -467,7 +463,7 @@ export const DragOverlay: FC = () => {
         {/* Last and highest so it is never covered by a stack. */}
         <div ref={ghostRef} className="absolute top-0 left-0 z-20 will-change-transform">
           <div className="-translate-y-1/2">
-            <DragGhost payload={payload} pendingLabel={pendingLabel} />
+            <DragGhost payload={payload} pendingAction={pendingAction} />
           </div>
         </div>
       </div>

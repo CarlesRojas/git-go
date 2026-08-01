@@ -11,6 +11,7 @@ import {
   faTrash,
   faUpload,
 } from '@fortawesome/free-solid-svg-icons'
+import { formatStash } from '@/component/StashTagPill'
 import { GitBranch, GitCommit } from '@git/gitService'
 
 export type DragActionId =
@@ -45,14 +46,17 @@ export const SOURCE_ACTION_IDS: DragActionId[] = [
   'dropStash',
 ]
 
+/** A ref is kept separate from the surrounding words so it can be emphasised when rendered. */
+export type DescriptionPart = string | { ref: string }
+
 /**
- * A single box in a drag stack. `effect` names the refs involved. When `disabledReason` is set
- * the box refuses drops and shows the reason in place of the effect.
+ * A single box in a drag stack. `description` is worded as the dialog the action opens words
+ * it, so the drag and the confirmation that follows read the same.
  */
 export interface DragAction {
   id: DragActionId
   verb: string
-  effect: string
+  description: DescriptionPart[]
   icon: IconDefinition
   destructive: boolean
   isDefault: boolean
@@ -105,7 +109,7 @@ export const resolveTargetActions = ({
       {
         id: 'cherryPick',
         verb: 'Cherry-pick',
-        effect: `${hash} → ${target.cleanName}`,
+        description: ['Cherry pick commit ', { ref: hash }, ' into ', { ref: target.cleanName }],
         icon: faCodeCommit,
         destructive: false,
         isDefault: true,
@@ -114,7 +118,7 @@ export const resolveTargetActions = ({
       {
         id: 'mergeCommit',
         verb: 'Merge',
-        effect: `${hash} → ${target.cleanName}`,
+        description: ['Merge commit ', { ref: hash }, ' into ', { ref: target.cleanName }],
         icon: faCodeMerge,
         destructive: false,
         isDefault: false,
@@ -123,7 +127,7 @@ export const resolveTargetActions = ({
       {
         id: 'revert',
         verb: 'Revert',
-        effect: `${hash} on ${target.cleanName}`,
+        description: ['Revert commit ', { ref: hash }, ' on ', { ref: target.cleanName }],
         icon: faRotateLeft,
         destructive: true,
         isDefault: false,
@@ -139,7 +143,7 @@ export const resolveTargetActions = ({
     {
       id: 'merge',
       verb: 'Merge',
-      effect: `${source.cleanName} → ${target.cleanName}`,
+      description: ['Merge branch ', { ref: source.cleanName }, ' into ', { ref: target.cleanName }],
       icon: faCodeMerge,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'merge',
@@ -154,7 +158,7 @@ export const resolveTargetActions = ({
     actions.push({
       id: 'rebase',
       verb: 'Rebase',
-      effect: `${source.cleanName} onto ${target.cleanName}`,
+      description: ['Rebase branch ', { ref: source.cleanName }, ' on branch ', { ref: target.cleanName }],
       icon: faCodeBranch,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'rebase',
@@ -185,7 +189,7 @@ export const resolveSourceActions = ({
       {
         id: 'applyStash',
         verb: 'Apply',
-        effect: payload.ref,
+        description: ['Apply ', { ref: formatStash(payload.ref) }],
         icon: faPlay,
         destructive: false,
         isDefault: false,
@@ -193,7 +197,7 @@ export const resolveSourceActions = ({
       {
         id: 'popStash',
         verb: 'Pop',
-        effect: `${payload.ref} — applies and drops`,
+        description: ['Pop ', { ref: formatStash(payload.ref) }],
         icon: faArrowRightFromBracket,
         destructive: false,
         isDefault: false,
@@ -201,7 +205,7 @@ export const resolveSourceActions = ({
       {
         id: 'dropStash',
         verb: 'Drop',
-        effect: payload.ref,
+        description: ['Drop ', { ref: formatStash(payload.ref) }],
         icon: faTrash,
         destructive: true,
         isDefault: false,
@@ -217,7 +221,7 @@ export const resolveSourceActions = ({
     actions.push({
       id: 'fetchIntoLocal',
       verb: 'Fetch into Local',
-      effect: label,
+      description: ['Fetch Remote Branch ', { ref: label }, ' into Local'],
       icon: faDownload,
       destructive: false,
       isDefault: false,
@@ -226,7 +230,11 @@ export const resolveSourceActions = ({
     actions.push({
       id: 'delete',
       verb: 'Delete',
-      effect: `${label} on ${payload.branch.remoteName ?? 'remote'}`,
+      description: [
+        'Delete the remote branch ',
+        { ref: label },
+        ...(payload.branch.remoteName ? [' on ', { ref: payload.branch.remoteName }] : []),
+      ],
       icon: faTrash,
       destructive: true,
       isDefault: false,
@@ -244,7 +252,10 @@ export const resolveSourceActions = ({
     actions.push({
       id: 'push',
       verb: 'Push',
-      effect: `${label} → ${remoteNames.length === 1 ? remoteNames[0] : 'remote'}`,
+      description:
+        payload.kind === 'tag'
+          ? ['Push ', { ref: label }, ' tag to remote']
+          : ['Push branch ', { ref: label }, ...(remoteNames.length === 1 ? [' to ', { ref: remoteNames[0]! }] : [])],
       icon: faUpload,
       destructive: false,
       isDefault: false,
@@ -254,7 +265,7 @@ export const resolveSourceActions = ({
   actions.push({
     id: 'delete',
     verb: 'Delete',
-    effect: label,
+    description: payload.kind === 'tag' ? ['Delete ', { ref: label }, ' tag'] : ['Delete the branch ', { ref: label }],
     icon: faTrash,
     destructive: true,
     isDefault: false,
