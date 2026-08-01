@@ -651,13 +651,7 @@ export const DragOverlay: FC = () => {
                 action={action}
                 isFirst={index === 0}
                 isLast={index === targetSnapshot.current!.actions.length - 1}
-                // With the pointer on the pill rather than a box, the action a release would
-                // perform is highlighted, so the box and the pill agree on what happens next.
-                // Once the pointer leaves, a release does nothing, so nothing stays highlighted.
-                hovered={
-                  hoveredActionId === action.id ||
-                  (!hoveredActionId && pointerOverTarget && action.id === defaultTargetAction?.id)
-                }
+                hovered={hoveredActionId === action.id}
               />
             ))}
           </div>
