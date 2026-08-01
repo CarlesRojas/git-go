@@ -26,7 +26,7 @@ function ComboboxTrigger({
           // Group
           'group',
           // Layout & Structure
-          'rounded-main flex h-7 w-56 items-center justify-between gap-2',
+          'rounded-main flex h-7 w-48 items-center justify-between gap-2',
           // Spacing
           'px-2.5',
           // Typography

@@ -3,7 +3,7 @@ import { cn } from '@/util/cn'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { ComponentProps } from 'react'
+import { ComponentProps, forwardRef } from 'react'
 
 const inputVariants = cva([
   // Layout & Structure
@@ -29,30 +29,40 @@ export interface InputProps extends ComponentProps<'input'>, VariantProps<typeof
   dataType?: 'normal' | 'search'
 }
 
-const Input = ({ className, dataType = 'normal', type = 'text', onClear, ...props }: InputProps) => {
-  const hasValue = props.value !== undefined ? String(props.value).length > 0 : false
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, dataType = 'normal', type = 'text', onClear, ...props }, ref) => {
+    const hasValue = props.value !== undefined ? String(props.value).length > 0 : false
 
-  if (onClear) {
-    return (
-      <div className="relative w-full">
-        <input type={type} data-type={dataType} className={cn(inputVariants({ className }), 'pr-9')} {...props} />
+    if (onClear) {
+      return (
+        <div className="relative w-full">
+          <input
+            ref={ref}
+            type={type}
+            data-type={dataType}
+            className={cn(inputVariants({ className }), 'pr-9')}
+            {...props}
+          />
 
-        {hasValue && (
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={onClear}
-            className="absolute top-1/2 right-1 -translate-y-1/2"
-          >
-            <FontAwesomeIcon icon={faTimes} className="pointer-events-none size-3" />
-          </Button>
-        )}
-      </div>
-    )
-  }
+          {hasValue && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={onClear}
+              className="absolute top-1/2 right-1 -translate-y-1/2"
+            >
+              <FontAwesomeIcon icon={faTimes} className="pointer-events-none size-3" />
+            </Button>
+          )}
+        </div>
+      )
+    }
 
-  return <input type={type} data-type={dataType} className={cn(inputVariants({ className }))} {...props} />
-}
+    return <input ref={ref} type={type} data-type={dataType} className={cn(inputVariants({ className }))} {...props} />
+  },
+)
+
+Input.displayName = 'Input'
 
 export { Input }
