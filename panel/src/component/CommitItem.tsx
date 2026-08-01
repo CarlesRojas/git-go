@@ -123,6 +123,7 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const pills = (
     <div
+      data-drag-clip
       className={cn(
         // Layout & sizing
         'flex w-fit min-w-fit gap-2 overflow-hidden',
@@ -305,6 +306,7 @@ export const CommitItem: FC<CommitItemProps> = ({
             )}
 
             <div
+              data-drag-clip
               className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
             >
               {!!hasPills && pills}

@@ -167,9 +167,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const element = document.elementFromPoint(x, y)
 
     // The dragged item shows its own actions whenever the pointer is back over it, or over
-    // the stack those actions live in.
+    // the stack those actions live in. That stack only mounts a frame after the drag begins,
+    // so until it exists a fast opening gesture must not clear the flag — otherwise the boxes
+    // are dismissed before they were ever rendered.
     const sourceHovered = !!element?.closest('[data-drag-source-active], [data-drag-source-zone]')
-    if (sourceHovered !== currentSourceHovered.current) {
+    const stackMounted = !!document.querySelector('[data-drag-source-zone]')
+    if (sourceHovered !== currentSourceHovered.current && (sourceHovered || stackMounted)) {
       currentSourceHovered.current = sourceHovered
       setHoveredSource(sourceHovered)
     }
@@ -263,6 +266,10 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
         started = true
         suppressNextClick.current = true
+
+        // The dragged item's own actions are visible from the moment it is picked up.
+        currentSourceHovered.current = true
+        setHoveredSource(true)
 
         sourceElement.current = element
         element.setAttribute(SOURCE_ATTRIBUTE, '')

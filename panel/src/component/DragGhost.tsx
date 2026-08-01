@@ -26,9 +26,9 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel, showHoldHint }) =>
     getColor({ index, theme: settings.theme, isDark: settings.isDark, customColors: settings.customColors })
 
   return (
-    <div className="rounded-main bg-vsc-editor-bg border-vsc-editor-fg/30 w-fit max-w-64 overflow-hidden border shadow-lg">
+    <div className="rounded-main bg-vsc-editor-bg border-vsc-editor-fg/30 w-fit overflow-hidden border shadow-lg">
       {payload.kind === 'branch' && (
-        <div className="flex h-5 items-center">
+        <div className="flex h-5 max-w-64 items-center">
           <div className="flex h-full items-center px-1" style={{ backgroundColor: color(payload.colorIndex) }}>
             {getBranchIcons({
               isLocal: true,
@@ -46,7 +46,7 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel, showHoldHint }) =>
       )}
 
       {payload.kind === 'tag' && (
-        <div className="bg-vsc-editor-fg/10 flex h-5 items-center gap-1.5 px-1.5">
+        <div className="bg-vsc-editor-fg/10 flex h-5 max-w-64 items-center gap-1.5 px-1.5">
           <FontAwesomeIcon icon={faTag} className="size-3 shrink-0 text-amber-500" />
 
           <span className="truncate text-xs leading-tight font-medium">{payload.name}</span>
@@ -54,7 +54,7 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel, showHoldHint }) =>
       )}
 
       {payload.kind === 'commit' && (
-        <div className="bg-vsc-editor-fg/10 flex h-5 items-center gap-1.5 px-1.5">
+        <div className="bg-vsc-editor-fg/10 flex h-5 max-w-64 items-center gap-1.5 px-1.5">
           <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color(payload.colorIndex) }} />
 
           <span className="shrink-0 text-xs leading-tight font-bold">{shortHash(payload.commit.hash)}</span>
@@ -66,11 +66,13 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel, showHoldHint }) =>
       {(pendingLabel || showHoldHint) && (
         <div className={cn('border-vsc-editor-fg/20 flex flex-col border-t px-1.5 py-1')}>
           {pendingLabel && (
-            <span className="truncate text-[11px] leading-tight font-medium opacity-80">{pendingLabel}</span>
+            <span className="text-[11px] leading-tight font-medium whitespace-nowrap opacity-80">{pendingLabel}</span>
           )}
 
           {showHoldHint && (
-            <span className="truncate text-[10px] leading-tight font-medium opacity-50">hold for more actions</span>
+            <span className="text-[10px] leading-tight font-medium whitespace-nowrap opacity-50">
+              hold for more actions
+            </span>
           )}
         </div>
       )}

@@ -259,8 +259,7 @@ export const DragOverlay: FC = () => {
     if (hovered.id === 'cancel') return 'Cancel — nothing changes'
     if (hovered.disabledReason) return hovered.disabledReason
 
-    // Naming the ref that moves is what keeps merge and rebase apart mid-gesture.
-    return hovered.note ? `${hovered.verb} ${hovered.effect} · ${hovered.note}` : `${hovered.verb} ${hovered.effect}`
+    return `${hovered.verb} ${hovered.effect}`
   }, [payload, targetActions, sourceActions, hoveredActionId, defaultTargetAction])
 
   const dialogs = (
@@ -304,7 +303,13 @@ export const DragOverlay: FC = () => {
             style={targetStackPosition}
           >
             {targetActions.map(action => (
-              <DragActionBox key={action.id} action={action} hovered={hoveredActionId === action.id} />
+              <DragActionBox
+                key={action.id}
+                action={action}
+                // With the pointer on the pill rather than a box, the action a release would
+                // perform is highlighted, so the box and the pill agree on what happens next.
+                hovered={hoveredActionId === action.id || (!hoveredActionId && action.id === defaultTargetAction?.id)}
+              />
             ))}
           </div>
         )}

@@ -124,6 +124,17 @@
 }
 
 /*
+ * A hovered target scales up, which the row's own clipping and right-edge fade would cut off.
+ * Scoped to the row actually holding the hovered pill, so the rest of the graph keeps clipping
+ * and no other row spills its pills over the commit message.
+ */
+[data-dragging] [data-drag-clip]:has([data-drag-hovered]) {
+  overflow: visible;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/*
  * A drop target is a descendant of its commit row, so hovering it still puts the row in the
  * hover chain. Flatten that — during a drag the row is not a click target.
  */

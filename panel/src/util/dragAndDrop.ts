@@ -11,14 +11,13 @@ export type DragPayload =
   | { kind: 'commit'; commit: GitCommit; colorIndex: number }
 
 /**
- * A single box in a drag stack. `effect` names the refs involved, `note` says which ref moves.
- * When `disabledReason` is set the box refuses drops and shows the reason in place of the note.
+ * A single box in a drag stack. `effect` names the refs involved. When `disabledReason` is set
+ * the box refuses drops and shows the reason in place of the effect.
  */
 export interface DragAction {
   id: DragActionId
   verb: string
   effect: string
-  note?: string
   icon: IconDefinition
   destructive: boolean
   isDefault: boolean
@@ -68,7 +67,6 @@ export const resolveTargetActions = ({
         id: 'cherryPick',
         verb: 'Cherry-pick',
         effect: `${shortHash(payload.commit.hash)} → ${target.cleanName}`,
-        note: `${target.cleanName} moves`,
         icon: faCodeCommit,
         destructive: false,
         isDefault: true,
@@ -85,7 +83,6 @@ export const resolveTargetActions = ({
       id: 'merge',
       verb: 'Merge',
       effect: `${source.cleanName} → ${target.cleanName}`,
-      note: `${target.cleanName} moves`,
       icon: faCodeMerge,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'merge',
@@ -95,7 +92,6 @@ export const resolveTargetActions = ({
       id: 'rebase',
       verb: 'Rebase',
       effect: `${source.cleanName} onto ${target.cleanName}`,
-      note: `${source.cleanName} moves`,
       icon: faCodeBranch,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'rebase',

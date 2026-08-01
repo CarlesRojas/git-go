@@ -24,13 +24,12 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
         'rounded-main pointer-events-auto flex w-56 flex-col justify-center gap-0.5 px-2 py-1.5',
         // Colors
         'bg-vsc-editor-bg border-vsc-editor-fg/20 border',
-        // Motion
-        'origin-left transition-transform duration-100',
-        // State — hover reads as a lift rather than a wash, so the box never looks faded
+        // State — the highlight is a ring so it costs no layout and cannot shift the contents
         disabled && 'opacity-50',
-        !disabled && hovered && 'border-vsc-editor-fg scale-105 shadow-lg',
-        action.destructive && !disabled && 'text-vsc-error-fg border-vsc-error-fg/40',
-        action.destructive && !disabled && hovered && 'border-vsc-error-fg',
+        hovered && !disabled && 'ring-vsc-editor-fg ring-2',
+        // Destructive keeps its accent when disabled; the shared opacity is what softens it
+        action.destructive && 'text-vsc-error-fg border-vsc-error-fg/40',
+        action.destructive && hovered && !disabled && 'ring-vsc-error-fg',
       )}
     >
       <div className="flex items-center gap-1.5">
@@ -44,7 +43,7 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
       </div>
 
       <span className="line-clamp-1 truncate text-[11px] leading-tight font-medium opacity-70">
-        {action.disabledReason ?? (action.note ? `${action.effect} · ${action.note}` : action.effect)}
+        {action.disabledReason ?? action.effect}
       </span>
     </div>
   )

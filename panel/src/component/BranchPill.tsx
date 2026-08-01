@@ -105,6 +105,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
       <button
         data-drop-target={local ? local.cleanName : undefined}
         data-drag-dimmable={onlyRemote ? '' : undefined}
+        data-drag-hovered={isHoveredTarget ? '' : undefined}
         onPointerDown={handlePointerDown}
         className={cn(
           // Layout & sizing
