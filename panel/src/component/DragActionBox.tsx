@@ -26,13 +26,14 @@ export const DragActionBox: FC<Props> = ({ action, hovered, isFirst, isLast }) =
       className={cn(
         // Layout & sizing
         'pointer-events-auto flex w-56 items-center gap-2 px-3 py-3',
-        // The stack reads as one block, so only its outer corners are rounded and neighbours
-        // share a single edge rather than stacking two borders against each other.
+        // Colors — the same surface the context menus use
+        'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
+        // The stack reads as one block, so only its outer corners are rounded and a box with
+        // one above it drops its top edge instead of doubling up on its neighbour's bottom.
+        // Ordered after the border above, which would otherwise win and put the edge back.
         isFirst && 'rounded-t-main-outer',
         isLast && 'rounded-b-main-outer',
         !isFirst && 'border-t-0',
-        // Colors — the same surface the context menus use
-        'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
         // State — highlight is background only, exactly as menu items do it, so the border
         // never changes and nothing inside can shift. Disabled fades the contents rather than
         // the box, so the surface never thins and lets the graph through.
