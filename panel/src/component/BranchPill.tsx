@@ -13,10 +13,18 @@ import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FC, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useState } from 'react'
+import { FC, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from 'react'
 
 /** Matches the pill's scale transition, so the row stays unclipped until it has finished. */
 const SCALE_TRANSITION_MS = 150
+
+/**
+ * A hovered pill grows by roughly this many pixels rather than by a fixed ratio, so a long
+ * branch name does not balloon while a short one barely moves. Clamped at both ends.
+ */
+const HOVER_GROWTH_PX = 8
+const MIN_HOVER_SCALE = 1.02
+const MAX_HOVER_SCALE = 1.12
 
 interface Props {
   branch: GroupedBranch
@@ -50,17 +58,28 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const isCurrent = !!local && (local.current || currentBranch === local.cleanName)
 
   const { beginPress } = useDragActions()
-  const { payload: dragPayload, hoveredTargetKey, hoveredSource } = useDragState()
+  const { payload: dragPayload, hoveredTargetKey, pointerOverSource } = useDragState()
 
   const isDropTarget = !!dragPayload && !!local
   // The pill being dragged is hoverable too — returning to it reveals its own actions — so it
   // reacts exactly like any other target rather than being singled out.
   const isDraggedPill = !!local && dragPayload?.kind === 'branch' && dragPayload.branch.cleanName === local.cleanName
-  const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && hoveredSource)
+  const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && pointerOverSource)
 
   // The row stops clipping so the scaled pill is not cut off. Dropping that the moment the
   // pointer leaves would clip the scale-down instead, so it outlives the transition.
   const [unclipRow, setUnclipRow] = useState(false)
+  const [hoverScale, setHoverScale] = useState(1)
+  const pillRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!isHoveredTarget) return
+
+    const width = pillRef.current?.offsetWidth
+    if (!width) return
+
+    setHoverScale(Math.min(Math.max(1 + HOVER_GROWTH_PX / width, MIN_HOVER_SCALE), MAX_HOVER_SCALE))
+  }, [isHoveredTarget])
 
   useEffect(() => {
     if (isHoveredTarget) {
@@ -125,6 +144,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   return (
     <>
       <button
+        ref={pillRef}
         data-drop-target={local ? local.cleanName : undefined}
         data-drag-dimmable={onlyRemote ? '' : undefined}
         data-drag-hovered={unclipRow ? '' : undefined}
@@ -138,7 +158,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
           (onlyLocal || onlyRemote) && 'group/branch',
           // Drag targeting — scale rather than an outline, matching the graph's own highlight
           !!dragPayload && 'transition-transform duration-100',
-          isHoveredTarget && 'z-10 scale-110',
+          isHoveredTarget && 'z-10',
         )}
         style={{
           borderColor: isCurrent
@@ -149,6 +169,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                 customColors: settings.customColors,
               })
             : undefined,
+          transform: isHoveredTarget ? `scale(${hoverScale})` : undefined,
         }}
         onClick={onlyLocal ? handleLocalDoubleClick : onlyRemote ? handleRemoteDoubleClick : undefined}
         title={local?.worktreePath ? `Checked out in worktree ${local.worktreePath}` : undefined}

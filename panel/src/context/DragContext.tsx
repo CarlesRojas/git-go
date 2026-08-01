@@ -32,6 +32,8 @@ interface DragStateContextType {
   revealed: boolean
   /** Whether the pointer is back over the dragged item, which shows its own actions. */
   hoveredSource: boolean
+  /** Whether the pointer is over the dragged item right now, before any hold has elapsed. */
+  pointerOverSource: boolean
   pendingDrop: PendingDrop | null
 }
 
@@ -71,6 +73,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const [hoveredActionId, setHoveredActionId] = useState<DragActionId | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [hoveredSource, setHoveredSource] = useState(false)
+  const [pointerOverSource, setPointerOverSource] = useState(false)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
 
   // Everything below is deliberately kept out of React state: it changes every frame and
@@ -150,6 +153,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     setHoveredActionId(null)
     setRevealed(false)
     setHoveredSource(false)
+    setPointerOverSource(false)
   }, [clearHoldTimer, clearSourceHoldTimer])
 
   const autoScroll = useCallback(() => {
@@ -189,7 +193,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     // of its own, so it has no stack to track at all.
     const inRegion = !!element?.closest('[data-drag-source-active], [data-drag-source-zone]')
     const stackMounted = !!document.querySelector('[data-drag-source-zone]')
-    inSourceRegion.current = inRegion
+
+    if (inRegion !== inSourceRegion.current) {
+      inSourceRegion.current = inRegion
+      // The pill reacts to the pointer immediately; only its boxes wait for the hold.
+      if (payloadKind.current !== 'commit') setPointerOverSource(inRegion)
+    }
 
     if (payloadKind.current === 'commit') {
       // Nothing to show or hide.
@@ -308,6 +317,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
           currentSourceHovered.current = true
           inSourceRegion.current = true
           setHoveredSource(true)
+          setPointerOverSource(true)
         }
 
         sourceElement.current = element
@@ -379,8 +389,8 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   )
 
   const state = useMemo(
-    () => ({ payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pendingDrop }),
-    [payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pendingDrop],
+    () => ({ payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pointerOverSource, pendingDrop }),
+    [payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pointerOverSource, pendingDrop],
   )
 
   return (

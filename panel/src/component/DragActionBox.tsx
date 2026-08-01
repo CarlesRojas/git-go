@@ -27,7 +27,7 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
         // State — highlight is background only, exactly as menu items do it, so the border
         // never changes and nothing inside can shift
         disabled && 'opacity-50',
-        hovered && !disabled && 'bg-vsc-editor-fg/15',
+        hovered && !disabled && 'bg-vsc-editor-fg/8',
         // Destructive keeps its accent when disabled; the shared opacity is what softens it
         action.destructive && 'text-vsc-error-fg',
         action.destructive && hovered && !disabled && 'bg-vsc-error-fg/10',
