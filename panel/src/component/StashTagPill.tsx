@@ -93,7 +93,9 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
           // Colors
           'bg-vsc-editor-bg',
           // Drag targeting — matches how the branch pills react
+          // Grows from the corner its actions anchor to, so the two stay flush at any scale.
           !!dragPayload && 'transition-transform duration-100',
+          'origin-bottom-left',
           isDraggedPill && pointerOverSource && 'z-10',
         )}
         style={{ transform: isDraggedPill && pointerOverSource ? `scale(${scale})` : undefined }}
