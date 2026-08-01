@@ -132,6 +132,20 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.remote.fetch.checkout` Extension Setting.
+     */
+    get remoteFetchCheckout(): boolean {
+        return !!this.config.get('remote.fetch.checkout', true);
+    }
+
+    /**
+     * Get the value of the `git-go.remote.fetch.confirmOnlyIfForceNeeded` Extension Setting.
+     */
+    get remoteFetchConfirmOnlyIfForceNeeded(): boolean {
+        return !!this.config.get('remote.fetch.confirmOnlyIfForceNeeded', false);
+    }
+
+    /**
      * Get the value of the `git-go.stash.includeUntracked` Extension Setting.
      */
     get stashIncludeUntracked(): boolean {

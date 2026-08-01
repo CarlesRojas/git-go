@@ -67,6 +67,8 @@ export function activate(context: vscode.ExtensionContext) {
                             revertNoCommit: config.revertNoCommit,
                             resetMode: config.resetMode,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
+                            remoteFetchCheckout: config.remoteFetchCheckout,
+                            remoteFetchConfirmOnlyIfForceNeeded: config.remoteFetchConfirmOnlyIfForceNeeded,
                             stashIncludeUntracked: config.stashIncludeUntracked,
                             worktreeDefaultPath: config.worktreeDefaultPath,
                             worktreeOpenNewWindow: config.worktreeOpenNewWindow,
@@ -438,14 +440,38 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'deleteRemoteBranchSuccess', success: true };
                 },
 
-                fetchIntoLocalBranch: async (message) => {
+                fetchIntoLocalBranchNeedsForce: async (message) => {
                     const gitService = GitService.getInstance();
-                    const { remote, remoteBranch, localBranch, forceFetch } = message;
+                    const { remote, remoteBranch, localBranch } = message;
                     if (!remote || !remoteBranch || !localBranch) {
                         throw new Error('Remote, remote branch, and local branch are required');
                     }
-                    await gitService.fetchIntoLocalBranch(log, remote, remoteBranch, localBranch, forceFetch || false);
-                    log(`Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}`);
+                    const needsForce = await gitService.fetchIntoLocalBranchNeedsForce(
+                        log,
+                        remote,
+                        remoteBranch,
+                        localBranch
+                    );
+                    return { type: 'fetchIntoLocalBranchNeedsForce', needsForce };
+                },
+
+                fetchIntoLocalBranch: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { remote, remoteBranch, localBranch, forceFetch, checkout } = message;
+                    if (!remote || !remoteBranch || !localBranch) {
+                        throw new Error('Remote, remote branch, and local branch are required');
+                    }
+                    await gitService.fetchIntoLocalBranch(
+                        log,
+                        remote,
+                        remoteBranch,
+                        localBranch,
+                        forceFetch || false,
+                        checkout || false
+                    );
+                    log(
+                        `Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}${checkout ? ' and checked it out' : ''}`
+                    );
                     return { type: 'fetchIntoLocalBranchSuccess', success: true };
                 },
 
@@ -556,6 +582,8 @@ export function activate(context: vscode.ExtensionContext) {
                             revertNoCommit: config.revertNoCommit,
                             resetMode: config.resetMode,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
+                            remoteFetchCheckout: config.remoteFetchCheckout,
+                            remoteFetchConfirmOnlyIfForceNeeded: config.remoteFetchConfirmOnlyIfForceNeeded,
                             stashIncludeUntracked: config.stashIncludeUntracked,
                             worktreeDefaultPath: config.worktreeDefaultPath,
                             worktreeOpenNewWindow: config.worktreeOpenNewWindow,

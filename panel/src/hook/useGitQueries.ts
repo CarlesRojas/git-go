@@ -56,6 +56,8 @@ export interface ConfigState {
   revertNoCommit: boolean
   resetMode: 'soft' | 'mixed' | 'hard'
   remoteFetchForceFetch: boolean
+  remoteFetchCheckout: boolean
+  remoteFetchConfirmOnlyIfForceNeeded: boolean
   stashIncludeUntracked: boolean
   worktreeDefaultPath: string
   worktreeOpenNewWindow: boolean
@@ -82,6 +84,8 @@ const defaultConfigState: ConfigState = {
   revertNoCommit: true,
   resetMode: 'mixed',
   remoteFetchForceFetch: false,
+  remoteFetchCheckout: true,
+  remoteFetchConfirmOnlyIfForceNeeded: false,
   stashIncludeUntracked: true,
   worktreeDefaultPath: '../{repo}.worktrees/{branch}',
   worktreeOpenNewWindow: true,
@@ -658,6 +662,27 @@ export const useDeleteRemoteBranch = () => {
   })
 }
 
+export const useFetchIntoLocalBranchNeedsForce = () => {
+  return useMutation({
+    mutationFn: async ({
+      remote,
+      remoteBranch,
+      localBranch,
+    }: {
+      remote: string
+      remoteBranch: string
+      localBranch: string
+    }) => {
+      const response = await sendCorrelatedMessage<{ needsForce: boolean }>(
+        'fetchIntoLocalBranchNeedsForce',
+        { remote, remoteBranch, localBranch },
+        30_000,
+      )
+      return response.needsForce
+    },
+  })
+}
+
 export const useFetchIntoLocalBranch = () => {
   const queryClient = useQueryClient()
 
@@ -667,15 +692,17 @@ export const useFetchIntoLocalBranch = () => {
       remoteBranch,
       localBranch,
       forceFetch = false,
+      checkout = false,
     }: {
       remote: string
       remoteBranch: string
       localBranch: string
       forceFetch?: boolean
+      checkout?: boolean
     }) => {
       return await sendCorrelatedMessage(
         'fetchIntoLocalBranch',
-        { remote, remoteBranch, localBranch, forceFetch },
+        { remote, remoteBranch, localBranch, forceFetch, checkout },
         30_000,
       )
     },
