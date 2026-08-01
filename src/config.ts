@@ -44,6 +44,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.file.openInSplitView` Extension Setting.
+     */
+    get fileOpenInSplitView(): boolean {
+        return !!this.config.get('file.openInSplitView', true);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {
