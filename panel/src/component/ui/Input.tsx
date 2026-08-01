@@ -40,7 +40,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={type}
             data-type={dataType}
-            className={cn(inputVariants({ className }), 'pr-9')}
+            className={cn(inputVariants({ className }), hasValue && 'pr-9')}
             {...props}
           />
 

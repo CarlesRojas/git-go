@@ -53,6 +53,8 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         expanded ? 'w-48' : 'w-7',
       ])}
     >
+      {/* Collapsed, the field drops its padding — 28px of box cannot hold it, and the overflow
+          would spill over the button to its right. */}
       <Input
         ref={inputRef}
         type="text"
@@ -62,7 +64,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder="Search commits..."
-        className={cn('w-full pl-7', !expanded && 'cursor-pointer placeholder:opacity-0')}
+        className={cn('w-full pl-7', !expanded && 'cursor-pointer px-0 placeholder:opacity-0')}
         dataType="search"
         onClear={handleClear}
       />
