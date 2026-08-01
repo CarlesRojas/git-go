@@ -165,6 +165,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     sourceElement.current = null
     document.documentElement.removeAttribute('data-dragging')
 
+    // Commit-highlight classes are suppressed while dragging rather than prevented, so any the
+    // graph picked up on the way are cleared here instead of surfacing once the drag ends.
+    document
+      .querySelectorAll('.highlighted, .dimmed')
+      .forEach(element => element.classList.remove('highlighted', 'dimmed'))
+
     currentTargetKey.current = null
     currentActionId.current = null
     currentActionDisabled.current = false

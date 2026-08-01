@@ -150,6 +150,11 @@
 }
 
 [data-dragging] .highlighted {
+  /* The utility scales through these variables rather than a transform, and a plain
+     `scale: none` here gets optimised away, so the variables themselves are reset. */
+  --tw-scale-x: 100%;
+  --tw-scale-y: 100%;
+  --tw-scale-z: 100%;
   transform: none;
 }
 

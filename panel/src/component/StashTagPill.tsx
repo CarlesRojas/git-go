@@ -1,7 +1,8 @@
-import { useDragActions } from '@/context/DragContext'
+import { useDragActions, useDragState } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useStashContextMenu } from '@/hook/contextMenu/useStashContextMenu'
 import { useTagContextMenu } from '@/hook/contextMenu/useTagContextMenu'
+import { useDragHoverScale } from '@/hook/useDragHoverScale'
 import { useTagRemotes } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
 import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
@@ -37,6 +38,15 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
 
   const { data: tagRemotes } = useTagRemotes(type === 'tag' && settings.showTags)
   const { beginPress } = useDragActions()
+  const { payload: dragPayload, pointerOverSource } = useDragState()
+
+  // A tag and a stash have no drop target, but the one being dragged still reacts when the
+  // pointer comes back to it, the same as a branch pill does.
+  const isDraggedPill =
+    (dragPayload?.kind === 'tag' && type === 'tag' && dragPayload.name === label) ||
+    (dragPayload?.kind === 'stash' && type === 'stash' && dragPayload.ref === label)
+
+  const { ref: pillRef, scale, unclipped } = useDragHoverScale<HTMLDivElement>(isDraggedPill && pointerOverSource)
 
   // Early returns after hooks
   if (type === 'stash' && !settings.showStashes) return null
@@ -69,14 +79,20 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
     <>
       <ContextMenuToUse>
         <div
+          ref={pillRef}
           data-drag-dimmable
+          data-drag-hovered={unclipped ? '' : undefined}
           onPointerDown={handlePointerDown}
           className={cn(
             // Layout & sizing
-            'rounded-main h-5 max-h-5 min-h-5 min-w-fit',
+            'rounded-main relative h-5 max-h-5 min-h-5 min-w-fit',
             // Colors
             'bg-vsc-editor-bg',
+            // Drag targeting — matches how the branch pills react
+            !!dragPayload && 'transition-transform duration-100',
+            isDraggedPill && pointerOverSource && 'z-10',
           )}
+          style={{ transform: isDraggedPill && pointerOverSource ? `scale(${scale})` : undefined }}
         >
           <div
             className={cn(
