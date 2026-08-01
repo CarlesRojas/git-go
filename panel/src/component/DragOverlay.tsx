@@ -19,14 +19,27 @@ import { useFadePresence } from '@/hook/useFadePresence'
 import {
   useApplyStash,
   useCheckoutLocalBranch,
+  useCherryPickCommit,
   useCurrentBranch,
+  useFetchIntoLocalBranch,
   useGitBranches,
   useGitRemotes,
+  useMergeBranch,
+  useMergeCommitIntoCurrentBranch,
   usePopStash,
+  usePushBranch,
+  useRebaseBranch,
 } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
-import { DragAction, resolveSourceActions, resolveTargetActions } from '@/util/dragAndDrop'
-import { faCodeBranch, faInbox } from '@fortawesome/free-solid-svg-icons'
+import { DragAction, resolveSourceActions, resolveTargetActions, shortHash } from '@/util/dragAndDrop'
+import {
+  faCodeBranch,
+  faCodeCommit,
+  faCodeMerge,
+  faDownload,
+  faInbox,
+  faUpload,
+} from '@fortawesome/free-solid-svg-icons'
 import { GitBranch, GitCommit } from '@git/gitService'
 import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
@@ -40,6 +53,12 @@ const EMPTY_COMMIT: GitCommit = {
   date: '',
   message: '',
   tags: [],
+}
+
+interface LayoutRect {
+  left: number
+  top: number
+  bottom: number
 }
 
 const STACK_GAP_PX = 8
@@ -56,7 +75,25 @@ const FADE_MS = 150
  * wrapper rather than empty space, so pill and boxes stay a single hit region — crossing the
  * gap must not collapse the stack.
  */
-const stackPositionFor = (rect: DOMRect | null, count: number) => {
+/**
+ * A pill's laid-out box, ignoring any scale it is currently showing. getBoundingClientRect
+ * measures the scaled box, which would move the stack as the pill grows and settles again;
+ * the centre is the one point a scale leaves alone, so the box is rebuilt around it from the
+ * untransformed layout size.
+ */
+const layoutRectOf = (element: HTMLElement): LayoutRect => {
+  const rect = element.getBoundingClientRect()
+  const centreX = rect.left + rect.width / 2
+  const centreY = rect.top + rect.height / 2
+
+  return {
+    left: centreX - element.offsetWidth / 2,
+    top: centreY - element.offsetHeight / 2,
+    bottom: centreY + element.offsetHeight / 2,
+  }
+}
+
+const stackPositionFor = (rect: LayoutRect | null, count: number) => {
   if (!rect || count === 0) return null
 
   const height = count * BOX_HEIGHT_ESTIMATE_PX
@@ -87,8 +124,8 @@ export const DragOverlay: FC = () => {
   const [dropBranch, setDropBranch] = useState<GitBranch | null>(null)
   const [dropCommit, setDropCommit] = useState<GitCommit | null>(null)
   const [dropStashRef, setDropStashRef] = useState('')
-  const [stackRect, setStackRect] = useState<DOMRect | null>(null)
-  const [sourceRect, setSourceRect] = useState<DOMRect | null>(null)
+  const [stackRect, setStackRect] = useState<LayoutRect | null>(null)
+  const [sourceRect, setSourceRect] = useState<LayoutRect | null>(null)
 
   const mergeDialog = useBranchMergeIntoCurrentDialog({ branch: dropBranch ?? EMPTY_BRANCH })
   const rebaseDialog = useRebaseCurrentBranchIntoBranch({ branch: dropBranch ?? EMPTY_BRANCH })
@@ -104,6 +141,15 @@ export const DragOverlay: FC = () => {
   const remoteDeleteDialog = useRemoteBranchDeleteDialog()
   const applyStashMutation = useApplyStash()
   const popStashMutation = usePopStash()
+
+  // Auto mode runs these in place of their dialog, with the values the dialog would have
+  // opened with, so confirming a dialog and skipping it produce the same command.
+  const mergeBranchMutation = useMergeBranch()
+  const rebaseBranchMutation = useRebaseBranch()
+  const cherryPickMutation = useCherryPickCommit()
+  const mergeCommitMutation = useMergeCommitIntoCurrentBranch()
+  const pushBranchMutation = usePushBranch()
+  const fetchIntoLocalMutation = useFetchIntoLocalBranch()
 
   const targetBranch = useMemo(
     () => branches.find(branch => !branch.remote && branch.cleanName === hoveredTargetKey) ?? null,
@@ -164,7 +210,10 @@ export const DragOverlay: FC = () => {
       return
     }
 
-    const measure = () => setStackRect(document.querySelector<HTMLElement>(selector)?.getBoundingClientRect() ?? null)
+    const measure = () => {
+      const element = document.querySelector<HTMLElement>(selector)
+      setStackRect(element ? layoutRectOf(element) : null)
+    }
     measure()
 
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
@@ -178,8 +227,10 @@ export const DragOverlay: FC = () => {
       return
     }
 
-    const measure = () =>
-      setSourceRect(document.querySelector<HTMLElement>(`[${SOURCE_ATTRIBUTE}]`)?.getBoundingClientRect() ?? null)
+    const measure = () => {
+      const element = document.querySelector<HTMLElement>(`[${SOURCE_ATTRIBUTE}]`)
+      setSourceRect(element ? layoutRectOf(element) : null)
+    }
     measure()
 
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
@@ -221,39 +272,147 @@ export const DragOverlay: FC = () => {
       }
 
       switch (drop.actionId) {
-        case 'merge':
+        case 'merge': {
           if (drop.payload.kind !== 'branch') return
-          setDropBranch(drop.payload.branch)
+          const merged = drop.payload.branch
+
+          if (settings.dragAndDropAutoMerge) {
+            mergeBranchMutation.mutate(
+              {
+                branchName: merged.cleanName,
+                fastForwardIfPossible: settings.mergeFastForwardIfPossible,
+                squash: settings.mergeSquash,
+                noCommit: settings.mergeNoCommit,
+              },
+              {
+                onSuccess: () =>
+                  showToast({
+                    text: `Branch '${merged.cleanName}' merged into '${target?.cleanName}' successfully`,
+                    icon: faCodeMerge,
+                    type: 'success',
+                  }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faCodeMerge }),
+              },
+            )
+            return
+          }
+
+          setDropBranch(merged)
           mergeDialog.openDialog()
           return
+        }
 
         case 'rebase':
           if (!target) return
+
+          if (settings.dragAndDropAutoRebase) {
+            rebaseBranchMutation.mutate(
+              { branchName: target.cleanName, ignoreDate: settings.branchRebaseIgnoreDate },
+              {
+                onSuccess: () =>
+                  showToast({
+                    text: `Current branch rebased onto '${target.cleanName}' successfully`,
+                    icon: faCodeBranch,
+                    type: 'success',
+                  }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faCodeBranch }),
+              },
+            )
+            return
+          }
+
           setDropBranch(target)
           rebaseDialog.openDialog()
           return
 
-        case 'cherryPick':
+        case 'cherryPick': {
           if (drop.payload.kind !== 'commit') return
-          setDropCommit(drop.payload.commit)
+          const picked = drop.payload.commit
+
+          if (settings.dragAndDropAutoCherryPick) {
+            cherryPickMutation.mutate(
+              {
+                commitHash: picked.hash,
+                recordOrigin: settings.cherryPickRecordOrigin,
+                noCommit: settings.cherryPickNoCommit,
+              },
+              {
+                onSuccess: () =>
+                  showToast({ text: 'Commit cherry-picked successfully', icon: faCodeCommit, type: 'success' }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faCodeCommit }),
+              },
+            )
+            return
+          }
+
+          setDropCommit(picked)
           cherryPickDialog.openDialog()
           return
+        }
 
-        case 'push':
+        case 'push': {
           if (drop.payload.kind === 'tag') {
             tagPushDialog.openDialog(drop.payload.commit, drop.payload.name)
             return
           }
           if (drop.payload.kind !== 'branch') return
-          setDropBranch(drop.payload.branch)
+          const pushed = drop.payload.branch
+
+          if (settings.dragAndDropAutoPush) {
+            pushBranchMutation.mutate(
+              {
+                branchName: pushed.cleanName,
+                remote: 'origin',
+                setUpstream: settings.branchPushSetUpstream,
+                pushMode: 'normal',
+              },
+              {
+                onSuccess: () =>
+                  showToast({
+                    text: `Branch '${pushed.cleanName}' pushed to 'origin' successfully`,
+                    icon: faUpload,
+                    type: 'success',
+                  }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faUpload }),
+              },
+            )
+            return
+          }
+
+          setDropBranch(pushed)
           pushDialog.openDialog()
           return
+        }
 
-        case 'mergeCommit':
+        case 'mergeCommit': {
           if (drop.payload.kind !== 'commit') return
-          setDropCommit(drop.payload.commit)
+          const mergedCommit = drop.payload.commit
+
+          if (settings.dragAndDropAutoMergeCommit) {
+            mergeCommitMutation.mutate(
+              {
+                commitHash: mergedCommit.hash,
+                fastForwardIfPossible: settings.mergeFastForwardIfPossible,
+                squash: settings.mergeSquash,
+                noCommit: settings.mergeNoCommit,
+              },
+              {
+                onSuccess: () =>
+                  showToast({
+                    text: `Commit ${shortHash(mergedCommit.hash)} merged into '${target?.cleanName}' successfully`,
+                    icon: faCodeMerge,
+                    type: 'success',
+                  }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faCodeMerge }),
+              },
+            )
+            return
+          }
+
+          setDropCommit(mergedCommit)
           mergeCommitDialog.openDialog()
           return
+        }
 
         case 'revert':
           if (drop.payload.kind !== 'commit') return
@@ -276,10 +435,39 @@ export const DragOverlay: FC = () => {
           deleteDialog.openDialog()
           return
 
-        case 'fetchIntoLocal':
+        case 'fetchIntoLocal': {
           if (drop.payload.kind !== 'branch') return
-          void remoteFetchDialog.openDialog(drop.payload.branch)
+          const fetched = drop.payload.branch
+
+          // Without a remote name there is no command to build, so the dialog handles it.
+          if (settings.dragAndDropAutoFetchIntoLocal && fetched.remoteName) {
+            const checkout = settings.remoteFetchCheckout
+            fetchIntoLocalMutation.mutate(
+              {
+                remote: fetched.remoteName,
+                remoteBranch: fetched.cleanName,
+                localBranch: fetched.cleanName,
+                forceFetch: settings.remoteFetchForceFetch,
+                checkout,
+              },
+              {
+                onSuccess: () =>
+                  showToast({
+                    text: checkout
+                      ? `Fetched remote branch '${fetched.cleanName}' into local and checked it out successfully`
+                      : `Fetched remote branch '${fetched.cleanName}' into local successfully`,
+                    icon: faDownload,
+                    type: 'success',
+                  }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faDownload }),
+              },
+            )
+            return
+          }
+
+          void remoteFetchDialog.openDialog(fetched)
           return
+        }
 
         case 'applyStash': {
           if (drop.payload.kind !== 'stash') return
@@ -333,6 +521,13 @@ export const DragOverlay: FC = () => {
       remoteDeleteDialog,
       applyStashMutation,
       popStashMutation,
+      settings,
+      mergeBranchMutation,
+      rebaseBranchMutation,
+      cherryPickMutation,
+      mergeCommitMutation,
+      pushBranchMutation,
+      fetchIntoLocalMutation,
     ],
   )
 

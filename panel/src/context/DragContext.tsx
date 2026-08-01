@@ -165,6 +165,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     sourceElement.current = null
     document.documentElement.removeAttribute('data-dragging')
 
+    // Commit-highlight classes are suppressed while dragging rather than prevented, so any the
+    // graph picked up on the way are cleared here instead of surfacing once the drag ends.
+    document
+      .querySelectorAll('.highlighted, .dimmed')
+      .forEach(element => element.classList.remove('highlighted', 'dimmed'))
+
     currentTargetKey.current = null
     currentActionId.current = null
     currentActionDisabled.current = false
@@ -280,7 +286,9 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     // The drag handle can be nested inside the drop target, so containment — not identity —
     // is what marks a pill as the one being dragged.
     const isSource = !!sourceElement.current && !!targetElement?.contains(sourceElement.current)
-    const targetKey = isSource ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
+    // A kind with no valid target never registers one, so pills do not react to it at all.
+    const canTarget = !TARGETLESS_KINDS.includes(payloadKind.current!)
+    const targetKey = isSource || !canTarget ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
 
     // The stack's own padding and the gaps between its boxes keep the target alive so it does
     // not close as the pointer travels, but they are not the target: resting there arms

@@ -5,6 +5,7 @@ import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchCont
 import { useRemoteBranchContextMenu } from '@/hook/contextMenu/useRemoteBranchContextMenu'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
+import { useDragHoverScale } from '@/hook/useDragHoverScale'
 import { useDoubleClick } from '@/hook/useDoubleClick'
 import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
 import { getColor } from '@/hook/useGitTree'
@@ -13,18 +14,7 @@ import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FC, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from 'react'
-
-/** Matches the pill's scale transition, so the row stays unclipped until it has finished. */
-const SCALE_TRANSITION_MS = 150
-
-/**
- * A hovered pill grows by roughly this many pixels rather than by a fixed ratio, so a long
- * branch name does not balloon while a short one barely moves. Clamped at both ends.
- */
-const HOVER_GROWTH_PX = 8
-const MIN_HOVER_SCALE = 1.02
-const MAX_HOVER_SCALE = 1.12
+import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 interface Props {
   branch: GroupedBranch
@@ -71,32 +61,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
     dragPayload.branch.cleanName === local.cleanName
   const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && pointerOverSource)
 
-  // The row stops clipping so the scaled pill is not cut off. Dropping that the moment the
-  // pointer leaves would clip the scale-down instead, so it outlives the transition.
-  const [unclipRow, setUnclipRow] = useState(false)
-  const [hoverScale, setHoverScale] = useState(1)
-  const pillRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!isHoveredTarget) return
-
-    const width = pillRef.current?.offsetWidth
-    if (!width) return
-
-    setHoverScale(Math.min(Math.max(1 + HOVER_GROWTH_PX / width, MIN_HOVER_SCALE), MAX_HOVER_SCALE))
-  }, [isHoveredTarget])
-
-  useEffect(() => {
-    if (isHoveredTarget) {
-      setUnclipRow(true)
-      return
-    }
-
-    if (!unclipRow) return
-
-    const timeout = window.setTimeout(() => setUnclipRow(false), SCALE_TRANSITION_MS)
-    return () => window.clearTimeout(timeout)
-  }, [isHoveredTarget, unclipRow])
+  const {
+    ref: pillRef,
+    scale: hoverScale,
+    unclipped: unclipRow,
+  } = useDragHoverScale<HTMLButtonElement>(isHoveredTarget)
 
   const handlePointerDown = (event: ReactPointerEvent) => {
     if (!settings.dragAndDropEnabled) return

@@ -103,8 +103,9 @@
 }
 
 /* Tier 2 is the absence of a rule — valid targets and the graph tree keep full opacity. Tags
-   have no valid pill targets, so during a tag drag branch pills drop to tier 1 as well. */
-[data-dragging='tag'] [data-drop-target] {
+   and stashes have no valid pill target, so during those drags branch pills drop to tier 1. */
+[data-dragging='tag'] [data-drop-target],
+[data-dragging='stash'] [data-drop-target] {
   opacity: 0.1;
 }
 
@@ -149,6 +150,11 @@
 }
 
 [data-dragging] .highlighted {
+  /* The utility scales through these variables rather than a transform, and a plain
+     `scale: none` here gets optimised away, so the variables themselves are reset. */
+  --tw-scale-x: 100%;
+  --tw-scale-y: 100%;
+  --tw-scale-z: 100%;
   transform: none;
 }
 
