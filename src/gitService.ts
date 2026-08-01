@@ -308,9 +308,7 @@ export class GitService {
 
                 if (branchToWorktree.size > 0) {
                     for (const branch of branches) {
-                        // The branch checked out here is never "in another worktree", even if
-                        // path normalization failed to match this workspace to its worktree entry
-                        if (branch.remote || branch.current) continue;
+                        if (branch.remote) continue;
                         const worktreePath = branchToWorktree.get(branch.name);
                         if (worktreePath) branch.worktreePath = worktreePath;
                     }

@@ -42,8 +42,6 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const onlyRemote = !local && remotes.length > 0
   const localAndRemote = !!local && remotes.length > 0
   const isCurrent = !!local && currentBranch === local.cleanName
-  // A branch held by a linked worktree is checked out too, just not in this window
-  const isCheckedOut = isCurrent || !!local?.worktreePath
 
   const handleLocalDoubleClick = useDoubleClick(() => {
     if (!local || isCurrent) return
@@ -93,11 +91,11 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
           'bg-vsc-editor-bg rounded-main relative flex h-5 max-h-5 min-h-5 min-w-fit cursor-pointer items-center overflow-hidden',
           // Interactions
           onlyRemote && 'border-vsc-editor-fg/30 border',
-          isCheckedOut && 'border',
+          isCurrent && 'border',
           (onlyLocal || onlyRemote) && 'group/branch',
         )}
         style={{
-          borderColor: isCheckedOut
+          borderColor: isCurrent
             ? getColor({
                 index: layout.colorIndex,
                 isDark: settings.isDark,
@@ -119,7 +117,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                 'px-1',
                 // Color
                 'bg-vsc-editor-fg/10',
-                !!local && !isCheckedOut && 'rounded-l-main border-y border-l',
+                !!local && !isCurrent && 'rounded-l-main border-y border-l',
               )}
               style={{
                 backgroundColor: local
@@ -156,8 +154,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               'flex h-full w-fit min-w-fit items-center px-1.5',
               // Color
               'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
-              localAndRemote && !isCheckedOut && 'border-vsc-editor-fg/20 border-y border-r',
-              onlyLocal && !isCheckedOut && 'border-vsc-editor-fg/20 rounded-r-main border-y border-r',
+              localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 border-y border-r',
+              onlyLocal && !isCurrent && 'border-vsc-editor-fg/20 rounded-r-main border-y border-r',
               onlyRemote && 'gap-1.5 pl-1',
               !onlyRemote && 'peer-hover/icon:bg-vsc-editor-fg/20',
             )}
@@ -174,7 +172,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
             <span
               className={cn('line-clamp-1 text-xs leading-tight font-medium text-nowrap', isCurrent && 'font-bold')}
               style={{
-                color: isCheckedOut
+                color: isCurrent
                   ? getColor({
                       index: layout.colorIndex,
                       theme: settings.theme,
@@ -200,8 +198,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                   // Colors
                   'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
                   onlyRemote && 'border-vsc-editor-fg/20 border-l',
-                  localAndRemote && !isCheckedOut && 'border-vsc-editor-fg/20 last:rounded-r-main border-y border-r',
-                  localAndRemote && isCheckedOut && 'border-vsc-editor-fg/20 border-l',
+                  localAndRemote && !isCurrent && 'border-vsc-editor-fg/20 last:rounded-r-main border-y border-r',
+                  localAndRemote && isCurrent && 'border-vsc-editor-fg/20 border-l',
                 )}
                 onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
               >
