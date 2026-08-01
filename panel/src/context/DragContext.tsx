@@ -297,16 +297,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const isSource = !!sourceElement.current && !!targetElement?.contains(sourceElement.current)
     // A kind with no valid target never registers one, so pills do not react to it at all.
     const canTarget = !TARGETLESS_KINDS.includes(payloadKind.current!)
-    const targetKey = isSource || !canTarget ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
+    // The stack carries its pill's key on the padding bridging the two, so the gap belongs to
+    // the pill: crossing it keeps the stack open and a release there still acts on the pill.
+    const resolvedTarget = isSource || !canTarget ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
 
-    // The stack's own padding and the gaps between its boxes keep the target alive so it does
-    // not close as the pointer travels, but they are not the target: resting there arms
-    // nothing and highlights nothing, since a release lands on neither pill nor box.
-    const bridgeKey = element?.closest<HTMLElement>('[data-drop-bridge]')?.getAttribute('data-drop-bridge') ?? null
-    const resolvedTarget = targetKey ?? bridgeKey
-
-    if ((targetKey !== null) !== isPointerOverTarget.current) {
-      isPointerOverTarget.current = targetKey !== null
+    if ((resolvedTarget !== null) !== isPointerOverTarget.current) {
+      isPointerOverTarget.current = resolvedTarget !== null
       setPointerOverTarget(isPointerOverTarget.current)
     }
 

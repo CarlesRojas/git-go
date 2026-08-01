@@ -136,7 +136,9 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
           isCurrent && 'border',
           (onlyLocal || onlyRemote) && 'group/branch',
           // Drag targeting — scale rather than an outline, matching the graph's own highlight
+          // Grows rightwards from the edge its actions line up with, so they stay aligned.
           !!dragPayload && 'transition-transform duration-100',
+          'origin-left',
           isHoveredTarget && 'z-10',
         )}
         style={{

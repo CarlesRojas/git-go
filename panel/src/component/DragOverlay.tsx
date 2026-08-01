@@ -70,28 +70,27 @@ const VIEWPORT_MARGIN_PX = 8
 const FADE_MS = 150
 
 /**
- * A pill's laid-out box, ignoring any scale it is currently showing. getBoundingClientRect
- * measures the scaled box, which would move the stack as the pill grows and settles again;
- * the centre is the one point a scale leaves alone, so the box is rebuilt around it from the
- * untransformed layout size.
+ * Where a stack anchors. Pills grow rightwards from their left edge, so that edge is read
+ * straight off; vertically they spread from the middle, which is the point a scale leaves
+ * alone, so the box is rebuilt around it from the untransformed height. Either way the anchor
+ * holds still while the pill scales.
  */
 const layoutRectOf = (element: HTMLElement): LayoutRect => {
   const rect = element.getBoundingClientRect()
-  const centreX = rect.left + rect.width / 2
   const centreY = rect.top + rect.height / 2
 
   return {
-    left: centreX - element.offsetWidth / 2,
+    left: rect.left,
     top: centreY - element.offsetHeight / 2,
     bottom: centreY + element.offsetHeight / 2,
   }
 }
 
 /**
- * Places a stack below the pill it belongs to, flipping above it and sliding left as needed so
- * it is never pushed off screen in a narrow panel. The gap to the pill is padding on the
- * wrapper rather than empty space, so pill and boxes stay a single hit region — crossing the
- * gap must not collapse the stack.
+ * Places the stack a short way off its pill and flush with its left edge, flipping above the
+ * pill and sliding left only when it would otherwise leave the viewport. The gap is padding on
+ * the stack rather than empty space, so it belongs to the pill: crossing it neither closes the
+ * stack nor stops a release from performing the pill's own action.
  */
 const stackPositionFor = (rect: LayoutRect | null, count: number) => {
   if (!rect || count === 0) return null
@@ -635,9 +634,9 @@ export const DragOverlay: FC = () => {
 
         {targetFade.mounted && targetSnapshot.current && (
           <div
-            // Carries the target key so the padded bridge back to the pill keeps the stack
-            // open while the pointer travels to a box, without counting as the target itself.
-            data-drop-bridge={targetFade.shown ? targetSnapshot.current.key : undefined}
+            // Carries the target key so the padding bridging back to the pill counts as the
+            // pill: the stack stays open and a release there still performs its action.
+            data-drop-target={targetFade.shown ? targetSnapshot.current.key : undefined}
             className={cn(
               'absolute z-10 flex flex-col transition-opacity duration-150',
               // Untargetable while fading out, so a release cannot land on a stale box.
