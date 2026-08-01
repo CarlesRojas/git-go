@@ -86,3 +86,85 @@
   --radius-small: 0px;
   --radius-main-outer: 0px;
 }
+
+/*
+ * Drag dimming. Driven by a single attribute on the root so that starting a drag never
+ * re-renders the graph — the whole tier system is static CSS keyed on the payload kind.
+ */
+
+/* Search dimming is suspended for the duration, so the two never multiply. */
+[data-dragging] [data-commit-row] {
+  opacity: 1 !important;
+}
+
+/* Tier 1: anything that cannot accept the dragged item, dimmed as far as a search miss. */
+[data-dragging] [data-drag-dimmable] {
+  opacity: 0.1;
+}
+
+/* Tier 2 is the absence of a rule — valid targets and the graph tree keep full opacity. Tags
+   have no valid pill targets, so during a tag drag branch pills drop to tier 1 as well. */
+[data-dragging='tag'] [data-drop-target] {
+  opacity: 0.1;
+}
+
+/*
+ * Only drop targets react to the pointer while dragging. Everything else in the graph stops
+ * receiving events, which suppresses hover backgrounds and the commit-highlight handlers in
+ * one go. Hit testing still resolves targets because elementFromPoint falls through to the
+ * nearest ancestor that accepts events.
+ */
+[data-dragging] [data-drag-scroll-container] * {
+  pointer-events: none;
+}
+
+[data-dragging] [data-drop-target],
+[data-dragging] [data-drag-source-active] {
+  pointer-events: auto;
+}
+
+/*
+ * A hovered target scales up, which the row's own clipping and right-edge fade would cut off.
+ * Scoped to the row actually holding the hovered pill, so the rest of the graph keeps clipping
+ * and no other row spills its pills over the commit message.
+ */
+[data-dragging] [data-drag-clip]:has([data-drag-hovered]) {
+  overflow: visible;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/*
+ * A drop target is a descendant of its commit row, so hovering it still puts the row in the
+ * hover chain. Flatten that — during a drag the row is not a click target.
+ */
+[data-dragging] [data-drag-row]:hover {
+  background-color: transparent;
+}
+
+/* Commit-highlight state can be left over from just before the drag began, and its dim would
+   otherwise fight the drag's own tiers. */
+[data-dragging] .dimmed {
+  opacity: 1;
+}
+
+[data-dragging] .highlighted {
+  transform: none;
+}
+
+/*
+ * The picked-up item stays where it is — its position still encodes what its ref points at —
+ * and reads as a target like any other, since returning to it reveals its own actions.
+ */
+[data-dragging] [data-drag-source-active] {
+  opacity: 1;
+}
+
+[data-dragging] body {
+  user-select: none;
+}
+
+/* Universal so it beats the cursor utilities the pills and rows set on themselves. */
+[data-dragging] * {
+  cursor: grabbing !important;
+}

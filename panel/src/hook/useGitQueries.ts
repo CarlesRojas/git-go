@@ -44,6 +44,10 @@ export interface ConfigState {
   rounded: boolean
   autoOpenEnabled: boolean
   pinTabEnabled: boolean
+  dragAndDropEnabled: boolean
+  dragAndDropBranchDefaultAction: 'merge' | 'rebase' | 'none'
+  dragAndDropHoldDelay: number
+  dragAndDropHideDelay: number
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
   branchPushSetUpstream: boolean
@@ -72,6 +76,10 @@ const defaultConfigState: ConfigState = {
   rounded: true,
   autoOpenEnabled: false,
   pinTabEnabled: true,
+  dragAndDropEnabled: true,
+  dragAndDropBranchDefaultAction: 'merge',
+  dragAndDropHoldDelay: 300,
+  dragAndDropHideDelay: 300,
   branchCreateCheckout: true,
   branchDeleteForce: false,
   branchPushSetUpstream: true,
@@ -152,11 +160,7 @@ export const useAvatar = (email: string, commitHash?: string) => {
   return useQuery({
     queryKey: queryKeys.avatar(email),
     queryFn: async (): Promise<string | null> => {
-      const response = await sendCorrelatedMessage<{ avatar: string | null }>(
-        'getAvatar',
-        { email, commitHash },
-        20000,
-      )
+      const response = await sendCorrelatedMessage<{ avatar: string | null }>('getAvatar', { email, commitHash }, 20000)
       return response.avatar ?? null
     },
     enabled: !!email && !!commitHash,

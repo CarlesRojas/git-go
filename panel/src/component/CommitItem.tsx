@@ -2,6 +2,7 @@ import BranchPill from '@/component/BranchPill'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
+import { useDragActions } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
@@ -14,7 +15,7 @@ import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
-import { FC, useEffect, useMemo, useRef } from 'react'
+import { FC, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface CommitItemProps {
@@ -105,6 +106,15 @@ export const CommitItem: FC<CommitItemProps> = ({
   const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({ commit })
   const { uncommittedChangesContextMenuWrapper, dialogs: uncommittedDialogs } = useUncommittedChangesContextMenu()
 
+  const { beginPress } = useDragActions()
+
+  const handleCommitPointerDown = (event: ReactPointerEvent) => {
+    // The uncommitted row has no hash, and a stash is not a cherry-pick source.
+    if (!settings.dragAndDropEnabled || commit.isUncommitted || commit.isStash) return
+
+    beginPress({ kind: 'commit', commit, colorIndex: layout.colorIndex }, event)
+  }
+
   const hasPills =
     !commit.isUncommitted &&
     (Object.keys(groupedBranches).length > 0 ||
@@ -113,6 +123,7 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const pills = (
     <div
+      data-drag-clip
       className={cn(
         // Layout & sizing
         'flex w-fit min-w-fit gap-2 overflow-hidden',
@@ -158,6 +169,8 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const message = (
     <div
+      data-drag-dimmable
+      onPointerDown={handleCommitPointerDown}
       className={cn(
         // Layout & sizing
         'relative flex h-full grow overflow-hidden',
@@ -194,6 +207,7 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const timeAndAuthor = (
     <div
+      data-drag-dimmable
       className={cn(
         // Layout & sizing
         'flex w-fit min-w-fit gap-2 overflow-hidden pl-2',
@@ -275,6 +289,7 @@ export const CommitItem: FC<CommitItemProps> = ({
       >
         {uncommittedChangesContextMenuWrapper(
           <div
+            data-drag-row
             className={cn(
               'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
               // Interactive
@@ -291,6 +306,7 @@ export const CommitItem: FC<CommitItemProps> = ({
             )}
 
             <div
+              data-drag-clip
               className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
             >
               {!!hasPills && pills}

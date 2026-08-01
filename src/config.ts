@@ -51,6 +51,38 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.dragAndDrop.enabled` Extension Setting.
+     */
+    get dragAndDropEnabled(): boolean {
+        return !!this.config.get('dragAndDrop.enabled', true);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.branchOnBranch.defaultAction` Extension Setting.
+     */
+    get dragAndDropBranchDefaultAction(): 'merge' | 'rebase' | 'none' {
+        const value = this.config.get<string>('dragAndDrop.branchOnBranch.defaultAction', 'merge');
+        if (value === 'merge' || value === 'rebase' || value === 'none') {
+            return value;
+        }
+        return 'merge';
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.holdDelay` Extension Setting.
+     */
+    get dragAndDropHoldDelay(): number {
+        return this.config.get('dragAndDrop.holdDelay', 300);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.hideDelay` Extension Setting.
+     */
+    get dragAndDropHideDelay(): number {
+        return this.config.get('dragAndDrop.hideDelay', 300);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

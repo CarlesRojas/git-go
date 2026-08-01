@@ -138,6 +138,35 @@
                     "default": true,
                     "markdownDescription": "**File Operations:** Open files and diffs in a split view next to Git Go, reusing an existing split view when there is one."
                 },
+                "git-go.dragAndDrop.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Drag and Drop:** Enable dragging branches, tags and commits in the graph to perform Git actions."
+                },
+                "git-go.dragAndDrop.branchOnBranch.defaultAction": {
+                    "type": "string",
+                    "enum": [
+                        "merge",
+                        "rebase",
+                        "none"
+                    ],
+                    "default": "merge",
+                    "markdownDescription": "**Drag and Drop:** Action performed when dropping a branch onto another branch. Set to 'none' to require picking an action from the boxes that appear when holding."
+                },
+                "git-go.dragAndDrop.holdDelay": {
+                    "type": "number",
+                    "default": 300,
+                    "minimum": 0,
+                    "maximum": 2000,
+                    "markdownDescription": "**Drag and Drop:** Milliseconds to hold over a branch while dragging before its extra actions appear."
+                },
+                "git-go.dragAndDrop.hideDelay": {
+                    "type": "number",
+                    "default": 300,
+                    "minimum": 0,
+                    "maximum": 5000,
+                    "markdownDescription": "**Drag and Drop:** Milliseconds the actions linger after the pointer moves away, so returning within that time keeps them open."
+                },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
                     "default": true,
