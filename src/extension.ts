@@ -687,6 +687,24 @@ export function activate(context: vscode.ExtensionContext) {
 
                     const emptyUri = vscode.Uri.parse('untitled:empty');
 
+                    // Open next to the graph: reuse an existing split group if there is one,
+                    // otherwise create a new one beside the graph.
+                    const panelColumn = currentPanel?.viewColumn;
+                    let viewColumn: vscode.ViewColumn = vscode.ViewColumn.Beside;
+                    if (panelColumn !== undefined) {
+                        const otherColumns = vscode.window.tabGroups.all
+                            .map((group) => group.viewColumn)
+                            .filter((column) => column !== panelColumn);
+                        const toTheRight = otherColumns
+                            .filter((column) => column > panelColumn)
+                            .sort((a, b) => a - b);
+                        const toTheLeft = otherColumns
+                            .filter((column) => column < panelColumn)
+                            .sort((a, b) => b - a);
+                        viewColumn = toTheRight[0] ?? toTheLeft[0] ?? vscode.ViewColumn.Beside;
+                    }
+                    const showOptions: vscode.TextDocumentShowOptions = { viewColumn };
+
                     if (commitHash) {
                         if (message.isUncommitted) {
                             // ── Uncommitted changes ──────────────────────────────────
@@ -695,14 +713,16 @@ export function activate(context: vscode.ExtensionContext) {
                                     'vscode.diff',
                                     emptyUri,
                                     fileUri,
-                                    `${fileName} (new file)`
+                                    `${fileName} (new file)`,
+                                    showOptions
                                 );
                             } else if (status === 'D') {
                                 await vscode.commands.executeCommand(
                                     'vscode.diff',
                                     makeGitUri(filePath, 'HEAD'),
                                     emptyUri,
-                                    `${fileName} (deleted)`
+                                    `${fileName} (deleted)`,
+                                    showOptions
                                 );
                             } else if ((status === 'R' || status === 'C') && oldPath) {
                                 const label =
@@ -713,14 +733,16 @@ export function activate(context: vscode.ExtensionContext) {
                                     'vscode.diff',
                                     makeGitUri(oldPath, 'HEAD'),
                                     fileUri,
-                                    label
+                                    label,
+                                    showOptions
                                 );
                             } else {
                                 await vscode.commands.executeCommand(
                                     'vscode.diff',
                                     makeGitUri(filePath, 'HEAD'),
                                     fileUri,
-                                    `${fileName} (uncommitted changes)`
+                                    `${fileName} (uncommitted changes)`,
+                                    showOptions
                                 );
                             }
                         } else {
@@ -732,14 +754,16 @@ export function activate(context: vscode.ExtensionContext) {
                                     'vscode.diff',
                                     makeGitUri(filePath, `${actualRef}^`),
                                     emptyUri,
-                                    `${fileName} (deleted in ${commitHash.substring(0, 7)})`
+                                    `${fileName} (deleted in ${commitHash.substring(0, 7)})`,
+                                    showOptions
                                 );
                             } else if (status === 'A') {
                                 await vscode.commands.executeCommand(
                                     'vscode.diff',
                                     emptyUri,
                                     makeGitUri(filePath, actualRef),
-                                    `${fileName} (added in ${commitHash.substring(0, 7)})`
+                                    `${fileName} (added in ${commitHash.substring(0, 7)})`,
+                                    showOptions
                                 );
                             } else if ((status === 'R' || status === 'C') && oldPath) {
                                 const label =
@@ -750,7 +774,8 @@ export function activate(context: vscode.ExtensionContext) {
                                     'vscode.diff',
                                     makeGitUri(oldPath, `${actualRef}^`),
                                     makeGitUri(filePath, actualRef),
-                                    label
+                                    label,
+                                    showOptions
                                 );
                             } else {
                                 const leftUri = isRootCommit ? emptyUri : makeGitUri(filePath, `${actualRef}^`);
@@ -758,7 +783,8 @@ export function activate(context: vscode.ExtensionContext) {
                                     'vscode.diff',
                                     leftUri,
                                     makeGitUri(filePath, actualRef),
-                                    `${fileName} (${commitHash.substring(0, 7)})`
+                                    `${fileName} (${commitHash.substring(0, 7)})`,
+                                    showOptions
                                 );
                             }
                         }
@@ -769,7 +795,7 @@ export function activate(context: vscode.ExtensionContext) {
                     } else {
                         // ── No commit hash — open working copy directly ──────────
                         const document = await vscode.workspace.openTextDocument(fileUri);
-                        await vscode.window.showTextDocument(document);
+                        await vscode.window.showTextDocument(document, showOptions);
                         log(`Opened file: ${fileName}`);
                     }
                 }
