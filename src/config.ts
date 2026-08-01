@@ -83,6 +83,48 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.dragAndDrop.auto.merge` Extension Setting.
+     */
+    get dragAndDropAutoMerge(): boolean {
+        return !!this.config.get('dragAndDrop.auto.merge', false);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.auto.rebase` Extension Setting.
+     */
+    get dragAndDropAutoRebase(): boolean {
+        return !!this.config.get('dragAndDrop.auto.rebase', false);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.auto.cherryPick` Extension Setting.
+     */
+    get dragAndDropAutoCherryPick(): boolean {
+        return !!this.config.get('dragAndDrop.auto.cherryPick', false);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.auto.mergeCommit` Extension Setting.
+     */
+    get dragAndDropAutoMergeCommit(): boolean {
+        return !!this.config.get('dragAndDrop.auto.mergeCommit', false);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.auto.push` Extension Setting.
+     */
+    get dragAndDropAutoPush(): boolean {
+        return !!this.config.get('dragAndDrop.auto.push', false);
+    }
+
+    /**
+     * Get the value of the `git-go.dragAndDrop.auto.fetchIntoLocal` Extension Setting.
+     */
+    get dragAndDropAutoFetchIntoLocal(): boolean {
+        return !!this.config.get('dragAndDrop.auto.fetchIntoLocal', false);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

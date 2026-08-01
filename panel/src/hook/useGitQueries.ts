@@ -48,6 +48,12 @@ export interface ConfigState {
   dragAndDropBranchDefaultAction: 'merge' | 'rebase' | 'none'
   dragAndDropHoldDelay: number
   dragAndDropHideDelay: number
+  dragAndDropAutoMerge: boolean
+  dragAndDropAutoRebase: boolean
+  dragAndDropAutoCherryPick: boolean
+  dragAndDropAutoMergeCommit: boolean
+  dragAndDropAutoPush: boolean
+  dragAndDropAutoFetchIntoLocal: boolean
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
   branchPushSetUpstream: boolean
@@ -80,6 +86,12 @@ const defaultConfigState: ConfigState = {
   dragAndDropBranchDefaultAction: 'merge',
   dragAndDropHoldDelay: 300,
   dragAndDropHideDelay: 300,
+  dragAndDropAutoMerge: false,
+  dragAndDropAutoRebase: false,
+  dragAndDropAutoCherryPick: false,
+  dragAndDropAutoMergeCommit: false,
+  dragAndDropAutoPush: false,
+  dragAndDropAutoFetchIntoLocal: false,
   branchCreateCheckout: true,
   branchDeleteForce: false,
   branchPushSetUpstream: true,

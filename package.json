@@ -160,6 +160,36 @@
                     "maximum": 2000,
                     "markdownDescription": "**Drag and Drop:** Milliseconds to hold over a branch while dragging before its extra actions appear."
                 },
+                "git-go.dragAndDrop.auto.merge": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a branch onto another branch, using the values its dialog would have opened with, instead of showing the dialog."
+                },
+                "git-go.dragAndDrop.auto.rebase": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a branch onto another branch with rebase selected, using the values its dialog would have opened with, instead of showing the dialog."
+                },
+                "git-go.dragAndDrop.auto.cherryPick": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a commit onto a branch, using the values its dialog would have opened with, instead of showing the dialog."
+                },
+                "git-go.dragAndDrop.auto.mergeCommit": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a commit onto a branch with merge selected, using the values its dialog would have opened with, instead of showing the dialog."
+                },
+                "git-go.dragAndDrop.auto.push": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a branch or tag onto its own push action, using the values its dialog would have opened with, instead of showing the dialog."
+                },
+                "git-go.dragAndDrop.auto.fetchIntoLocal": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a remote branch onto its own fetch action, using the values its dialog would have opened with, instead of showing the dialog."
+                },
                 "git-go.dragAndDrop.hideDelay": {
                     "type": "number",
                     "default": 300,
