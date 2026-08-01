@@ -61,6 +61,7 @@ interface LayoutRect {
   bottom: number
 }
 
+const STACK_GAP_PX = 8
 /** One box, used only to decide whether a stack fits below its pill. */
 const BOX_HEIGHT_ESTIMATE_PX = 42
 const BOX_WIDTH_PX = 224
@@ -69,33 +70,38 @@ const VIEWPORT_MARGIN_PX = 8
 const FADE_MS = 150
 
 /**
- * The corner a stack anchors to. Pills scale from their bottom-left, so that corner holds
- * still however far the pill has grown — the stack can sit flush against it at any point in
- * the animation without drifting. Height comes from the layout box, since only the corner is
- * guaranteed not to move.
+ * Where a stack anchors. Pills grow rightwards from their left edge, so that edge is read
+ * straight off; vertically they spread from the middle, which is the point a scale leaves
+ * alone, so the box is rebuilt around it from the untransformed height. Either way the anchor
+ * holds still while the pill scales.
  */
 const layoutRectOf = (element: HTMLElement): LayoutRect => {
   const rect = element.getBoundingClientRect()
+  const centreY = rect.top + rect.height / 2
 
-  return { left: rect.left, bottom: rect.bottom, top: rect.bottom - element.offsetHeight }
+  return {
+    left: rect.left,
+    top: centreY - element.offsetHeight / 2,
+    bottom: centreY + element.offsetHeight / 2,
+  }
 }
 
 /**
- * Sits the stack flush against the pill it belongs to and flush with its left edge, flipping
- * above the pill and sliding left only when it would otherwise leave the viewport. Touching
- * the pill also means there is no gap between them to cross, so travelling from one to the
- * other cannot pass through anything that would close the stack.
+ * Places the stack a short way off its pill and flush with its left edge, flipping above the
+ * pill and sliding left only when it would otherwise leave the viewport. The gap is padding on
+ * the stack rather than empty space, so it belongs to the pill: crossing it neither closes the
+ * stack nor stops a release from performing the pill's own action.
  */
 const stackPositionFor = (rect: LayoutRect | null, count: number) => {
   if (!rect || count === 0) return null
 
   const height = count * BOX_HEIGHT_ESTIMATE_PX
-  const fitsBelow = rect.bottom + height <= window.innerHeight - VIEWPORT_MARGIN_PX
+  const fitsBelow = rect.bottom + STACK_GAP_PX + height <= window.innerHeight - VIEWPORT_MARGIN_PX
   const left = Math.max(VIEWPORT_MARGIN_PX, Math.min(rect.left, window.innerWidth - BOX_WIDTH_PX - VIEWPORT_MARGIN_PX))
 
-  if (fitsBelow) return { top: rect.bottom, left }
+  if (fitsBelow) return { top: rect.bottom, left, paddingTop: STACK_GAP_PX }
 
-  return { top: Math.max(VIEWPORT_MARGIN_PX, rect.top - height), left }
+  return { top: Math.max(VIEWPORT_MARGIN_PX, rect.top - height - STACK_GAP_PX), left, paddingBottom: STACK_GAP_PX }
 }
 
 /**
@@ -628,9 +634,9 @@ export const DragOverlay: FC = () => {
 
         {targetFade.mounted && targetSnapshot.current && (
           <div
-            // Carries the target key so the padded bridge back to the pill keeps the stack
-            // open while the pointer travels to a box, without counting as the target itself.
-            data-drop-bridge={targetFade.shown ? targetSnapshot.current.key : undefined}
+            // Carries the target key so the padding bridging back to the pill counts as the
+            // pill: the stack stays open and a release there still performs its action.
+            data-drop-target={targetFade.shown ? targetSnapshot.current.key : undefined}
             className={cn(
               'absolute z-10 flex flex-col transition-opacity duration-150',
               // Untargetable while fading out, so a release cannot land on a stale box.
