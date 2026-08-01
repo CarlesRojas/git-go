@@ -153,6 +153,13 @@
                     "default": "merge",
                     "markdownDescription": "**Drag and Drop:** Action performed when dropping a branch onto another branch. Set to 'none' to require picking an action from the boxes that appear when holding."
                 },
+                "git-go.dragAndDrop.holdDelay": {
+                    "type": "number",
+                    "default": 300,
+                    "minimum": 0,
+                    "maximum": 2000,
+                    "markdownDescription": "**Drag and Drop:** Milliseconds to hold over a branch while dragging before its extra actions appear."
+                },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
                     "default": true,

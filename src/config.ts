@@ -69,6 +69,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.dragAndDrop.holdDelay` Extension Setting.
+     */
+    get dragAndDropHoldDelay(): number {
+        return this.config.get('dragAndDrop.holdDelay', 300);
+    }
+
+    /**
      * Get the value of the `git-go.branch.create.checkout` Extension Setting.
      */
     get branchCreateCheckout(): boolean {

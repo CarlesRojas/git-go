@@ -11,22 +11,20 @@ interface Props {
   payload: DragPayload
   /** What a release would do right now, or null when the pointer is over nothing actionable. */
   pendingLabel: string | null
-  /** Shown when the current target has more actions available behind a hold. */
-  showHoldHint: boolean
 }
 
 /**
  * The item under the cursor while dragging. The real pill never moves — in this graph a pill's
  * position encodes which commit its ref points at, so moving it would claim the ref already moved.
  */
-export const DragGhost: FC<Props> = ({ payload, pendingLabel, showHoldHint }) => {
+export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
   const { settings } = useSettings()
 
   const color = (index: number) =>
     getColor({ index, theme: settings.theme, isDark: settings.isDark, customColors: settings.customColors })
 
   return (
-    <div className="rounded-main bg-vsc-editor-bg border-vsc-editor-fg/30 w-fit overflow-hidden border shadow-lg">
+    <div className="rounded-main-outer border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg w-fit overflow-hidden border shadow-lg backdrop-blur-md">
       {payload.kind === 'branch' && (
         <div className="flex h-5 max-w-64 items-center">
           <div className="flex h-full items-center px-1" style={{ backgroundColor: color(payload.colorIndex) }}>
@@ -63,17 +61,9 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel, showHoldHint }) =>
         </div>
       )}
 
-      {(pendingLabel || showHoldHint) && (
-        <div className={cn('border-vsc-editor-fg/20 flex flex-col border-t px-1.5 py-1')}>
-          {pendingLabel && (
-            <span className="text-[11px] leading-tight font-medium whitespace-nowrap opacity-80">{pendingLabel}</span>
-          )}
-
-          {showHoldHint && (
-            <span className="text-[10px] leading-tight font-medium whitespace-nowrap opacity-50">
-              hold for more actions
-            </span>
-          )}
+      {pendingLabel && (
+        <div className={cn('border-vsc-editor-fg/15 flex flex-col border-t px-1.5 py-1')}>
+          <span className="text-[11px] leading-tight font-medium whitespace-nowrap opacity-80">{pendingLabel}</span>
         </div>
       )}
     </div>

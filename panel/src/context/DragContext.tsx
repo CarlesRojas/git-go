@@ -1,8 +1,8 @@
+import { useSettings } from '@/context/SettingsContext'
 import { DragActionId, DragPayload } from '@/util/dragAndDrop'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 const DRAG_THRESHOLD_PX = 5
-const HOLD_DELAY_MS = 450
 const EDGE_ZONE_PX = 40
 const MAX_SCROLL_SPEED_PX = 16
 /** Keeps the ghost clear of the pointer so it never covers what is being aimed at. */
@@ -86,8 +86,15 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const currentActionId = useRef<DragActionId | null>(null)
   const currentActionDisabled = useRef(false)
   const currentSourceHovered = useRef(false)
+  /** Whether the pointer is physically over the source, as opposed to its stack being shown. */
+  const inSourceRegion = useRef(false)
+  const sourceHoldTimer = useRef<number | null>(null)
   const defaultAction = useRef<DragActionId | null>(null)
   const suppressNextClick = useRef(false)
+
+  const { settings } = useSettings()
+  const holdDelay = useRef(settings.dragAndDropHoldDelay)
+  holdDelay.current = settings.dragAndDropHoldDelay
 
   const ghostRef = useCallback((element: HTMLDivElement | null) => {
     ghost.current = element
@@ -108,13 +115,20 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     holdTimer.current = window.setTimeout(() => {
       holdTimer.current = null
       setRevealed(true)
-    }, HOLD_DELAY_MS)
+    }, holdDelay.current)
   }, [clearHoldTimer])
+
+  const clearSourceHoldTimer = useCallback(() => {
+    if (sourceHoldTimer.current === null) return
+    window.clearTimeout(sourceHoldTimer.current)
+    sourceHoldTimer.current = null
+  }, [])
 
   const teardown = useCallback(() => {
     if (frame.current !== null) cancelAnimationFrame(frame.current)
     frame.current = null
     clearHoldTimer()
+    clearSourceHoldTimer()
 
     sourceElement.current?.removeAttribute(SOURCE_ATTRIBUTE)
     sourceElement.current = null
@@ -124,6 +138,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     currentActionId.current = null
     currentActionDisabled.current = false
     currentSourceHovered.current = false
+    inSourceRegion.current = false
     defaultAction.current = null
     isAutoScrolling.current = false
     scrollContainer.current = null
@@ -133,7 +148,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     setHoveredActionId(null)
     setRevealed(false)
     setHoveredSource(false)
-  }, [clearHoldTimer])
+  }, [clearHoldTimer, clearSourceHoldTimer])
 
   const autoScroll = useCallback(() => {
     const container = scrollContainer.current
@@ -166,15 +181,28 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const { x, y } = pointer.current
     const element = document.elementFromPoint(x, y)
 
-    // The dragged item shows its own actions whenever the pointer is back over it, or over
-    // the stack those actions live in. That stack only mounts a frame after the drag begins,
-    // so until it exists a fast opening gesture must not clear the flag — otherwise the boxes
-    // are dismissed before they were ever rendered.
-    const sourceHovered = !!element?.closest('[data-drag-source-active], [data-drag-source-zone]')
+    // The dragged item's actions are shown from pickup, but coming back to it later costs the
+    // same hold as any other pill. Evaluated every frame rather than on transitions so the
+    // initial show can survive until its stack has actually mounted.
+    const inRegion = !!element?.closest('[data-drag-source-active], [data-drag-source-zone]')
     const stackMounted = !!document.querySelector('[data-drag-source-zone]')
-    if (sourceHovered !== currentSourceHovered.current && (sourceHovered || stackMounted)) {
-      currentSourceHovered.current = sourceHovered
-      setHoveredSource(sourceHovered)
+    inSourceRegion.current = inRegion
+
+    if (!inRegion) {
+      clearSourceHoldTimer()
+      // A fast opening gesture leaves the source before the stack exists; dismissing then
+      // would hide boxes that were never rendered.
+      if (currentSourceHovered.current && stackMounted) {
+        currentSourceHovered.current = false
+        setHoveredSource(false)
+      }
+    } else if (!currentSourceHovered.current && sourceHoldTimer.current === null) {
+      sourceHoldTimer.current = window.setTimeout(() => {
+        sourceHoldTimer.current = null
+        if (!inSourceRegion.current) return
+        currentSourceHovered.current = true
+        setHoveredSource(true)
+      }, holdDelay.current)
     }
 
     const actionElement = element?.closest<HTMLElement>('[data-drag-action]') ?? null
@@ -203,7 +231,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
     if (resolvedTarget === null) clearHoldTimer()
     else if (!isAutoScrolling.current) startHoldTimer()
-  }, [clearHoldTimer, startHoldTimer])
+  }, [clearHoldTimer, clearSourceHoldTimer, startHoldTimer])
 
   const tick = useCallback(() => {
     const { x, y } = pointer.current
@@ -267,8 +295,9 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
         started = true
         suppressNextClick.current = true
 
-        // The dragged item's own actions are visible from the moment it is picked up.
+        // Visible from the moment it is picked up; only returning to it later costs a hold.
         currentSourceHovered.current = true
+        inSourceRegion.current = true
         setHoveredSource(true)
 
         sourceElement.current = element

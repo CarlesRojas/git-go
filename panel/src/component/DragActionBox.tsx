@@ -21,25 +21,22 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
       data-drag-action-disabled={disabled}
       className={cn(
         // Layout & sizing
-        'rounded-main pointer-events-auto flex w-56 flex-col justify-center gap-0.5 px-2 py-1.5',
-        // Colors
-        'bg-vsc-editor-bg border-vsc-editor-fg/20 border',
-        // State — the highlight is a ring so it costs no layout and cannot shift the contents
+        'rounded-main-outer pointer-events-auto flex w-56 flex-col justify-center gap-0.5 px-2 py-1.5',
+        // Colors — the same surface the context menus use
+        'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
+        // State — highlight is background only, exactly as menu items do it, so the border
+        // never changes and nothing inside can shift
         disabled && 'opacity-50',
-        hovered && !disabled && 'ring-vsc-editor-fg ring-2',
+        hovered && !disabled && 'bg-vsc-editor-fg/15',
         // Destructive keeps its accent when disabled; the shared opacity is what softens it
-        action.destructive && 'text-vsc-error-fg border-vsc-error-fg/40',
-        action.destructive && hovered && !disabled && 'ring-vsc-error-fg',
+        action.destructive && 'text-vsc-error-fg',
+        action.destructive && hovered && !disabled && 'bg-vsc-error-fg/10',
       )}
     >
       <div className="flex items-center gap-1.5">
         <FontAwesomeIcon icon={action.icon} className="size-3 shrink-0" />
 
         <span className="text-xs leading-tight font-bold tracking-wide uppercase">{action.verb}</span>
-
-        {action.isDefault && !disabled && (
-          <span className="ml-auto text-[10px] leading-tight font-medium opacity-50">on release</span>
-        )}
       </div>
 
       <span className="line-clamp-1 truncate text-[11px] leading-tight font-medium opacity-70">
