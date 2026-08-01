@@ -207,6 +207,16 @@
                     "default": false,
                     "markdownDescription": "**Branch Operations:** Default value for 'Force delete' when deleting a branch."
                 },
+                "git-go.branch.delete.deleteOnRemote": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Branch Operations:** Default value for 'Also delete on remote' when deleting a branch that tracks an upstream branch."
+                },
+                "git-go.branch.checkout.pullAfterCheckout": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Branch Operations:** Pull the branch from its upstream right after checking it out. Branches without an upstream are checked out without pulling."
+                },
                 "git-go.branch.push.setUpstream": {
                     "type": "boolean",
                     "default": true,
@@ -247,6 +257,16 @@
                     "default": false,
                     "markdownDescription": "**Merge Operations:** Default value for 'Don't commit automatically' when merging branches."
                 },
+                "git-go.merge.commitMessage": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "**Merge Operations:** Message template for merge commits. `{source}` is replaced with the branch or commit being merged and `{target}` with the current branch. Leave empty to use the message git generates. Ignored when the merge squashes or does not commit."
+                },
+                "git-go.rebase.autoStash": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Rebase Operations:** Default value for 'Autostash' when rebasing, which stashes uncommitted changes before the rebase and restores them afterwards."
+                },
                 "git-go.cherryPick.recordOrigin": {
                     "type": "boolean",
                     "default": false,
@@ -286,6 +306,11 @@
                     "type": "string",
                     "default": "origin",
                     "markdownDescription": "**Remote Operations:** Remote preselected in dialogs that push branches or tags. Falls back to the repository's first remote when this one does not exist."
+                },
+                "git-go.fetch.onOpen": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Remote Operations:** Fetch from every remote when the Git Go panel opens."
                 },
                 "git-go.remote.fetch.prune": {
                     "type": "boolean",
@@ -379,6 +404,26 @@
                     "type": "boolean",
                     "default": false,
                     "markdownDescription": "**Worktree Operations:** Default value for 'Also delete branch' when removing a worktree."
+                },
+                "git-go.confirm.merge": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Confirmation Dialogs:** Ask before merging. When disabled, merging a branch or a commit runs straight away using the configured defaults."
+                },
+                "git-go.confirm.rebase": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Confirmation Dialogs:** Ask before rebasing. When disabled, rebasing onto a branch or a commit runs straight away using the configured defaults."
+                },
+                "git-go.confirm.push": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Confirmation Dialogs:** Ask before pushing a branch. When disabled, pushing runs straight away using the configured defaults."
+                },
+                "git-go.confirm.branchDelete": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Confirmation Dialogs:** Ask before deleting a local branch. When disabled, deleting runs straight away using the configured defaults. Deleting a branch on a remote always asks."
                 }
             }
         }

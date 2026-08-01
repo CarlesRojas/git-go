@@ -65,12 +65,14 @@ export interface ConfigState {
   dragAndDropAutoFetchIntoLocal: boolean
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
+  branchDeleteOnRemote: boolean
   branchPushSetUpstream: boolean
   branchPushMode: GitPushMode
   branchRebaseIgnoreDate: boolean
   mergeFastForwardIfPossible: boolean
   mergeSquash: boolean
   mergeNoCommit: boolean
+  rebaseAutoStash: boolean
   cherryPickRecordOrigin: boolean
   cherryPickNoCommit: boolean
   revertNoCommit: boolean
@@ -90,6 +92,10 @@ export interface ConfigState {
   worktreeOpenAfterCreate: boolean
   worktreeRemoveForce: boolean
   worktreeRemoveDeleteBranch: boolean
+  confirmMerge: boolean
+  confirmRebase: boolean
+  confirmPush: boolean
+  confirmBranchDelete: boolean
   expandedCommitHeight: number
   showCommitterName: boolean
   theme: string
@@ -112,12 +118,14 @@ const defaultConfigState: ConfigState = {
   dragAndDropAutoFetchIntoLocal: false,
   branchCreateCheckout: true,
   branchDeleteForce: false,
+  branchDeleteOnRemote: false,
   branchPushSetUpstream: true,
   branchPushMode: 'normal',
   branchRebaseIgnoreDate: true,
   mergeFastForwardIfPossible: true,
   mergeSquash: false,
   mergeNoCommit: false,
+  rebaseAutoStash: false,
   cherryPickRecordOrigin: false,
   cherryPickNoCommit: true,
   revertNoCommit: true,
@@ -137,6 +145,10 @@ const defaultConfigState: ConfigState = {
   worktreeOpenAfterCreate: true,
   worktreeRemoveForce: false,
   worktreeRemoveDeleteBranch: false,
+  confirmMerge: true,
+  confirmRebase: true,
+  confirmPush: true,
+  confirmBranchDelete: true,
   expandedCommitHeight: 300,
   showCommitterName: true,
   theme: 'vibrant',
@@ -416,8 +428,16 @@ export const useRebaseBranchToCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ commitHash, ignoreDate = false }: { commitHash: string; ignoreDate?: boolean }) => {
-      return await sendCorrelatedMessage('rebaseBranchToCommit', { commitHash, ignoreDate }, 30_000)
+    mutationFn: async ({
+      commitHash,
+      ignoreDate = false,
+      autoStash = false,
+    }: {
+      commitHash: string
+      ignoreDate?: boolean
+      autoStash?: boolean
+    }) => {
+      return await sendCorrelatedMessage('rebaseBranchToCommit', { commitHash, ignoreDate, autoStash }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)
@@ -666,8 +686,16 @@ export const useRebaseBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ branchName, ignoreDate = false }: { branchName: string; ignoreDate?: boolean }) => {
-      return await sendCorrelatedMessage('rebaseBranch', { branchName, ignoreDate }, 30_000)
+    mutationFn: async ({
+      branchName,
+      ignoreDate = false,
+      autoStash = false,
+    }: {
+      branchName: string
+      ignoreDate?: boolean
+      autoStash?: boolean
+    }) => {
+      return await sendCorrelatedMessage('rebaseBranch', { branchName, ignoreDate, autoStash }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)

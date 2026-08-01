@@ -70,12 +70,14 @@ export function activate(context: vscode.ExtensionContext) {
                             dragAndDropAutoFetchIntoLocal: config.dragAndDropAutoFetchIntoLocal,
                             branchCreateCheckout: config.branchCreateCheckout,
                             branchDeleteForce: config.branchDeleteForce,
+                            branchDeleteOnRemote: config.branchDeleteOnRemote,
                             branchPushSetUpstream: config.branchPushSetUpstream,
                             branchPushMode: config.branchPushMode,
                             branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
                             mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
                             mergeSquash: config.mergeSquash,
                             mergeNoCommit: config.mergeNoCommit,
+                            rebaseAutoStash: config.rebaseAutoStash,
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
@@ -95,6 +97,10 @@ export function activate(context: vscode.ExtensionContext) {
                             worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
                             worktreeRemoveForce: config.worktreeRemoveForce,
                             worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
+                            confirmMerge: config.confirmMerge,
+                            confirmRebase: config.confirmRebase,
+                            confirmPush: config.confirmPush,
+                            confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
                             showCommitterName: config.showCommitterName,
                             theme: config.theme,
@@ -138,6 +144,12 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             watchGitChanges(currentPanel, log, diffDocProvider);
+
+            if (config.fetchOnOpen) {
+                GitService.getInstance()
+                    .fetch(log, getConfig().remoteFetchPrune)
+                    .catch((error) => log(`Could not fetch when opening the panel: ${error}`));
+            }
 
             context.subscriptions.push(
                 vscode.window.onDidChangeActiveColorTheme((theme) => {
@@ -299,11 +311,11 @@ export function activate(context: vscode.ExtensionContext) {
 
                 rebaseBranchToCommit: async (message) => {
                     const gitService = GitService.getInstance();
-                    const { commitHash, ignoreDate } = message;
+                    const { commitHash, ignoreDate, autoStash } = message;
                     if (!commitHash) {
                         throw new Error('Commit hash is required');
                     }
-                    await gitService.rebaseBranchToCommit(log, commitHash, ignoreDate || false);
+                    await gitService.rebaseBranchToCommit(log, commitHash, ignoreDate || false, autoStash || false);
                     log(`Successfully rebased current branch onto commit ${commitHash.substring(0, 7)}`);
                     return { type: 'branchRebasedToCommit', success: true };
                 },
@@ -319,7 +331,8 @@ export function activate(context: vscode.ExtensionContext) {
                         commitHash,
                         fastForwardIfPossible,
                         squash,
-                        noCommit
+                        noCommit,
+                        await resolveMergeCommitMessage(commitHash.substring(0, 7))
                     );
                     log(`Successfully merged commit ${commitHash.substring(0, 7)} into current branch`);
                     return { type: 'commitMergedIntoCurrentBranch', success: true };
@@ -333,6 +346,7 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                     await gitService.checkoutLocalBranch(log, branchName);
                     log(`Successfully checked out local branch: ${branchName}`);
+                    await pullAfterCheckout(log);
                     return { type: 'branchCheckedOut', branchName, isLocal: true };
                 },
 
@@ -344,6 +358,7 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                     await gitService.checkoutRemoteBranch(log, remoteBranchName, localBranchName);
                     log(`Successfully created and checked out branch: ${localBranchName}`);
+                    await pullAfterCheckout(log);
                     return { type: 'branchCheckedOut', branchName: localBranchName, isLocal: false, remoteBranchName };
                 },
 
@@ -435,15 +450,22 @@ export function activate(context: vscode.ExtensionContext) {
                 mergeBranch: async (message) => {
                     const gitService = GitService.getInstance();
                     const { branchName, fastForwardIfPossible, squash, noCommit } = message;
-                    await gitService.mergeBranch(log, branchName, fastForwardIfPossible, squash, noCommit);
+                    await gitService.mergeBranch(
+                        log,
+                        branchName,
+                        fastForwardIfPossible,
+                        squash,
+                        noCommit,
+                        await resolveMergeCommitMessage(branchName)
+                    );
                     log(`Successfully merged branch ${branchName}`);
                     return { type: 'mergeBranchSuccess' };
                 },
 
                 rebaseBranch: async (message) => {
                     const gitService = GitService.getInstance();
-                    const { branchName, ignoreDate } = message;
-                    await gitService.rebaseBranch(log, branchName, ignoreDate);
+                    const { branchName, ignoreDate, autoStash } = message;
+                    await gitService.rebaseBranch(log, branchName, ignoreDate, autoStash || false);
                     log(`Successfully rebased onto ${branchName}`);
                     return { type: 'rebaseBranchSuccess' };
                 },
@@ -651,12 +673,14 @@ export function activate(context: vscode.ExtensionContext) {
                             dragAndDropAutoFetchIntoLocal: config.dragAndDropAutoFetchIntoLocal,
                             branchCreateCheckout: config.branchCreateCheckout,
                             branchDeleteForce: config.branchDeleteForce,
+                            branchDeleteOnRemote: config.branchDeleteOnRemote,
                             branchPushSetUpstream: config.branchPushSetUpstream,
                             branchPushMode: config.branchPushMode,
                             branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
                             mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
                             mergeSquash: config.mergeSquash,
                             mergeNoCommit: config.mergeNoCommit,
+                            rebaseAutoStash: config.rebaseAutoStash,
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
@@ -676,6 +700,10 @@ export function activate(context: vscode.ExtensionContext) {
                             worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
                             worktreeRemoveForce: config.worktreeRemoveForce,
                             worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
+                            confirmMerge: config.confirmMerge,
+                            confirmRebase: config.confirmRebase,
+                            confirmPush: config.confirmPush,
+                            confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
                             showCommitterName: config.showCommitterName,
                             theme: config.theme,
@@ -1003,6 +1031,38 @@ export function activate(context: vscode.ExtensionContext) {
     scheduleRetry();
 
     log('Git Go extension activated successfully');
+}
+
+/**
+ * Pull the branch that was just checked out, when the user asked for it and the branch has an upstream.
+ * A failed pull must not fail the checkout that already succeeded, so errors are only logged.
+ */
+async function pullAfterCheckout(log: (message: string) => void): Promise<void> {
+    if (!getConfig().branchPullAfterCheckout) return;
+
+    const gitService = GitService.getInstance();
+
+    try {
+        if (!(await gitService.hasUpstreamBranch())) {
+            log('Skipping the pull after checkout: the branch has no upstream');
+            return;
+        }
+
+        await gitService.pullCurrentBranch(log);
+    } catch (error) {
+        log(`Could not pull after checkout: ${error}`);
+    }
+}
+
+/**
+ * Resolve the configured merge commit message template, or undefined when git should write the message itself.
+ */
+async function resolveMergeCommitMessage(source: string): Promise<string | undefined> {
+    const template = getConfig().mergeCommitMessage.trim();
+    if (!template) return undefined;
+
+    const target = (await GitService.getInstance().getCurrentBranch(() => {})) ?? '';
+    return template.replace(/{source}/g, source).replace(/{target}/g, target);
 }
 
 function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, styleUri: vscode.Uri): string {

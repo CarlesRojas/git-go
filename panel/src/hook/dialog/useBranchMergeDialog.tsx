@@ -57,6 +57,11 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
   })
 
   const openDialog = () => {
+    if (!settings.confirmMerge) {
+      void mergeForm.handleSubmit()
+      return
+    }
+
     setShowMergeDialog(true)
   }
 

@@ -139,6 +139,20 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.branch.delete.deleteOnRemote` Extension Setting.
+     */
+    get branchDeleteOnRemote(): boolean {
+        return !!this.config.get('branch.delete.deleteOnRemote', false);
+    }
+
+    /**
+     * Get the value of the `git-go.branch.checkout.pullAfterCheckout` Extension Setting.
+     */
+    get branchPullAfterCheckout(): boolean {
+        return !!this.config.get('branch.checkout.pullAfterCheckout', false);
+    }
+
+    /**
      * Get the value of the `git-go.branch.push.setUpstream` Extension Setting.
      */
     get branchPushSetUpstream(): boolean {
@@ -182,6 +196,20 @@ export class Config {
      */
     get mergeNoCommit(): boolean {
         return !!this.config.get('merge.noCommit', false);
+    }
+
+    /**
+     * Get the value of the `git-go.merge.commitMessage` Extension Setting.
+     */
+    get mergeCommitMessage(): string {
+        return this.config.get('merge.commitMessage', '');
+    }
+
+    /**
+     * Get the value of the `git-go.rebase.autoStash` Extension Setting.
+     */
+    get rebaseAutoStash(): boolean {
+        return !!this.config.get('rebase.autoStash', false);
     }
 
     /**
@@ -235,6 +263,13 @@ export class Config {
      */
     get remoteDefaultRemote(): string {
         return this.config.get('remote.defaultRemote', 'origin');
+    }
+
+    /**
+     * Get the value of the `git-go.fetch.onOpen` Extension Setting.
+     */
+    get fetchOnOpen(): boolean {
+        return !!this.config.get('fetch.onOpen', false);
     }
 
     /**
@@ -348,6 +383,34 @@ export class Config {
      */
     get worktreeRemoveDeleteBranch(): boolean {
         return !!this.config.get('worktree.remove.deleteBranch', false);
+    }
+
+    /**
+     * Get the value of the `git-go.confirm.merge` Extension Setting.
+     */
+    get confirmMerge(): boolean {
+        return !!this.config.get('confirm.merge', true);
+    }
+
+    /**
+     * Get the value of the `git-go.confirm.rebase` Extension Setting.
+     */
+    get confirmRebase(): boolean {
+        return !!this.config.get('confirm.rebase', true);
+    }
+
+    /**
+     * Get the value of the `git-go.confirm.push` Extension Setting.
+     */
+    get confirmPush(): boolean {
+        return !!this.config.get('confirm.push', true);
+    }
+
+    /**
+     * Get the value of the `git-go.confirm.branchDelete` Extension Setting.
+     */
+    get confirmBranchDelete(): boolean {
+        return !!this.config.get('confirm.branchDelete', true);
     }
 
     /**

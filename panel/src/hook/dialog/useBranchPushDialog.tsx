@@ -65,6 +65,11 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
   }, [pushForm, remotes, settings.remoteDefaultRemote])
 
   const openDialog = () => {
+    if (!settings.confirmPush) {
+      void pushForm.handleSubmit()
+      return
+    }
+
     setShowPushDialog(true)
   }
 
