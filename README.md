@@ -143,7 +143,8 @@ Git Go can be customized through VS Code settings. Here are all available config
 {
     "git-go.graph.rounded": true, // Use rounded corners for graph elements
     "git-go.graph.theme": "vibrant", // Color theme for branch visualization
-    "git-go.graph.expandedCommitHeight": 300 // Height in pixels for expanded commit details (200-800)
+    "git-go.graph.expandedCommitHeight": 300, // Height in pixels for expanded commit details (200-800)
+    "git-go.graph.remoteAvatars": true // Show author pictures from the remote (GitHub), falling back to Gravatar
 }
 ```
 

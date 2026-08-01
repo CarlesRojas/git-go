@@ -113,6 +113,11 @@
                     "default": true,
                     "markdownDescription": "**Graph Appearance:** Show the committer name next to each commit in the graph."
                 },
+                "git-go.graph.remoteAvatars": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Graph Appearance:** Show author profile pictures from the repository's remote (GitHub), falling back to Gravatar. When disabled, only Gravatar is used."
+                },
                 "git-go.autoOpen.enabled": {
                     "type": "boolean",
                     "default": false,

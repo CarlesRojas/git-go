@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { AvatarService } from './avatarService';
 import { getConfig } from './config';
 import { DiffDocProvider } from './diffDocProvider';
 import { GitService } from './gitService';
@@ -32,6 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
         const timestamp = new Date().toISOString();
         outputChannel.appendLine(`[${timestamp}] ${message}`);
     };
+
+    const avatarService = new AvatarService(context.globalState);
 
     log('Starting Git Go extension...');
 
@@ -168,6 +171,26 @@ export function activate(context: vscode.ExtensionContext) {
                     const remotes = await gitService.getGitRemotes(log);
                     log(`Successfully retrieved ${remotes.length} remotes`);
                     return { type: 'gitRemotes', remotes };
+                },
+
+                getAvatar: async (message) => {
+                    const email = message.email;
+                    if (!email || typeof email !== 'string') throw new Error('Email is required');
+
+                    if (!getConfig().remoteAvatars) return { type: 'avatar', email, avatar: null };
+
+                    const avatar = await avatarService.getAvatar(
+                        email,
+                        typeof message.commitHash === 'string' ? message.commitHash : undefined,
+                        async () => {
+                            const gitService = GitService.getInstance();
+                            const remotes = await gitService.getGitRemotes(log);
+                            const origin = remotes.find((remote) => remote.name === 'origin') ?? remotes[0];
+                            return origin?.fetchUrl ?? null;
+                        },
+                        log
+                    );
+                    return { type: 'avatar', email, avatar };
                 },
 
                 getCommitFiles: async (message) => {

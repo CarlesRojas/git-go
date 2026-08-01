@@ -1,3 +1,4 @@
+import { useAvatar } from '@/hook/useGitQueries'
 import { FC, ImgHTMLAttributes, useState } from 'react'
 
 // Pure JavaScript MD5 implementation for Gravatar
@@ -181,10 +182,21 @@ interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 
   email: string
   author: string
   size?: number // Size in pixels, e.g., 24, 32, 48
+  // A commit authored by this email, used to ask the remote who authored it
+  commitHash?: string
 }
 
-export const Avatar: FC<AvatarProps> = ({ email, author, size = 24, className = '', style, ...imgProps }) => {
-  const [imageError, setImageError] = useState(false)
+export const Avatar: FC<AvatarProps> = ({
+  email,
+  author,
+  size = 24,
+  commitHash,
+  className = '',
+  style,
+  ...imgProps
+}) => {
+  const [failedSources, setFailedSources] = useState<string[]>([])
+  const { data: remoteAvatar } = useAvatar(email, commitHash)
 
   const authorInitials = author
     .split(' ')
@@ -193,7 +205,10 @@ export const Avatar: FC<AvatarProps> = ({ email, author, size = 24, className = 
     .toUpperCase()
     .slice(0, 2)
 
-  const gravatarUrl = getGravatarUrl(email, size * 2)
+  // The remote knows every author of the repository; Gravatar only knows the ones registered with it
+  const source = [remoteAvatar, getGravatarUrl(email, size * 2)].find(
+    (candidate): candidate is string => !!candidate && !failedSources.includes(candidate),
+  )
 
   // Create inline styles for size (more reliable than Tailwind classes)
   const sizeStyle = {
@@ -207,14 +222,14 @@ export const Avatar: FC<AvatarProps> = ({ email, author, size = 24, className = 
 
   const fallbackTextSize = size <= 24 ? 'text-xs' : size <= 32 ? 'text-sm' : 'text-base'
 
-  if (!imageError) {
+  if (source) {
     return (
       <img
-        src={gravatarUrl}
+        src={source}
         alt={author}
         className={`pointer-events-none rounded-full ${className}`}
         style={{ ...sizeStyle, ...style }}
-        onError={() => setImageError(true)}
+        onError={() => setFailedSources(previous => [...previous, source])}
         {...imgProps}
       />
     )

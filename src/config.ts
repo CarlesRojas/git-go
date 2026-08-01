@@ -199,6 +199,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.graph.remoteAvatars` Extension Setting.
+     */
+    get remoteAvatars(): boolean {
+        return !!this.config.get('graph.remoteAvatars', true);
+    }
+
+    /**
      * Get the value of the `git-go.graph.theme` Extension Setting.
      */
     get theme(): string {
