@@ -160,6 +160,13 @@
                     "maximum": 2000,
                     "markdownDescription": "**Drag and Drop:** Milliseconds to hold over a branch while dragging before its extra actions appear."
                 },
+                "git-go.dragAndDrop.hideDelay": {
+                    "type": "number",
+                    "default": 1000,
+                    "minimum": 0,
+                    "maximum": 5000,
+                    "markdownDescription": "**Drag and Drop:** Milliseconds the actions linger after the pointer moves away, so returning within that time keeps them open."
+                },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
                     "default": true,

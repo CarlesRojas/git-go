@@ -24,7 +24,9 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
     getColor({ index, theme: settings.theme, isDark: settings.isDark, customColors: settings.customColors })
 
   return (
-    <div className="rounded-main-outer border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg w-fit overflow-hidden border shadow-lg backdrop-blur-md">
+    // The shadow takes the panel's own background colour, so the ghost reads as lifted off the
+    // graph in both light and dark themes rather than casting a black halo over a light panel.
+    <div className="rounded-main-outer border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg shadow-vsc-editor-bg w-fit overflow-hidden border shadow-lg backdrop-blur-md">
       {/*
         The identity row fills whatever width the label below forces, so its background never
         stops short. Truncation is capped on the text itself rather than the row, which would

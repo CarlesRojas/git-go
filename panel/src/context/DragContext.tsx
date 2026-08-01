@@ -92,6 +92,10 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   /** Whether the pointer is physically over the source, as opposed to its stack being shown. */
   const inSourceRegion = useRef(false)
   const sourceHoldTimer = useRef<number | null>(null)
+  /** Pending dismissals, so stepping away briefly and coming back keeps the boxes open. */
+  const hideTimer = useRef<number | null>(null)
+  const sourceHideTimer = useRef<number | null>(null)
+  const isRevealed = useRef(false)
   const payloadKind = useRef<DragPayload['kind'] | null>(null)
   const defaultAction = useRef<DragActionId | null>(null)
   const suppressNextClick = useRef(false)
@@ -99,6 +103,8 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const { settings } = useSettings()
   const holdDelay = useRef(settings.dragAndDropHoldDelay)
   holdDelay.current = settings.dragAndDropHoldDelay
+  const hideDelay = useRef(settings.dragAndDropHideDelay)
+  hideDelay.current = settings.dragAndDropHideDelay
 
   const ghostRef = useCallback((element: HTMLDivElement | null) => {
     ghost.current = element
@@ -106,6 +112,11 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
   const setDefaultAction = useCallback((actionId: DragActionId | null) => {
     defaultAction.current = actionId
+  }, [])
+
+  const setRevealedTracked = useCallback((value: boolean) => {
+    isRevealed.current = value
+    setRevealed(value)
   }, [])
 
   const clearHoldTimer = useCallback(() => {
@@ -118,9 +129,9 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     clearHoldTimer()
     holdTimer.current = window.setTimeout(() => {
       holdTimer.current = null
-      setRevealed(true)
+      setRevealedTracked(true)
     }, holdDelay.current)
-  }, [clearHoldTimer])
+  }, [clearHoldTimer, setRevealedTracked])
 
   const clearSourceHoldTimer = useCallback(() => {
     if (sourceHoldTimer.current === null) return
@@ -128,11 +139,25 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     sourceHoldTimer.current = null
   }, [])
 
+  const clearHideTimer = useCallback(() => {
+    if (hideTimer.current === null) return
+    window.clearTimeout(hideTimer.current)
+    hideTimer.current = null
+  }, [])
+
+  const clearSourceHideTimer = useCallback(() => {
+    if (sourceHideTimer.current === null) return
+    window.clearTimeout(sourceHideTimer.current)
+    sourceHideTimer.current = null
+  }, [])
+
   const teardown = useCallback(() => {
     if (frame.current !== null) cancelAnimationFrame(frame.current)
     frame.current = null
     clearHoldTimer()
     clearSourceHoldTimer()
+    clearHideTimer()
+    clearSourceHideTimer()
 
     sourceElement.current?.removeAttribute(SOURCE_ATTRIBUTE)
     sourceElement.current = null
@@ -151,10 +176,10 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     setPayload(null)
     setHoveredTargetKey(null)
     setHoveredActionId(null)
-    setRevealed(false)
+    setRevealedTracked(false)
     setHoveredSource(false)
     setPointerOverSource(false)
-  }, [clearHoldTimer, clearSourceHoldTimer])
+  }, [clearHideTimer, clearHoldTimer, clearSourceHideTimer, clearSourceHoldTimer, setRevealedTracked])
 
   const autoScroll = useCallback(() => {
     const container = scrollContainer.current
@@ -177,11 +202,11 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
       container.scrollTop += delta
       // Content slides under a stationary pointer, so resting here is not a deliberate hold.
       clearHoldTimer()
-      setRevealed(false)
+      setRevealedTracked(false)
     } else if (wasScrolling && currentTargetKey.current !== null) {
       startHoldTimer()
     }
-  }, [clearHoldTimer, startHoldTimer])
+  }, [clearHoldTimer, setRevealedTracked, startHoldTimer])
 
   const hitTest = useCallback(() => {
     const { x, y } = pointer.current
@@ -208,17 +233,31 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
       // offer and they stay up for the whole drag.
       // A fast opening gesture also leaves the source before the stack exists; dismissing
       // then would hide boxes that were never rendered.
-      if (currentSourceHovered.current && stackMounted && payloadKind.current !== 'tag') {
-        currentSourceHovered.current = false
-        setHoveredSource(false)
+      if (
+        currentSourceHovered.current &&
+        stackMounted &&
+        payloadKind.current !== 'tag' &&
+        sourceHideTimer.current === null
+      ) {
+        sourceHideTimer.current = window.setTimeout(() => {
+          sourceHideTimer.current = null
+          if (inSourceRegion.current) return
+          currentSourceHovered.current = false
+          setHoveredSource(false)
+        }, hideDelay.current)
       }
-    } else if (!currentSourceHovered.current && sourceHoldTimer.current === null) {
-      sourceHoldTimer.current = window.setTimeout(() => {
-        sourceHoldTimer.current = null
-        if (!inSourceRegion.current) return
-        currentSourceHovered.current = true
-        setHoveredSource(true)
-      }, holdDelay.current)
+    } else {
+      // Back before the dismissal ran, so the boxes were never really gone.
+      clearSourceHideTimer()
+
+      if (!currentSourceHovered.current && sourceHoldTimer.current === null) {
+        sourceHoldTimer.current = window.setTimeout(() => {
+          sourceHoldTimer.current = null
+          if (!inSourceRegion.current) return
+          currentSourceHovered.current = true
+          setHoveredSource(true)
+        }, holdDelay.current)
+      }
     }
 
     const actionElement = element?.closest<HTMLElement>('[data-drag-action]') ?? null
@@ -239,15 +278,34 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const isSource = !!sourceElement.current && !!targetElement?.contains(sourceElement.current)
     const resolvedTarget = isSource ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
 
+    // Back on the same pill before the dismissal ran, so its boxes stay put and keep the hold
+    // they already earned.
+    if (resolvedTarget !== null && resolvedTarget === currentTargetKey.current) clearHideTimer()
+
     if (resolvedTarget === currentTargetKey.current) return
 
+    // Stepping off a revealed pill only schedules the dismissal, so a brief overshoot on the
+    // way to a box does not close it. Moving onto a different pill commits immediately.
+    if (resolvedTarget === null && isRevealed.current) {
+      if (hideTimer.current === null) {
+        hideTimer.current = window.setTimeout(() => {
+          hideTimer.current = null
+          currentTargetKey.current = null
+          setHoveredTargetKey(null)
+          setRevealedTracked(false)
+        }, hideDelay.current)
+      }
+      return
+    }
+
+    clearHideTimer()
     currentTargetKey.current = resolvedTarget
     setHoveredTargetKey(resolvedTarget)
-    setRevealed(false)
+    setRevealedTracked(false)
 
     if (resolvedTarget === null) clearHoldTimer()
     else if (!isAutoScrolling.current) startHoldTimer()
-  }, [clearHoldTimer, clearSourceHoldTimer, startHoldTimer])
+  }, [clearHideTimer, clearHoldTimer, clearSourceHideTimer, clearSourceHoldTimer, setRevealedTracked, startHoldTimer])
 
   const tick = useCallback(() => {
     const { x, y } = pointer.current

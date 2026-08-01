@@ -47,6 +47,7 @@ export interface ConfigState {
   dragAndDropEnabled: boolean
   dragAndDropBranchDefaultAction: 'merge' | 'rebase' | 'none'
   dragAndDropHoldDelay: number
+  dragAndDropHideDelay: number
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
   branchPushSetUpstream: boolean
@@ -78,6 +79,7 @@ const defaultConfigState: ConfigState = {
   dragAndDropEnabled: true,
   dragAndDropBranchDefaultAction: 'merge',
   dragAndDropHoldDelay: 300,
+  dragAndDropHideDelay: 1000,
   branchCreateCheckout: true,
   branchDeleteForce: false,
   branchPushSetUpstream: true,
