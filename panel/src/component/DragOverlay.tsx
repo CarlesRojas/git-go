@@ -43,7 +43,8 @@ const EMPTY_COMMIT: GitCommit = {
 }
 
 const STACK_GAP_PX = 8
-const BOX_HEIGHT_ESTIMATE_PX = 52
+/** One box plus the gap below it, used only to decide whether a stack fits below its pill. */
+const BOX_HEIGHT_ESTIMATE_PX = 40
 const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
 /** Matches the opacity transition on the stacks, so they stay mounted until it finishes. */
@@ -123,6 +124,11 @@ export const DragOverlay: FC = () => {
     })
   }, [payload, remotes, currentBranch])
 
+  // Refused actions are dropped from the stack rather than shown greyed. The unfiltered lists
+  // survive so the dragged item's label can still say why a blocked default is unavailable.
+  const visibleTargetActions = useMemo(() => targetActions.filter(action => !action.disabledReason), [targetActions])
+  const visibleSourceActions = useMemo(() => sourceActions.filter(action => !action.disabledReason), [sourceActions])
+
   const defaultTargetAction = useMemo(
     () => targetActions.find(action => action.isDefault && !action.disabledReason) ?? null,
     [targetActions],
@@ -137,7 +143,7 @@ export const DragOverlay: FC = () => {
   // With nothing to perform on release there is no reason to make the user hold: the boxes are
   // the only way to act, so they open on contact. This covers a target that cannot be checked
   // out — one held by a worktree, say — as well as a default action turned off in settings.
-  const revealOnContact = targetActions.length > 0 && !defaultTargetAction
+  const revealOnContact = visibleTargetActions.length > 0 && !defaultTargetAction
 
   // Layout effect so the default lands in the same frame as the hover that produced it —
   // a plain effect can miss a hover-and-release inside one frame.
@@ -340,28 +346,28 @@ export const DragOverlay: FC = () => {
   }, [pendingDrop, clearPendingDrop])
 
   const targetStackPosition = useMemo(
-    () => stackPositionFor(stackRect, targetActions.length),
-    [stackRect, targetActions],
+    () => stackPositionFor(stackRect, visibleTargetActions.length),
+    [stackRect, visibleTargetActions],
   )
 
   const sourceStackPosition = useMemo(
-    () => stackPositionFor(sourceRect, sourceActions.length),
-    [sourceRect, sourceActions],
+    () => stackPositionFor(sourceRect, visibleSourceActions.length),
+    [sourceRect, visibleSourceActions],
   )
 
   const targetStackVisible =
-    (revealed || revealOnContact) && !!targetStackPosition && !!hoveredTargetKey && targetActions.length > 0
-  const sourceStackVisible = hoveredSource && !!sourceStackPosition && sourceActions.length > 0
+    (revealed || revealOnContact) && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
+  const sourceStackVisible = hoveredSource && !!sourceStackPosition && visibleSourceActions.length > 0
 
   // The position and actions are cleared the moment a stack stops being visible, so the last
   // ones are held on to for the duration of the fade.
   const targetSnapshot = useRef<{ position: object; actions: DragAction[]; key: string } | null>(null)
   if (targetStackVisible) {
-    targetSnapshot.current = { position: targetStackPosition, actions: targetActions, key: hoveredTargetKey }
+    targetSnapshot.current = { position: targetStackPosition, actions: visibleTargetActions, key: hoveredTargetKey }
   }
 
   const sourceSnapshot = useRef<{ position: object; actions: DragAction[] } | null>(null)
-  if (sourceStackVisible) sourceSnapshot.current = { position: sourceStackPosition, actions: sourceActions }
+  if (sourceStackVisible) sourceSnapshot.current = { position: sourceStackPosition, actions: visibleSourceActions }
 
   const targetFade = useFadePresence(targetStackVisible, FADE_MS)
   const sourceFade = useFadePresence(sourceStackVisible, FADE_MS)

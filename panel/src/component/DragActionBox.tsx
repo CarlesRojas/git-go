@@ -9,8 +9,9 @@ interface Props {
 }
 
 /**
- * One box in a drag stack. Identical anatomy wherever it appears: icon, verb, and a line
- * saying what will happen — replaced by the reason when the action cannot run.
+ * One box in a drag stack: just the icon and the verb, centred. What the action would do —
+ * and why it cannot, when it is refused — is said once, in the label under the dragged item,
+ * rather than repeated on every box.
  */
 export const DragActionBox: FC<Props> = ({ action, hovered }) => {
   const disabled = !!action.disabledReason
@@ -21,7 +22,7 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
       data-drag-action-disabled={disabled}
       className={cn(
         // Layout & sizing
-        'rounded-main-outer pointer-events-auto flex w-56 flex-col justify-center gap-0.5 px-2 py-1.5',
+        'rounded-main-outer pointer-events-auto flex w-56 items-center justify-center gap-1.5 px-2 py-2',
         // Colors — the same surface the context menus use
         'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
         // State — highlight is background only, exactly as menu items do it, so the border
@@ -31,22 +32,12 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
         // Destructive keeps its accent when disabled; the shared opacity is what softens it
         action.destructive && 'text-vsc-error-fg',
         action.destructive && hovered && !disabled && 'bg-vsc-error-fg/10',
+        disabled && '[&>*]:opacity-50',
       )}
     >
-      <div className={cn('flex items-center gap-1.5', disabled && 'opacity-50')}>
-        <FontAwesomeIcon icon={action.icon} className="size-3 shrink-0" />
+      <FontAwesomeIcon icon={action.icon} className="size-3 shrink-0" />
 
-        <span className="text-xs leading-tight font-bold tracking-wide uppercase">{action.verb}</span>
-      </div>
-
-      <span
-        className={cn(
-          'line-clamp-1 truncate text-[11px] leading-tight font-medium opacity-70',
-          disabled && 'opacity-50',
-        )}
-      >
-        {action.disabledReason ?? action.effect}
-      </span>
+      <span className="text-xs leading-tight font-bold tracking-wide uppercase">{action.verb}</span>
     </div>
   )
 }
