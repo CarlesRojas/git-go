@@ -41,7 +41,9 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
   const localAndRemote = !!local && remotes.length > 0
-  const isCurrent = !!local && currentBranch === local.cleanName
+  // %(HEAD) from git itself is the authoritative per-worktree marker; the name comparison only
+  // covers branch data that predates it
+  const isCurrent = !!local && (local.current || currentBranch === local.cleanName)
 
   const handleLocalDoubleClick = useDoubleClick(() => {
     if (!local || isCurrent) return

@@ -1350,22 +1350,28 @@ export class GitService {
         const gitExecutable = await this.findGitExecutable();
 
         try {
-            const currentBranch = await this.spawnGit(
-                [gitExecutable.path, 'rev-parse', '--abbrev-ref', 'HEAD'],
+            // symbolic-ref returns the full ref, so the name always matches the one derived from
+            // %(refname). 'rev-parse --abbrev-ref' shortens it instead, and the shortening is only
+            // as short as it is unambiguous: with a tag named like the branch it answers
+            // 'heads/my-branch', which no longer matches any branch in the list.
+            const symbolicRef = await this.spawnGit(
+                [gitExecutable.path, 'symbolic-ref', '--quiet', 'HEAD'],
                 workspacePath
             );
 
-            const branchName = currentBranch.trim();
-            // If HEAD is detached, git returns 'HEAD' instead of a branch name
-            if (branchName === 'HEAD') {
-                log('Repository is in detached HEAD state');
+            const ref = symbolicRef.trim();
+            // HEAD can point outside refs/heads/, in which case no branch is checked out
+            if (!ref.startsWith('refs/heads/')) {
+                log(`HEAD does not point at a branch: ${ref || '(empty)'}`);
                 return null;
             }
 
+            const branchName = ref.slice('refs/heads/'.length);
             log(`Current branch: ${branchName}`);
             return branchName;
         } catch (error) {
-            log(`Error getting current branch: ${error}`);
+            // --quiet makes symbolic-ref exit non-zero without output when HEAD is detached
+            log(`No branch checked out (detached HEAD or unreadable HEAD): ${error}`);
             return null;
         }
     }

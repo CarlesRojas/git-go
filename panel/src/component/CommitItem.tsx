@@ -122,8 +122,8 @@ export const CommitItem: FC<CommitItemProps> = ({
     >
       {Object.entries(groupedBranches)
         .sort(([, a], [, b]) => {
-          const aIsCurrent = a.local && currentBranch === a.local.cleanName
-          const bIsCurrent = b.local && currentBranch === b.local.cleanName
+          const aIsCurrent = a.local && (a.local.current || currentBranch === a.local.cleanName)
+          const bIsCurrent = b.local && (b.local.current || currentBranch === b.local.cleanName)
 
           if (aIsCurrent && !bIsCurrent) return -1
           if (!aIsCurrent && bIsCurrent) return 1
