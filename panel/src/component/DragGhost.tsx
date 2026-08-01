@@ -1,9 +1,10 @@
+import { formatStash } from '@/component/StashTagPill'
 import { useSettings } from '@/context/SettingsContext'
 import { getColor } from '@/hook/useGitTree'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { DragAction, DragPayload, shortHash } from '@/util/dragAndDrop'
-import { faTag } from '@fortawesome/free-solid-svg-icons'
+import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { FC } from 'react'
 
@@ -66,6 +67,14 @@ export const DragGhost: FC<Props> = ({ payload, pendingAction }) => {
           <FontAwesomeIcon icon={faTag} className="size-3 shrink-0 text-amber-500" />
 
           <span className="max-w-64 truncate text-xs leading-tight font-medium">{payload.name}</span>
+        </div>
+      )}
+
+      {payload.kind === 'stash' && (
+        <div className="bg-vsc-editor-fg/10 flex h-5 items-center gap-1.5 px-1.5">
+          <FontAwesomeIcon icon={faInbox} className="text-vsc-editor-fg/80 size-3 shrink-0" />
+
+          <span className="max-w-64 truncate text-xs leading-tight font-medium">{formatStash(payload.ref)}</span>
         </div>
       )}
 
