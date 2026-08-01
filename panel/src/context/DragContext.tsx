@@ -280,10 +280,16 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     // The drag handle can be nested inside the drop target, so containment — not identity —
     // is what marks a pill as the one being dragged.
     const isSource = !!sourceElement.current && !!targetElement?.contains(sourceElement.current)
-    const resolvedTarget = isSource ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
+    const targetKey = isSource ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
 
-    if ((resolvedTarget !== null) !== isPointerOverTarget.current) {
-      isPointerOverTarget.current = resolvedTarget !== null
+    // The stack's own padding and the gaps between its boxes keep the target alive so it does
+    // not close as the pointer travels, but they are not the target: resting there arms
+    // nothing and highlights nothing, since a release lands on neither pill nor box.
+    const bridgeKey = element?.closest<HTMLElement>('[data-drop-bridge]')?.getAttribute('data-drop-bridge') ?? null
+    const resolvedTarget = targetKey ?? bridgeKey
+
+    if ((targetKey !== null) !== isPointerOverTarget.current) {
+      isPointerOverTarget.current = targetKey !== null
       setPointerOverTarget(isPointerOverTarget.current)
     }
 

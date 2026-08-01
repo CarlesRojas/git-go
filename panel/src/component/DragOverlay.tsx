@@ -432,9 +432,9 @@ export const DragOverlay: FC = () => {
 
         {targetFade.mounted && targetSnapshot.current && (
           <div
-            // Carries the target key so the padded bridge back to the pill counts as the same
-            // target, keeping the stack open while the pointer travels to a box.
-            data-drop-target={targetFade.shown ? targetSnapshot.current.key : undefined}
+            // Carries the target key so the padded bridge back to the pill keeps the stack
+            // open while the pointer travels to a box, without counting as the target itself.
+            data-drop-bridge={targetFade.shown ? targetSnapshot.current.key : undefined}
             className={cn(
               'absolute z-10 flex flex-col gap-1.5 transition-opacity duration-150',
               // Untargetable while fading out, so a release cannot land on a stale box.
