@@ -243,6 +243,7 @@ export const CommitItem: FC<CommitItemProps> = ({
       <Avatar
         email={commit.email}
         author={commit.author}
+        commitHash={commit.isUncommitted ? undefined : commit.hash}
         size={20}
         className={cn(!settings.showCommitterName && 'mr-2', commit.isUncommitted && 'opacity-0')}
       />
@@ -352,7 +353,13 @@ export const CommitItem: FC<CommitItemProps> = ({
             <div className={cn('relative flex h-fit w-full flex-col gap-1 py-3 pr-2', commit.isUncommitted && 'py-0')}>
               {!commit.isUncommitted && (
                 <div className="relative flex h-fit w-full items-center gap-3">
-                  <Avatar email={commit.email} author={commit.author} size={64} className="place-self-start" />
+                  <Avatar
+                    email={commit.email}
+                    author={commit.author}
+                    commitHash={commit.hash}
+                    size={64}
+                    className="place-self-start"
+                  />
 
                   <div className="relative flex h-fit w-full flex-col">
                     <p className="text-xs font-medium">

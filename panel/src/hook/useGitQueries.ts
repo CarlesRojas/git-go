@@ -113,6 +113,8 @@ export const queryKeys = {
   // Deliberately outside the 'git' namespace: resolving it hits the network (ls-remote),
   // so it must not be refetched by the blanket 'git' invalidation after every mutation
   tagRemotes: ['remote-tags'] as const,
+  // Also outside the 'git' namespace: resolving it hits the remote's API
+  avatar: (email: string) => ['avatar', email] as const,
   state: (key: string) => ['state', key] as const,
   theme: ['theme'] as const,
 }
@@ -138,6 +140,29 @@ export const useGitRemotes = () => {
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  })
+}
+
+/**
+ * Resolve an author's profile picture from the repository's remote, as a data URI.
+ * Keyed by email only, so every commit by the same author shares a single lookup.
+ * Resolves to null when the remote has no picture for that author, leaving Gravatar as the fallback.
+ */
+export const useAvatar = (email: string, commitHash?: string) => {
+  return useQuery({
+    queryKey: queryKeys.avatar(email),
+    queryFn: async (): Promise<string | null> => {
+      const response = await sendCorrelatedMessage<{ avatar: string | null }>(
+        'getAvatar',
+        { email, commitHash },
+        20000,
+      )
+      return response.avatar ?? null
+    },
+    enabled: !!email && !!commitHash,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
   })
 }
 
