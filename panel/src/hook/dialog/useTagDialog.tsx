@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/component/ui/Input'
 import { Label } from '@/component/ui/Label'
 import { Textarea } from '@/component/ui/Textarea'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useAddTag } from '@/hook/useGitQueries'
 import { faCircleNotch, faTag } from '@fortawesome/free-solid-svg-icons'
@@ -17,6 +18,7 @@ interface UseTagDialogProps {
 
 export const useTagDialog = ({ commit }: UseTagDialogProps) => {
   const { showToast } = useToast()
+  const { settings } = useSettings()
   const [showTagDialog, setShowTagDialog] = useState(false)
   const addTagMutation = useAddTag()
 
@@ -31,12 +33,12 @@ export const useTagDialog = ({ commit }: UseTagDialogProps) => {
           commitHash: commit.hash,
           tagName: value.tagName,
           tagMessage: value.tagMessage || undefined,
-          tagType: 'annotated',
+          tagType: settings.tagType,
         },
         {
           onSuccess: () => {
             showToast({
-              text: `Annotated tag '${value.tagName}' created successfully`,
+              text: `Tag '${value.tagName}' created successfully`,
               icon: faTag,
               type: 'success',
             })

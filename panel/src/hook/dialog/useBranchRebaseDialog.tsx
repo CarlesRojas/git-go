@@ -25,12 +25,14 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
   const rebaseForm = useForm({
     defaultValues: {
       ignoreDate: settings.branchRebaseIgnoreDate,
+      autoStash: settings.rebaseAutoStash,
     },
     onSubmit: async ({ value }) => {
       rebaseBranchMutation.mutate(
         {
           branchName: branch.cleanName,
           ignoreDate: value.ignoreDate,
+          autoStash: value.autoStash,
         },
         {
           onSuccess: () => {
@@ -53,6 +55,11 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
   })
 
   const openDialog = () => {
+    if (!settings.confirmRebase) {
+      void rebaseForm.handleSubmit()
+      return
+    }
+
     setShowRebaseDialog(true)
   }
 
@@ -84,6 +91,21 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
                   />
                   <Label htmlFor="ignoreDate" className="cursor-pointer pl-2">
                     Ignore date
+                  </Label>
+                </div>
+              )}
+            </rebaseForm.Field>
+
+            <rebaseForm.Field name="autoStash">
+              {field => (
+                <div className="flex items-center">
+                  <Checkbox
+                    id="autoStash"
+                    checked={field.state.value}
+                    onCheckedChange={checked => field.handleChange(checked === true)}
+                  />
+                  <Label htmlFor="autoStash" className="cursor-pointer pl-2">
+                    Autostash uncommitted changes
                   </Label>
                 </div>
               )}

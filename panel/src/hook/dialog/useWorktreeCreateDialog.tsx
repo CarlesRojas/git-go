@@ -38,7 +38,7 @@ export const useWorktreeCreateDialog = ({ branch }: UseWorktreeCreateDialogProps
     defaultValues: {
       branchName: branch?.cleanName ?? '',
       worktreePath: '',
-      openAfterCreate: true,
+      openAfterCreate: settings.worktreeOpenAfterCreate,
     },
     onSubmit: async ({ value }) => {
       addWorktreeMutation.mutate(
@@ -72,7 +72,7 @@ export const useWorktreeCreateDialog = ({ branch }: UseWorktreeCreateDialogProps
     const initialBranch = branch?.cleanName ?? eligibleBranches[0]?.cleanName ?? ''
     createForm.setFieldValue('branchName', initialBranch)
     createForm.setFieldValue('worktreePath', initialBranch ? getDefaultPath(initialBranch) : '')
-    createForm.setFieldValue('openAfterCreate', true)
+    createForm.setFieldValue('openAfterCreate', settings.worktreeOpenAfterCreate)
     setShowCreateDialog(true)
   }
 

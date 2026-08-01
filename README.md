@@ -144,7 +144,9 @@ Git Go can be customized through VS Code settings. Here are all available config
 {
     "git-go.graph.rounded": true, // Use rounded corners for graph elements
     "git-go.graph.theme": "vibrant", // Color theme for branch visualization
+    "git-go.graph.customColors": [], // Palette used when the theme is 'custom' (hex colors, up to 16)
     "git-go.graph.expandedCommitHeight": 300, // Height in pixels for expanded commit details (200-800)
+    "git-go.graph.showCommitterName": true, // Show the committer name next to each commit
     "git-go.graph.remoteAvatars": true // Show author pictures from the remote (GitHub), falling back to Gravatar
 }
 ```
@@ -174,13 +176,33 @@ Git Go can be customized through VS Code settings. Here are all available config
 }
 ```
 
+### 🖱️ Drag and Drop
+
+```json
+{
+    "git-go.dragAndDrop.enabled": true, // Enable dragging branches, commits, stashes and tags
+    "git-go.dragAndDrop.branchOnBranch.defaultAction": "merge", // 'merge' | 'rebase' | 'none' when dropping a branch onto another
+    "git-go.dragAndDrop.holdDelay": 300, // Milliseconds to hold over a branch before its extra actions appear
+    "git-go.dragAndDrop.hideDelay": 300, // Milliseconds the actions linger after the pointer moves away
+    "git-go.dragAndDrop.auto.merge": false, // Merge on drop without showing the dialog
+    "git-go.dragAndDrop.auto.rebase": false, // Rebase on drop without showing the dialog
+    "git-go.dragAndDrop.auto.cherryPick": false, // Cherry-pick on drop without showing the dialog
+    "git-go.dragAndDrop.auto.mergeCommit": false, // Merge a commit on drop without showing the dialog
+    "git-go.dragAndDrop.auto.push": false, // Push on drop without showing the dialog
+    "git-go.dragAndDrop.auto.fetchIntoLocal": false // Fetch into local on drop without showing the dialog
+}
+```
+
 ### 🌿 Branch Operations
 
 ```json
 {
     "git-go.branch.create.checkout": true, // Default 'Checkout new branch' when creating a branch
     "git-go.branch.delete.force": false, // Default 'Force delete' when deleting a branch
+    "git-go.branch.delete.deleteOnRemote": false, // Default 'Also delete on remote' when the branch tracks an upstream
+    "git-go.branch.checkout.pullAfterCheckout": false, // Pull from the upstream right after checking a branch out
     "git-go.branch.push.setUpstream": true, // Default 'Set upstream' when pushing a branch
+    "git-go.branch.push.mode": "normal", // Default 'Push Mode': 'normal' | 'force-with-lease' | 'force'
     "git-go.branch.rebase.ignoreDate": true // Default 'Ignore date' when rebasing a branch
 }
 ```
@@ -191,7 +213,16 @@ Git Go can be customized through VS Code settings. Here are all available config
 {
     "git-go.merge.fastForwardIfPossible": true, // Default 'Fast forward if possible' when merging
     "git-go.merge.squash": false, // Default 'Squash commits' when merging branches
-    "git-go.merge.noCommit": false // Default 'Don't commit automatically' when merging
+    "git-go.merge.noCommit": false, // Default 'Don't commit automatically' when merging
+    "git-go.merge.commitMessage": "" // Merge commit message template, with {source} and {target} placeholders
+}
+```
+
+### 📐 Rebase Operations
+
+```json
+{
+    "git-go.rebase.autoStash": false // Default 'Autostash uncommitted changes' when rebasing
 }
 ```
 
@@ -212,10 +243,23 @@ Git Go can be customized through VS Code settings. Here are all available config
 }
 ```
 
+### ⏪ Reset Operations
+
+```json
+{
+    "git-go.reset.mode": "mixed", // Default reset mode ('soft' | 'mixed' | 'hard') when resetting to a commit
+    "git-go.reset.discardUntrackedFiles": true, // Also delete untracked files when discarding all changes
+    "git-go.reset.discardUntrackedDirectories": true // Also delete untracked directories when discarding all changes
+}
+```
+
 ### 🌐 Remote Operations
 
 ```json
 {
+    "git-go.remote.defaultRemote": "origin", // Remote preselected when pushing branches and tags
+    "git-go.fetch.onOpen": false, // Fetch from every remote when the Git Go panel opens
+    "git-go.remote.fetch.prune": false, // Delete remote-tracking branches that no longer exist on the remote
     "git-go.remote.fetch.forceFetch": false, // Default 'Force fetch' when fetching remote branches
     "git-go.remote.fetch.checkout": true, // Default 'Checkout branch after fetch' when fetching remote branches
     "git-go.remote.fetch.confirmOnlyIfForceNeeded": false // Only confirm the fetch when it needs to be forced
@@ -226,7 +270,18 @@ Git Go can be customized through VS Code settings. Here are all available config
 
 ```json
 {
-    "git-go.stash.includeUntracked": true // Default 'Include untracked files' when creating stashes
+    "git-go.stash.includeUntracked": true, // Default 'Include untracked files' when creating stashes
+    "git-go.stash.reinstateIndex": false // Restore the staged state of the files when applying or popping a stash
+}
+```
+
+### 🏷️ Tag Operations
+
+```json
+{
+    "git-go.tag.type": "annotated", // 'annotated' | 'lightweight' tags created from the tag dialog
+    "git-go.tag.push.allRemotes": false, // Preselect every remote when pushing a tag
+    "git-go.tag.delete.onRemotes": false // Preselect the remotes that have the tag when deleting a tag
 }
 ```
 
@@ -236,9 +291,26 @@ Git Go can be customized through VS Code settings. Here are all available config
 {
     "git-go.worktree.defaultPath": "../{repo}.worktrees/{branch}", // Path template for new worktrees
     "git-go.worktree.openNewWindow": true, // Open worktrees in a new window by default
-    "git-go.worktree.openBehavior": "ask" // 'ask' | 'newWindow' | 'currentWindow' when opening a worktree
+    "git-go.worktree.openBehavior": "ask", // 'ask' | 'newWindow' | 'currentWindow' when opening a worktree
+    "git-go.worktree.create.openAfterCreate": true, // Default 'Open after creating' when creating a worktree
+    "git-go.worktree.remove.force": false, // Default 'Force Remove' when removing a worktree
+    "git-go.worktree.remove.deleteBranch": false // Default 'Also delete branch' when removing a worktree
 }
 ```
+
+### ✅ Confirmation Dialogs
+
+```json
+{
+    "git-go.confirm.merge": true, // Ask before merging a branch or a commit
+    "git-go.confirm.rebase": true, // Ask before rebasing onto a branch or a commit
+    "git-go.confirm.push": true, // Ask before pushing a branch
+    "git-go.confirm.branchDelete": true // Ask before deleting a local branch
+}
+```
+
+Disabling one of these runs the action straight away with the configured defaults, skipping its dialog. Deleting a
+branch on a remote always asks.
 
 ### Repository Settings
 

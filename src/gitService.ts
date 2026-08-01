@@ -25,6 +25,8 @@ export interface GitBranch {
     current: boolean;
     remote: boolean;
     remoteName?: string;
+    upstreamRemote?: string;
+    upstreamBranch?: string;
     worktreePath?: string;
 }
 
@@ -276,7 +278,12 @@ export class GitService {
             log(`Using git executable: ${gitExecutable.path}`);
 
             const branchOutput = await this.spawnGit(
-                [gitExecutable.path, 'branch', '-a', '--format=%(refname),%(HEAD),%(objectname)'],
+                [
+                    gitExecutable.path,
+                    'branch',
+                    '-a',
+                    '--format=%(refname),%(HEAD),%(objectname),%(upstream:remotename),%(upstream:lstrip=3)'
+                ],
                 workspacePath
             );
 
@@ -284,7 +291,7 @@ export class GitService {
             const lines = branchOutput.split(EOL_REGEX).filter((line: string) => line.trim());
 
             for (const line of lines) {
-                const [name, isHead, hash] = line.split(',');
+                const [name, isHead, hash, upstreamRemote, upstreamBranch] = line.split(',');
                 if (name && name.trim() && hash && hash.trim()) {
                     const refName = name.trim();
                     const isRemote = refName.startsWith('refs/remotes/');
@@ -299,7 +306,9 @@ export class GitService {
                         hash: hash.trim(),
                         current: isHead?.trim() === '*',
                         remote: isRemote,
-                        remoteName
+                        remoteName,
+                        upstreamRemote: upstreamRemote?.trim() || undefined,
+                        upstreamBranch: upstreamBranch?.trim() || undefined
                     });
                 }
             }
@@ -1294,6 +1303,41 @@ export class GitService {
         }
     }
 
+    public async hasUpstreamBranch(): Promise<boolean> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            await this.spawnGit(
+                [gitExecutable.path, 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
+                workspacePath
+            );
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    public async pullCurrentBranch(log: (message: string) => void): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log('Pulling the current branch from its upstream...');
+            await this.spawnGit([gitExecutable.path, 'pull', '--no-edit'], workspacePath);
+            log('Successfully pulled the current branch');
+        } catch (error) {
+            log(`Error pulling the current branch: ${error}`);
+            throw error;
+        }
+    }
+
     public async checkoutRemoteBranch(
         log: (message: string) => void,
         remoteBranchName: string,
@@ -1381,7 +1425,7 @@ export class GitService {
         }
     }
 
-    public async fetch(log: (message: string) => void): Promise<void> {
+    public async fetch(log: (message: string) => void, prune: boolean = false): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -1390,8 +1434,12 @@ export class GitService {
 
         try {
             log('Fetching from remote repositories...');
-            await this.spawnGit([gitExecutable.path, 'fetch', '--all'], workspacePath);
-            log('Successfully fetched from remotes');
+
+            const args = [gitExecutable.path, 'fetch', '--all'];
+            if (prune) args.push('--prune');
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully fetched from remotes${prune ? ' and pruned deleted remote branches' : ''}`);
         } catch (error) {
             log(`Error fetching from remotes: ${error}`);
             throw error;
@@ -1484,7 +1532,8 @@ export class GitService {
         branchName: string,
         fastForwardIfPossible: boolean = true,
         squash: boolean = false,
-        noCommit: boolean = false
+        noCommit: boolean = false,
+        commitMessage?: string
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -1509,6 +1558,10 @@ export class GitService {
                 args.push('--no-commit');
             }
 
+            if (commitMessage && !squash && !noCommit) {
+                args.push('-m', commitMessage);
+            }
+
             args.push('--', branchName);
 
             await this.spawnGit(args, workspacePath);
@@ -1524,7 +1577,8 @@ export class GitService {
         commitHash: string,
         fastForwardIfPossible: boolean = true,
         squash: boolean = false,
-        noCommit: boolean = false
+        noCommit: boolean = false,
+        commitMessage?: string
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -1547,6 +1601,10 @@ export class GitService {
                 args.push('--no-commit');
             }
 
+            if (commitMessage && !squash && !noCommit) {
+                args.push('-m', commitMessage);
+            }
+
             args.push(commitHash);
 
             await this.spawnGit(args, workspacePath);
@@ -1560,7 +1618,8 @@ export class GitService {
     public async rebaseBranch(
         log: (message: string) => void,
         branchName: string,
-        ignoreDate: boolean = false
+        ignoreDate: boolean = false,
+        autoStash: boolean = false
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -1579,6 +1638,10 @@ export class GitService {
                 args.push('--ignore-date');
             }
 
+            if (autoStash) {
+                args.push('--autostash');
+            }
+
             args.push('--', branchName);
 
             await this.spawnGit(args, workspacePath);
@@ -1592,7 +1655,8 @@ export class GitService {
     public async rebaseBranchToCommit(
         log: (message: string) => void,
         commitHash: string,
-        ignoreDate: boolean = false
+        ignoreDate: boolean = false,
+        autoStash: boolean = false
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -1607,6 +1671,10 @@ export class GitService {
 
             if (ignoreDate) {
                 args.push('--ignore-date');
+            }
+
+            if (autoStash) {
+                args.push('--autostash');
             }
 
             args.push(commitHash);

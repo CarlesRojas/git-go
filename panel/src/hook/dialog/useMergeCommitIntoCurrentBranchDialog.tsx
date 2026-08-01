@@ -56,7 +56,14 @@ export const useMergeCommitIntoCurrentBranchDialog = ({ commit }: UseMergeCommit
     },
   })
 
-  const openDialog = () => setShowMergeDialog(true)
+  const openDialog = () => {
+    if (!settings.confirmMerge) {
+      void mergeForm.handleSubmit()
+      return
+    }
+
+    setShowMergeDialog(true)
+  }
 
   const DialogComponent = (
     <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>

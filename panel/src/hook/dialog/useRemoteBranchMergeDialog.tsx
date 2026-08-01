@@ -19,6 +19,33 @@ export const useRemoteBranchMergeDialog = () => {
   const { data: currentBranch } = useCurrentBranch()
   const { settings } = useSettings()
 
+  const merge = (branch: GitBranch, values: { fastForwardIfPossible: boolean; squash: boolean; noCommit: boolean }) => {
+    mergeBranchMutation.mutate(
+      {
+        branchName: branch.cleanName,
+        fastForwardIfPossible: values.fastForwardIfPossible,
+        squash: values.squash,
+        noCommit: values.noCommit,
+      },
+      {
+        onSuccess: () => {
+          showToast({
+            text: `Remote branch '${branch.cleanName}' merged into '${currentBranch}' successfully`,
+            icon: faCodeMerge,
+            type: 'success',
+          })
+        },
+        onError: error => {
+          showToast({ text: error.message, type: 'error', icon: faCodeMerge })
+        },
+        onSettled: () => {
+          setShowMergeDialog(false)
+          mergeForm.reset()
+        },
+      },
+    )
+  }
+
   const mergeForm = useForm({
     defaultValues: {
       fastForwardIfPossible: settings.mergeFastForwardIfPossible,
@@ -27,35 +54,22 @@ export const useRemoteBranchMergeDialog = () => {
     },
     onSubmit: async ({ value }) => {
       if (!remoteBranch) return
-      mergeBranchMutation.mutate(
-        {
-          branchName: remoteBranch.cleanName,
-          fastForwardIfPossible: value.fastForwardIfPossible,
-          squash: value.squash,
-          noCommit: value.noCommit,
-        },
-        {
-          onSuccess: () => {
-            showToast({
-              text: `Remote branch '${remoteBranch.cleanName}' merged into '${currentBranch}' successfully`,
-              icon: faCodeMerge,
-              type: 'success',
-            })
-          },
-          onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faCodeMerge })
-          },
-          onSettled: () => {
-            setShowMergeDialog(false)
-            mergeForm.reset()
-          },
-        },
-      )
+      merge(remoteBranch, value)
     },
   })
 
   const openDialog = (branch: GitBranch) => {
     setRemoteBranch(branch)
+
+    if (!settings.confirmMerge) {
+      merge(branch, {
+        fastForwardIfPossible: settings.mergeFastForwardIfPossible,
+        squash: settings.mergeSquash,
+        noCommit: settings.mergeNoCommit,
+      })
+      return
+    }
+
     setShowMergeDialog(true)
   }
 

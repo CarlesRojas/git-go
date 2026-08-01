@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/component/ui/Label'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
-import { useDeleteBranch, useRemoveWorktree } from '@/hook/useGitQueries'
+import { useDeleteBranch, useDeleteRemoteBranch, useRemoveWorktree } from '@/hook/useGitQueries'
 import { faCircleNotch, faFolderTree, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -19,46 +19,62 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
   const { showToast } = useToast()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const deleteBranchMutation = useDeleteBranch()
+  const deleteRemoteBranchMutation = useDeleteRemoteBranch()
   const removeWorktreeMutation = useRemoveWorktree()
   const { settings } = useSettings()
 
-  const isPending = deleteBranchMutation.isPending || removeWorktreeMutation.isPending
+  const isPending =
+    deleteBranchMutation.isPending || deleteRemoteBranchMutation.isPending || removeWorktreeMutation.isPending
+
+  const upstream =
+    branch.upstreamRemote && branch.upstreamBranch
+      ? { remote: branch.upstreamRemote, branchName: branch.upstreamBranch }
+      : null
 
   const deleteForm = useForm({
     defaultValues: {
       force: settings.branchDeleteForce,
+      deleteOnRemote: settings.branchDeleteOnRemote,
     },
     onSubmit: async ({ value }) => {
-      const callbacks = {
-        onSuccess: () => {
-          showToast({
-            text: `Branch '${branch.cleanName}' deleted successfully`,
-            icon: faTrash,
-            type: 'success' as const,
+      try {
+        if (branch.worktreePath) {
+          await removeWorktreeMutation.mutateAsync({
+            worktreePath: branch.worktreePath,
+            force: value.force,
+            deleteBranch: branch.cleanName,
           })
-        },
-        onError: (error: Error) => {
-          showToast({ text: error.message, type: 'error', icon: faTrash })
-        },
-        onSettled: () => {
-          setShowDeleteDialog(false)
-          deleteForm.reset()
-        },
-      }
+        } else {
+          await deleteBranchMutation.mutateAsync({ branchName: branch.cleanName, force: value.force })
+        }
 
-      if (branch.worktreePath) {
-        removeWorktreeMutation.mutate(
-          { worktreePath: branch.worktreePath, force: value.force, deleteBranch: branch.cleanName },
-          callbacks,
-        )
-        return
-      }
+        if (value.deleteOnRemote && upstream) {
+          await deleteRemoteBranchMutation.mutateAsync(upstream)
+        }
 
-      deleteBranchMutation.mutate({ branchName: branch.cleanName, force: value.force }, callbacks)
+        showToast({
+          text:
+            value.deleteOnRemote && upstream
+              ? `Branch '${branch.cleanName}' deleted locally and on '${upstream.remote}'`
+              : `Branch '${branch.cleanName}' deleted successfully`,
+          icon: faTrash,
+          type: 'success',
+        })
+      } catch (error) {
+        showToast({ text: (error as Error).message, type: 'error', icon: faTrash })
+      } finally {
+        setShowDeleteDialog(false)
+        deleteForm.reset()
+      }
     },
   })
 
   const openDialog = () => {
+    if (!settings.confirmBranchDelete) {
+      void deleteForm.handleSubmit()
+      return
+    }
+
     setShowDeleteDialog(true)
   }
 
@@ -103,6 +119,24 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
                 </div>
               )}
             </deleteForm.Field>
+
+            {!!upstream && (
+              <deleteForm.Field name="deleteOnRemote">
+                {field => (
+                  <div className="flex items-center">
+                    <Checkbox
+                      id="deleteOnRemote"
+                      checked={field.state.value}
+                      onCheckedChange={checked => field.handleChange(checked === true)}
+                    />
+
+                    <Label htmlFor="deleteOnRemote" className="cursor-pointer pl-2">
+                      Also delete '{upstream.branchName}' on '{upstream.remote}'
+                    </Label>
+                  </div>
+                )}
+              </deleteForm.Field>
+            )}
           </div>
 
           <DialogFooter>
