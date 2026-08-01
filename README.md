@@ -2,7 +2,7 @@
 
 **A beautiful, interactive Git visualization extension for VS Code**
 
-[![Version](https://img.shields.io/badge/version-1.0.9-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.0.19-blue.svg)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.116.0+-blue.svg)](https://code.visualstudio.com/)
 
@@ -66,6 +66,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Cherry-pick commits** with origin tracking options
 - **Revert commits** safely
 - **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
+- **Reset the current branch** to any commit, soft, mixed or hard
 - **View detailed commit information** including:
     - File changes and diffs
     - Author and committer details
@@ -83,7 +84,17 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Browse repository** file tree at any commit or stash
 - **View file diffs** between commits
 - **See working directory changes** with uncommitted files
-- **Open files** in VS Code editor at specific commits
+- **Stash or discard** uncommitted changes from the working directory row
+- **Open files** in VS Code editor at specific commits, in a split view next to the graph
+
+### 🧲 Drag and Drop
+
+- **Drop a branch on a branch** to merge or rebase, with the default action set in the settings
+- **Drop a commit on a branch** to cherry-pick, merge, or revert it
+- **Hold over a pill** to open every action it accepts instead of taking the default one
+- **Drag an item on its own** for the actions that need no target - push, delete, fetch into local, and apply, pop or drop a stash
+- **Refused actions** stay visible with the reason, such as a branch checked out in another worktree
+- **Auto mode** per action, to run it on drop with the values its dialog would have opened with
 
 ### ⚙️ Git Configuration
 
@@ -110,6 +121,9 @@ Choose from multiple color themes for the commit graph:
 ![Dusk Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/dusk.png)
 ![Coral Theme](https://github.com/CarlesRojas/git-go/raw/main/resource/coral.png)
 
+Or set the theme to `custom` and list your own colors in `git-go.graph.customColors`, up to 16 hex codes cycled through
+as branches are drawn.
+
 ## 🚀 Getting Started
 
 ### Installation From VS Code Marketplace:
@@ -134,6 +148,13 @@ Choose from multiple color themes for the commit graph:
 
 3. **Perform Git operations**:
     - **Right-click** on commits, branches, stashes, or tags for context menus
+    - **Drag** a branch, commit, tag, or stash onto a branch, or hold over it for more actions
+    - **Undo** the last one from the toolbar button, which names the action it will undo
+
+4. **Keyboard shortcuts**:
+    - `Ctrl+F` / `Cmd+F` focuses the search, `Esc` clears it
+    - `↑` / `↓` move between commits while one is expanded
+    - `Ctrl+Z` / `Cmd+Z` undoes the last action on the current branch
 
 ## ⚙️ Configuration
 
@@ -313,28 +334,6 @@ asks.
     "git-go.worktree.remove.deleteBranch": false // Default 'Also delete branch' when removing a worktree
 }
 ```
-
-### Renamed Settings
-
-These settings still work, and are read whenever their replacement is not set. VS Code hides them from the Settings
-editor unless you have one configured.
-
-| Old setting                          | Use instead                       |
-| ------------------------------------ | --------------------------------- |
-| `git-go.branch.rebase.ignoreDate`    | `git-go.rebase.ignoreDate`        |
-| `git-go.branch.delete.deleteOnRemote`| `git-go.branch.delete.onRemote`   |
-| `git-go.fetch.onOpen`                | `git-go.remote.fetch.onOpen`      |
-| `git-go.worktree.openNewWindow`      | `git-go.worktree.openBehavior`    |
-
-
-### Repository Settings
-
-Access via the settings button in the Git Go interface:
-
-- Toggle visibility of stashes, tags, and remotes
-- Configure Git user name and email (local/global)
-- Manage remote repositories
-- Open extension settings
 
 ## 🔧 Requirements
 
