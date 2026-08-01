@@ -16,6 +16,39 @@ export class Config {
     }
 
     /**
+     * Read a setting that used to live under a different name, so a value set before the rename keeps working.
+     * The current name wins as soon as it is set anywhere, and the old one is only read while it is not.
+     * @param section The current name of the setting, without the `git-go.` prefix.
+     * @param deprecatedSection The name the setting used to have, without the `git-go.` prefix.
+     * @param defaultValue The value to fall back to when neither name is set.
+     */
+    private getRenamed<T>(section: string, deprecatedSection: string, defaultValue: T): T {
+        if (!this.isSet(section)) {
+            const deprecated = this.config.get<T>(deprecatedSection);
+            if (this.isSet(deprecatedSection) && deprecated !== undefined) return deprecated;
+        }
+
+        return this.config.get(section, defaultValue);
+    }
+
+    /**
+     * Whether a setting has a value of its own anywhere, rather than just its default.
+     */
+    private isSet(section: string): boolean {
+        const inspected = this.config.inspect(section);
+        if (!inspected) return false;
+
+        return (
+            inspected.globalValue !== undefined ||
+            inspected.workspaceValue !== undefined ||
+            inspected.workspaceFolderValue !== undefined ||
+            inspected.globalLanguageValue !== undefined ||
+            inspected.workspaceLanguageValue !== undefined ||
+            inspected.workspaceFolderLanguageValue !== undefined
+        );
+    }
+
+    /**
      * Get the value of the `git-go.graph.rounded` Extension Setting.
      */
     get rounded(): boolean {
@@ -139,10 +172,10 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.branch.delete.deleteOnRemote` Extension Setting.
+     * Get the value of the `git-go.branch.delete.onRemote` Extension Setting.
      */
     get branchDeleteOnRemote(): boolean {
-        return !!this.config.get('branch.delete.deleteOnRemote', false);
+        return !!this.getRenamed('branch.delete.onRemote', 'branch.delete.deleteOnRemote', false);
     }
 
     /**
@@ -171,13 +204,6 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.branch.rebase.ignoreDate` Extension Setting.
-     */
-    get branchRebaseIgnoreDate(): boolean {
-        return !!this.config.get('branch.rebase.ignoreDate', true);
-    }
-
-    /**
      * Get the value of the `git-go.merge.fastForwardIfPossible` Extension Setting.
      */
     get mergeFastForwardIfPossible(): boolean {
@@ -203,6 +229,13 @@ export class Config {
      */
     get mergeCommitMessage(): string {
         return this.config.get('merge.commitMessage', '');
+    }
+
+    /**
+     * Get the value of the `git-go.rebase.ignoreDate` Extension Setting.
+     */
+    get rebaseIgnoreDate(): boolean {
+        return !!this.getRenamed('rebase.ignoreDate', 'branch.rebase.ignoreDate', true);
     }
 
     /**
@@ -266,10 +299,10 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.fetch.onOpen` Extension Setting.
+     * Get the value of the `git-go.remote.fetch.onOpen` Extension Setting.
      */
-    get fetchOnOpen(): boolean {
-        return !!this.config.get('fetch.onOpen', false);
+    get remoteFetchOnOpen(): boolean {
+        return !!this.getRenamed('remote.fetch.onOpen', 'fetch.onOpen', false);
     }
 
     /**
@@ -344,13 +377,6 @@ export class Config {
      */
     get worktreeDefaultPath(): string {
         return this.config.get('worktree.defaultPath', '../{repo}.worktrees/{branch}');
-    }
-
-    /**
-     * Get the value of the `git-go.worktree.openNewWindow` Extension Setting.
-     */
-    get worktreeOpenNewWindow(): boolean {
-        return !!this.config.get('worktree.openNewWindow', true);
     }
 
     /**

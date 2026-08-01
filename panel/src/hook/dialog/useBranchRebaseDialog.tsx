@@ -24,7 +24,7 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
 
   const rebaseForm = useForm({
     defaultValues: {
-      ignoreDate: settings.branchRebaseIgnoreDate,
+      ignoreDate: settings.rebaseIgnoreDate,
       autoStash: settings.rebaseAutoStash,
     },
     onSubmit: async ({ value }) => {

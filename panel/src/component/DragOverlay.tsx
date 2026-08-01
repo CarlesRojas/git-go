@@ -306,7 +306,7 @@ export const DragOverlay: FC = () => {
 
           if (settings.dragAndDropAutoRebase) {
             rebaseBranchMutation.mutate(
-              { branchName: target.cleanName, ignoreDate: settings.branchRebaseIgnoreDate },
+              { branchName: target.cleanName, ignoreDate: settings.rebaseIgnoreDate },
               {
                 onSuccess: () =>
                   showToast({

@@ -69,10 +69,10 @@ export interface ConfigState {
   branchDeleteOnRemote: boolean
   branchPushSetUpstream: boolean
   branchPushMode: GitPushMode
-  branchRebaseIgnoreDate: boolean
   mergeFastForwardIfPossible: boolean
   mergeSquash: boolean
   mergeNoCommit: boolean
+  rebaseIgnoreDate: boolean
   rebaseAutoStash: boolean
   cherryPickRecordOrigin: boolean
   cherryPickNoCommit: boolean
@@ -88,7 +88,6 @@ export interface ConfigState {
   tagPushAllRemotes: boolean
   tagDeleteOnRemotes: boolean
   worktreeDefaultPath: string
-  worktreeOpenNewWindow: boolean
   worktreeOpenBehavior: 'ask' | 'newWindow' | 'currentWindow'
   worktreeOpenAfterCreate: boolean
   worktreeRemoveForce: boolean
@@ -122,10 +121,10 @@ const defaultConfigState: ConfigState = {
   branchDeleteOnRemote: false,
   branchPushSetUpstream: true,
   branchPushMode: 'normal',
-  branchRebaseIgnoreDate: true,
   mergeFastForwardIfPossible: true,
   mergeSquash: false,
   mergeNoCommit: false,
+  rebaseIgnoreDate: true,
   rebaseAutoStash: false,
   cherryPickRecordOrigin: false,
   cherryPickNoCommit: true,
@@ -141,7 +140,6 @@ const defaultConfigState: ConfigState = {
   tagPushAllRemotes: false,
   tagDeleteOnRemotes: false,
   worktreeDefaultPath: '../{repo}.worktrees/{branch}',
-  worktreeOpenNewWindow: true,
   worktreeOpenBehavior: 'ask',
   worktreeOpenAfterCreate: true,
   worktreeRemoveForce: false,

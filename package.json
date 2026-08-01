@@ -61,372 +61,537 @@
                 }
             ]
         },
-        "configuration": {
-            "type": "object",
-            "title": "Git Go",
-            "properties": {
-                "git-go.graph.rounded": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Graph Appearance:** Use rounded corners for all commit graph elements."
-                },
-                "git-go.graph.theme": {
-                    "type": "string",
-                    "enum": [
-                        "vibrant",
-                        "spring",
-                        "ocean",
-                        "sunset",
-                        "pastel",
-                        "coast",
-                        "cloud",
-                        "forest",
-                        "rainbow",
-                        "earth",
-                        "float",
-                        "dusk",
-                        "coral",
-                        "custom"
-                    ],
-                    "default": "vibrant",
-                    "markdownDescription": "**Graph Appearance:** Color theme for the commit graph branches and dots."
-                },
-                "git-go.graph.customColors": {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+        "configuration": [
+            {
+                "title": "General",
+                "order": 1,
+                "properties": {
+                    "git-go.autoOpen.enabled": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Open Git Go automatically when a window with a git repository starts.",
+                        "order": 1
                     },
-                    "default": [],
-                    "maxItems": 16,
-                    "markdownDescription": "**Graph Appearance:** Custom color palette for branches. Theme needs to be set to 'custom'. Use hex color codes (e.g., #3b82f6)."
-                },
-                "git-go.graph.expandedCommitHeight": {
-                    "type": "number",
-                    "default": 300,
-                    "minimum": 200,
-                    "maximum": 800,
-                    "markdownDescription": "**Graph Appearance:** Height in pixels for expanded commit details view."
-                },
-                "git-go.graph.showCommitterName": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Graph Appearance:** Show the committer name next to each commit in the graph."
-                },
-                "git-go.graph.remoteAvatars": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Graph Appearance:** Show author profile pictures from the repository's remote (GitHub), falling back to Gravatar. When disabled, only Gravatar is used."
-                },
-                "git-go.autoOpen.enabled": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Auto-Open Behavior:** Automatically open Git Go when VS Code opens in a git repository."
-                },
-                "git-go.autoOpen.pinTab": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Auto-Open Behavior:** Automatically pin the Git Go tab when opened."
-                },
-                "git-go.statusBar.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Interface Elements:** Show a Status Bar Item that opens the Git Go Graph when clicked."
-                },
-                "git-go.file.openInSplitView": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**File Operations:** Open files and diffs in a split view next to Git Go, reusing an existing split view when there is one."
-                },
-                "git-go.dragAndDrop.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Drag and Drop:** Enable dragging branches, tags and commits in the graph to perform Git actions."
-                },
-                "git-go.dragAndDrop.branchOnBranch.defaultAction": {
-                    "type": "string",
-                    "enum": [
-                        "merge",
-                        "rebase",
-                        "none"
-                    ],
-                    "default": "merge",
-                    "markdownDescription": "**Drag and Drop:** Action performed when dropping a branch onto another branch. Set to 'none' to require picking an action from the boxes that appear when holding."
-                },
-                "git-go.dragAndDrop.holdDelay": {
-                    "type": "number",
-                    "default": 300,
-                    "minimum": 0,
-                    "maximum": 2000,
-                    "markdownDescription": "**Drag and Drop:** Milliseconds to hold over a branch while dragging before its extra actions appear."
-                },
-                "git-go.dragAndDrop.auto.merge": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a branch onto another branch, using the values its dialog would have opened with, instead of showing the dialog."
-                },
-                "git-go.dragAndDrop.auto.rebase": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a branch onto another branch with rebase selected, using the values its dialog would have opened with, instead of showing the dialog."
-                },
-                "git-go.dragAndDrop.auto.cherryPick": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a commit onto a branch, using the values its dialog would have opened with, instead of showing the dialog."
-                },
-                "git-go.dragAndDrop.auto.mergeCommit": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a commit onto a branch with merge selected, using the values its dialog would have opened with, instead of showing the dialog."
-                },
-                "git-go.dragAndDrop.auto.push": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a branch or tag onto its own push action, using the values its dialog would have opened with, instead of showing the dialog."
-                },
-                "git-go.dragAndDrop.auto.fetchIntoLocal": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Drag and Drop:** Run the action straight away when dropping a remote branch onto its own fetch action, using the values its dialog would have opened with, instead of showing the dialog."
-                },
-                "git-go.dragAndDrop.hideDelay": {
-                    "type": "number",
-                    "default": 300,
-                    "minimum": 0,
-                    "maximum": 5000,
-                    "markdownDescription": "**Drag and Drop:** Milliseconds the actions linger after the pointer moves away, so returning within that time keeps them open."
-                },
-                "git-go.branch.create.checkout": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Branch Operations:** Default value for 'Checkout new branch' when creating a branch."
-                },
-                "git-go.branch.delete.force": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Branch Operations:** Default value for 'Force delete' when deleting a branch."
-                },
-                "git-go.branch.delete.deleteOnRemote": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Branch Operations:** Default value for 'Also delete on remote' when deleting a branch that tracks an upstream branch."
-                },
-                "git-go.branch.checkout.pullAfterCheckout": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Branch Operations:** Pull the branch from its upstream right after checking it out. Branches without an upstream are checked out without pulling."
-                },
-                "git-go.branch.push.setUpstream": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Branch Operations:** Default value for 'Set upstream' when pushing a branch."
-                },
-                "git-go.branch.push.mode": {
-                    "type": "string",
-                    "enum": [
-                        "normal",
-                        "force-with-lease",
-                        "force"
-                    ],
-                    "enumDescriptions": [
-                        "Push without forcing, failing when the remote has commits the local branch does not",
-                        "Force the push, but abort when the remote branch changed since it was last fetched",
-                        "Force the push, overwriting the remote branch unconditionally"
-                    ],
-                    "default": "normal",
-                    "markdownDescription": "**Branch Operations:** Default value for 'Push Mode' when pushing a branch."
-                },
-                "git-go.branch.rebase.ignoreDate": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Branch Operations:** Default value for 'Ignore date' when rebasing a branch."
-                },
-                "git-go.merge.fastForwardIfPossible": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Merge Operations:** Default value for 'Fast forward if possible' when merging branches."
-                },
-                "git-go.merge.squash": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Merge Operations:** Default value for 'Squash commits' when merging branches."
-                },
-                "git-go.merge.noCommit": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Merge Operations:** Default value for 'Don't commit automatically' when merging branches."
-                },
-                "git-go.merge.commitMessage": {
-                    "type": "string",
-                    "default": "",
-                    "markdownDescription": "**Merge Operations:** Message template for merge commits. `{source}` is replaced with the branch or commit being merged and `{target}` with the current branch. Leave empty to use the message git generates. Ignored when the merge squashes or does not commit."
-                },
-                "git-go.rebase.autoStash": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Rebase Operations:** Default value for 'Autostash' when rebasing, which stashes uncommitted changes before the rebase and restores them afterwards."
-                },
-                "git-go.cherryPick.recordOrigin": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Cherry-Pick Operations:** Default value for 'Record origin' when cherry-picking commits."
-                },
-                "git-go.cherryPick.noCommit": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Cherry-Pick Operations:** Default value for 'Don't commit automatically' when cherry-picking commits."
-                },
-                "git-go.revert.noCommit": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Revert Operations:** Default value for 'Don't commit automatically' when reverting commits."
-                },
-                "git-go.reset.mode": {
-                    "type": "string",
-                    "enum": [
-                        "soft",
-                        "mixed",
-                        "hard"
-                    ],
-                    "default": "mixed",
-                    "markdownDescription": "**Reset Operations:** Default reset mode when resetting the current branch to a commit."
-                },
-                "git-go.reset.discardUntrackedFiles": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Reset Operations:** Also delete untracked files when discarding all uncommitted changes. When disabled, untracked files are left in the working tree."
-                },
-                "git-go.reset.discardUntrackedDirectories": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Reset Operations:** Also delete untracked directories when discarding all uncommitted changes. Only applies when `#git-go.reset.discardUntrackedFiles#` is enabled."
-                },
-                "git-go.remote.defaultRemote": {
-                    "type": "string",
-                    "default": "origin",
-                    "markdownDescription": "**Remote Operations:** Remote preselected in dialogs that push branches or tags. Falls back to the repository's first remote when this one does not exist."
-                },
-                "git-go.fetch.onOpen": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Remote Operations:** Fetch from every remote when the Git Go panel opens."
-                },
-                "git-go.remote.fetch.prune": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Remote Operations:** Delete remote-tracking branches that no longer exist on the remote when fetching."
-                },
-                "git-go.remote.fetch.forceFetch": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Remote Operations:** Default value for 'Force fetch' when fetching remote branches into local branches."
-                },
-                "git-go.remote.fetch.checkout": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Remote Operations:** Default value for 'Checkout branch after fetch' when fetching remote branches into local branches."
-                },
-                "git-go.remote.fetch.confirmOnlyIfForceNeeded": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Remote Operations:** Only show the confirmation dialog when fetching a remote branch into a local branch if the local branch has commits the remote branch does not, so the fetch needs to be forced. Otherwise the fetch runs straight away using the configured defaults."
-                },
-                "git-go.stash.includeUntracked": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Stash Operations:** Default value for 'Include untracked files' when creating stashes."
-                },
-                "git-go.stash.reinstateIndex": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Stash Operations:** Restore the staged state of the files when applying or popping a stash, instead of leaving every change unstaged."
-                },
-                "git-go.tag.type": {
-                    "type": "string",
-                    "enum": [
-                        "annotated",
-                        "lightweight"
-                    ],
-                    "enumDescriptions": [
-                        "Create annotated tags, which store the tagger, the date and the message",
-                        "Create lightweight tags, which are just a pointer to the commit"
-                    ],
-                    "default": "annotated",
-                    "markdownDescription": "**Tag Operations:** Type of tag created from the tag dialog. Annotated tags without a message are created as lightweight tags."
-                },
-                "git-go.tag.push.allRemotes": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Tag Operations:** Preselect every remote when pushing a tag. When disabled, only `#git-go.remote.defaultRemote#` is preselected."
-                },
-                "git-go.tag.delete.onRemotes": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Tag Operations:** Preselect the remotes that have the tag when deleting a tag, so it is deleted on the remotes too."
-                },
-                "git-go.worktree.defaultPath": {
-                    "type": "string",
-                    "default": "../{repo}.worktrees/{branch}",
-                    "markdownDescription": "**Worktree Operations:** Default path template for new worktrees, relative to the repository root. `{repo}` is replaced with the repository name and `{branch}` with the branch name."
-                },
-                "git-go.worktree.openNewWindow": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Worktree Operations:** Default value for 'Open in new window' when creating or opening a worktree."
-                },
-                "git-go.worktree.openBehavior": {
-                    "type": "string",
-                    "enum": [
-                        "ask",
-                        "newWindow",
-                        "currentWindow"
-                    ],
-                    "enumDescriptions": [
-                        "Ask every time whether to open the worktree in a new window or the current one",
-                        "Always open worktrees in a new window",
-                        "Always open worktrees in the current window"
-                    ],
-                    "default": "ask",
-                    "markdownDescription": "**Worktree Operations:** What to do when opening a worktree."
-                },
-                "git-go.worktree.create.openAfterCreate": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Worktree Operations:** Default value for 'Open after creating' when creating a worktree."
-                },
-                "git-go.worktree.remove.force": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Worktree Operations:** Default value for 'Force Remove' when removing a worktree, which discards its uncommitted changes."
-                },
-                "git-go.worktree.remove.deleteBranch": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "**Worktree Operations:** Default value for 'Also delete branch' when removing a worktree."
-                },
-                "git-go.confirm.merge": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Confirmation Dialogs:** Ask before merging. When disabled, merging a branch or a commit runs straight away using the configured defaults."
-                },
-                "git-go.confirm.rebase": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Confirmation Dialogs:** Ask before rebasing. When disabled, rebasing onto a branch or a commit runs straight away using the configured defaults."
-                },
-                "git-go.confirm.push": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Confirmation Dialogs:** Ask before pushing a branch. When disabled, pushing runs straight away using the configured defaults."
-                },
-                "git-go.confirm.branchDelete": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "**Confirmation Dialogs:** Ask before deleting a local branch. When disabled, deleting runs straight away using the configured defaults. Deleting a branch on a remote always asks."
+                    "git-go.autoOpen.pinTab": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Pin the Git Go tab when it opens, so it stays put as other files are opened.",
+                        "order": 2
+                    },
+                    "git-go.statusBar.enabled": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Show a status bar item that opens Git Go when clicked.",
+                        "order": 3
+                    },
+                    "git-go.file.openInSplitView": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Open files and diffs in a split view next to Git Go, reusing an existing split view when there is one.",
+                        "order": 4
+                    }
+                }
+            },
+            {
+                "title": "Graph",
+                "order": 2,
+                "properties": {
+                    "git-go.graph.theme": {
+                        "type": "string",
+                        "enum": [
+                            "vibrant",
+                            "spring",
+                            "ocean",
+                            "sunset",
+                            "pastel",
+                            "coast",
+                            "cloud",
+                            "forest",
+                            "rainbow",
+                            "earth",
+                            "float",
+                            "dusk",
+                            "coral",
+                            "custom"
+                        ],
+                        "default": "vibrant",
+                        "markdownDescription": "Color palette used for the branches and dots in the graph. Pick `custom` to use the colors from `#git-go.graph.customColors#`.",
+                        "order": 1
+                    },
+                    "git-go.graph.customColors": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+                        },
+                        "default": [],
+                        "maxItems": 16,
+                        "markdownDescription": "Colors used when the theme is set to `custom`, as hex codes such as `#3b82f6`. Up to 16 colors, cycled through as branches are drawn.",
+                        "order": 2
+                    },
+                    "git-go.graph.rounded": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Round the corners of the branches, pills and boxes in the graph. Turn off for a sharper look.",
+                        "order": 3
+                    },
+                    "git-go.graph.showCommitterName": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Show the name of the person who made each commit next to its message.",
+                        "order": 4
+                    },
+                    "git-go.graph.remoteAvatars": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Show author pictures from the repository's remote, such as GitHub. Gravatar is used when the remote has no picture for an author, and whenever this is off.",
+                        "order": 5
+                    },
+                    "git-go.graph.expandedCommitHeight": {
+                        "type": "number",
+                        "default": 300,
+                        "minimum": 200,
+                        "maximum": 800,
+                        "markdownDescription": "Height in pixels of the details panel that opens when a commit is expanded.",
+                        "order": 6
+                    }
+                }
+            },
+            {
+                "title": "Drag and Drop",
+                "order": 3,
+                "properties": {
+                    "git-go.dragAndDrop.enabled": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Drag branches, commits, stashes and tags in the graph to act on them.",
+                        "order": 1
+                    },
+                    "git-go.dragAndDrop.branchOnBranch.defaultAction": {
+                        "type": "string",
+                        "enum": [
+                            "merge",
+                            "rebase",
+                            "none"
+                        ],
+                        "default": "merge",
+                        "enumDescriptions": [
+                            "Merge the dropped branch into the branch it lands on",
+                            "Rebase the current branch onto the branch it lands on",
+                            "Do nothing, and require picking one of the actions that appear while holding"
+                        ],
+                        "markdownDescription": "Action taken when a branch is dropped straight onto another branch.",
+                        "order": 2
+                    },
+                    "git-go.dragAndDrop.holdDelay": {
+                        "type": "number",
+                        "default": 300,
+                        "minimum": 0,
+                        "maximum": 2000,
+                        "markdownDescription": "How long, in milliseconds, a drag has to be held over a branch before its extra actions appear.",
+                        "order": 3
+                    },
+                    "git-go.dragAndDrop.hideDelay": {
+                        "type": "number",
+                        "default": 300,
+                        "minimum": 0,
+                        "maximum": 5000,
+                        "markdownDescription": "How long, in milliseconds, those actions stay on screen once the pointer leaves them, so coming back within that time keeps them open.",
+                        "order": 4
+                    },
+                    "git-go.dragAndDrop.auto.merge": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Merge straight away when a branch is dropped onto another branch, instead of opening the merge dialog. The merge uses the values the dialog would have opened with.",
+                        "order": 5
+                    },
+                    "git-go.dragAndDrop.auto.rebase": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Rebase straight away when a branch is dropped onto another branch with rebase selected, instead of opening the rebase dialog. The rebase uses the values the dialog would have opened with.",
+                        "order": 6
+                    },
+                    "git-go.dragAndDrop.auto.mergeCommit": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Merge straight away when a commit is dropped onto a branch with merge selected, instead of opening the merge dialog. The merge uses the values the dialog would have opened with.",
+                        "order": 7
+                    },
+                    "git-go.dragAndDrop.auto.cherryPick": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Cherry-pick straight away when a commit is dropped onto a branch, instead of opening the cherry-pick dialog. The cherry-pick uses the values the dialog would have opened with.",
+                        "order": 8
+                    },
+                    "git-go.dragAndDrop.auto.push": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Push straight away when a branch is dropped onto its push action, instead of opening the push dialog. The push uses the values the dialog would have opened with.",
+                        "order": 9
+                    },
+                    "git-go.dragAndDrop.auto.fetchIntoLocal": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Fetch straight away when a remote branch is dropped onto its fetch action, instead of opening the fetch dialog. The fetch uses the values the dialog would have opened with.",
+                        "order": 10
+                    }
+                }
+            },
+            {
+                "title": "Confirmations",
+                "order": 4,
+                "properties": {
+                    "git-go.confirm.merge": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Ask before merging a branch or a commit. When off, the merge runs straight away using the defaults under Merge.",
+                        "order": 1
+                    },
+                    "git-go.confirm.rebase": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Ask before rebasing onto a branch or a commit. When off, the rebase runs straight away using the defaults under Rebase.",
+                        "order": 2
+                    },
+                    "git-go.confirm.push": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Ask before pushing a branch. When off, the push runs straight away using the defaults under Branches.",
+                        "order": 3
+                    },
+                    "git-go.confirm.branchDelete": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Ask before deleting a local branch. When off, the branch is deleted straight away using the defaults under Branches. Deleting a branch on a remote always asks.",
+                        "order": 4
+                    }
+                }
+            },
+            {
+                "title": "Branches",
+                "order": 5,
+                "properties": {
+                    "git-go.branch.create.checkout": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Checkout new branch' when creating a branch.",
+                        "order": 1
+                    },
+                    "git-go.branch.checkout.pullAfterCheckout": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Pull from the upstream right after checking a branch out. Branches without an upstream are checked out without pulling.",
+                        "order": 2
+                    },
+                    "git-go.branch.push.mode": {
+                        "type": "string",
+                        "enum": [
+                            "normal",
+                            "force-with-lease",
+                            "force"
+                        ],
+                        "default": "normal",
+                        "enumDescriptions": [
+                            "Push without forcing, failing when the remote has commits the local branch does not",
+                            "Force the push, but stop when the remote branch moved since it was last fetched",
+                            "Force the push, overwriting the remote branch whatever it points at"
+                        ],
+                        "markdownDescription": "Default value for 'Push Mode' when pushing a branch.",
+                        "order": 3
+                    },
+                    "git-go.branch.push.setUpstream": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Set upstream' when pushing a branch.",
+                        "order": 4
+                    },
+                    "git-go.branch.delete.force": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Force Delete' when deleting a branch, which deletes it even when its commits are not merged anywhere.",
+                        "order": 5
+                    },
+                    "git-go.branch.delete.onRemote": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Also delete on the remote' when deleting a branch that tracks an upstream branch.",
+                        "order": 6
+                    },
+                    "git-go.branch.delete.deleteOnRemote": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Also delete on the remote' when deleting a branch that tracks an upstream branch.",
+                        "markdownDeprecationMessage": "This setting has been renamed to `#git-go.branch.delete.onRemote#`, which is used instead whenever it is set.",
+                        "order": 90
+                    }
+                }
+            },
+            {
+                "title": "Merge",
+                "order": 6,
+                "properties": {
+                    "git-go.merge.fastForwardIfPossible": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Fast forward if possible' when merging, which moves the branch pointer forward instead of writing a merge commit.",
+                        "order": 1
+                    },
+                    "git-go.merge.squash": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Squash commits' when merging, which stages the whole merge as one change without committing it.",
+                        "order": 2
+                    },
+                    "git-go.merge.noCommit": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Don't commit automatically' when merging, which stages the merge and leaves the commit to you.",
+                        "order": 3
+                    },
+                    "git-go.merge.commitMessage": {
+                        "type": "string",
+                        "default": "",
+                        "markdownDescription": "Message written on merge commits. `{source}` becomes the branch or commit being merged and `{target}` the current branch. Leave empty to keep the message git writes. Ignored when the merge squashes, does not commit, or fast forwards.",
+                        "order": 4
+                    }
+                }
+            },
+            {
+                "title": "Rebase",
+                "order": 7,
+                "properties": {
+                    "git-go.rebase.ignoreDate": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Ignore date' when rebasing, which stamps the replayed commits with the time of the rebase.",
+                        "order": 1
+                    },
+                    "git-go.rebase.autoStash": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Autostash uncommitted changes' when rebasing, which stashes the working tree before the rebase and restores it afterwards.",
+                        "order": 2
+                    },
+                    "git-go.branch.rebase.ignoreDate": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Ignore date' when rebasing.",
+                        "markdownDeprecationMessage": "This setting has moved to `#git-go.rebase.ignoreDate#`, which is used instead whenever it is set.",
+                        "order": 90
+                    }
+                }
+            },
+            {
+                "title": "Cherry-Pick and Revert",
+                "order": 8,
+                "properties": {
+                    "git-go.cherryPick.recordOrigin": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Record origin' when cherry-picking, which notes the commit the change came from in the message.",
+                        "order": 1
+                    },
+                    "git-go.cherryPick.noCommit": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Don't commit automatically' when cherry-picking, which stages the change and leaves the commit to you.",
+                        "order": 2
+                    },
+                    "git-go.revert.noCommit": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Don't commit automatically' when reverting, which stages the reversal and leaves the commit to you.",
+                        "order": 3
+                    }
+                }
+            },
+            {
+                "title": "Reset and Discard",
+                "order": 9,
+                "properties": {
+                    "git-go.reset.mode": {
+                        "type": "string",
+                        "enum": [
+                            "soft",
+                            "mixed",
+                            "hard"
+                        ],
+                        "default": "mixed",
+                        "enumDescriptions": [
+                            "Move the branch and leave every change staged",
+                            "Move the branch and leave the changes in the working tree, unstaged",
+                            "Move the branch and throw away every change to tracked files"
+                        ],
+                        "markdownDescription": "Default mode when resetting the current branch to a commit.",
+                        "order": 1
+                    },
+                    "git-go.reset.discardUntrackedFiles": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Delete untracked files when discarding all uncommitted changes. When off, untracked files are left in the working tree.",
+                        "order": 2
+                    },
+                    "git-go.reset.discardUntrackedDirectories": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Delete untracked directories when discarding all uncommitted changes. Only applies while `#git-go.reset.discardUntrackedFiles#` is on.",
+                        "order": 3
+                    }
+                }
+            },
+            {
+                "title": "Stashes",
+                "order": 10,
+                "properties": {
+                    "git-go.stash.includeUntracked": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Include untracked files' when creating a stash.",
+                        "order": 1
+                    },
+                    "git-go.stash.reinstateIndex": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Restore which files were staged when applying or popping a stash. When off, everything the stash brings back is unstaged.",
+                        "order": 2
+                    }
+                }
+            },
+            {
+                "title": "Tags",
+                "order": 11,
+                "properties": {
+                    "git-go.tag.type": {
+                        "type": "string",
+                        "enum": [
+                            "annotated",
+                            "lightweight"
+                        ],
+                        "default": "annotated",
+                        "enumDescriptions": [
+                            "Create annotated tags, which record the tagger, the date and a message",
+                            "Create lightweight tags, which are only a pointer to the commit"
+                        ],
+                        "markdownDescription": "Type of tag created from the tag dialog. Annotated tags left without a message are created as lightweight tags.",
+                        "order": 1
+                    },
+                    "git-go.tag.push.allRemotes": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Preselect every remote when pushing a tag. When off, only `#git-go.remote.defaultRemote#` is preselected.",
+                        "order": 2
+                    },
+                    "git-go.tag.delete.onRemotes": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Preselect the remotes that already have the tag when deleting it, so it is deleted there too.",
+                        "order": 3
+                    }
+                }
+            },
+            {
+                "title": "Remotes",
+                "order": 12,
+                "properties": {
+                    "git-go.remote.defaultRemote": {
+                        "type": "string",
+                        "default": "origin",
+                        "markdownDescription": "Remote preselected when pushing a branch or a tag. The first remote of the repository is used when this one does not exist.",
+                        "order": 1
+                    },
+                    "git-go.remote.fetch.onOpen": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Fetch from every remote when Git Go opens.",
+                        "order": 2
+                    },
+                    "git-go.remote.fetch.prune": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Delete remote-tracking branches whose branch is gone from the remote while fetching.",
+                        "order": 3
+                    },
+                    "git-go.remote.fetch.checkout": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Checkout branch after fetch' when fetching a remote branch into a local one.",
+                        "order": 4
+                    },
+                    "git-go.remote.fetch.forceFetch": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Force fetch' when fetching a remote branch into a local one, which overwrites commits the local branch has and the remote does not.",
+                        "order": 5
+                    },
+                    "git-go.remote.fetch.confirmOnlyIfForceNeeded": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Only ask before fetching a remote branch into a local one when the local branch has commits the remote does not, so the fetch has to be forced. Every other fetch runs straight away using these defaults.",
+                        "order": 6
+                    },
+                    "git-go.fetch.onOpen": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Fetch from every remote when Git Go opens.",
+                        "markdownDeprecationMessage": "This setting has moved to `#git-go.remote.fetch.onOpen#`, which is used instead whenever it is set.",
+                        "order": 90
+                    }
+                }
+            },
+            {
+                "title": "Worktrees",
+                "order": 13,
+                "properties": {
+                    "git-go.worktree.defaultPath": {
+                        "type": "string",
+                        "default": "../{repo}.worktrees/{branch}",
+                        "markdownDescription": "Path new worktrees are created at, relative to the repository root. `{repo}` becomes the repository name and `{branch}` the branch name.",
+                        "order": 1
+                    },
+                    "git-go.worktree.openBehavior": {
+                        "type": "string",
+                        "enum": [
+                            "ask",
+                            "newWindow",
+                            "currentWindow"
+                        ],
+                        "default": "ask",
+                        "enumDescriptions": [
+                            "Ask each time whether to open it in a new window or the current one",
+                            "Always open worktrees in a new window",
+                            "Always open worktrees in the current window"
+                        ],
+                        "markdownDescription": "How a worktree is opened, both from the worktree list and after creating one.",
+                        "order": 2
+                    },
+                    "git-go.worktree.create.openAfterCreate": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Default value for 'Open after creating' when creating a worktree.",
+                        "order": 3
+                    },
+                    "git-go.worktree.remove.force": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Force Remove' when removing a worktree, which removes it even when it has uncommitted changes.",
+                        "order": 4
+                    },
+                    "git-go.worktree.remove.deleteBranch": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Default value for 'Also delete branch' when removing a worktree.",
+                        "order": 5
+                    },
+                    "git-go.worktree.openNewWindow": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Open worktrees in a new window.",
+                        "markdownDeprecationMessage": "This setting has been replaced by `#git-go.worktree.openBehavior#`. Set that to `newWindow` or `currentWindow` to always open worktrees the same way.",
+                        "order": 90
+                    }
                 }
             }
-        }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "pnpm run build",

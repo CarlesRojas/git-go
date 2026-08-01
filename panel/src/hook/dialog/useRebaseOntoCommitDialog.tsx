@@ -24,7 +24,7 @@ export const useRebaseOntoCommitDialog = ({ commit }: UseRebaseOntoCommitDialogP
 
   const rebaseForm = useForm({
     defaultValues: {
-      ignoreDate: settings.branchRebaseIgnoreDate,
+      ignoreDate: settings.rebaseIgnoreDate,
       autoStash: settings.rebaseAutoStash,
     },
     onSubmit: async ({ value }) => {
