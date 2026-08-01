@@ -62,19 +62,13 @@ interface LayoutRect {
 }
 
 const STACK_GAP_PX = 8
-/** One box plus the gap below it, used only to decide whether a stack fits below its pill. */
-const BOX_HEIGHT_ESTIMATE_PX = 48
+/** One box, used only to decide whether a stack fits below its pill. */
+const BOX_HEIGHT_ESTIMATE_PX = 42
 const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
 /** Matches the opacity transition on the stacks, so they stay mounted until it finishes. */
 const FADE_MS = 150
 
-/**
- * Places a stack below the pill it belongs to, flipping above it and sliding left as needed so
- * it is never pushed off screen in a narrow panel. The gap to the pill is padding on the
- * wrapper rather than empty space, so pill and boxes stay a single hit region — crossing the
- * gap must not collapse the stack.
- */
 /**
  * A pill's laid-out box, ignoring any scale it is currently showing. getBoundingClientRect
  * measures the scaled box, which would move the stack as the pill grows and settles again;
@@ -93,6 +87,12 @@ const layoutRectOf = (element: HTMLElement): LayoutRect => {
   }
 }
 
+/**
+ * Places a stack below the pill it belongs to, flipping above it and sliding left as needed so
+ * it is never pushed off screen in a narrow panel. The gap to the pill is padding on the
+ * wrapper rather than empty space, so pill and boxes stay a single hit region — crossing the
+ * gap must not collapse the stack.
+ */
 const stackPositionFor = (rect: LayoutRect | null, count: number) => {
   if (!rect || count === 0) return null
 
@@ -615,14 +615,20 @@ export const DragOverlay: FC = () => {
           <div
             data-drag-source-zone={sourceFade.shown ? '' : undefined}
             className={cn(
-              'absolute z-10 flex flex-col gap-1.5 transition-opacity duration-150',
+              'absolute z-10 flex flex-col transition-opacity duration-150',
               // Untargetable while fading out, so a release cannot land on a stale box.
               sourceFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
             )}
             style={sourceSnapshot.current.position}
           >
-            {sourceSnapshot.current.actions.map(action => (
-              <DragActionBox key={action.id} action={action} hovered={hoveredActionId === action.id} />
+            {sourceSnapshot.current.actions.map((action, index) => (
+              <DragActionBox
+                key={action.id}
+                action={action}
+                hovered={hoveredActionId === action.id}
+                isFirst={index === 0}
+                isLast={index === sourceSnapshot.current!.actions.length - 1}
+              />
             ))}
           </div>
         )}
@@ -633,16 +639,18 @@ export const DragOverlay: FC = () => {
             // open while the pointer travels to a box, without counting as the target itself.
             data-drop-bridge={targetFade.shown ? targetSnapshot.current.key : undefined}
             className={cn(
-              'absolute z-10 flex flex-col gap-1.5 transition-opacity duration-150',
+              'absolute z-10 flex flex-col transition-opacity duration-150',
               // Untargetable while fading out, so a release cannot land on a stale box.
               targetFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
             )}
             style={targetSnapshot.current.position}
           >
-            {targetSnapshot.current.actions.map(action => (
+            {targetSnapshot.current.actions.map((action, index) => (
               <DragActionBox
                 key={action.id}
                 action={action}
+                isFirst={index === 0}
+                isLast={index === targetSnapshot.current!.actions.length - 1}
                 // With the pointer on the pill rather than a box, the action a release would
                 // perform is highlighted, so the box and the pill agree on what happens next.
                 // Once the pointer leaves, a release does nothing, so nothing stays highlighted.
