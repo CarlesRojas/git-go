@@ -135,7 +135,7 @@ export const resolveTargetActions = ({
   const source = payload.branch
   if (source.cleanName === target.cleanName && source.remote === target.remote) return []
 
-  return [
+  const actions: DragAction[] = [
     {
       id: 'merge',
       verb: 'Merge',
@@ -145,17 +145,24 @@ export const resolveTargetActions = ({
       isDefault: config.dragAndDropBranchDefaultAction === 'merge',
       disabledReason: checkoutBlocker(target),
     },
-    {
+  ]
+
+  // Rebasing moves the source, so it needs the source checked out. A remote ref never can be,
+  // which is a property of the ref rather than a passing state, so the action is left out
+  // entirely instead of offered and refused.
+  if (!source.remote) {
+    actions.push({
       id: 'rebase',
       verb: 'Rebase',
       effect: `${source.cleanName} onto ${target.cleanName}`,
       icon: faCodeBranch,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'rebase',
-      // Rebasing moves the source, so a remote source is refused here rather than on the target.
       disabledReason: checkoutBlocker(source),
-    },
-  ]
+    })
+  }
+
+  return actions
 }
 
 /**
@@ -209,8 +216,8 @@ export const resolveSourceActions = ({
   if (payload.kind === 'branch' && payload.branch.remote) {
     actions.push({
       id: 'fetchIntoLocal',
-      verb: 'Fetch',
-      effect: `${label} → local`,
+      verb: 'Fetch into Local',
+      effect: label,
       icon: faDownload,
       destructive: false,
       isDefault: false,

@@ -35,18 +35,25 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
       */}
       {payload.kind === 'branch' && (
         <div className="flex h-5 items-center">
-          <div
-            className="flex h-full shrink-0 items-center px-1"
-            style={{ backgroundColor: color(payload.colorIndex) }}
-          >
-            {getBranchIcons({
-              isLocal: true,
-              hasRemote: false,
-              inWorktree: !!payload.branch.worktreePath,
-              black: true,
-              white: false,
-            })}
-          </div>
+          {/* A remote branch shows the cloud and no colour block, matching its pill in the graph. */}
+          {payload.branch.remote ? (
+            <div className="bg-vsc-editor-fg/10 flex h-full shrink-0 items-center pr-0.5 pl-1.5">
+              {getBranchIcons({ isLocal: false, hasRemote: true, black: false, white: true })}
+            </div>
+          ) : (
+            <div
+              className="flex h-full shrink-0 items-center px-1"
+              style={{ backgroundColor: color(payload.colorIndex) }}
+            >
+              {getBranchIcons({
+                isLocal: true,
+                hasRemote: false,
+                inWorktree: !!payload.branch.worktreePath,
+                black: true,
+                white: false,
+              })}
+            </div>
+          )}
 
           <span className="bg-vsc-editor-fg/10 flex h-full grow items-center px-1.5 text-xs leading-tight font-medium">
             <span className="max-w-64 truncate">{payload.branch.cleanName}</span>
