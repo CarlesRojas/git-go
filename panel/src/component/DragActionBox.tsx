@@ -25,21 +25,26 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
         // Colors — the same surface the context menus use
         'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
         // State — highlight is background only, exactly as menu items do it, so the border
-        // never changes and nothing inside can shift
-        disabled && 'opacity-50',
+        // never changes and nothing inside can shift. Disabled fades the contents rather than
+        // the box, so the surface never thins and lets the graph through.
         hovered && !disabled && 'bg-vsc-editor-fg/8',
         // Destructive keeps its accent when disabled; the shared opacity is what softens it
         action.destructive && 'text-vsc-error-fg',
         action.destructive && hovered && !disabled && 'bg-vsc-error-fg/10',
       )}
     >
-      <div className="flex items-center gap-1.5">
+      <div className={cn('flex items-center gap-1.5', disabled && 'opacity-50')}>
         <FontAwesomeIcon icon={action.icon} className="size-3 shrink-0" />
 
         <span className="text-xs leading-tight font-bold tracking-wide uppercase">{action.verb}</span>
       </div>
 
-      <span className="line-clamp-1 truncate text-[11px] leading-tight font-medium opacity-70">
+      <span
+        className={cn(
+          'line-clamp-1 truncate text-[11px] leading-tight font-medium opacity-70',
+          disabled && 'opacity-50',
+        )}
+      >
         {action.disabledReason ?? action.effect}
       </span>
     </div>
