@@ -9,7 +9,7 @@ interface Props {
 }
 
 /**
- * One box in a drag stack: just the icon and the verb, centred. What the action would do —
+ * One box in a drag stack: just the icon and the verb. What the action would do —
  * and why it cannot, when it is refused — is said once, in the label under the dragged item,
  * rather than repeated on every box.
  */
@@ -22,7 +22,7 @@ export const DragActionBox: FC<Props> = ({ action, hovered }) => {
       data-drag-action-disabled={disabled}
       className={cn(
         // Layout & sizing
-        'rounded-main-outer pointer-events-auto flex w-56 items-center justify-center gap-1.5 px-2 py-2',
+        'rounded-main-outer pointer-events-auto flex w-56 items-center gap-2 px-3 py-3',
         // Colors — the same surface the context menus use
         'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
         // State — highlight is background only, exactly as menu items do it, so the border

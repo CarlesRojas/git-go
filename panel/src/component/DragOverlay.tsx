@@ -44,7 +44,7 @@ const EMPTY_COMMIT: GitCommit = {
 
 const STACK_GAP_PX = 8
 /** One box plus the gap below it, used only to decide whether a stack fits below its pill. */
-const BOX_HEIGHT_ESTIMATE_PX = 40
+const BOX_HEIGHT_ESTIMATE_PX = 48
 const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
 /** Matches the opacity transition on the stacks, so they stay mounted until it finishes. */
