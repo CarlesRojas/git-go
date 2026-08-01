@@ -87,7 +87,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Stash or discard** uncommitted changes from the working directory row
 - **Open files** in VS Code editor at specific commits, in a split view next to the graph
 
-### 🖱️ Drag and Drop
+### 🎯 Drag and Drop
 
 - **Drop a branch on a branch** to merge or rebase, with the default action set in the settings
 - **Drop a commit on a branch** to cherry-pick, merge, or revert it
