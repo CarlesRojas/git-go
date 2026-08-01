@@ -87,7 +87,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Stash or discard** uncommitted changes from the working directory row
 - **Open files** in VS Code editor at specific commits, in a split view next to the graph
 
-### 🎯 Drag and Drop
+### 🧲 Drag and Drop
 
 - **Drop a branch on a branch** to merge or rebase, with the default action set in the settings
 - **Drop a commit on a branch** to cherry-pick, merge, or revert it
@@ -334,28 +334,6 @@ asks.
     "git-go.worktree.remove.deleteBranch": false // Default 'Also delete branch' when removing a worktree
 }
 ```
-
-### Renamed Settings
-
-These settings still work, and are read whenever their replacement is not set. VS Code hides them from the Settings
-editor unless you have one configured.
-
-| Old setting                          | Use instead                       |
-| ------------------------------------ | --------------------------------- |
-| `git-go.branch.rebase.ignoreDate`    | `git-go.rebase.ignoreDate`        |
-| `git-go.branch.delete.deleteOnRemote`| `git-go.branch.delete.onRemote`   |
-| `git-go.fetch.onOpen`                | `git-go.remote.fetch.onOpen`      |
-| `git-go.worktree.openNewWindow`      | `git-go.worktree.openBehavior`    |
-
-
-### Repository Settings
-
-Access via the settings button in the Git Go interface:
-
-- Toggle visibility of stashes, tags, and remotes
-- Configure Git user name and email (local/global)
-- Manage remote repositories
-- Open extension settings
 
 ## 🔧 Requirements
 
