@@ -77,23 +77,28 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
 
   return (
     <>
-      <ContextMenuToUse>
-        <div
-          ref={pillRef}
-          data-drag-dimmable
-          data-drag-hovered={unclipped ? '' : undefined}
-          onPointerDown={handlePointerDown}
-          className={cn(
-            // Layout & sizing
-            'rounded-main relative h-5 max-h-5 min-h-5 min-w-fit',
-            // Colors
-            'bg-vsc-editor-bg',
-            // Drag targeting — matches how the branch pills react
-            !!dragPayload && 'transition-transform duration-100',
-            isDraggedPill && pointerOverSource && 'z-10',
-          )}
-          style={{ transform: isDraggedPill && pointerOverSource ? `scale(${scale})` : undefined }}
-        >
+      {/*
+        The drag handle sits outside the context-menu wrapper. That wrapper is a component
+        created during render, so React remounts its subtree whenever this pill re-renders —
+        which would throw away the attribute marking it as the item being dragged.
+      */}
+      <div
+        ref={pillRef}
+        data-drag-dimmable
+        data-drag-hovered={unclipped ? '' : undefined}
+        onPointerDown={handlePointerDown}
+        className={cn(
+          // Layout & sizing
+          'rounded-main relative h-5 max-h-5 min-h-5 min-w-fit',
+          // Colors
+          'bg-vsc-editor-bg',
+          // Drag targeting — matches how the branch pills react
+          !!dragPayload && 'transition-transform duration-100',
+          isDraggedPill && pointerOverSource && 'z-10',
+        )}
+        style={{ transform: isDraggedPill && pointerOverSource ? `scale(${scale})` : undefined }}
+      >
+        <ContextMenuToUse>
           <div
             className={cn(
               // Layout & sizing
@@ -121,8 +126,8 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
               </div>
             ))}
           </div>
-        </div>
-      </ContextMenuToUse>
+        </ContextMenuToUse>
+      </div>
 
       {stashDialogs.stashDropDialog.DialogComponent}
       {tagDialogs.detailsDialog.DialogComponent}

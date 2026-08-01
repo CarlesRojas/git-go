@@ -55,6 +55,12 @@ const EMPTY_COMMIT: GitCommit = {
   tags: [],
 }
 
+interface LayoutRect {
+  left: number
+  top: number
+  bottom: number
+}
+
 const STACK_GAP_PX = 8
 /** One box plus the gap below it, used only to decide whether a stack fits below its pill. */
 const BOX_HEIGHT_ESTIMATE_PX = 48
@@ -69,7 +75,25 @@ const FADE_MS = 150
  * wrapper rather than empty space, so pill and boxes stay a single hit region — crossing the
  * gap must not collapse the stack.
  */
-const stackPositionFor = (rect: DOMRect | null, count: number) => {
+/**
+ * A pill's laid-out box, ignoring any scale it is currently showing. getBoundingClientRect
+ * measures the scaled box, which would move the stack as the pill grows and settles again;
+ * the centre is the one point a scale leaves alone, so the box is rebuilt around it from the
+ * untransformed layout size.
+ */
+const layoutRectOf = (element: HTMLElement): LayoutRect => {
+  const rect = element.getBoundingClientRect()
+  const centreX = rect.left + rect.width / 2
+  const centreY = rect.top + rect.height / 2
+
+  return {
+    left: centreX - element.offsetWidth / 2,
+    top: centreY - element.offsetHeight / 2,
+    bottom: centreY + element.offsetHeight / 2,
+  }
+}
+
+const stackPositionFor = (rect: LayoutRect | null, count: number) => {
   if (!rect || count === 0) return null
 
   const height = count * BOX_HEIGHT_ESTIMATE_PX
@@ -100,8 +124,8 @@ export const DragOverlay: FC = () => {
   const [dropBranch, setDropBranch] = useState<GitBranch | null>(null)
   const [dropCommit, setDropCommit] = useState<GitCommit | null>(null)
   const [dropStashRef, setDropStashRef] = useState('')
-  const [stackRect, setStackRect] = useState<DOMRect | null>(null)
-  const [sourceRect, setSourceRect] = useState<DOMRect | null>(null)
+  const [stackRect, setStackRect] = useState<LayoutRect | null>(null)
+  const [sourceRect, setSourceRect] = useState<LayoutRect | null>(null)
 
   const mergeDialog = useBranchMergeIntoCurrentDialog({ branch: dropBranch ?? EMPTY_BRANCH })
   const rebaseDialog = useRebaseCurrentBranchIntoBranch({ branch: dropBranch ?? EMPTY_BRANCH })
@@ -186,7 +210,10 @@ export const DragOverlay: FC = () => {
       return
     }
 
-    const measure = () => setStackRect(document.querySelector<HTMLElement>(selector)?.getBoundingClientRect() ?? null)
+    const measure = () => {
+      const element = document.querySelector<HTMLElement>(selector)
+      setStackRect(element ? layoutRectOf(element) : null)
+    }
     measure()
 
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
@@ -200,8 +227,10 @@ export const DragOverlay: FC = () => {
       return
     }
 
-    const measure = () =>
-      setSourceRect(document.querySelector<HTMLElement>(`[${SOURCE_ATTRIBUTE}]`)?.getBoundingClientRect() ?? null)
+    const measure = () => {
+      const element = document.querySelector<HTMLElement>(`[${SOURCE_ATTRIBUTE}]`)
+      setSourceRect(element ? layoutRectOf(element) : null)
+    }
     measure()
 
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
