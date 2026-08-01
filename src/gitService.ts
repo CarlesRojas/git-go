@@ -1790,6 +1790,57 @@ export class GitService {
         }
     }
 
+    public async fetchIntoLocalBranchNeedsForce(
+        log: (message: string) => void,
+        remote: string,
+        remoteBranch: string,
+        localBranch: string
+    ): Promise<boolean> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        // Validate remote name
+        this.validatePositional(remote, 'remote name');
+
+        // Validate both branch names
+        this.validateRefName(`refs/remotes/${remote}/${remoteBranch}`);
+        this.validateRefName(`refs/heads/${localBranch}`);
+
+        try {
+            const localBranchExists = await this.spawnGit(
+                [gitExecutable.path, 'rev-parse', '--verify', '--quiet', `refs/heads/${localBranch}`],
+                workspacePath
+            )
+                .then(() => true)
+                .catch(() => false);
+
+            if (!localBranchExists) {
+                log(`Local branch ${localBranch} does not exist yet, no force needed`);
+                return false;
+            }
+
+            // Update FETCH_HEAD so the comparison uses the current remote tip
+            await this.spawnGit([gitExecutable.path, 'fetch', '--', remote, remoteBranch], workspacePath);
+
+            const commitsOnlyInLocal = await this.spawnGit(
+                [gitExecutable.path, 'rev-list', '--count', `refs/heads/${localBranch}`, '^FETCH_HEAD'],
+                workspacePath
+            );
+
+            const needsForce = parseInt(commitsOnlyInLocal.trim(), 10) > 0;
+            log(
+                `Fetching ${remote}/${remoteBranch} into ${localBranch} ${needsForce ? 'needs force' : 'is a fast forward'}`
+            );
+            return needsForce;
+        } catch (error) {
+            log(`Error checking if fetch into local branch needs force: ${error}`);
+            throw error;
+        }
+    }
+
     public async fetchIntoLocalBranch(
         log: (message: string) => void,
         remote: string,

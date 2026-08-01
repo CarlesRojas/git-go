@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/component/ui/Label'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
-import { useFetchIntoLocalBranch } from '@/hook/useGitQueries'
+import { useFetchIntoLocalBranch, useFetchIntoLocalBranchNeedsForce } from '@/hook/useGitQueries'
 import { faCircleNotch, faDownload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -16,7 +16,42 @@ export const useRemoteBranchFetchIntoLocalDialog = () => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
   const [remoteBranch, setRemoteBranch] = useState<GitBranch | null>(null)
   const fetchIntoLocalBranchMutation = useFetchIntoLocalBranch()
+  const fetchIntoLocalBranchNeedsForceMutation = useFetchIntoLocalBranchNeedsForce()
   const { settings } = useSettings()
+
+  const fetchIntoLocal = (branch: GitBranch, forceFetch: boolean, checkout: boolean) => {
+    if (!branch.remoteName) {
+      return
+    }
+
+    fetchIntoLocalBranchMutation.mutate(
+      {
+        remote: branch.remoteName,
+        remoteBranch: branch.cleanName,
+        localBranch: branch.cleanName,
+        forceFetch,
+        checkout,
+      },
+      {
+        onSuccess: () => {
+          showToast({
+            text: checkout
+              ? `Fetched remote branch '${branch.cleanName}' into local and checked it out successfully`
+              : `Fetched remote branch '${branch.cleanName}' into local successfully`,
+            icon: faDownload,
+            type: 'success',
+          })
+        },
+        onError: error => {
+          showToast({ text: error.message, type: 'error', icon: faDownload })
+        },
+        onSettled: () => {
+          setShowFetchDialog(false)
+          fetchForm.reset()
+        },
+      },
+    )
+  }
 
   const fetchForm = useForm({
     defaultValues: {
@@ -24,43 +59,38 @@ export const useRemoteBranchFetchIntoLocalDialog = () => {
       checkout: settings.remoteFetchCheckout,
     },
     onSubmit: async ({ value }) => {
-      if (!remoteBranch?.remoteName) {
+      if (!remoteBranch) {
         return
       }
 
-      fetchIntoLocalBranchMutation.mutate(
-        {
-          remote: remoteBranch.remoteName,
-          remoteBranch: remoteBranch.cleanName,
-          localBranch: remoteBranch.cleanName,
-          forceFetch: value.forceFetch,
-          checkout: value.checkout,
-        },
-        {
-          onSuccess: () => {
-            showToast({
-              text: value.checkout
-                ? `Fetched remote branch '${remoteBranch.cleanName}' into local and checked it out successfully`
-                : `Fetched remote branch '${remoteBranch.cleanName}' into local successfully`,
-              icon: faDownload,
-              type: 'success',
-            })
-          },
-          onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faDownload })
-          },
-          onSettled: () => {
-            setShowFetchDialog(false)
-            fetchForm.reset()
-          },
-        },
-      )
+      fetchIntoLocal(remoteBranch, value.forceFetch, value.checkout)
     },
   })
 
-  const openDialog = (branch: GitBranch) => {
+  const openDialog = async (branch: GitBranch) => {
     setRemoteBranch(branch)
-    setShowFetchDialog(true)
+
+    if (!settings.remoteFetchConfirmOnlyIfForceNeeded || !branch.remoteName) {
+      setShowFetchDialog(true)
+      return
+    }
+
+    try {
+      const needsForce = await fetchIntoLocalBranchNeedsForceMutation.mutateAsync({
+        remote: branch.remoteName,
+        remoteBranch: branch.cleanName,
+        localBranch: branch.cleanName,
+      })
+
+      if (needsForce) {
+        setShowFetchDialog(true)
+        return
+      }
+
+      fetchIntoLocal(branch, false, settings.remoteFetchCheckout)
+    } catch {
+      setShowFetchDialog(true)
+    }
   }
 
   const DialogComponent = (

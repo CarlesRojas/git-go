@@ -195,8 +195,13 @@
                 },
                 "git-go.remote.fetch.checkout": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "markdownDescription": "**Remote Operations:** Default value for 'Checkout branch after fetch' when fetching remote branches into local branches."
+                },
+                "git-go.remote.fetch.confirmOnlyIfForceNeeded": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Remote Operations:** Only show the confirmation dialog when fetching a remote branch into a local branch if the local branch has commits the remote branch does not, so the fetch needs to be forced. Otherwise the fetch runs straight away using the configured defaults."
                 },
                 "git-go.stash.includeUntracked": {
                     "type": "boolean",
