@@ -1,4 +1,5 @@
 import * as cp from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { formatGitError } from './util/formatGitError';
@@ -77,6 +78,8 @@ export interface GitTagRemoteStatus {
     remote: string;
     tags: GitRemoteTag[];
 }
+
+export type GitOperationInProgress = 'merge' | 'rebase';
 
 export type GitPushMode = 'normal' | 'force-with-lease' | 'force';
 
@@ -1610,6 +1613,64 @@ export class GitService {
             log(`Successfully rebased current branch onto commit ${commitHash.substring(0, 7)}`);
         } catch (error) {
             log(`Error rebasing branch onto commit: ${error}`);
+            throw error;
+        }
+    }
+
+    private async gitDirEntryExists(gitDir: string, entry: string): Promise<boolean> {
+        try {
+            await fs.promises.access(path.join(gitDir, entry));
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * The operation the working tree is halted in the middle of, if any. Git records these as
+     * marker files in the per-worktree git dir, which is also how 'git status' reports them.
+     */
+    public async getOperationInProgress(log: (message: string) => void): Promise<GitOperationInProgress | null> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return null;
+
+        try {
+            const { gitDir } = await this.getGitDirs();
+
+            // 'rebase-merge' covers interactive and merge-backend rebases, 'rebase-apply' the patch
+            // backend — which 'git am' shares, and only 'git am --abort' can end that one
+            if (await this.gitDirEntryExists(gitDir, 'rebase-merge')) return 'rebase';
+            if (await this.gitDirEntryExists(gitDir, 'rebase-apply')) {
+                const isApplyingPatches = await this.gitDirEntryExists(gitDir, 'rebase-apply/applying');
+                return isApplyingPatches ? null : 'rebase';
+            }
+
+            // Checked after the rebase markers: a rebase stopping on a conflicted merge commit
+            // writes MERGE_HEAD too, and there 'git merge --abort' is not what ends the operation
+            if (await this.gitDirEntryExists(gitDir, 'MERGE_HEAD')) return 'merge';
+
+            return null;
+        } catch (error) {
+            log(`Error checking for an operation in progress: ${error}`);
+            return null;
+        }
+    }
+
+    public async abortOperation(log: (message: string) => void, operation: GitOperationInProgress): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) throw new Error('No workspace folder found');
+
+        if (operation !== 'merge' && operation !== 'rebase') throw new Error(`Cannot abort '${operation}'`);
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            log(`Aborting the ${operation} in progress`);
+            await this.spawnGit([gitExecutable.path, operation, '--abort'], workspacePath);
+            log(`Successfully aborted the ${operation}`);
+        } catch (error) {
+            log(`Error aborting the ${operation}: ${error}`);
             throw error;
         }
     }

@@ -1,3 +1,4 @@
+import { AbortOperationButton } from '@/component/AbortOperationButton'
 import { BranchSelector } from '@/component/BranchSelector'
 import { DragOverlay } from '@/component/DragOverlay'
 import { Graph } from '@/component/Graph'
@@ -84,6 +85,8 @@ export const App: FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <AbortOperationButton />
+
                   <SearchInput value={searchTerm} onChange={setSearchTerm} />
 
                   <RefetchButton />

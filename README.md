@@ -34,6 +34,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Checkout, rename, delete** branches with ease
 - **Push/pull operations** with upstream tracking
 - **Merge and rebase** with multiple strategies (fast-forward, squash, etc.)
+- **Abort a merge or rebase** from a toolbar button that only appears while one is in progress
 - **Force push** with safety options (force-with-lease)
 - **Remote branch operations** - checkout, fetch, merge, delete
 
