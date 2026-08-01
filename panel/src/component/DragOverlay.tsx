@@ -1,6 +1,6 @@
 import { DragActionBox } from '@/component/DragActionBox'
 import { DragGhost } from '@/component/DragGhost'
-import { PendingDrop, useDragActions, useDragState } from '@/context/DragContext'
+import { PendingDrop, SOURCE_ATTRIBUTE, useDragActions, useDragState } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useBranchDeleteDialog } from '@/hook/dialog/useBranchDeleteDialog'
@@ -34,11 +34,29 @@ const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
 
 /**
- * Renders everything that only exists during a drag — the ghost, the fixed rail of
- * source actions, and the stack revealed on the hovered target — and executes the drop.
+ * Places a stack below the pill it belongs to, flipping above it and sliding left as needed so
+ * it is never pushed off screen in a narrow panel. The gap to the pill is padding on the
+ * wrapper rather than empty space, so pill and boxes stay a single hit region — crossing the
+ * gap must not collapse the stack.
+ */
+const stackPositionFor = (rect: DOMRect | null, count: number) => {
+  if (!rect || count === 0) return null
+
+  const height = count * BOX_HEIGHT_ESTIMATE_PX
+  const fitsBelow = rect.bottom + STACK_GAP_PX + height <= window.innerHeight - VIEWPORT_MARGIN_PX
+  const left = Math.max(VIEWPORT_MARGIN_PX, Math.min(rect.left, window.innerWidth - BOX_WIDTH_PX - VIEWPORT_MARGIN_PX))
+
+  if (fitsBelow) return { top: rect.bottom, left, paddingTop: STACK_GAP_PX }
+
+  return { top: Math.max(VIEWPORT_MARGIN_PX, rect.top - height - STACK_GAP_PX), left, paddingBottom: STACK_GAP_PX }
+}
+
+/**
+ * Renders everything that only exists during a drag — the ghost, the dragged item's own
+ * actions, and the stack revealed on the hovered target — and executes the drop.
  */
 export const DragOverlay: FC = () => {
-  const { payload, hoveredTargetKey, hoveredActionId, revealed, pendingDrop } = useDragState()
+  const { payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pendingDrop } = useDragState()
   const { clearPendingDrop, setDefaultAction, ghostRef } = useDragActions()
 
   const { settings } = useSettings()
@@ -51,6 +69,7 @@ export const DragOverlay: FC = () => {
   const [dropBranch, setDropBranch] = useState<GitBranch | null>(null)
   const [dropCommit, setDropCommit] = useState<GitCommit | null>(null)
   const [stackRect, setStackRect] = useState<DOMRect | null>(null)
+  const [sourceRect, setSourceRect] = useState<DOMRect | null>(null)
 
   const mergeDialog = useBranchMergeIntoCurrentDialog({ branch: dropBranch ?? EMPTY_BRANCH })
   const rebaseDialog = useRebaseCurrentBranchIntoBranch({ branch: dropBranch ?? EMPTY_BRANCH })
@@ -72,8 +91,12 @@ export const DragOverlay: FC = () => {
 
   const sourceActions = useMemo(() => {
     if (!payload) return []
-    return resolveSourceActions({ payload, config: settings, remoteNames: remotes.map(remote => remote.name) })
-  }, [payload, settings, remotes])
+    return resolveSourceActions({
+      payload,
+      remoteNames: remotes.map(remote => remote.name),
+      currentBranch: currentBranch ?? undefined,
+    })
+  }, [payload, remotes, currentBranch])
 
   const defaultTargetAction = useMemo(
     () => targetActions.find(action => action.isDefault && !action.disabledReason) ?? null,
@@ -86,25 +109,38 @@ export const DragOverlay: FC = () => {
     setDefaultAction(defaultTargetAction?.id ?? null)
   }, [defaultTargetAction, setDefaultAction])
 
-  // Anchor the revealed stack to the pill it acts on. Recomputed when the target changes and
-  // whenever the graph scrolls under it.
+  // Both stacks anchor to a pill the same way: measure it, and re-measure while the graph
+  // scrolls under it.
   useLayoutEffect(() => {
-    if (!revealed || !hoveredTargetKey) {
+    const selector = revealed && hoveredTargetKey ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]` : undefined
+
+    if (!selector) {
       setStackRect(null)
       return
     }
 
-    const measure = () => {
-      const element = document.querySelector<HTMLElement>(`[data-drop-target="${CSS.escape(hoveredTargetKey)}"]`)
-      setStackRect(element?.getBoundingClientRect() ?? null)
-    }
-
+    const measure = () => setStackRect(document.querySelector<HTMLElement>(selector)?.getBoundingClientRect() ?? null)
     measure()
 
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
     container?.addEventListener('scroll', measure)
     return () => container?.removeEventListener('scroll', measure)
   }, [revealed, hoveredTargetKey])
+
+  useLayoutEffect(() => {
+    if (!hoveredSource) {
+      setSourceRect(null)
+      return
+    }
+
+    const measure = () =>
+      setSourceRect(document.querySelector<HTMLElement>(`[${SOURCE_ATTRIBUTE}]`)?.getBoundingClientRect() ?? null)
+    measure()
+
+    const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
+    container?.addEventListener('scroll', measure)
+    return () => container?.removeEventListener('scroll', measure)
+  }, [hoveredSource])
 
   const execute = useCallback(
     async (drop: PendingDrop) => {
@@ -202,34 +238,15 @@ export const DragOverlay: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingDrop, clearPendingDrop])
 
-  const cancelAction = useMemo(() => sourceActions.find(action => action.id === 'cancel') ?? null, [sourceActions])
-  const railActions = useMemo(() => sourceActions.filter(action => action.id !== 'cancel'), [sourceActions])
+  const targetStackPosition = useMemo(
+    () => stackPositionFor(stackRect, targetActions.length),
+    [stackRect, targetActions],
+  )
 
-  /**
-   * Opens below the pill, flipping above it and sliding left as needed so the stack is never
-   * pushed off screen in a narrow panel. The gap to the pill is padding on the wrapper rather
-   * than empty space, so the pill and its boxes stay a single hit region — crossing the gap
-   * must not collapse the stack.
-   */
-  const stackPosition = useMemo(() => {
-    if (!stackRect || targetActions.length === 0) return null
-
-    const height = targetActions.length * BOX_HEIGHT_ESTIMATE_PX
-    const fitsBelow = stackRect.bottom + STACK_GAP_PX + height <= window.innerHeight - VIEWPORT_MARGIN_PX
-
-    const left = Math.max(
-      VIEWPORT_MARGIN_PX,
-      Math.min(stackRect.left, window.innerWidth - BOX_WIDTH_PX - VIEWPORT_MARGIN_PX),
-    )
-
-    if (fitsBelow) return { top: stackRect.bottom, left, paddingTop: STACK_GAP_PX }
-
-    return {
-      top: Math.max(VIEWPORT_MARGIN_PX, stackRect.top - height - STACK_GAP_PX),
-      left,
-      paddingBottom: STACK_GAP_PX,
-    }
-  }, [stackRect, targetActions])
+  const sourceStackPosition = useMemo(
+    () => stackPositionFor(sourceRect, sourceActions.length),
+    [sourceRect, sourceActions],
+  )
 
   const pendingLabel = useMemo(() => {
     if (!payload) return null
@@ -265,41 +282,43 @@ export const DragOverlay: FC = () => {
       {dialogs}
 
       <div className="pointer-events-none fixed inset-0 z-50">
-        <div ref={ghostRef} className="absolute top-0 left-0 will-change-transform">
-          <DragGhost
-            payload={payload}
-            pendingLabel={pendingLabel}
-            showHoldHint={!revealed && targetActions.length > 1 && !!hoveredTargetKey}
-          />
-        </div>
-
-        {/* Cancel is the only box present in every drag, so it — not the stack — is what stays
-            pinned to the viewport centre. Everything else stacks above it. */}
-        {cancelAction && (
-          <div className="absolute top-1/2 right-3 -translate-y-1/2">
-            <div className="absolute right-0 bottom-full mb-3 flex flex-col items-end gap-1.5">
-              {railActions.map(action => (
-                <DragActionBox key={action.id} action={action} hovered={hoveredActionId === action.id} />
-              ))}
-            </div>
-
-            <DragActionBox action={cancelAction} hovered={hoveredActionId === 'cancel'} />
+        {/* Actions on the dragged item itself, shown under it whenever the pointer is on it. */}
+        {hoveredSource && sourceStackPosition && (
+          <div
+            data-drag-source-zone
+            className="pointer-events-auto absolute z-10 flex flex-col gap-1.5"
+            style={sourceStackPosition}
+          >
+            {sourceActions.map(action => (
+              <DragActionBox key={action.id} action={action} hovered={hoveredActionId === action.id} />
+            ))}
           </div>
         )}
 
-        {revealed && stackPosition && hoveredTargetKey && targetActions.length > 0 && (
+        {revealed && targetStackPosition && hoveredTargetKey && targetActions.length > 0 && (
           <div
             // Carries the target key so the padded bridge back to the pill counts as the same
             // target, keeping the stack open while the pointer travels to a box.
             data-drop-target={hoveredTargetKey}
-            className="pointer-events-auto absolute flex flex-col gap-1.5"
-            style={stackPosition}
+            className="pointer-events-auto absolute z-10 flex flex-col gap-1.5"
+            style={targetStackPosition}
           >
             {targetActions.map(action => (
               <DragActionBox key={action.id} action={action} hovered={hoveredActionId === action.id} />
             ))}
           </div>
         )}
+
+        {/* Last and highest so it is never covered by a stack. */}
+        <div ref={ghostRef} className="absolute top-0 left-0 z-20 will-change-transform">
+          <div className="-translate-y-1/2">
+            <DragGhost
+              payload={payload}
+              pendingLabel={pendingLabel}
+              showHoldHint={!revealed && targetActions.length > 1 && !!hoveredTargetKey}
+            />
+          </div>
+        </div>
       </div>
     </>
   )

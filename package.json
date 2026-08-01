@@ -153,47 +153,6 @@
                     "default": "merge",
                     "markdownDescription": "**Drag and Drop:** Action performed when dropping a branch onto another branch. Set to 'none' to require picking an action from the boxes that appear when holding."
                 },
-                "git-go.dragAndDrop.branchOnBranch.actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "merge",
-                            "rebase"
-                        ]
-                    },
-                    "default": [
-                        "merge",
-                        "rebase"
-                    ],
-                    "uniqueItems": true,
-                    "markdownDescription": "**Drag and Drop:** Actions offered when dropping a branch onto another branch."
-                },
-                "git-go.dragAndDrop.commitOnBranch.defaultAction": {
-                    "type": "string",
-                    "enum": [
-                        "cherryPick",
-                        "none"
-                    ],
-                    "default": "cherryPick",
-                    "markdownDescription": "**Drag and Drop:** Action performed when dropping a commit onto a branch."
-                },
-                "git-go.dragAndDrop.sourceActions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "push",
-                            "delete"
-                        ]
-                    },
-                    "default": [
-                        "push",
-                        "delete"
-                    ],
-                    "uniqueItems": true,
-                    "markdownDescription": "**Drag and Drop:** Actions offered for the dragged branch or tag itself. Cancel is always available."
-                },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
                     "default": true,

@@ -288,6 +288,7 @@ export const CommitItem: FC<CommitItemProps> = ({
       >
         {uncommittedChangesContextMenuWrapper(
           <div
+            data-drag-row
             className={cn(
               'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
               // Interactive

@@ -63,7 +63,6 @@ export const resolveTargetActions = ({
   if (payload.kind === 'tag') return []
 
   if (payload.kind === 'commit') {
-    // `none` only removes the on-release default — the box is still offered on hold.
     return [
       {
         id: 'cherryPick',
@@ -72,7 +71,7 @@ export const resolveTargetActions = ({
         note: `${target.cleanName} moves`,
         icon: faCodeCommit,
         destructive: false,
-        isDefault: config.dragAndDropCommitDefaultAction === 'cherryPick',
+        isDefault: true,
         disabledReason: checkoutBlocker(target),
       },
     ]
@@ -81,63 +80,51 @@ export const resolveTargetActions = ({
   const source = payload.branch
   if (source.cleanName === target.cleanName && source.remote === target.remote) return []
 
-  const allowed = config.dragAndDropBranchActions
-  // A default that has been removed from `actions` cannot be offered, so nothing is the default.
-  const defaultAction = allowed.includes(config.dragAndDropBranchDefaultAction as 'merge' | 'rebase')
-    ? config.dragAndDropBranchDefaultAction
-    : 'none'
-
-  const actions: DragAction[] = []
-
-  if (allowed.includes('merge')) {
-    actions.push({
+  return [
+    {
       id: 'merge',
       verb: 'Merge',
       effect: `${source.cleanName} → ${target.cleanName}`,
       note: `${target.cleanName} moves`,
       icon: faCodeMerge,
       destructive: false,
-      isDefault: defaultAction === 'merge',
+      isDefault: config.dragAndDropBranchDefaultAction === 'merge',
       disabledReason: checkoutBlocker(target),
-    })
-  }
-
-  if (allowed.includes('rebase')) {
-    actions.push({
+    },
+    {
       id: 'rebase',
       verb: 'Rebase',
       effect: `${source.cleanName} onto ${target.cleanName}`,
       note: `${source.cleanName} moves`,
       icon: faCodeBranch,
       destructive: false,
-      isDefault: defaultAction === 'rebase',
+      isDefault: config.dragAndDropBranchDefaultAction === 'rebase',
       disabledReason: checkoutBlocker(source),
-    })
-  }
-
-  return actions
+    },
+  ]
 }
 
 /**
- * Actions that operate on the dragged item itself. These need no target, so they live in the
- * fixed rail rather than on a pill. Cancel is always present.
+ * Actions that operate on the dragged item itself, shown beneath it rather than on a target.
+ * Cancel is always present.
  */
 export const resolveSourceActions = ({
   payload,
-  config,
   remoteNames,
+  currentBranch,
 }: {
   payload: DragPayload
-  config: ConfigState
   remoteNames: string[]
+  currentBranch?: string
 }): DragAction[] => {
   const actions: DragAction[] = []
 
   if (payload.kind !== 'commit') {
     const label = payloadLabel(payload)
-    const isCurrentBranch = payload.kind === 'branch' && payload.branch.current
+    // Compared by name rather than trusting `branch.current`, matching how the pills decide it.
+    const isCurrentBranch = payload.kind === 'branch' && payload.branch.cleanName === currentBranch
 
-    if (config.dragAndDropSourceActions.includes('push') && remoteNames.length > 0) {
+    if (remoteNames.length > 0) {
       actions.push({
         id: 'push',
         verb: 'Push',
@@ -148,16 +135,16 @@ export const resolveSourceActions = ({
       })
     }
 
-    if (config.dragAndDropSourceActions.includes('delete') && !isCurrentBranch) {
-      actions.push({
-        id: 'delete',
-        verb: 'Delete',
-        effect: label,
-        icon: faTrash,
-        destructive: true,
-        isDefault: false,
-      })
-    }
+    actions.push({
+      id: 'delete',
+      verb: 'Delete',
+      effect: label,
+      icon: faTrash,
+      destructive: true,
+      isDefault: false,
+      // Shown but refused, so the box does not appear and disappear per branch.
+      disabledReason: isCurrentBranch ? 'The checked-out branch cannot be deleted' : undefined,
+    })
   }
 
   actions.push({
@@ -171,5 +158,3 @@ export const resolveSourceActions = ({
 
   return actions
 }
-
-export const isDragEnabled = (config: ConfigState) => config.dragAndDropEnabled

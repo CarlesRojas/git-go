@@ -113,8 +113,9 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
           onlyRemote && 'border-vsc-editor-fg/30 border',
           isCurrent && 'border',
           (onlyLocal || onlyRemote) && 'group/branch',
-          // Drag targeting
-          isHoveredTarget && 'ring-vsc-editor-fg/70 ring-2',
+          // Drag targeting — scale rather than an outline, matching the graph's own highlight
+          !!dragPayload && 'transition-transform duration-100',
+          isHoveredTarget && 'z-10 scale-110',
         )}
         style={{
           borderColor: isCurrent

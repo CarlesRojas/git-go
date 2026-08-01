@@ -46,9 +46,6 @@ export interface ConfigState {
   pinTabEnabled: boolean
   dragAndDropEnabled: boolean
   dragAndDropBranchDefaultAction: 'merge' | 'rebase' | 'none'
-  dragAndDropBranchActions: ('merge' | 'rebase')[]
-  dragAndDropCommitDefaultAction: 'cherryPick' | 'none'
-  dragAndDropSourceActions: ('push' | 'delete')[]
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
   branchPushSetUpstream: boolean
@@ -79,9 +76,6 @@ const defaultConfigState: ConfigState = {
   pinTabEnabled: true,
   dragAndDropEnabled: true,
   dragAndDropBranchDefaultAction: 'merge',
-  dragAndDropBranchActions: ['merge', 'rebase'],
-  dragAndDropCommitDefaultAction: 'cherryPick',
-  dragAndDropSourceActions: ['push', 'delete'],
   branchCreateCheckout: true,
   branchDeleteForce: false,
   branchPushSetUpstream: true,

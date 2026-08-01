@@ -5,6 +5,8 @@ const DRAG_THRESHOLD_PX = 5
 const HOLD_DELAY_MS = 450
 const EDGE_ZONE_PX = 40
 const MAX_SCROLL_SPEED_PX = 16
+/** Keeps the ghost clear of the pointer so it never covers what is being aimed at. */
+const GHOST_CURSOR_OFFSET_PX = 16
 
 /** Set on the dragged item so it can be styled as picked-up without a React re-render. */
 export const SOURCE_ATTRIBUTE = 'data-drag-source-active'
@@ -28,6 +30,8 @@ interface DragStateContextType {
   hoveredActionId: DragActionId | null
   /** Whether the pointer has rested on the current target long enough to reveal its boxes. */
   revealed: boolean
+  /** Whether the pointer is back over the dragged item, which shows its own actions. */
+  hoveredSource: boolean
   pendingDrop: PendingDrop | null
 }
 
@@ -66,12 +70,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const [hoveredTargetKey, setHoveredTargetKey] = useState<string | null>(null)
   const [hoveredActionId, setHoveredActionId] = useState<DragActionId | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [hoveredSource, setHoveredSource] = useState(false)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
 
   // Everything below is deliberately kept out of React state: it changes every frame and
   // must never re-render the graph.
   const pointer = useRef({ x: 0, y: 0 })
-  const grabOffset = useRef({ x: 0, y: 0 })
   const ghost = useRef<HTMLDivElement | null>(null)
   const frame = useRef<number | null>(null)
   const holdTimer = useRef<number | null>(null)
@@ -81,6 +85,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const currentTargetKey = useRef<string | null>(null)
   const currentActionId = useRef<DragActionId | null>(null)
   const currentActionDisabled = useRef(false)
+  const currentSourceHovered = useRef(false)
   const defaultAction = useRef<DragActionId | null>(null)
   const suppressNextClick = useRef(false)
 
@@ -118,6 +123,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     currentTargetKey.current = null
     currentActionId.current = null
     currentActionDisabled.current = false
+    currentSourceHovered.current = false
     defaultAction.current = null
     isAutoScrolling.current = false
     scrollContainer.current = null
@@ -126,6 +132,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     setHoveredTargetKey(null)
     setHoveredActionId(null)
     setRevealed(false)
+    setHoveredSource(false)
   }, [clearHoldTimer])
 
   const autoScroll = useCallback(() => {
@@ -159,6 +166,14 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const { x, y } = pointer.current
     const element = document.elementFromPoint(x, y)
 
+    // The dragged item shows its own actions whenever the pointer is back over it, or over
+    // the stack those actions live in.
+    const sourceHovered = !!element?.closest('[data-drag-source-active], [data-drag-source-zone]')
+    if (sourceHovered !== currentSourceHovered.current) {
+      currentSourceHovered.current = sourceHovered
+      setHoveredSource(sourceHovered)
+    }
+
     const actionElement = element?.closest<HTMLElement>('[data-drag-action]') ?? null
     const actionId = (actionElement?.getAttribute('data-drag-action') as DragActionId | null) ?? null
     currentActionDisabled.current = actionElement?.getAttribute('data-drag-action-disabled') === 'true'
@@ -191,7 +206,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const { x, y } = pointer.current
 
     if (ghost.current) {
-      ghost.current.style.transform = `translate3d(${x - grabOffset.current.x}px, ${y - grabOffset.current.y}px, 0)`
+      ghost.current.style.transform = `translate3d(${x + GHOST_CURSOR_OFFSET_PX}px, ${y}px, 0)`
     }
 
     autoScroll()
@@ -248,9 +263,6 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
         started = true
         suppressNextClick.current = true
-
-        const bounds = element.getBoundingClientRect()
-        grabOffset.current = { x: origin.x - bounds.left, y: origin.y - bounds.top }
 
         sourceElement.current = element
         element.setAttribute(SOURCE_ATTRIBUTE, '')
@@ -321,8 +333,8 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   )
 
   const state = useMemo(
-    () => ({ payload, hoveredTargetKey, hoveredActionId, revealed, pendingDrop }),
-    [payload, hoveredTargetKey, hoveredActionId, revealed, pendingDrop],
+    () => ({ payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pendingDrop }),
+    [payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pendingDrop],
   )
 
   return (
