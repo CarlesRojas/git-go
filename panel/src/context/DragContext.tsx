@@ -34,6 +34,8 @@ interface DragStateContextType {
   hoveredSource: boolean
   /** Whether the pointer is over the dragged item right now, before any hold has elapsed. */
   pointerOverSource: boolean
+  /** Whether the pointer is over the hovered target right now, as opposed to its boxes lingering. */
+  pointerOverTarget: boolean
   pendingDrop: PendingDrop | null
 }
 
@@ -74,6 +76,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const [revealed, setRevealed] = useState(false)
   const [hoveredSource, setHoveredSource] = useState(false)
   const [pointerOverSource, setPointerOverSource] = useState(false)
+  const [pointerOverTarget, setPointerOverTarget] = useState(false)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
 
   // Everything below is deliberately kept out of React state: it changes every frame and
@@ -96,6 +99,8 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const hideTimer = useRef<number | null>(null)
   const sourceHideTimer = useRef<number | null>(null)
   const isRevealed = useRef(false)
+  /** Distinct from `currentTargetKey`, which outlives the pointer for the length of the linger. */
+  const isPointerOverTarget = useRef(false)
   const payloadKind = useRef<DragPayload['kind'] | null>(null)
   const defaultAction = useRef<DragActionId | null>(null)
   const suppressNextClick = useRef(false)
@@ -168,6 +173,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     currentActionDisabled.current = false
     currentSourceHovered.current = false
     inSourceRegion.current = false
+    isPointerOverTarget.current = false
     payloadKind.current = null
     defaultAction.current = null
     isAutoScrolling.current = false
@@ -179,6 +185,7 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     setRevealedTracked(false)
     setHoveredSource(false)
     setPointerOverSource(false)
+    setPointerOverTarget(false)
   }, [clearHideTimer, clearHoldTimer, clearSourceHideTimer, clearSourceHoldTimer, setRevealedTracked])
 
   const autoScroll = useCallback(() => {
@@ -278,6 +285,11 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const isSource = !!sourceElement.current && !!targetElement?.contains(sourceElement.current)
     const resolvedTarget = isSource ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
 
+    if ((resolvedTarget !== null) !== isPointerOverTarget.current) {
+      isPointerOverTarget.current = resolvedTarget !== null
+      setPointerOverTarget(isPointerOverTarget.current)
+    }
+
     // Back on the same pill before the dismissal ran, so its boxes stay put and keep the hold
     // they already earned.
     if (resolvedTarget !== null && resolvedTarget === currentTargetKey.current) clearHideTimer()
@@ -333,6 +345,9 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
       return { payload: dragPayload, targetKey: needsTarget ? currentTargetKey.current : null, actionId }
     }
 
+    // The boxes outlive the pointer by design, but the drop does not — releasing once the
+    // pointer has left the pill must do nothing, however long they are still on screen.
+    if (!isPointerOverTarget.current) return null
     if (currentTargetKey.current === null || defaultAction.current === null) return null
 
     return { payload: dragPayload, targetKey: currentTargetKey.current, actionId: defaultAction.current }
@@ -447,8 +462,26 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   )
 
   const state = useMemo(
-    () => ({ payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pointerOverSource, pendingDrop }),
-    [payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pointerOverSource, pendingDrop],
+    () => ({
+      payload,
+      hoveredTargetKey,
+      hoveredActionId,
+      revealed,
+      hoveredSource,
+      pointerOverSource,
+      pointerOverTarget,
+      pendingDrop,
+    }),
+    [
+      payload,
+      hoveredTargetKey,
+      hoveredActionId,
+      revealed,
+      hoveredSource,
+      pointerOverSource,
+      pointerOverTarget,
+      pendingDrop,
+    ],
   )
 
   return (

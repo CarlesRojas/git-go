@@ -60,7 +60,8 @@ const stackPositionFor = (rect: DOMRect | null, count: number) => {
  * actions, and the stack revealed on the hovered target — and executes the drop.
  */
 export const DragOverlay: FC = () => {
-  const { payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pendingDrop } = useDragState()
+  const { payload, hoveredTargetKey, hoveredActionId, revealed, hoveredSource, pointerOverTarget, pendingDrop } =
+    useDragState()
   const { clearPendingDrop, setDefaultAction, ghostRef } = useDragActions()
 
   const { settings } = useSettings()
@@ -335,7 +336,11 @@ export const DragOverlay: FC = () => {
                 action={action}
                 // With the pointer on the pill rather than a box, the action a release would
                 // perform is highlighted, so the box and the pill agree on what happens next.
-                hovered={hoveredActionId === action.id || (!hoveredActionId && action.id === defaultTargetAction?.id)}
+                // Once the pointer leaves, a release does nothing, so nothing stays highlighted.
+                hovered={
+                  hoveredActionId === action.id ||
+                  (!hoveredActionId && pointerOverTarget && action.id === defaultTargetAction?.id)
+                }
               />
             ))}
           </div>
