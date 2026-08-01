@@ -51,7 +51,7 @@ const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
       <Button
         variant="secondary"
         onClick={openDialog}
-        title={`Undo '${action.description}' on ${action.branch}${action.when ? ` — ${action.when}` : ''} (${undoShortcutLabel})`}
+        title={`Undo '${action.description}' on ${action.branch} (${undoShortcutLabel})`}
       >
         <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
         Undo {label}

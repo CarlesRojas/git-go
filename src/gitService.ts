@@ -109,8 +109,6 @@ export interface GitUndoableAction {
     currentHash: string;
     /** Where the branch was before the action, and where undoing it returns the branch to */
     previousHash: string;
-    /** How long ago the action happened, e.g. '2 hours ago' */
-    when: string;
     /** Whether the action changed the working tree, so undoing it faithfully needs a hard reset */
     changedWorkingTree: boolean;
 }
@@ -1852,8 +1850,7 @@ export class GitService {
                     gitExecutable.path,
                     'reflog',
                     'show',
-                    '--date=relative',
-                    `--format=%H${GIT_LOG_SEPARATOR}%gd${GIT_LOG_SEPARATOR}%gs`,
+                    `--format=%H${GIT_LOG_SEPARATOR}%gs`,
                     '-n',
                     '2',
                     `refs/heads/${branch}`
@@ -1874,15 +1871,12 @@ export class GitService {
 
             const currentHash = (current[0] ?? '').trim();
             const previousHash = (previous[0] ?? '').trim();
-            const description = (current[2] ?? '').trim();
+            const description = (current[1] ?? '').trim();
             if (!currentHash || !previousHash || !description) return null;
             if (currentHash === previousHash) return null;
 
             const kind = GitService.parseUndoActionKind(description);
             if (!kind) return null;
-
-            // With --date=relative the selector reads 'refs/heads/main@{2 hours ago}'
-            const when = (current[1] ?? '').match(/@\{(.*)\}$/)?.[1] ?? '';
 
             log(`Undoable action on ${branch}: ${description}`);
             return {
@@ -1891,7 +1885,6 @@ export class GitService {
                 branch,
                 currentHash,
                 previousHash,
-                when,
                 changedWorkingTree: WORKING_TREE_UNDO_KINDS.includes(kind)
             };
         } catch (error) {
