@@ -9,6 +9,7 @@ import type {
   GitPushMode,
   GitRemote,
   GitTagRemoteStatus,
+  GitUndoActionKind,
   GitUndoableAction,
   GitWorktree,
 } from '@git/gitService'
@@ -92,6 +93,9 @@ export interface ConfigState {
   worktreeOpenAfterCreate: boolean
   worktreeRemoveForce: boolean
   worktreeRemoveDeleteBranch: boolean
+  undoEnabled: boolean
+  undoKeyboardShortcut: boolean
+  undoShow: Record<GitUndoActionKind, boolean>
   confirmMerge: boolean
   confirmRebase: boolean
   confirmPush: boolean
@@ -144,6 +148,19 @@ const defaultConfigState: ConfigState = {
   worktreeOpenAfterCreate: true,
   worktreeRemoveForce: false,
   worktreeRemoveDeleteBranch: false,
+  undoEnabled: true,
+  undoKeyboardShortcut: true,
+  undoShow: {
+    commit: true,
+    amend: true,
+    merge: true,
+    rebase: true,
+    'cherry-pick': true,
+    revert: true,
+    reset: true,
+    pull: true,
+    other: true,
+  },
   confirmMerge: true,
   confirmRebase: true,
   confirmPush: true,
@@ -559,8 +576,9 @@ export const useAbortOperation = () => {
   })
 }
 
-export const useUndoableAction = () => {
+export const useUndoableAction = (enabled = true) => {
   return useQuery({
+    enabled,
     queryKey: queryKeys.undoableAction,
     queryFn: async (): Promise<GitUndoableAction | null> => {
       const response = await sendCorrelatedMessage<{ undoableAction: GitUndoableAction | null }>('getUndoableAction')

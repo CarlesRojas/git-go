@@ -183,6 +183,26 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
 
 Each `auto` option runs the action with the values its dialog would have opened with.
 
+### Undo
+
+```json
+{
+    "git-go.undo.enabled": true, // Offer to undo the last action on the current branch
+    "git-go.undo.keyboardShortcut": true, // Also reach the undo from Ctrl+Z / Cmd+Z
+    "git-go.undo.show.commit": true, // Offer to undo a commit
+    "git-go.undo.show.amend": true, // Offer to undo an amend
+    "git-go.undo.show.merge": true, // Offer to undo a merge
+    "git-go.undo.show.rebase": true, // Offer to undo a rebase
+    "git-go.undo.show.cherryPick": true, // Offer to undo a cherry-pick
+    "git-go.undo.show.revert": true, // Offer to undo a revert
+    "git-go.undo.show.reset": true, // Offer to undo a reset
+    "git-go.undo.show.pull": true, // Offer to undo a pull
+    "git-go.undo.show.other": true // Offer to undo an action Git Go could not name
+}
+```
+
+Each `show` option covers the button and its shortcut together, so an action turned off here has no undo at all.
+
 ### Confirmations
 
 ```json

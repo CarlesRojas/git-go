@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import type { GitUndoActionKind } from './gitService';
 
 /**
  * Represents the user's configuration of Git Go Extension Settings.
@@ -409,6 +410,37 @@ export class Config {
      */
     get worktreeRemoveDeleteBranch(): boolean {
         return !!this.config.get('worktree.remove.deleteBranch', false);
+    }
+
+    /**
+     * Get the value of the `git-go.undo.enabled` Extension Setting.
+     */
+    get undoEnabled(): boolean {
+        return !!this.config.get('undo.enabled', true);
+    }
+
+    /**
+     * Get the value of the `git-go.undo.keyboardShortcut` Extension Setting.
+     */
+    get undoKeyboardShortcut(): boolean {
+        return !!this.config.get('undo.keyboardShortcut', true);
+    }
+
+    /**
+     * Get the value of every `git-go.undo.show.*` Extension Setting, keyed by the action it covers.
+     */
+    get undoShow(): Record<GitUndoActionKind, boolean> {
+        return {
+            commit: !!this.config.get('undo.show.commit', true),
+            amend: !!this.config.get('undo.show.amend', true),
+            merge: !!this.config.get('undo.show.merge', true),
+            rebase: !!this.config.get('undo.show.rebase', true),
+            'cherry-pick': !!this.config.get('undo.show.cherryPick', true),
+            revert: !!this.config.get('undo.show.revert', true),
+            reset: !!this.config.get('undo.show.reset', true),
+            pull: !!this.config.get('undo.show.pull', true),
+            other: !!this.config.get('undo.show.other', true)
+        };
     }
 
     /**

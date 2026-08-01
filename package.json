@@ -238,8 +238,80 @@
                 }
             },
             {
-                "title": "Confirmations",
+                "title": "Undo",
                 "order": 4,
+                "properties": {
+                    "git-go.undo.enabled": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo the last action on the current branch, from a toolbar button that names what it will undo. Turning this off hides the button and unbinds its shortcut, whatever the action was.",
+                        "order": 1
+                    },
+                    "git-go.undo.keyboardShortcut": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Also reach the undo from `Ctrl+Z` (`Cmd+Z` on macOS) while the graph has focus. Turning this off leaves the button as the only way to undo.",
+                        "order": 2
+                    },
+                    "git-go.undo.show.commit": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a commit, which moves the branch back to the commit before it and keeps the changes in the working tree.",
+                        "order": 3
+                    },
+                    "git-go.undo.show.amend": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo an amend, which brings back the commit as it was before it was amended.",
+                        "order": 4
+                    },
+                    "git-go.undo.show.merge": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a merge, which moves the branch back to the commit it was on before the branch was merged in.",
+                        "order": 5
+                    },
+                    "git-go.undo.show.rebase": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a rebase, which puts the branch back on the commits it had before they were replayed.",
+                        "order": 6
+                    },
+                    "git-go.undo.show.cherryPick": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a cherry-pick, which drops the commit that was copied onto the branch.",
+                        "order": 7
+                    },
+                    "git-go.undo.show.revert": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a revert, which drops the commit that undid the change.",
+                        "order": 8
+                    },
+                    "git-go.undo.show.reset": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a reset, which returns the branch to where it pointed before the reset.",
+                        "order": 9
+                    },
+                    "git-go.undo.show.pull": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo a pull, which drops the commits the pull brought in.",
+                        "order": 10
+                    },
+                    "git-go.undo.show.other": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Offer to undo an action Git Go could not name, shown as 'Last Action'. It is read straight from the reflog, so what gets undone is whatever moved the branch last.",
+                        "order": 11
+                    }
+                }
+            },
+            {
+                "title": "Confirmations",
+                "order": 5,
                 "properties": {
                     "git-go.confirm.merge": {
                         "type": "boolean",
@@ -269,7 +341,7 @@
             },
             {
                 "title": "Branches",
-                "order": 5,
+                "order": 6,
                 "properties": {
                     "git-go.branch.create.checkout": {
                         "type": "boolean",
@@ -328,7 +400,7 @@
             },
             {
                 "title": "Merge",
-                "order": 6,
+                "order": 7,
                 "properties": {
                     "git-go.merge.fastForwardIfPossible": {
                         "type": "boolean",
@@ -358,7 +430,7 @@
             },
             {
                 "title": "Rebase",
-                "order": 7,
+                "order": 8,
                 "properties": {
                     "git-go.rebase.ignoreDate": {
                         "type": "boolean",
@@ -383,7 +455,7 @@
             },
             {
                 "title": "Cherry-Pick and Revert",
-                "order": 8,
+                "order": 9,
                 "properties": {
                     "git-go.cherryPick.recordOrigin": {
                         "type": "boolean",
@@ -407,7 +479,7 @@
             },
             {
                 "title": "Reset and Discard",
-                "order": 9,
+                "order": 10,
                 "properties": {
                     "git-go.reset.mode": {
                         "type": "string",
@@ -441,7 +513,7 @@
             },
             {
                 "title": "Stashes",
-                "order": 10,
+                "order": 11,
                 "properties": {
                     "git-go.stash.includeUntracked": {
                         "type": "boolean",
@@ -459,7 +531,7 @@
             },
             {
                 "title": "Tags",
-                "order": 11,
+                "order": 12,
                 "properties": {
                     "git-go.tag.type": {
                         "type": "string",
@@ -491,7 +563,7 @@
             },
             {
                 "title": "Remotes",
-                "order": 12,
+                "order": 13,
                 "properties": {
                     "git-go.remote.defaultRemote": {
                         "type": "string",
@@ -540,7 +612,7 @@
             },
             {
                 "title": "Worktrees",
-                "order": 13,
+                "order": 14,
                 "properties": {
                     "git-go.worktree.defaultPath": {
                         "type": "string",
