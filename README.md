@@ -149,6 +149,7 @@ as branches are drawn.
 3. **Perform Git operations**:
     - **Right-click** on commits, branches, stashes, or tags for context menus
     - **Drag** a branch, commit, tag, or stash onto a branch, or hold over it for more actions
+    - **Undo** the last one from the toolbar button, which names the action it will undo
 
 4. **Keyboard shortcuts**:
     - `Ctrl+F` / `Cmd+F` focuses the search, `Esc` clears it
