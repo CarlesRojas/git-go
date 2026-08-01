@@ -206,7 +206,8 @@ Git Go can be customized through VS Code settings. Here are all available config
 
 ```json
 {
-    "git-go.remote.fetch.forceFetch": false // Default 'Force fetch' when fetching remote branches
+    "git-go.remote.fetch.forceFetch": false, // Default 'Force fetch' when fetching remote branches
+    "git-go.remote.fetch.checkout": false // Default 'Checkout branch after fetch' when fetching remote branches
 }
 ```
 

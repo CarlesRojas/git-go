@@ -56,6 +56,7 @@ export interface ConfigState {
   revertNoCommit: boolean
   resetMode: 'soft' | 'mixed' | 'hard'
   remoteFetchForceFetch: boolean
+  remoteFetchCheckout: boolean
   stashIncludeUntracked: boolean
   worktreeDefaultPath: string
   worktreeOpenNewWindow: boolean
@@ -82,6 +83,7 @@ const defaultConfigState: ConfigState = {
   revertNoCommit: true,
   resetMode: 'mixed',
   remoteFetchForceFetch: false,
+  remoteFetchCheckout: false,
   stashIncludeUntracked: true,
   worktreeDefaultPath: '../{repo}.worktrees/{branch}',
   worktreeOpenNewWindow: true,
@@ -667,15 +669,17 @@ export const useFetchIntoLocalBranch = () => {
       remoteBranch,
       localBranch,
       forceFetch = false,
+      checkout = false,
     }: {
       remote: string
       remoteBranch: string
       localBranch: string
       forceFetch?: boolean
+      checkout?: boolean
     }) => {
       return await sendCorrelatedMessage(
         'fetchIntoLocalBranch',
-        { remote, remoteBranch, localBranch, forceFetch },
+        { remote, remoteBranch, localBranch, forceFetch, checkout },
         30_000,
       )
     },

@@ -1795,7 +1795,8 @@ export class GitService {
         remote: string,
         remoteBranch: string,
         localBranch: string,
-        forceFetch: boolean = false
+        forceFetch: boolean = false,
+        checkout: boolean = false
     ): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
@@ -1842,6 +1843,10 @@ export class GitService {
                 log(
                     `Successfully fetched ${remote}/${remoteBranch} into local branch ${localBranch}${forceFetch ? ' (force)' : ''}`
                 );
+
+                if (checkout) {
+                    await this.checkoutLocalBranch(log, localBranch);
+                }
             }
         } catch (error) {
             log(`Error fetching into local branch: ${error}`);

@@ -193,6 +193,11 @@
                     "default": false,
                     "markdownDescription": "**Remote Operations:** Default value for 'Force fetch' when fetching remote branches into local branches."
                 },
+                "git-go.remote.fetch.checkout": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Remote Operations:** Default value for 'Checkout branch after fetch' when fetching remote branches into local branches."
+                },
                 "git-go.stash.includeUntracked": {
                     "type": "boolean",
                     "default": true,

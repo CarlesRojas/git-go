@@ -21,6 +21,7 @@ export const useRemoteBranchFetchIntoLocalDialog = () => {
   const fetchForm = useForm({
     defaultValues: {
       forceFetch: settings.remoteFetchForceFetch,
+      checkout: settings.remoteFetchCheckout,
     },
     onSubmit: async ({ value }) => {
       if (!remoteBranch?.remoteName) {
@@ -33,11 +34,14 @@ export const useRemoteBranchFetchIntoLocalDialog = () => {
           remoteBranch: remoteBranch.cleanName,
           localBranch: remoteBranch.cleanName,
           forceFetch: value.forceFetch,
+          checkout: value.checkout,
         },
         {
           onSuccess: () => {
             showToast({
-              text: `Fetched remote branch '${remoteBranch.cleanName}' into local successfully`,
+              text: value.checkout
+                ? `Fetched remote branch '${remoteBranch.cleanName}' into local and checked it out successfully`
+                : `Fetched remote branch '${remoteBranch.cleanName}' into local successfully`,
               icon: faDownload,
               type: 'success',
             })
@@ -87,6 +91,22 @@ export const useRemoteBranchFetchIntoLocalDialog = () => {
 
                 <Label htmlFor="forceFetch" className="cursor-pointer pl-2">
                   Force fetch
+                </Label>
+              </div>
+            )}
+          </fetchForm.Field>
+
+          <fetchForm.Field name="checkout">
+            {field => (
+              <div className="flex items-center">
+                <Checkbox
+                  id="checkoutAfterFetch"
+                  checked={field.state.value}
+                  onCheckedChange={checked => field.handleChange(checked === true)}
+                />
+
+                <Label htmlFor="checkoutAfterFetch" className="cursor-pointer pl-2">
+                  Checkout branch after fetch
                 </Label>
               </div>
             )}
