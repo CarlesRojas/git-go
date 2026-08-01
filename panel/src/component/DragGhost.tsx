@@ -25,9 +25,17 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
 
   return (
     <div className="rounded-main-outer border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg w-fit overflow-hidden border shadow-lg backdrop-blur-md">
+      {/*
+        The identity row fills whatever width the label below forces, so its background never
+        stops short. Truncation is capped on the text itself rather than the row, which would
+        otherwise stop the background at the same point.
+      */}
       {payload.kind === 'branch' && (
-        <div className="flex h-5 max-w-64 items-center">
-          <div className="flex h-full items-center px-1" style={{ backgroundColor: color(payload.colorIndex) }}>
+        <div className="flex h-5 items-center">
+          <div
+            className="flex h-full shrink-0 items-center px-1"
+            style={{ backgroundColor: color(payload.colorIndex) }}
+          >
             {getBranchIcons({
               isLocal: true,
               hasRemote: false,
@@ -37,27 +45,29 @@ export const DragGhost: FC<Props> = ({ payload, pendingLabel }) => {
             })}
           </div>
 
-          <span className="bg-vsc-editor-fg/10 flex h-full items-center truncate px-1.5 text-xs leading-tight font-medium">
-            {payload.branch.cleanName}
+          <span className="bg-vsc-editor-fg/10 flex h-full grow items-center px-1.5 text-xs leading-tight font-medium">
+            <span className="max-w-64 truncate">{payload.branch.cleanName}</span>
           </span>
         </div>
       )}
 
       {payload.kind === 'tag' && (
-        <div className="bg-vsc-editor-fg/10 flex h-5 max-w-64 items-center gap-1.5 px-1.5">
+        <div className="bg-vsc-editor-fg/10 flex h-5 items-center gap-1.5 px-1.5">
           <FontAwesomeIcon icon={faTag} className="size-3 shrink-0 text-amber-500" />
 
-          <span className="truncate text-xs leading-tight font-medium">{payload.name}</span>
+          <span className="max-w-64 truncate text-xs leading-tight font-medium">{payload.name}</span>
         </div>
       )}
 
       {payload.kind === 'commit' && (
-        <div className="bg-vsc-editor-fg/10 flex h-5 max-w-64 items-center gap-1.5 px-1.5">
+        <div className="bg-vsc-editor-fg/10 flex h-5 items-center gap-1.5 px-1.5">
           <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color(payload.colorIndex) }} />
 
           <span className="shrink-0 text-xs leading-tight font-bold">{shortHash(payload.commit.hash)}</span>
 
-          <span className="truncate text-xs leading-tight font-medium opacity-70">{payload.commit.message}</span>
+          <span className="max-w-64 truncate text-xs leading-tight font-medium opacity-70">
+            {payload.commit.message}
+          </span>
         </div>
       )}
 
