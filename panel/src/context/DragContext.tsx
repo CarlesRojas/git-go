@@ -201,9 +201,18 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const fromTop = y - bounds.top
     const fromBottom = bounds.bottom - y
 
+    // Only an edge the graph can actually scroll towards counts. At the very top or bottom the
+    // zone would otherwise stay armed over content that cannot move, and since scrolling
+    // cancels the hold, the pills sitting in it could never reveal their actions.
+    const canScrollUp = container.scrollTop > 0
+    const canScrollDown = container.scrollTop < container.scrollHeight - container.clientHeight - 1
+
     let delta = 0
-    if (fromTop < EDGE_ZONE_PX) delta = -MAX_SCROLL_SPEED_PX * (1 - Math.max(fromTop, 0) / EDGE_ZONE_PX)
-    else if (fromBottom < EDGE_ZONE_PX) delta = MAX_SCROLL_SPEED_PX * (1 - Math.max(fromBottom, 0) / EDGE_ZONE_PX)
+    if (canScrollUp && fromTop < EDGE_ZONE_PX) {
+      delta = -MAX_SCROLL_SPEED_PX * (1 - Math.max(fromTop, 0) / EDGE_ZONE_PX)
+    } else if (canScrollDown && fromBottom < EDGE_ZONE_PX) {
+      delta = MAX_SCROLL_SPEED_PX * (1 - Math.max(fromBottom, 0) / EDGE_ZONE_PX)
+    }
 
     const wasScrolling = isAutoScrolling.current
     isAutoScrolling.current = delta !== 0
@@ -322,12 +331,29 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     }
 
     clearHideTimer()
+
+    // Sweeping across pills should not close and reopen the stack at each one. Once it is
+    // open, moving to another target re-anchors it at once and only the first pill of a sweep
+    // pays the hold — the same courtesy menus extend when moving between triggers.
+    const alreadyOpen = isRevealed.current
+
     currentTargetKey.current = resolvedTarget
     setHoveredTargetKey(resolvedTarget)
-    setRevealedTracked(false)
 
-    if (resolvedTarget === null) clearHoldTimer()
-    else if (!isAutoScrolling.current) startHoldTimer()
+    if (resolvedTarget === null) {
+      clearHoldTimer()
+      setRevealedTracked(false)
+      return
+    }
+
+    if (alreadyOpen) {
+      clearHoldTimer()
+      setRevealedTracked(true)
+      return
+    }
+
+    setRevealedTracked(false)
+    if (!isAutoScrolling.current) startHoldTimer()
   }, [clearHideTimer, clearHoldTimer, clearSourceHideTimer, clearSourceHoldTimer, setRevealedTracked, startHoldTimer])
 
   const tick = useCallback(() => {
