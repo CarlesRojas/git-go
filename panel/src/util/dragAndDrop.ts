@@ -117,8 +117,10 @@ export const resolveSourceActions = ({
 
   if (payload.kind !== 'commit') {
     const label = payloadLabel(payload)
-    // Compared by name rather than trusting `branch.current`, matching how the pills decide it.
-    const isCurrentBranch = payload.kind === 'branch' && payload.branch.cleanName === currentBranch
+    // Decided the same way the pills do it: %(HEAD) from git is the authoritative per-worktree
+    // marker, with the name comparison covering branch data that predates it.
+    const isCurrentBranch =
+      payload.kind === 'branch' && (payload.branch.current || payload.branch.cleanName === currentBranch)
 
     if (remoteNames.length > 0) {
       actions.push({
