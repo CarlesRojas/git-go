@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import type { GitUndoActionKind } from './gitService';
 
 /**
  * Represents the user's configuration of Git Go Extension Settings.
@@ -13,6 +14,39 @@ export class Config {
     constructor(resourcePath?: string) {
         const resource = resourcePath ? vscode.Uri.file(resourcePath) : undefined;
         this.config = vscode.workspace.getConfiguration('git-go', resource);
+    }
+
+    /**
+     * Read a setting that used to live under a different name, so a value set before the rename keeps working.
+     * The current name wins as soon as it is set anywhere, and the old one is only read while it is not.
+     * @param section The current name of the setting, without the `git-go.` prefix.
+     * @param deprecatedSection The name the setting used to have, without the `git-go.` prefix.
+     * @param defaultValue The value to fall back to when neither name is set.
+     */
+    private getRenamed<T>(section: string, deprecatedSection: string, defaultValue: T): T {
+        if (!this.isSet(section)) {
+            const deprecated = this.config.get<T>(deprecatedSection);
+            if (this.isSet(deprecatedSection) && deprecated !== undefined) return deprecated;
+        }
+
+        return this.config.get(section, defaultValue);
+    }
+
+    /**
+     * Whether a setting has a value of its own anywhere, rather than just its default.
+     */
+    private isSet(section: string): boolean {
+        const inspected = this.config.inspect(section);
+        if (!inspected) return false;
+
+        return (
+            inspected.globalValue !== undefined ||
+            inspected.workspaceValue !== undefined ||
+            inspected.workspaceFolderValue !== undefined ||
+            inspected.globalLanguageValue !== undefined ||
+            inspected.workspaceLanguageValue !== undefined ||
+            inspected.workspaceFolderLanguageValue !== undefined
+        );
     }
 
     /**
@@ -139,10 +173,10 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.branch.delete.deleteOnRemote` Extension Setting.
+     * Get the value of the `git-go.branch.delete.onRemote` Extension Setting.
      */
     get branchDeleteOnRemote(): boolean {
-        return !!this.config.get('branch.delete.deleteOnRemote', false);
+        return !!this.getRenamed('branch.delete.onRemote', 'branch.delete.deleteOnRemote', false);
     }
 
     /**
@@ -171,13 +205,6 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.branch.rebase.ignoreDate` Extension Setting.
-     */
-    get branchRebaseIgnoreDate(): boolean {
-        return !!this.config.get('branch.rebase.ignoreDate', true);
-    }
-
-    /**
      * Get the value of the `git-go.merge.fastForwardIfPossible` Extension Setting.
      */
     get mergeFastForwardIfPossible(): boolean {
@@ -203,6 +230,13 @@ export class Config {
      */
     get mergeCommitMessage(): string {
         return this.config.get('merge.commitMessage', '');
+    }
+
+    /**
+     * Get the value of the `git-go.rebase.ignoreDate` Extension Setting.
+     */
+    get rebaseIgnoreDate(): boolean {
+        return !!this.getRenamed('rebase.ignoreDate', 'branch.rebase.ignoreDate', true);
     }
 
     /**
@@ -266,10 +300,10 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.fetch.onOpen` Extension Setting.
+     * Get the value of the `git-go.remote.fetch.onOpen` Extension Setting.
      */
-    get fetchOnOpen(): boolean {
-        return !!this.config.get('fetch.onOpen', false);
+    get remoteFetchOnOpen(): boolean {
+        return !!this.getRenamed('remote.fetch.onOpen', 'fetch.onOpen', false);
     }
 
     /**
@@ -347,13 +381,6 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.worktree.openNewWindow` Extension Setting.
-     */
-    get worktreeOpenNewWindow(): boolean {
-        return !!this.config.get('worktree.openNewWindow', true);
-    }
-
-    /**
      * Get the value of the `git-go.worktree.openBehavior` Extension Setting.
      */
     get worktreeOpenBehavior(): 'ask' | 'newWindow' | 'currentWindow' {
@@ -383,6 +410,37 @@ export class Config {
      */
     get worktreeRemoveDeleteBranch(): boolean {
         return !!this.config.get('worktree.remove.deleteBranch', false);
+    }
+
+    /**
+     * Get the value of the `git-go.undo.enabled` Extension Setting.
+     */
+    get undoEnabled(): boolean {
+        return !!this.config.get('undo.enabled', true);
+    }
+
+    /**
+     * Get the value of the `git-go.undo.keyboardShortcut` Extension Setting.
+     */
+    get undoKeyboardShortcut(): boolean {
+        return !!this.config.get('undo.keyboardShortcut', true);
+    }
+
+    /**
+     * Get the value of every `git-go.undo.show.*` Extension Setting, keyed by the action it covers.
+     */
+    get undoShow(): Record<GitUndoActionKind, boolean> {
+        return {
+            commit: !!this.config.get('undo.show.commit', true),
+            amend: !!this.config.get('undo.show.amend', true),
+            merge: !!this.config.get('undo.show.merge', true),
+            rebase: !!this.config.get('undo.show.rebase', true),
+            'cherry-pick': !!this.config.get('undo.show.cherryPick', true),
+            revert: !!this.config.get('undo.show.revert', true),
+            reset: !!this.config.get('undo.show.reset', true),
+            pull: !!this.config.get('undo.show.pull', true),
+            other: !!this.config.get('undo.show.other', true)
+        };
     }
 
     /**

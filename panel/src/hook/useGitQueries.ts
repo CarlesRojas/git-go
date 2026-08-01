@@ -9,6 +9,7 @@ import type {
   GitPushMode,
   GitRemote,
   GitTagRemoteStatus,
+  GitUndoActionKind,
   GitUndoableAction,
   GitWorktree,
 } from '@git/gitService'
@@ -69,10 +70,10 @@ export interface ConfigState {
   branchDeleteOnRemote: boolean
   branchPushSetUpstream: boolean
   branchPushMode: GitPushMode
-  branchRebaseIgnoreDate: boolean
   mergeFastForwardIfPossible: boolean
   mergeSquash: boolean
   mergeNoCommit: boolean
+  rebaseIgnoreDate: boolean
   rebaseAutoStash: boolean
   cherryPickRecordOrigin: boolean
   cherryPickNoCommit: boolean
@@ -88,11 +89,13 @@ export interface ConfigState {
   tagPushAllRemotes: boolean
   tagDeleteOnRemotes: boolean
   worktreeDefaultPath: string
-  worktreeOpenNewWindow: boolean
   worktreeOpenBehavior: 'ask' | 'newWindow' | 'currentWindow'
   worktreeOpenAfterCreate: boolean
   worktreeRemoveForce: boolean
   worktreeRemoveDeleteBranch: boolean
+  undoEnabled: boolean
+  undoKeyboardShortcut: boolean
+  undoShow: Record<GitUndoActionKind, boolean>
   confirmMerge: boolean
   confirmRebase: boolean
   confirmPush: boolean
@@ -122,10 +125,10 @@ const defaultConfigState: ConfigState = {
   branchDeleteOnRemote: false,
   branchPushSetUpstream: true,
   branchPushMode: 'normal',
-  branchRebaseIgnoreDate: true,
   mergeFastForwardIfPossible: true,
   mergeSquash: false,
   mergeNoCommit: false,
+  rebaseIgnoreDate: true,
   rebaseAutoStash: false,
   cherryPickRecordOrigin: false,
   cherryPickNoCommit: true,
@@ -141,11 +144,23 @@ const defaultConfigState: ConfigState = {
   tagPushAllRemotes: false,
   tagDeleteOnRemotes: false,
   worktreeDefaultPath: '../{repo}.worktrees/{branch}',
-  worktreeOpenNewWindow: true,
   worktreeOpenBehavior: 'ask',
   worktreeOpenAfterCreate: true,
   worktreeRemoveForce: false,
   worktreeRemoveDeleteBranch: false,
+  undoEnabled: true,
+  undoKeyboardShortcut: true,
+  undoShow: {
+    commit: true,
+    amend: true,
+    merge: true,
+    rebase: true,
+    'cherry-pick': true,
+    revert: true,
+    reset: true,
+    pull: true,
+    other: true,
+  },
   confirmMerge: true,
   confirmRebase: true,
   confirmPush: true,
@@ -561,8 +576,9 @@ export const useAbortOperation = () => {
   })
 }
 
-export const useUndoableAction = () => {
+export const useUndoableAction = (enabled = true) => {
   return useQuery({
+    enabled,
     queryKey: queryKeys.undoableAction,
     queryFn: async (): Promise<GitUndoableAction | null> => {
       const response = await sendCorrelatedMessage<{ undoableAction: GitUndoableAction | null }>('getUndoableAction')

@@ -73,10 +73,10 @@ export function activate(context: vscode.ExtensionContext) {
                             branchDeleteOnRemote: config.branchDeleteOnRemote,
                             branchPushSetUpstream: config.branchPushSetUpstream,
                             branchPushMode: config.branchPushMode,
-                            branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
                             mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
                             mergeSquash: config.mergeSquash,
                             mergeNoCommit: config.mergeNoCommit,
+                            rebaseIgnoreDate: config.rebaseIgnoreDate,
                             rebaseAutoStash: config.rebaseAutoStash,
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
@@ -92,11 +92,13 @@ export function activate(context: vscode.ExtensionContext) {
                             tagPushAllRemotes: config.tagPushAllRemotes,
                             tagDeleteOnRemotes: config.tagDeleteOnRemotes,
                             worktreeDefaultPath: config.worktreeDefaultPath,
-                            worktreeOpenNewWindow: config.worktreeOpenNewWindow,
                             worktreeOpenBehavior: config.worktreeOpenBehavior,
                             worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
                             worktreeRemoveForce: config.worktreeRemoveForce,
                             worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
+                            undoEnabled: config.undoEnabled,
+                            undoKeyboardShortcut: config.undoKeyboardShortcut,
+                            undoShow: config.undoShow,
                             confirmMerge: config.confirmMerge,
                             confirmRebase: config.confirmRebase,
                             confirmPush: config.confirmPush,
@@ -145,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             watchGitChanges(currentPanel, log, diffDocProvider);
 
-            if (config.fetchOnOpen) {
+            if (config.remoteFetchOnOpen) {
                 GitService.getInstance()
                     .fetch(log, getConfig().remoteFetchPrune)
                     .catch((error) => log(`Could not fetch when opening the panel: ${error}`));
@@ -694,10 +696,10 @@ export function activate(context: vscode.ExtensionContext) {
                             branchDeleteOnRemote: config.branchDeleteOnRemote,
                             branchPushSetUpstream: config.branchPushSetUpstream,
                             branchPushMode: config.branchPushMode,
-                            branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
                             mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
                             mergeSquash: config.mergeSquash,
                             mergeNoCommit: config.mergeNoCommit,
+                            rebaseIgnoreDate: config.rebaseIgnoreDate,
                             rebaseAutoStash: config.rebaseAutoStash,
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
@@ -713,11 +715,13 @@ export function activate(context: vscode.ExtensionContext) {
                             tagPushAllRemotes: config.tagPushAllRemotes,
                             tagDeleteOnRemotes: config.tagDeleteOnRemotes,
                             worktreeDefaultPath: config.worktreeDefaultPath,
-                            worktreeOpenNewWindow: config.worktreeOpenNewWindow,
                             worktreeOpenBehavior: config.worktreeOpenBehavior,
                             worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
                             worktreeRemoveForce: config.worktreeRemoveForce,
                             worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
+                            undoEnabled: config.undoEnabled,
+                            undoKeyboardShortcut: config.undoKeyboardShortcut,
+                            undoShow: config.undoShow,
                             confirmMerge: config.confirmMerge,
                             confirmRebase: config.confirmRebase,
                             confirmPush: config.confirmPush,

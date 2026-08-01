@@ -6,7 +6,8 @@ import { Label } from '@/component/ui/Label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/component/ui/Select'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
-import { openWorktree, useAddWorktree, useGitBranches, useRepoName } from '@/hook/useGitQueries'
+import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
+import { useAddWorktree, useGitBranches, useRepoName } from '@/hook/useGitQueries'
 import { faCircleNotch, faFolderTree } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -24,6 +25,7 @@ export const useWorktreeCreateDialog = ({ branch }: UseWorktreeCreateDialogProps
   const { data: allBranches = [] } = useGitBranches()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const addWorktreeMutation = useAddWorktree()
+  const worktreeOpenDialog = useWorktreeOpenDialog()
   const pathEditedRef = useRef(false)
 
   const eligibleBranches = useMemo(
@@ -53,7 +55,8 @@ export const useWorktreeCreateDialog = ({ branch }: UseWorktreeCreateDialogProps
               icon: faFolderTree,
               type: 'success',
             })
-            if (value.openAfterCreate) openWorktree(response.worktreePath, settings.worktreeOpenNewWindow)
+            if (value.openAfterCreate)
+              worktreeOpenDialog.openDialog({ worktreePath: response.worktreePath, branchName: value.branchName })
           },
           onError: error => {
             showToast({ text: error.message, type: 'error', icon: faFolderTree })
@@ -177,7 +180,7 @@ export const useWorktreeCreateDialog = ({ branch }: UseWorktreeCreateDialogProps
                 />
 
                 <Label htmlFor="openAfterCreate" className="cursor-pointer pl-2">
-                  {settings.worktreeOpenNewWindow ? 'Open in new window after creating' : 'Open after creating'}
+                  Open after creating
                 </Label>
               </div>
             )}
@@ -209,5 +212,14 @@ export const useWorktreeCreateDialog = ({ branch }: UseWorktreeCreateDialogProps
     </Dialog>
   )
 
-  return { openDialog, DialogComponent }
+  return {
+    openDialog,
+    DialogComponent: (
+      <>
+        {DialogComponent}
+
+        {worktreeOpenDialog.DialogComponent}
+      </>
+    ),
+  }
 }

@@ -1,4 +1,5 @@
 import { Button } from '@/component/ui/Button'
+import { useSettings } from '@/context/SettingsContext'
 import { undoActionLabel, useUndoDialog } from '@/hook/dialog/useUndoDialog'
 import { useUndoableAction } from '@/hook/useGitQueries'
 import { faRotateLeft } from '@fortawesome/free-solid-svg-icons'
@@ -15,6 +16,7 @@ interface UndoButtonContentProps {
 
 const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
   const { openDialog, DialogComponent } = useUndoDialog({ action })
+  const { settings } = useSettings()
 
   const label = undoActionLabel[action.kind]
 
@@ -22,6 +24,7 @@ const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
     'keydown',
     useCallback(
       (event: KeyboardEvent) => {
+        if (!settings.undoKeyboardShortcut) return
         if (event.key.toLowerCase() !== 'z') return
         if (!event.metaKey && !event.ctrlKey) return
         if (event.altKey || event.shiftKey) return
@@ -42,7 +45,7 @@ const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
         event.preventDefault()
         openDialog()
       },
-      [openDialog],
+      [openDialog, settings.undoKeyboardShortcut],
     ),
   )
 
@@ -51,7 +54,11 @@ const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
       <Button
         variant="secondary"
         onClick={openDialog}
-        title={`Undo '${action.description}' on ${action.branch} (${undoShortcutLabel})`}
+        title={
+          settings.undoKeyboardShortcut
+            ? `Undo '${action.description}' on ${action.branch} (${undoShortcutLabel})`
+            : `Undo '${action.description}' on ${action.branch}`
+        }
       >
         <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
         Undo {label}
@@ -63,9 +70,12 @@ const UndoButtonContent: FC<UndoButtonContentProps> = ({ action }) => {
 }
 
 export const UndoButton: FC = () => {
-  const { data: action } = useUndoableAction()
+  const { settings } = useSettings()
+  const { data: action } = useUndoableAction(settings.undoEnabled)
 
   if (!action) return null
+  if (!settings.undoEnabled) return null
+  if (!settings.undoShow[action.kind]) return null
 
   return <UndoButtonContent key={action.currentHash} action={action} />
 }
