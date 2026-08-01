@@ -164,6 +164,14 @@ Git Go can be customized through VS Code settings. Here are all available config
 }
 ```
 
+### 📄 File Operations
+
+```json
+{
+    "git-go.file.openInSplitView": true // Open files and diffs in a split view next to Git Go, reusing an existing split view
+}
+```
+
 ### 🌿 Branch Operations
 
 ```json

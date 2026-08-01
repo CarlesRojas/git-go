@@ -128,6 +128,11 @@
                     "default": true,
                     "markdownDescription": "**Interface Elements:** Show a Status Bar Item that opens the Git Go Graph when clicked."
                 },
+                "git-go.file.openInSplitView": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**File Operations:** Open files and diffs in a split view next to Git Go, reusing an existing split view when there is one."
+                },
                 "git-go.branch.create.checkout": {
                     "type": "boolean",
                     "default": true,

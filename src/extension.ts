@@ -689,9 +689,10 @@ export function activate(context: vscode.ExtensionContext) {
 
                     // Open next to the graph: reuse an existing split group if there is one,
                     // otherwise create a new one beside the graph.
-                    const panelColumn = currentPanel?.viewColumn;
-                    let viewColumn: vscode.ViewColumn = vscode.ViewColumn.Beside;
-                    if (panelColumn !== undefined) {
+                    const resolveSplitViewColumn = (): vscode.ViewColumn => {
+                        const panelColumn = currentPanel?.viewColumn;
+                        if (panelColumn === undefined) return vscode.ViewColumn.Beside;
+
                         const otherColumns = vscode.window.tabGroups.all
                             .map((group) => group.viewColumn)
                             .filter((column) => column !== panelColumn);
@@ -701,9 +702,12 @@ export function activate(context: vscode.ExtensionContext) {
                         const toTheLeft = otherColumns
                             .filter((column) => column < panelColumn)
                             .sort((a, b) => b - a);
-                        viewColumn = toTheRight[0] ?? toTheLeft[0] ?? vscode.ViewColumn.Beside;
-                    }
-                    const showOptions: vscode.TextDocumentShowOptions = { viewColumn };
+                        return toTheRight[0] ?? toTheLeft[0] ?? vscode.ViewColumn.Beside;
+                    };
+
+                    const showOptions: vscode.TextDocumentShowOptions = getConfig().fileOpenInSplitView
+                        ? { viewColumn: resolveSplitViewColumn() }
+                        : {};
 
                     if (commitHash) {
                         if (message.isUncommitted) {
