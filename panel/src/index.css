@@ -152,11 +152,12 @@
   transform: none;
 }
 
-/* The picked-up item stays where it is; its position still encodes what its ref points at. */
+/*
+ * The picked-up item stays where it is — its position still encodes what its ref points at —
+ * and reads as a target like any other, since returning to it reveals its own actions.
+ */
 [data-dragging] [data-drag-source-active] {
-  opacity: 0.5;
-  outline: 1px dashed currentColor;
-  outline-offset: 1px;
+  opacity: 1;
 }
 
 [data-dragging] body {

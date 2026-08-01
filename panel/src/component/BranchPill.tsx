@@ -47,10 +47,13 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const isCurrent = !!local && (local.current || currentBranch === local.cleanName)
 
   const { beginPress } = useDragActions()
-  const { payload: dragPayload, hoveredTargetKey } = useDragState()
+  const { payload: dragPayload, hoveredTargetKey, hoveredSource } = useDragState()
 
   const isDropTarget = !!dragPayload && !!local
-  const isHoveredTarget = isDropTarget && hoveredTargetKey === local.cleanName
+  // The pill being dragged is hoverable too — returning to it reveals its own actions — so it
+  // reacts exactly like any other target rather than being singled out.
+  const isDraggedPill = !!local && dragPayload?.kind === 'branch' && dragPayload.branch.cleanName === local.cleanName
+  const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && hoveredSource)
 
   const handlePointerDown = (event: ReactPointerEvent) => {
     if (!settings.dragAndDropEnabled || !local) return
