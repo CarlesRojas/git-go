@@ -361,14 +361,14 @@ export const DragOverlay: FC = () => {
             pushBranchMutation.mutate(
               {
                 branchName: pushed.cleanName,
-                remote: 'origin',
+                remote: settings.remoteDefaultRemote,
                 setUpstream: settings.branchPushSetUpstream,
-                pushMode: 'normal',
+                pushMode: settings.branchPushMode,
               },
               {
                 onSuccess: () =>
                   showToast({
-                    text: `Branch '${pushed.cleanName}' pushed to 'origin' successfully`,
+                    text: `Branch '${pushed.cleanName}' pushed to '${settings.remoteDefaultRemote}' successfully`,
                     icon: faUpload,
                     type: 'success',
                   }),
@@ -472,7 +472,7 @@ export const DragOverlay: FC = () => {
           if (drop.payload.kind !== 'stash') return
           const stashSelector = drop.payload.ref
           applyStashMutation.mutate(
-            { stashSelector, reinstateIndex: false },
+            { stashSelector, reinstateIndex: settings.stashReinstateIndex },
             {
               onSuccess: () => showToast({ text: `Applied '${stashSelector}'`, icon: faInbox, type: 'success' }),
               onError: error => showToast({ text: error.message, type: 'error', icon: faInbox }),
@@ -485,7 +485,7 @@ export const DragOverlay: FC = () => {
           if (drop.payload.kind !== 'stash') return
           const stashSelector = drop.payload.ref
           popStashMutation.mutate(
-            { stashSelector, reinstateIndex: false },
+            { stashSelector, reinstateIndex: settings.stashReinstateIndex },
             {
               onSuccess: () => showToast({ text: `Popped '${stashSelector}'`, icon: faInbox, type: 'success' }),
               onError: error => showToast({ text: error.message, type: 'error', icon: faInbox }),

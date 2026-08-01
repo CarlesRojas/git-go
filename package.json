@@ -212,6 +212,21 @@
                     "default": true,
                     "markdownDescription": "**Branch Operations:** Default value for 'Set upstream' when pushing a branch."
                 },
+                "git-go.branch.push.mode": {
+                    "type": "string",
+                    "enum": [
+                        "normal",
+                        "force-with-lease",
+                        "force"
+                    ],
+                    "enumDescriptions": [
+                        "Push without forcing, failing when the remote has commits the local branch does not",
+                        "Force the push, but abort when the remote branch changed since it was last fetched",
+                        "Force the push, overwriting the remote branch unconditionally"
+                    ],
+                    "default": "normal",
+                    "markdownDescription": "**Branch Operations:** Default value for 'Push Mode' when pushing a branch."
+                },
                 "git-go.branch.rebase.ignoreDate": {
                     "type": "boolean",
                     "default": true,
@@ -257,6 +272,26 @@
                     "default": "mixed",
                     "markdownDescription": "**Reset Operations:** Default reset mode when resetting the current branch to a commit."
                 },
+                "git-go.reset.discardUntrackedFiles": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Reset Operations:** Also delete untracked files when discarding all uncommitted changes. When disabled, untracked files are left in the working tree."
+                },
+                "git-go.reset.discardUntrackedDirectories": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Reset Operations:** Also delete untracked directories when discarding all uncommitted changes. Only applies when `#git-go.reset.discardUntrackedFiles#` is enabled."
+                },
+                "git-go.remote.defaultRemote": {
+                    "type": "string",
+                    "default": "origin",
+                    "markdownDescription": "**Remote Operations:** Remote preselected in dialogs that push branches or tags. Falls back to the repository's first remote when this one does not exist."
+                },
+                "git-go.remote.fetch.prune": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Remote Operations:** Delete remote-tracking branches that no longer exist on the remote when fetching."
+                },
                 "git-go.remote.fetch.forceFetch": {
                     "type": "boolean",
                     "default": false,
@@ -276,6 +311,34 @@
                     "type": "boolean",
                     "default": true,
                     "markdownDescription": "**Stash Operations:** Default value for 'Include untracked files' when creating stashes."
+                },
+                "git-go.stash.reinstateIndex": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Stash Operations:** Restore the staged state of the files when applying or popping a stash, instead of leaving every change unstaged."
+                },
+                "git-go.tag.type": {
+                    "type": "string",
+                    "enum": [
+                        "annotated",
+                        "lightweight"
+                    ],
+                    "enumDescriptions": [
+                        "Create annotated tags, which store the tagger, the date and the message",
+                        "Create lightweight tags, which are just a pointer to the commit"
+                    ],
+                    "default": "annotated",
+                    "markdownDescription": "**Tag Operations:** Type of tag created from the tag dialog. Annotated tags without a message are created as lightweight tags."
+                },
+                "git-go.tag.push.allRemotes": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Tag Operations:** Preselect every remote when pushing a tag. When disabled, only `#git-go.remote.defaultRemote#` is preselected."
+                },
+                "git-go.tag.delete.onRemotes": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Tag Operations:** Preselect the remotes that have the tag when deleting a tag, so it is deleted on the remotes too."
                 },
                 "git-go.worktree.defaultPath": {
                     "type": "string",
@@ -301,6 +364,21 @@
                     ],
                     "default": "ask",
                     "markdownDescription": "**Worktree Operations:** What to do when opening a worktree."
+                },
+                "git-go.worktree.create.openAfterCreate": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "**Worktree Operations:** Default value for 'Open after creating' when creating a worktree."
+                },
+                "git-go.worktree.remove.force": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Worktree Operations:** Default value for 'Force Remove' when removing a worktree, which discards its uncommitted changes."
+                },
+                "git-go.worktree.remove.deleteBranch": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**Worktree Operations:** Default value for 'Also delete branch' when removing a worktree."
                 }
             }
         }

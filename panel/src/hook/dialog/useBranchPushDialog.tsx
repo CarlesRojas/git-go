@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useGitRemotes, usePushBranch } from '@/hook/useGitQueries'
+import { resolveDefaultRemote } from '@/util/resolveDefaultRemote'
 import { faCircleNotch, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch, GitPushMode } from '@git/gitService'
@@ -26,9 +27,9 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
 
   const pushForm = useForm({
     defaultValues: {
-      remote: 'origin',
+      remote: settings.remoteDefaultRemote,
       setUpstream: settings.branchPushSetUpstream,
-      pushMode: 'normal' as GitPushMode,
+      pushMode: settings.branchPushMode,
     },
     onSubmit: async ({ value }) => {
       pushBranchMutation.mutate(
@@ -59,9 +60,9 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
   })
 
   useEffect(() => {
-    const firstRemote = remotes[0]
-    if (!!firstRemote) pushForm.setFieldValue('remote', firstRemote.name)
-  }, [pushForm, remotes])
+    const defaultRemote = resolveDefaultRemote(remotes, settings.remoteDefaultRemote)
+    if (!!defaultRemote) pushForm.setFieldValue('remote', defaultRemote)
+  }, [pushForm, remotes, settings.remoteDefaultRemote])
 
   const openDialog = () => {
     setShowPushDialog(true)

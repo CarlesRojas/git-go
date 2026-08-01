@@ -2,8 +2,10 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useGitRemotes, usePushTag, useTagRemotes } from '@/hook/useGitQueries'
+import { resolveDefaultRemote } from '@/util/resolveDefaultRemote'
 import { faCircleNotch, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
@@ -12,6 +14,7 @@ import { useState } from 'react'
 
 export const useTagPushDialog = () => {
   const { showToast } = useToast()
+  const { settings } = useSettings()
   const [showPushDialog, setShowPushDialog] = useState(false)
   const [commit, setCommit] = useState<GitCommit | null>(null)
   const [tagName, setTagName] = useState<string>('')
@@ -22,9 +25,16 @@ export const useTagPushDialog = () => {
   const isTagOnRemote = (remoteName: string) =>
     !!tagRemotes?.some(({ remote, tags }) => remote === remoteName && tags.some(({ name }) => name === tagName))
 
+  const preselectedRemotes = () => {
+    if (settings.tagPushAllRemotes) return remotes.map(remote => remote.name)
+
+    const defaultRemote = resolveDefaultRemote(remotes, settings.remoteDefaultRemote)
+    return defaultRemote ? [defaultRemote] : []
+  }
+
   const pushForm = useForm({
     defaultValues: {
-      selectedRemotes: ['origin'],
+      selectedRemotes: [] as string[],
     },
     onSubmit: async ({ value }) => {
       pushTagMutation.mutate(
@@ -55,6 +65,7 @@ export const useTagPushDialog = () => {
   const openDialog = (commitData: GitCommit, tag: string) => {
     setCommit(commitData)
     setTagName(tag)
+    pushForm.setFieldValue('selectedRemotes', preselectedRemotes())
     setShowPushDialog(true)
   }
 

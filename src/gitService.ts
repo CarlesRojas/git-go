@@ -1381,7 +1381,7 @@ export class GitService {
         }
     }
 
-    public async fetch(log: (message: string) => void): Promise<void> {
+    public async fetch(log: (message: string) => void, prune: boolean = false): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) throw new Error('No workspace folder found');
 
@@ -1390,8 +1390,12 @@ export class GitService {
 
         try {
             log('Fetching from remote repositories...');
-            await this.spawnGit([gitExecutable.path, 'fetch', '--all'], workspacePath);
-            log('Successfully fetched from remotes');
+
+            const args = [gitExecutable.path, 'fetch', '--all'];
+            if (prune) args.push('--prune');
+
+            await this.spawnGit(args, workspacePath);
+            log(`Successfully fetched from remotes${prune ? ' and pruned deleted remote branches' : ''}`);
         } catch (error) {
             log(`Error fetching from remotes: ${error}`);
             throw error;

@@ -6,6 +6,7 @@ import type {
   GitCommit,
   GitFileChange,
   GitOperationInProgress,
+  GitPushMode,
   GitRemote,
   GitTagRemoteStatus,
   GitWorktree,
@@ -65,6 +66,7 @@ export interface ConfigState {
   branchCreateCheckout: boolean
   branchDeleteForce: boolean
   branchPushSetUpstream: boolean
+  branchPushMode: GitPushMode
   branchRebaseIgnoreDate: boolean
   mergeFastForwardIfPossible: boolean
   mergeSquash: boolean
@@ -73,13 +75,21 @@ export interface ConfigState {
   cherryPickNoCommit: boolean
   revertNoCommit: boolean
   resetMode: 'soft' | 'mixed' | 'hard'
+  remoteDefaultRemote: string
   remoteFetchForceFetch: boolean
   remoteFetchCheckout: boolean
   remoteFetchConfirmOnlyIfForceNeeded: boolean
   stashIncludeUntracked: boolean
+  stashReinstateIndex: boolean
+  tagType: 'annotated' | 'lightweight'
+  tagPushAllRemotes: boolean
+  tagDeleteOnRemotes: boolean
   worktreeDefaultPath: string
   worktreeOpenNewWindow: boolean
   worktreeOpenBehavior: 'ask' | 'newWindow' | 'currentWindow'
+  worktreeOpenAfterCreate: boolean
+  worktreeRemoveForce: boolean
+  worktreeRemoveDeleteBranch: boolean
   expandedCommitHeight: number
   showCommitterName: boolean
   theme: string
@@ -103,6 +113,7 @@ const defaultConfigState: ConfigState = {
   branchCreateCheckout: true,
   branchDeleteForce: false,
   branchPushSetUpstream: true,
+  branchPushMode: 'normal',
   branchRebaseIgnoreDate: true,
   mergeFastForwardIfPossible: true,
   mergeSquash: false,
@@ -111,13 +122,21 @@ const defaultConfigState: ConfigState = {
   cherryPickNoCommit: true,
   revertNoCommit: true,
   resetMode: 'mixed',
+  remoteDefaultRemote: 'origin',
   remoteFetchForceFetch: false,
   remoteFetchCheckout: true,
   remoteFetchConfirmOnlyIfForceNeeded: false,
   stashIncludeUntracked: true,
+  stashReinstateIndex: false,
+  tagType: 'annotated',
+  tagPushAllRemotes: false,
+  tagDeleteOnRemotes: false,
   worktreeDefaultPath: '../{repo}.worktrees/{branch}',
   worktreeOpenNewWindow: true,
   worktreeOpenBehavior: 'ask',
+  worktreeOpenAfterCreate: true,
+  worktreeRemoveForce: false,
+  worktreeRemoveDeleteBranch: false,
   expandedCommitHeight: 300,
   showCommitterName: true,
   theme: 'vibrant',

@@ -6,6 +6,7 @@ import {
   ContextMenuLabel,
   ContextMenuTrigger,
 } from '@/component/ui/ContextMenu'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useStashDropDialog } from '@/hook/dialog/useStashDropDialog'
 import { useApplyStash, usePopStash } from '@/hook/useGitQueries'
@@ -69,6 +70,7 @@ StashContextMenuWrapper.displayName = 'StashContextMenuWrapper'
 
 export const useStashContextMenu = ({ stash }: UseStashContextMenuProps) => {
   const { showToast } = useToast()
+  const { settings } = useSettings()
   const applyStashMutation = useApplyStash()
   const popStashMutation = usePopStash()
   const [, copy] = useCopyToClipboard()
@@ -79,7 +81,7 @@ export const useStashContextMenu = ({ stash }: UseStashContextMenuProps) => {
     if (!stash) return
 
     applyStashMutation.mutate(
-      { stashSelector: stash, reinstateIndex: false },
+      { stashSelector: stash, reinstateIndex: settings.stashReinstateIndex },
       {
         onSuccess: () => {
           showToast({ text: `Applied '${formatStash(stash)}'`, icon: faPlay, type: 'success' })
@@ -95,7 +97,7 @@ export const useStashContextMenu = ({ stash }: UseStashContextMenuProps) => {
     if (!stash) return
 
     popStashMutation.mutate(
-      { stashSelector: stash, reinstateIndex: false },
+      { stashSelector: stash, reinstateIndex: settings.stashReinstateIndex },
       {
         onSuccess: () => {
           showToast({ text: `Popped '${formatStash(stash)}'`, icon: faArrowRightFromBracket, type: 'success' })

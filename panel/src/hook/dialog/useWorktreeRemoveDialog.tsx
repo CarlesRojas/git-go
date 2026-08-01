@@ -2,6 +2,7 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useRemoveWorktree } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -12,14 +13,15 @@ import { useState } from 'react'
 
 export const useWorktreeRemoveDialog = () => {
   const { showToast } = useToast()
+  const { settings } = useSettings()
   const [showRemoveDialog, setShowRemoveDialog] = useState(false)
   const [worktree, setWorktree] = useState<GitWorktree | null>(null)
   const removeWorktreeMutation = useRemoveWorktree()
 
   const removeForm = useForm({
     defaultValues: {
-      force: false,
-      deleteBranch: false,
+      force: settings.worktreeRemoveForce,
+      deleteBranch: settings.worktreeRemoveDeleteBranch,
     },
     onSubmit: async ({ value }) => {
       if (!worktree) return

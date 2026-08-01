@@ -71,6 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
                             branchCreateCheckout: config.branchCreateCheckout,
                             branchDeleteForce: config.branchDeleteForce,
                             branchPushSetUpstream: config.branchPushSetUpstream,
+                            branchPushMode: config.branchPushMode,
                             branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
                             mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
                             mergeSquash: config.mergeSquash,
@@ -79,13 +80,21 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
                             resetMode: config.resetMode,
+                            remoteDefaultRemote: config.remoteDefaultRemote,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             remoteFetchCheckout: config.remoteFetchCheckout,
                             remoteFetchConfirmOnlyIfForceNeeded: config.remoteFetchConfirmOnlyIfForceNeeded,
                             stashIncludeUntracked: config.stashIncludeUntracked,
+                            stashReinstateIndex: config.stashReinstateIndex,
+                            tagType: config.tagType,
+                            tagPushAllRemotes: config.tagPushAllRemotes,
+                            tagDeleteOnRemotes: config.tagDeleteOnRemotes,
                             worktreeDefaultPath: config.worktreeDefaultPath,
                             worktreeOpenNewWindow: config.worktreeOpenNewWindow,
                             worktreeOpenBehavior: config.worktreeOpenBehavior,
+                            worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
+                            worktreeRemoveForce: config.worktreeRemoveForce,
+                            worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
                             expandedCommitHeight: config.expandedCommitHeight,
                             showCommitterName: config.showCommitterName,
                             theme: config.theme,
@@ -394,7 +403,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                 fetch: async () => {
                     const gitService = GitService.getInstance();
-                    await gitService.fetch(log);
+                    await gitService.fetch(log, getConfig().remoteFetchPrune);
                     log('Successfully fetched from remotes');
                     return { type: 'fetchComplete', success: true };
                 },
@@ -572,8 +581,17 @@ export function activate(context: vscode.ExtensionContext) {
                 resetUncommittedChanges: async (message) => {
                     const gitService = GitService.getInstance();
                     const { mode } = message;
-                    await gitService.resetUncommittedChanges(log, mode || 'mixed');
-                    log(`Successfully reset uncommitted changes and cleaned untracked files (${mode || 'mixed'} mode)`);
+                    const config = getConfig();
+                    const discardUntracked = config.resetDiscardUntrackedFiles;
+                    await gitService.resetUncommittedChanges(
+                        log,
+                        mode || 'mixed',
+                        discardUntracked,
+                        config.resetDiscardUntrackedDirectories
+                    );
+                    log(
+                        `Successfully reset uncommitted changes${discardUntracked ? ' and cleaned untracked files' : ''} (${mode || 'mixed'} mode)`
+                    );
                     return { type: 'resetUncommittedChangesSuccess', success: true };
                 },
 
@@ -634,6 +652,7 @@ export function activate(context: vscode.ExtensionContext) {
                             branchCreateCheckout: config.branchCreateCheckout,
                             branchDeleteForce: config.branchDeleteForce,
                             branchPushSetUpstream: config.branchPushSetUpstream,
+                            branchPushMode: config.branchPushMode,
                             branchRebaseIgnoreDate: config.branchRebaseIgnoreDate,
                             mergeFastForwardIfPossible: config.mergeFastForwardIfPossible,
                             mergeSquash: config.mergeSquash,
@@ -642,13 +661,21 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
                             resetMode: config.resetMode,
+                            remoteDefaultRemote: config.remoteDefaultRemote,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
                             remoteFetchCheckout: config.remoteFetchCheckout,
                             remoteFetchConfirmOnlyIfForceNeeded: config.remoteFetchConfirmOnlyIfForceNeeded,
                             stashIncludeUntracked: config.stashIncludeUntracked,
+                            stashReinstateIndex: config.stashReinstateIndex,
+                            tagType: config.tagType,
+                            tagPushAllRemotes: config.tagPushAllRemotes,
+                            tagDeleteOnRemotes: config.tagDeleteOnRemotes,
                             worktreeDefaultPath: config.worktreeDefaultPath,
                             worktreeOpenNewWindow: config.worktreeOpenNewWindow,
                             worktreeOpenBehavior: config.worktreeOpenBehavior,
+                            worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
+                            worktreeRemoveForce: config.worktreeRemoveForce,
+                            worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
                             expandedCommitHeight: config.expandedCommitHeight,
                             showCommitterName: config.showCommitterName,
                             theme: config.theme,

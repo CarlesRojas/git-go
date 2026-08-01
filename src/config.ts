@@ -146,6 +146,17 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.branch.push.mode` Extension Setting.
+     */
+    get branchPushMode(): 'normal' | 'force-with-lease' | 'force' {
+        const value = this.config.get<string>('branch.push.mode', 'normal');
+        if (value === 'normal' || value === 'force-with-lease' || value === 'force') {
+            return value;
+        }
+        return 'normal';
+    }
+
+    /**
      * Get the value of the `git-go.branch.rebase.ignoreDate` Extension Setting.
      */
     get branchRebaseIgnoreDate(): boolean {
@@ -206,6 +217,34 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.reset.discardUntrackedFiles` Extension Setting.
+     */
+    get resetDiscardUntrackedFiles(): boolean {
+        return !!this.config.get('reset.discardUntrackedFiles', true);
+    }
+
+    /**
+     * Get the value of the `git-go.reset.discardUntrackedDirectories` Extension Setting.
+     */
+    get resetDiscardUntrackedDirectories(): boolean {
+        return !!this.config.get('reset.discardUntrackedDirectories', true);
+    }
+
+    /**
+     * Get the value of the `git-go.remote.defaultRemote` Extension Setting.
+     */
+    get remoteDefaultRemote(): string {
+        return this.config.get('remote.defaultRemote', 'origin');
+    }
+
+    /**
+     * Get the value of the `git-go.remote.fetch.prune` Extension Setting.
+     */
+    get remoteFetchPrune(): boolean {
+        return !!this.config.get('remote.fetch.prune', false);
+    }
+
+    /**
      * Get the value of the `git-go.remote.fetch.forceFetch` Extension Setting.
      */
     get remoteFetchForceFetch(): boolean {
@@ -234,6 +273,38 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.stash.reinstateIndex` Extension Setting.
+     */
+    get stashReinstateIndex(): boolean {
+        return !!this.config.get('stash.reinstateIndex', false);
+    }
+
+    /**
+     * Get the value of the `git-go.tag.type` Extension Setting.
+     */
+    get tagType(): 'annotated' | 'lightweight' {
+        const value = this.config.get<string>('tag.type', 'annotated');
+        if (value === 'annotated' || value === 'lightweight') {
+            return value;
+        }
+        return 'annotated';
+    }
+
+    /**
+     * Get the value of the `git-go.tag.push.allRemotes` Extension Setting.
+     */
+    get tagPushAllRemotes(): boolean {
+        return !!this.config.get('tag.push.allRemotes', false);
+    }
+
+    /**
+     * Get the value of the `git-go.tag.delete.onRemotes` Extension Setting.
+     */
+    get tagDeleteOnRemotes(): boolean {
+        return !!this.config.get('tag.delete.onRemotes', false);
+    }
+
+    /**
      * Get the value of the `git-go.worktree.defaultPath` Extension Setting.
      */
     get worktreeDefaultPath(): string {
@@ -256,6 +327,27 @@ export class Config {
             return value;
         }
         return 'ask';
+    }
+
+    /**
+     * Get the value of the `git-go.worktree.create.openAfterCreate` Extension Setting.
+     */
+    get worktreeOpenAfterCreate(): boolean {
+        return !!this.config.get('worktree.create.openAfterCreate', true);
+    }
+
+    /**
+     * Get the value of the `git-go.worktree.remove.force` Extension Setting.
+     */
+    get worktreeRemoveForce(): boolean {
+        return !!this.config.get('worktree.remove.force', false);
+    }
+
+    /**
+     * Get the value of the `git-go.worktree.remove.deleteBranch` Extension Setting.
+     */
+    get worktreeRemoveDeleteBranch(): boolean {
+        return !!this.config.get('worktree.remove.deleteBranch', false);
     }
 
     /**

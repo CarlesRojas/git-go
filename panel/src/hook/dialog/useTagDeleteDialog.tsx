@@ -2,15 +2,17 @@ import { Button } from '@/component/ui/Button'
 import { Checkbox } from '@/component/ui/Checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/component/ui/Dialog'
 import { Label } from '@/component/ui/Label'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useDeleteTag, useGitRemotes, useTagRemotes } from '@/hook/useGitQueries'
 import { faCircleNotch, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useForm } from '@tanstack/react-form'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export const useTagDeleteDialog = () => {
   const { showToast } = useToast()
+  const { settings } = useSettings()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [tagName, setTagName] = useState<string>('')
   const [deleteLocal, setDeleteLocal] = useState(true)
@@ -61,6 +63,16 @@ export const useTagDeleteDialog = () => {
       )
     },
   })
+
+  useEffect(() => {
+    if (!showDeleteDialog || !settings.tagDeleteOnRemotes || !tagRemotes) return
+
+    const remotesWithTag = tagRemotes
+      .filter(({ tags }) => tags.some(({ name }) => name === tagName))
+      .map(({ remote }) => remote)
+
+    deleteForm.setFieldValue('deleteOnRemotes', remotesWithTag)
+  }, [deleteForm, showDeleteDialog, settings.tagDeleteOnRemotes, tagName, tagRemotes])
 
   const openDialog = (tag: string, options?: { deleteLocal?: boolean }) => {
     setTagName(tag)
