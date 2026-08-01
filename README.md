@@ -65,6 +65,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 
 - **Cherry-pick commits** with origin tracking options
 - **Revert commits** safely
+- **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
 - **View detailed commit information** including:
     - File changes and diffs
     - Author and committer details
