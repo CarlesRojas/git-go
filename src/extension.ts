@@ -345,6 +345,24 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'currentBranch', currentBranch };
                 },
 
+                getOperationInProgress: async () => {
+                    const gitService = GitService.getInstance();
+                    const operation = await gitService.getOperationInProgress(log);
+                    log(`Operation in progress: ${operation ?? 'none'}`);
+                    return { type: 'operationInProgress', operation };
+                },
+
+                abortOperation: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { operation } = message;
+                    if (!operation) {
+                        throw new Error('Operation is required');
+                    }
+                    await gitService.abortOperation(log, operation);
+                    log(`Successfully aborted the ${operation}`);
+                    return { type: 'abortOperationSuccess', success: true };
+                },
+
                 getWorktrees: async () => {
                     const gitService = GitService.getInstance();
                     const worktrees = await gitService.getWorktrees(log);
@@ -1079,6 +1097,16 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
             watchAll(commonDir, 'worktrees/**');
             watchAll(gitDir, 'HEAD');
             watchAll(gitDir, 'logs/HEAD');
+
+            // Markers for an operation halted mid-way, so the abort button appears and clears promptly
+            watchAll(gitDir, 'MERGE_HEAD');
+            watchAll(gitDir, 'CHERRY_PICK_HEAD');
+            watchAll(gitDir, 'sequencer');
+            watchAll(gitDir, 'sequencer/**');
+            watchAll(gitDir, 'rebase-merge');
+            watchAll(gitDir, 'rebase-merge/**');
+            watchAll(gitDir, 'rebase-apply');
+            watchAll(gitDir, 'rebase-apply/**');
         };
 
         // Resolve the real git dirs so watching works when the workspace is a linked worktree

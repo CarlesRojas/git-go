@@ -1,7 +1,15 @@
 import { TreeDataItem } from '@/component/Tree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { sendCorrelatedMessage } from '@/util/sendCorrelatedMessage'
-import type { GitBranch, GitCommit, GitFileChange, GitRemote, GitTagRemoteStatus, GitWorktree } from '@git/gitService'
+import type {
+  GitBranch,
+  GitCommit,
+  GitFileChange,
+  GitOperationInProgress,
+  GitRemote,
+  GitTagRemoteStatus,
+  GitWorktree,
+} from '@git/gitService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 
@@ -125,6 +133,7 @@ export const queryKeys = {
     ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
+  operationInProgress: ['git', 'operation-in-progress'] as const,
   worktrees: ['git', 'worktrees'] as const,
   remotes: ['git', 'remotes'] as const,
   repoName: ['git', 'repo-name'] as const,
@@ -481,6 +490,33 @@ export const useCurrentBranch = () => {
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  })
+}
+
+export const useOperationInProgress = () => {
+  return useQuery({
+    queryKey: queryKeys.operationInProgress,
+    queryFn: async (): Promise<GitOperationInProgress | null> => {
+      const response = await sendCorrelatedMessage<{ operation: GitOperationInProgress | null }>(
+        'getOperationInProgress',
+      )
+      return response.operation
+    },
+    staleTime: 5 * 1000,
+    gcTime: 60 * 1000,
+  })
+}
+
+export const useAbortOperation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ operation }: { operation: GitOperationInProgress }) => {
+      return await sendCorrelatedMessage('abortOperation', { operation }, 30_000)
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
   })
 }
 
