@@ -22,46 +22,58 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
   const { data: currentBranch } = useCurrentBranch()
   const { settings } = useSettings()
 
+  // Held separately from the prop so a drop can name the branch it acted on: the prop is fed by
+  // state set in the same tick, which has not landed yet when the dialog is skipped.
+  const [mergeBranch, setMergeBranch] = useState<GitBranch | null>(null)
+  const subject = mergeBranch ?? branch
+
+  const merge = (target: GitBranch, values: { fastForwardIfPossible: boolean; squash: boolean; noCommit: boolean }) => {
+    mergeBranchMutation.mutate(
+      {
+        branchName: target.cleanName,
+        fastForwardIfPossible: values.fastForwardIfPossible,
+        squash: values.squash,
+        noCommit: values.noCommit,
+      },
+      {
+        onSuccess: () => {
+          showToast({
+            text: `Branch '${target.cleanName}' merged into '${currentBranch}' successfully`,
+            icon: faCodeMerge,
+            type: 'success',
+          })
+        },
+        onError: error => {
+          showToast({ text: error.message, type: 'error', icon: faCodeMerge })
+        },
+        onSettled: () => {
+          setShowMergeDialog(false)
+          mergeForm.reset()
+        },
+      },
+    )
+  }
+
   const mergeForm = useForm({
     defaultValues: {
       fastForwardIfPossible: settings.mergeFastForwardIfPossible,
       squash: settings.mergeSquash,
       noCommit: settings.mergeNoCommit,
     },
-    onSubmit: async ({ value }) => {
-      mergeBranchMutation.mutate(
-        {
-          branchName: branch.cleanName,
-          fastForwardIfPossible: value.fastForwardIfPossible,
-          squash: value.squash,
-          noCommit: value.noCommit,
-        },
-        {
-          onSuccess: () => {
-            showToast({
-              text: `Branch '${branch.cleanName}' merged into '${currentBranch}' successfully`,
-              icon: faCodeMerge,
-              type: 'success',
-            })
-          },
-          onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faCodeMerge })
-          },
-          onSettled: () => {
-            setShowMergeDialog(false)
-            mergeForm.reset()
-          },
-        },
-      )
-    },
+    onSubmit: async ({ value }) => merge(subject, value),
   })
 
-  const openDialog = () => {
+  const openDialog = (target?: GitBranch) => {
     if (!settings.confirmMerge) {
-      void mergeForm.handleSubmit()
+      merge(target ?? branch, {
+        fastForwardIfPossible: settings.mergeFastForwardIfPossible,
+        squash: settings.mergeSquash,
+        noCommit: settings.mergeNoCommit,
+      })
       return
     }
 
+    setMergeBranch(target ?? null)
     setShowMergeDialog(true)
   }
 
@@ -70,7 +82,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Merge branch <strong>{branch.cleanName}</strong> into{' '}
+            Merge branch <strong>{subject.cleanName}</strong> into{' '}
             {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch)
           </DialogTitle>
         </DialogHeader>

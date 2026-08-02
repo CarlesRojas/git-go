@@ -26,55 +26,70 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
   const isPending =
     deleteBranchMutation.isPending || deleteRemoteBranchMutation.isPending || removeWorktreeMutation.isPending
 
-  const upstream =
-    branch.upstreamRemote && branch.upstreamBranch
-      ? { remote: branch.upstreamRemote, branchName: branch.upstreamBranch }
+  // Held separately from the prop so a drop can name the branch it acted on: the prop is fed by
+  // state set in the same tick, which has not landed yet when the dialog is skipped.
+  const [deleteBranch, setDeleteBranch] = useState<GitBranch | null>(null)
+  const subject = deleteBranch ?? branch
+
+  const upstreamOf = (target: GitBranch) =>
+    target.upstreamRemote && target.upstreamBranch
+      ? { remote: target.upstreamRemote, branchName: target.upstreamBranch }
       : null
+
+  const upstream = upstreamOf(subject)
+
+  const remove = async (target: GitBranch, value: { force: boolean; deleteOnRemote: boolean }) => {
+    const targetUpstream = upstreamOf(target)
+
+    try {
+      if (target.worktreePath) {
+        await removeWorktreeMutation.mutateAsync({
+          worktreePath: target.worktreePath,
+          force: value.force,
+          deleteBranch: target.cleanName,
+        })
+      } else {
+        await deleteBranchMutation.mutateAsync({ branchName: target.cleanName, force: value.force })
+      }
+
+      if (value.deleteOnRemote && targetUpstream) {
+        await deleteRemoteBranchMutation.mutateAsync(targetUpstream)
+      }
+
+      showToast({
+        text:
+          value.deleteOnRemote && targetUpstream
+            ? `Branch '${target.cleanName}' deleted locally and on '${targetUpstream.remote}'`
+            : `Branch '${target.cleanName}' deleted successfully`,
+        icon: faTrash,
+        type: 'success',
+      })
+    } catch (error) {
+      showToast({ text: (error as Error).message, type: 'error', icon: faTrash })
+    } finally {
+      setShowDeleteDialog(false)
+      deleteForm.reset()
+    }
+  }
 
   const deleteForm = useForm({
     defaultValues: {
       force: settings.branchDeleteForce,
       deleteOnRemote: settings.branchDeleteOnRemote,
     },
-    onSubmit: async ({ value }) => {
-      try {
-        if (branch.worktreePath) {
-          await removeWorktreeMutation.mutateAsync({
-            worktreePath: branch.worktreePath,
-            force: value.force,
-            deleteBranch: branch.cleanName,
-          })
-        } else {
-          await deleteBranchMutation.mutateAsync({ branchName: branch.cleanName, force: value.force })
-        }
-
-        if (value.deleteOnRemote && upstream) {
-          await deleteRemoteBranchMutation.mutateAsync(upstream)
-        }
-
-        showToast({
-          text:
-            value.deleteOnRemote && upstream
-              ? `Branch '${branch.cleanName}' deleted locally and on '${upstream.remote}'`
-              : `Branch '${branch.cleanName}' deleted successfully`,
-          icon: faTrash,
-          type: 'success',
-        })
-      } catch (error) {
-        showToast({ text: (error as Error).message, type: 'error', icon: faTrash })
-      } finally {
-        setShowDeleteDialog(false)
-        deleteForm.reset()
-      }
-    },
+    onSubmit: async ({ value }) => remove(subject, value),
   })
 
-  const openDialog = () => {
+  const openDialog = (target?: GitBranch) => {
     if (!settings.confirmBranchDelete) {
-      void deleteForm.handleSubmit()
+      void remove(target ?? branch, {
+        force: settings.branchDeleteForce,
+        deleteOnRemote: settings.branchDeleteOnRemote,
+      })
       return
     }
 
+    setDeleteBranch(target ?? null)
     setShowDeleteDialog(true)
   }
 
@@ -83,7 +98,7 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Delete the branch <strong>{branch.cleanName}</strong>
+            Delete the branch <strong>{subject.cleanName}</strong>
           </DialogTitle>
         </DialogHeader>
 
@@ -95,12 +110,12 @@ export const useBranchDeleteDialog = ({ branch }: UseBranchDeleteDialogProps) =>
           }}
         >
           <div className="flex flex-col gap-3">
-            {branch.worktreePath && (
+            {subject.worktreePath && (
               <div className="flex items-center gap-2 text-xs">
                 <FontAwesomeIcon icon={faFolderTree} className="size-3 opacity-70" />
 
                 <span className="opacity-70">
-                  This branch is checked out in worktree {branch.worktreePath}. The worktree will be removed too.
+                  This branch is checked out in worktree {subject.worktreePath}. The worktree will be removed too.
                 </span>
               </div>
             )}

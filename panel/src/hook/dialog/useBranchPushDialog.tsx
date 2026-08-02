@@ -25,38 +25,45 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
   const { data: remotes = [], isLoading: remotesLoading } = useGitRemotes()
   const { settings } = useSettings()
 
+  // Held separately from the prop so a drop can name the branch it acted on: the prop is fed by
+  // state set in the same tick, which has not landed yet when the dialog is skipped.
+  const [pushBranch, setPushBranch] = useState<GitBranch | null>(null)
+  const subject = pushBranch ?? branch
+
+  const push = (target: GitBranch, values: { remote: string; setUpstream: boolean; pushMode: GitPushMode }) => {
+    pushBranchMutation.mutate(
+      {
+        branchName: target.cleanName,
+        remote: values.remote,
+        setUpstream: values.setUpstream,
+        pushMode: values.pushMode,
+      },
+      {
+        onSuccess: () => {
+          showToast({
+            text: `Branch '${target.cleanName}' pushed to '${values.remote}' successfully`,
+            icon: faUpload,
+            type: 'success',
+          })
+        },
+        onError: error => {
+          showToast({ text: error.message, type: 'error', icon: faUpload })
+        },
+        onSettled: () => {
+          setShowPushDialog(false)
+          pushForm.reset()
+        },
+      },
+    )
+  }
+
   const pushForm = useForm({
     defaultValues: {
       remote: settings.remoteDefaultRemote,
       setUpstream: settings.branchPushSetUpstream,
       pushMode: settings.branchPushMode,
     },
-    onSubmit: async ({ value }) => {
-      pushBranchMutation.mutate(
-        {
-          branchName: branch.cleanName,
-          remote: value.remote,
-          setUpstream: value.setUpstream,
-          pushMode: value.pushMode,
-        },
-        {
-          onSuccess: () => {
-            showToast({
-              text: `Branch '${branch.cleanName}' pushed to '${value.remote}' successfully`,
-              icon: faUpload,
-              type: 'success',
-            })
-          },
-          onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faUpload })
-          },
-          onSettled: () => {
-            setShowPushDialog(false)
-            pushForm.reset()
-          },
-        },
-      )
-    },
+    onSubmit: async ({ value }) => push(subject, value),
   })
 
   useEffect(() => {
@@ -64,12 +71,22 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
     if (!!defaultRemote) pushForm.setFieldValue('remote', defaultRemote)
   }, [pushForm, remotes, settings.remoteDefaultRemote])
 
-  const openDialog = () => {
+  const openDialog = (options?: { branch?: GitBranch; remote?: string }) => {
+    const target = options?.branch ?? branch
+    const remote =
+      options?.remote ?? resolveDefaultRemote(remotes, settings.remoteDefaultRemote) ?? pushForm.state.values.remote
+
     if (!settings.confirmPush) {
-      void pushForm.handleSubmit()
+      push(target, {
+        remote,
+        setUpstream: settings.branchPushSetUpstream,
+        pushMode: settings.branchPushMode,
+      })
       return
     }
 
+    setPushBranch(options?.branch ?? null)
+    pushForm.setFieldValue('remote', remote)
     setShowPushDialog(true)
   }
 
@@ -78,7 +95,7 @@ export const useBranchPushDialog = ({ branch }: UseBranchPushDialogProps) => {
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Push branch <strong>{branch.cleanName}</strong>
+            Push branch <strong>{subject.cleanName}</strong>
             {remotes.length === 1 ? ` to ` : ''}
             {remotes.length === 1 && <strong>{remotes[0]!.name}</strong>}
           </DialogTitle>

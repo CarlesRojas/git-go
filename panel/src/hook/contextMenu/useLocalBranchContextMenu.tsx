@@ -142,7 +142,7 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
             </ContextMenuItem>
 
             {remotes.length > 0 && (
-              <ContextMenuItem onClick={pushDialog.openDialog}>
+              <ContextMenuItem onClick={() => pushDialog.openDialog()}>
                 <FontAwesomeIcon icon={faUpload} className="size-3" />
                 Push
               </ContextMenuItem>
@@ -150,17 +150,17 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
 
             {!branch.current && (
               <>
-                <ContextMenuItem onClick={mergeDialog.openDialog}>
+                <ContextMenuItem onClick={() => mergeDialog.openDialog()}>
                   <FontAwesomeIcon icon={faCodeMerge} className="size-3" />
                   Merge into Current
                 </ContextMenuItem>
 
-                <ContextMenuItem onClick={rebaseDialog.openDialog}>
+                <ContextMenuItem onClick={() => rebaseDialog.openDialog()}>
                   <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
                   Rebase Current Branch Here
                 </ContextMenuItem>
 
-                <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
+                <ContextMenuItem onClick={() => deleteDialog.openDialog()} variant="destructive">
                   <FontAwesomeIcon icon={faTrash} className="size-3" />
                   Delete
                 </ContextMenuItem>

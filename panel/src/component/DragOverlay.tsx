@@ -31,7 +31,7 @@ import {
   useRebaseBranch,
 } from '@/hook/useGitQueries'
 import { cn } from '@/util/cn'
-import { DragAction, resolveSourceActions, resolveTargetActions, shortHash } from '@/util/dragAndDrop'
+import { DragAction, findDropTarget, resolveSourceActions, resolveTargetActions, shortHash } from '@/util/dragAndDrop'
 import {
   faCodeBranch,
   faCodeCommit,
@@ -150,10 +150,7 @@ export const DragOverlay: FC = () => {
   const pushBranchMutation = usePushBranch()
   const fetchIntoLocalMutation = useFetchIntoLocalBranch()
 
-  const targetBranch = useMemo(
-    () => branches.find(branch => !branch.remote && branch.cleanName === hoveredTargetKey) ?? null,
-    [branches, hoveredTargetKey],
-  )
+  const targetBranch = useMemo(() => findDropTarget(branches, hoveredTargetKey), [branches, hoveredTargetKey])
 
   const targetActions = useMemo(() => {
     if (!payload || !targetBranch) return []
@@ -239,9 +236,7 @@ export const DragOverlay: FC = () => {
 
   const execute = useCallback(
     async (drop: PendingDrop) => {
-      const target = drop.targetKey
-        ? (branches.find(branch => !branch.remote && branch.cleanName === drop.targetKey) ?? null)
-        : null
+      const target = findDropTarget(branches, drop.targetKey)
 
       // Merging moves the target so the target is checked out; rebasing moves the source so
       // the source is. Both then run the existing HEAD-relative command.
@@ -297,7 +292,7 @@ export const DragOverlay: FC = () => {
           }
 
           setDropBranch(merged)
-          mergeDialog.openDialog()
+          mergeDialog.openDialog(merged)
           return
         }
 
@@ -321,7 +316,7 @@ export const DragOverlay: FC = () => {
           }
 
           setDropBranch(target)
-          rebaseDialog.openDialog()
+          rebaseDialog.openDialog(target)
           return
 
         case 'cherryPick': {
@@ -346,6 +341,37 @@ export const DragOverlay: FC = () => {
 
           setDropCommit(picked)
           cherryPickDialog.openDialog()
+          return
+        }
+
+        case 'pushToRemote': {
+          if (drop.payload.kind !== 'branch' || !target?.remoteName) return
+          const pushed = drop.payload.branch
+          const remote = target.remoteName
+
+          if (settings.dragAndDropAutoPush) {
+            pushBranchMutation.mutate(
+              {
+                branchName: pushed.cleanName,
+                remote,
+                setUpstream: settings.branchPushSetUpstream,
+                pushMode: settings.branchPushMode,
+              },
+              {
+                onSuccess: () =>
+                  showToast({
+                    text: `Branch '${pushed.cleanName}' pushed to '${remote}' successfully`,
+                    icon: faUpload,
+                    type: 'success',
+                  }),
+                onError: error => showToast({ text: error.message, type: 'error', icon: faUpload }),
+              },
+            )
+            return
+          }
+
+          setDropBranch(pushed)
+          pushDialog.openDialog({ branch: pushed, remote })
           return
         }
 
@@ -379,7 +405,7 @@ export const DragOverlay: FC = () => {
           }
 
           setDropBranch(pushed)
-          pushDialog.openDialog()
+          pushDialog.openDialog({ branch: pushed })
           return
         }
 
@@ -431,7 +457,7 @@ export const DragOverlay: FC = () => {
             return
           }
           setDropBranch(drop.payload.branch)
-          deleteDialog.openDialog()
+          deleteDialog.openDialog(drop.payload.branch)
           return
 
         case 'fetchIntoLocal': {

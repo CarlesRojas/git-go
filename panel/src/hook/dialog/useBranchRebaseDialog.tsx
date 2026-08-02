@@ -22,44 +22,52 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
   const { data: currentBranch } = useCurrentBranch()
   const { settings } = useSettings()
 
+  // Held separately from the prop so a drop can name the branch it acted on: the prop is fed by
+  // state set in the same tick, which has not landed yet when the dialog is skipped.
+  const [rebaseOnto, setRebaseOnto] = useState<GitBranch | null>(null)
+  const subject = rebaseOnto ?? branch
+
+  const rebase = (target: GitBranch, values: { ignoreDate: boolean; autoStash: boolean }) => {
+    rebaseBranchMutation.mutate(
+      {
+        branchName: target.cleanName,
+        ignoreDate: values.ignoreDate,
+        autoStash: values.autoStash,
+      },
+      {
+        onSuccess: () => {
+          showToast({
+            text: `Current branch rebased onto '${target.cleanName}' successfully`,
+            icon: faCodeBranch,
+            type: 'success',
+          })
+        },
+        onError: error => {
+          showToast({ text: error.message, type: 'error', icon: faCodeBranch })
+        },
+        onSettled: () => {
+          setShowRebaseDialog(false)
+          rebaseForm.reset()
+        },
+      },
+    )
+  }
+
   const rebaseForm = useForm({
     defaultValues: {
       ignoreDate: settings.rebaseIgnoreDate,
       autoStash: settings.rebaseAutoStash,
     },
-    onSubmit: async ({ value }) => {
-      rebaseBranchMutation.mutate(
-        {
-          branchName: branch.cleanName,
-          ignoreDate: value.ignoreDate,
-          autoStash: value.autoStash,
-        },
-        {
-          onSuccess: () => {
-            showToast({
-              text: `Current branch rebased onto '${branch.cleanName}' successfully`,
-              icon: faCodeBranch,
-              type: 'success',
-            })
-          },
-          onError: error => {
-            showToast({ text: error.message, type: 'error', icon: faCodeBranch })
-          },
-          onSettled: () => {
-            setShowRebaseDialog(false)
-            rebaseForm.reset()
-          },
-        },
-      )
-    },
+    onSubmit: async ({ value }) => rebase(subject, value),
   })
 
-  const openDialog = () => {
+  const openDialog = (target?: GitBranch) => {
     if (!settings.confirmRebase) {
-      void rebaseForm.handleSubmit()
+      rebase(target ?? branch, { ignoreDate: settings.rebaseIgnoreDate, autoStash: settings.rebaseAutoStash })
       return
     }
 
+    setRebaseOnto(target ?? null)
     setShowRebaseDialog(true)
   }
 
@@ -69,7 +77,7 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
         <DialogHeader>
           <DialogTitle>
             Rebase branch {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch) on branch{' '}
-            <strong>{branch.cleanName}</strong>
+            <strong>{subject.cleanName}</strong>
           </DialogTitle>
         </DialogHeader>
 

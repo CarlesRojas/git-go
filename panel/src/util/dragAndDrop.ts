@@ -21,6 +21,7 @@ export type DragActionId =
   | 'mergeCommit'
   | 'revert'
   | 'push'
+  | 'pushToRemote'
   | 'delete'
   | 'fetchIntoLocal'
   | 'applyStash'
@@ -46,6 +47,32 @@ export const SOURCE_ACTION_IDS: DragActionId[] = [
   'dropStash',
 ]
 
+/**
+ * The value a pill publishes as its drop target. Remote refs are keyed by their full name so a
+ * branch present both locally and on a remote resolves to the ref that was actually hovered.
+ */
+export const dropTargetKey = (branch: GitBranch): string =>
+  branch.remote ? `${REMOTE_TARGET_PREFIX}${branch.name}` : branch.cleanName
+
+/** The branch a drop target key was published for, or null when it no longer exists. */
+export const findDropTarget = (branches: GitBranch[], key: string | null): GitBranch | null => {
+  if (!key) return null
+
+  if (key.startsWith(REMOTE_TARGET_PREFIX)) {
+    const name = key.slice(REMOTE_TARGET_PREFIX.length)
+    return branches.find(branch => branch.remote && branch.name === name) ?? null
+  }
+
+  return branches.find(branch => !branch.remote && branch.cleanName === key) ?? null
+}
+
+/**
+ * Whether the branch on a remote is the one the local branch tracks by name, which is the only
+ * pairing a drop between them can act on: pushing sends the local branch under its own name.
+ */
+export const isRemoteCounterpart = (source: GitBranch, target: GitBranch): boolean =>
+  !source.remote && target.remote && source.cleanName === target.cleanName
+
 /** A ref is kept separate from the surrounding words so it can be emphasised when rendered. */
 export type DescriptionPart = string | { ref: string }
 
@@ -62,6 +89,8 @@ export interface DragAction {
   isDefault: boolean
   disabledReason?: string
 }
+
+const REMOTE_TARGET_PREFIX = 'remote:'
 
 const SHORT_HASH_LENGTH = 7
 
@@ -100,6 +129,26 @@ export const resolveTargetActions = ({
   config: ConfigState
 }): DragAction[] => {
   if (payload.kind === 'tag' || payload.kind === 'stash') return []
+
+  // Everything a remote ref could receive other than a push needs it checked out, which it never
+  // can be, so a remote target offers the push or nothing at all.
+  if (target.remote) {
+    if (payload.kind !== 'branch') return []
+    if (!isRemoteCounterpart(payload.branch, target) || !target.remoteName) return []
+
+    return [
+      {
+        id: 'pushToRemote',
+        verb: 'Push',
+        description: ['Push branch ', { ref: payload.branch.cleanName }, ' to ', { ref: target.remoteName }],
+        icon: faUpload,
+        destructive: false,
+        // A default action turned off in settings stays off here: the drop is still a branch
+        // landing on a branch, and the boxes remain the way to act.
+        isDefault: config.dragAndDropBranchDefaultAction !== 'none',
+      },
+    ]
+  }
 
   if (payload.kind === 'commit') {
     const hash = shortHash(payload.commit.hash)

@@ -12,7 +12,9 @@ import { getColor } from '@/hook/useGitTree'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
+import { dropTargetKey, isRemoteCounterpart } from '@/util/dragAndDrop'
 import { GroupedBranch } from '@/util/groupBranches'
+import { GitBranch } from '@git/gitService'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
@@ -50,7 +52,17 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const { beginPress } = useDragActions()
   const { payload: dragPayload, hoveredTargetKey, pointerOverSource } = useDragState()
 
-  const isDropTarget = !!dragPayload && !!local
+  // A remote-only pill accepts the local branch it is the counterpart of, so a push can be
+  // aimed at one remote by name. A pill that also has the local ref has nothing to receive:
+  // both refs sit on the same commit, so there is nothing to send.
+  const draggedLocalBranch = dragPayload?.kind === 'branch' && !dragPayload.branch.remote ? dragPayload.branch : null
+  const remoteTargetKey = (remote: GitBranch) =>
+    onlyRemote && !!draggedLocalBranch && isRemoteCounterpart(draggedLocalBranch, remote) && !!remote.remoteName
+      ? dropTargetKey(remote)
+      : undefined
+
+  const hasRemoteDropTarget = remotes.some(remote => !!remoteTargetKey(remote))
+  const isDropTarget = !!dragPayload && (!!local || hasRemoteDropTarget)
   // The pill being dragged is hoverable too — returning to it reveals its own actions — so it
   // reacts exactly like any other target rather than being singled out.
   // A remote branch shares its name with the local one, so the kind of ref has to match too.
@@ -59,7 +71,13 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
     dragPayload?.kind === 'branch' &&
     !dragPayload.branch.remote &&
     dragPayload.branch.cleanName === local.cleanName
-  const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && pointerOverSource)
+  // Each remote segment carries its own key, so a pill showing several remotes pushes to the one
+  // the pointer is actually over. The pill still reacts as a whole to any of them.
+  const isHoveredTargetKey = (key: string | null | undefined) => !!key && hoveredTargetKey === key
+  const isHoveredTarget =
+    (isDropTarget &&
+      (isHoveredTargetKey(local?.cleanName) || remotes.some(remote => isHoveredTargetKey(remoteTargetKey(remote))))) ||
+    (isDraggedPill && pointerOverSource)
 
   const {
     ref: pillRef,
@@ -125,7 +143,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
       <button
         ref={pillRef}
         data-drop-target={local ? local.cleanName : undefined}
-        data-drag-dimmable={onlyRemote ? '' : undefined}
+        data-drag-dimmable={onlyRemote && !hasRemoteDropTarget ? '' : undefined}
         data-drag-hovered={unclipRow ? '' : undefined}
         onPointerDown={handlePointerDown}
         className={cn(
@@ -242,6 +260,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               <div
                 key={`remote-${i}-${remote.remoteName}`}
                 data-branch-remote-segment={i}
+                data-drop-target={remoteTargetKey(remote)}
                 className={cn(
                   'flex h-full w-fit min-w-fit items-center px-1.5',
                   // Colors
