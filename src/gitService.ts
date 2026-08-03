@@ -1824,6 +1824,48 @@ export class GitService {
     }
 
     /**
+     * Whether a position on a branch is already contained in that branch's upstream, and so has
+     * already been published. A branch with no upstream, or whose upstream is missing locally, has
+     * nothing to compare against and is never treated as published.
+     */
+    private async isPublished(
+        workspacePath: string,
+        gitPath: string,
+        branch: string,
+        hash: string
+    ): Promise<boolean> {
+        try {
+            this.validateRefName(branch);
+            this.validatePositional(hash, 'commit hash');
+
+            // 'for-each-ref' answers with an empty line for a branch that has no upstream, where
+            // 'rev-parse <branch>@{upstream}' would fail and be indistinguishable from a real error
+            const upstreamOutput = await this.spawnGit(
+                [gitPath, 'for-each-ref', '--format=%(upstream)', `refs/heads/${branch}`],
+                workspacePath
+            );
+
+            const upstream = upstreamOutput
+                .split(EOL_REGEX)
+                .map((line) => line.trim())
+                .find((line) => line.length > 0);
+            if (!upstream) return false;
+
+            // Commits reachable from the position but not from the upstream: none of them means the
+            // upstream already holds everything up to it
+            const countOutput = await this.spawnGit(
+                [gitPath, 'rev-list', '--count', hash, '--not', upstream],
+                workspacePath
+            );
+
+            return countOutput.trim() === '0';
+        } catch {
+            // No upstream is configured, or it no longer exists locally
+            return false;
+        }
+    }
+
+    /**
      * The last action that moved the current branch, if it is one that can be undone by moving the
      * branch back. Reads the branch's own reflog rather than HEAD's: HEAD also records checkouts,
      * where the entry before belongs to a different branch entirely, and resetting to it would move
@@ -1877,6 +1919,16 @@ export class GitService {
 
             const kind = GitService.parseUndoActionKind(description);
             if (!kind) return null;
+
+            // Undoing is a local reset, so undoing a position the remote already has leaves the
+            // remote holding commits the branch no longer does, and reconciling them needs a force
+            // push. There is no safe way to offer that, so it is not offered at all. A pull is the
+            // exception: undoing one only leaves the branch behind its upstream, which pulling
+            // again restores.
+            if (kind !== 'pull' && (await this.isPublished(workspacePath, gitExecutable.path, branch, currentHash))) {
+                log(`Not offering to undo '${description}': ${branch} is already pushed at ${currentHash}`);
+                return null;
+            }
 
             log(`Undoable action on ${branch}: ${description}`);
             return {

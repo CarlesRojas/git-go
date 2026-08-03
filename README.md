@@ -66,6 +66,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Cherry-pick commits** with origin tracking options
 - **Revert commits** safely
 - **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
+- **Never undo pushed history**, since the button and its shortcut are hidden once the branch tip is on its upstream, so an undo can never leave you needing a force push
 - **Reset the current branch** to any commit, soft, mixed or hard
 - **View detailed commit information** including:
     - File changes and diffs
@@ -223,6 +224,8 @@ Each `auto` option runs the action with the values its dialog would have opened 
 ```
 
 Each `show` option covers the button and its shortcut together, so an action turned off here has no undo at all.
+
+There is no undo for an action that is already pushed: once the branch tip is contained in its upstream, the button and its shortcut are hidden, because moving the branch back would leave the remote holding commits the branch no longer has. Undoing a pull is the exception, since it only leaves the branch behind its upstream and pulling again restores it.
 
 ### Confirmations
 
