@@ -2,6 +2,7 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { getConfig } from './config';
 import { formatGitError } from './util/formatGitError';
 
 export interface GitCommit {
@@ -1922,10 +1923,11 @@ export class GitService {
 
             // Undoing is a local reset, so undoing a position the remote already has leaves the
             // remote holding commits the branch no longer does, and reconciling them needs a force
-            // push. There is no safe way to offer that, so it is not offered at all. A pull is the
+            // push. By default that is not offered at all, rather than warned about. A pull is the
             // exception: undoing one only leaves the branch behind its upstream, which pulling
             // again restores.
-            if (kind !== 'pull' && (await this.isPublished(workspacePath, gitExecutable.path, branch, currentHash))) {
+            const guardPushed = !getConfig().undoAllowPushed && kind !== 'pull';
+            if (guardPushed && (await this.isPublished(workspacePath, gitExecutable.path, branch, currentHash))) {
                 log(`Not offering to undo '${description}': ${branch} is already pushed at ${currentHash}`);
                 return null;
             }

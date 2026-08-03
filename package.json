@@ -239,7 +239,7 @@
             },
             {
                 "title": "Undo",
-                "order": 4,
+                "order": 5,
                 "properties": {
                     "git-go.undo.enabled": {
                         "type": "boolean",
@@ -253,59 +253,65 @@
                         "markdownDescription": "Also reach the undo from `Ctrl+Z` (`Cmd+Z` on macOS) while the graph has focus. Turning this off leaves the button as the only way to undo.",
                         "order": 2
                     },
+                    "git-go.undo.allowPushed": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Offer to undo an action that is already pushed. Undoing moves the branch back with a reset, so the remote keeps commits the branch no longer has and reconciling them needs a force push. Off by default, which hides the button and its shortcut until the branch has something of its own to undo. Undoing a pull is always offered, since it only leaves the branch behind its upstream.",
+                        "order": 3
+                    },
                     "git-go.undo.show.commit": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a commit, which moves the branch back to the commit before it and keeps the changes in the working tree.",
-                        "order": 3
+                        "order": 4
                     },
                     "git-go.undo.show.amend": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo an amend, which brings back the commit as it was before it was amended.",
-                        "order": 4
+                        "order": 5
                     },
                     "git-go.undo.show.merge": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a merge, which moves the branch back to the commit it was on before the branch was merged in.",
-                        "order": 5
+                        "order": 6
                     },
                     "git-go.undo.show.rebase": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a rebase, which puts the branch back on the commits it had before they were replayed.",
-                        "order": 6
+                        "order": 7
                     },
                     "git-go.undo.show.cherryPick": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a cherry-pick, which drops the commit that was copied onto the branch.",
-                        "order": 7
+                        "order": 8
                     },
                     "git-go.undo.show.revert": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a revert, which drops the commit that undid the change.",
-                        "order": 8
+                        "order": 9
                     },
                     "git-go.undo.show.reset": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a reset, which returns the branch to where it pointed before the reset.",
-                        "order": 9
+                        "order": 10
                     },
                     "git-go.undo.show.pull": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo a pull, which drops the commits the pull brought in.",
-                        "order": 10
+                        "order": 11
                     },
                     "git-go.undo.show.other": {
                         "type": "boolean",
                         "default": true,
                         "markdownDescription": "Offer to undo an action Git Go could not name, shown as 'Last Action'. It is read straight from the reflog, so what gets undone is whatever moved the branch last.",
-                        "order": 11
+                        "order": 12
                     }
                 }
             },
