@@ -15,13 +15,13 @@ import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
-import { FC, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react'
+import { FC, PointerEvent as ReactPointerEvent, memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface CommitItemProps {
   commit: GitCommit
   isExpanded: boolean
-  onToggle: () => void
+  onToggle: (hash: string) => void
   selectedBranches: GitBranch[]
   treeWidth: number
   onCommitHover: (hash: string | null, row: number | null) => void
@@ -31,7 +31,7 @@ interface CommitItemProps {
   dimmed?: boolean
 }
 
-export const CommitItem: FC<CommitItemProps> = ({
+const CommitItemContent: FC<CommitItemProps> = ({
   commit,
   isExpanded,
   onToggle,
@@ -79,6 +79,8 @@ export const CommitItem: FC<CommitItemProps> = ({
     }
     return [...names]
   }, [tagRemotes, commit.hash, commit.tags])
+
+  const handleToggle = useCallback(() => onToggle(commit.hash), [onToggle, commit.hash])
 
   const copyText = (text: string, label: string) => {
     copy(text)
@@ -178,7 +180,7 @@ export const CommitItem: FC<CommitItemProps> = ({
         'items-center text-left',
         hasPills && 'pl-2',
       )}
-      onClick={onToggle}
+      onClick={handleToggle}
     >
       <h3
         className={cn(
@@ -214,7 +216,7 @@ export const CommitItem: FC<CommitItemProps> = ({
         // Alignment
         'items-center justify-between text-left',
       )}
-      onClick={onToggle}
+      onClick={handleToggle}
     >
       <time
         className={cn(
@@ -301,7 +303,11 @@ export const CommitItem: FC<CommitItemProps> = ({
             onMouseLeave={() => onCommitHover(null, null)}
           >
             {commitContextMenuWrapper(
-              <div className="absolute inset-y-0 left-0" style={{ width: `${treeWidth + 8}px` }} onClick={onToggle} />,
+              <div
+                className="absolute inset-y-0 left-0"
+                style={{ width: `${treeWidth + 8}px` }}
+                onClick={handleToggle}
+              />,
               !commit.isUncommitted,
             )}
 
@@ -449,3 +455,9 @@ export const CommitItem: FC<CommitItemProps> = ({
     </>
   )
 }
+
+/**
+ * Scrolling re-renders the graph on every frame, and the rows in view do not change with it, so
+ * each one is only worth rendering again when something it is actually showing changed.
+ */
+export const CommitItem = memo(CommitItemContent)

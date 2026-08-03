@@ -2,13 +2,20 @@ import { CommitItem } from '@/component/CommitItem'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
-import { useGitTree } from '@/hook/useGitTree'
+import { ROW_HEIGHT, useGitTree } from '@/hook/useGitTree'
 import { matchesSearch } from '@/util/searchCommits'
 import { faCircleNotch, faCodeBranch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
-import { FC, Fragment, useCallback, useMemo, useState } from 'react'
-import { useEventListener, useIntersectionObserver } from 'usehooks-ts'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useEventListener } from 'usehooks-ts'
+
+/** Rows kept mounted on either side of the window, so scrolling does not race the render */
+const OVERSCAN = 12
+
+/** How coarsely the tree is told which rows are on screen, in rows */
+const ROW_BLOCK = 256
 
 interface GraphProps {
   selectedBranches: GitBranch[]
@@ -17,17 +24,11 @@ interface GraphProps {
 
 export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => {
   const [expandedHash, setExpandedHash] = useState<string | null>(null)
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
   const { settings } = useSettings()
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteGitCommits(selectedBranches)
-
-  const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
-    threshold: 0.1,
-    onChange: isIntersecting => {
-      if (isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage()
-    },
-  })
 
   const { data: workingChangesData } = useWorkingChanges(true)
   const { data: branches = [], error: gitError, isLoading: isBranchesLoading } = useGitBranches()
@@ -48,7 +49,67 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     return row === -1 ? undefined : row
   }, [commits, expandedHash])
 
-  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow)
+  // The graph scrolls inside the container the toolbar leaves it, which the rows are nested in
+  // rather than owning. A stable callback keeps React from re-running it on every render
+  const scrollElementRef = useCallback((element: HTMLDivElement | null) => {
+    setScrollElement(element?.closest<HTMLElement>('[data-drag-scroll-container]') ?? null)
+  }, [])
+
+  // Every row is exactly one row tall, except the expanded one, which the commit itself pins to
+  // the configured height. Sizes are therefore known without measuring anything
+  const estimateSize = useCallback(
+    (index: number) => ROW_HEIGHT + (index === expandedRow ? settings.expandedCommitHeight : 0),
+    [expandedRow, settings.expandedCommitHeight],
+  )
+
+  // Stable identities matter here: the virtualizer rebuilds the size of every row it knows about
+  // whenever one of these changes, so a fresh function each render is a fresh pass over the
+  // whole history on every frame of a scroll
+  const getItemKey = useCallback((index: number) => commits[index]?.hash ?? index, [commits])
+
+  const virtualizer = useVirtualizer({
+    count: commits.length,
+    getScrollElement: () => scrollElement,
+    estimateSize,
+    overscan: OVERSCAN,
+    getItemKey,
+  })
+
+  const virtualRows = virtualizer.getVirtualItems()
+
+  // Sizes are cached, so expanding a commit or changing how tall an expanded commit is has to say
+  // that the cache is stale
+  useEffect(() => {
+    virtualizer.measure()
+  }, [virtualizer, expandedRow, settings.expandedCommitHeight])
+
+  // The window is rounded out to whole blocks of rows before the tree sees it. Handing over the
+  // exact window instead would redraw the tree on every frame of a scroll, which costs more than
+  // the rows the drawing saves
+  const firstIndex = virtualRows[0]?.index
+  const lastIndex = virtualRows[virtualRows.length - 1]?.index
+
+  const visibleRows = useMemo(() => {
+    if (firstIndex === undefined || lastIndex === undefined) return undefined
+
+    return {
+      start: Math.floor(firstIndex / ROW_BLOCK) * ROW_BLOCK,
+      end: (Math.floor(lastIndex / ROW_BLOCK) + 1) * ROW_BLOCK - 1,
+    }
+  }, [firstIndex, lastIndex])
+
+  const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow, visibleRows)
+
+  // Reaching the last row is what asks for the next page, now that there is no sentinel element
+  // sitting at the bottom of the list to scroll into view
+  useEffect(() => {
+    const last = virtualRows[virtualRows.length - 1]
+    if (!last) return
+    if (last.index < commits.length - 1) return
+    if (!hasNextPage || isFetchingNextPage) return
+
+    fetchNextPage()
+  }, [virtualRows, commits.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const layoutMap = useMemo(() => {
     const map = new Map()
@@ -59,6 +120,10 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
   }, [rows])
 
   const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
+
+  const toggleExpanded = useCallback((hash: string) => {
+    setExpandedHash(prev => (prev === hash ? null : hash))
+  }, [])
 
   const navigateCommit = useCallback(
     (direction: 'up' | 'down') => {
@@ -72,8 +137,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
       if (nextIndex === expandedRow || !nextCommit) return
 
       setExpandedHash(nextCommit.hash)
+
+      // The next row may not be mounted, so it cannot scroll itself into view
+      virtualizer.scrollToIndex(nextIndex, { align: 'auto' })
     },
-    [expandedRow, commits],
+    [expandedRow, commits, virtualizer],
   )
 
   useEventListener(
@@ -138,31 +206,35 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '' }) => 
     <Fragment>
       {commits.length > 0 && treeComponent}
 
-      <div className="flex w-full flex-col py-3">
-        {commits.map((commit, row) => {
-          const layout = layoutMap.get(commit.hash)
-          if (!layout) return null
+      <div className="w-full py-3" ref={scrollElementRef}>
+        <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+          {virtualRows.map(virtualRow => {
+            const commit = commits[virtualRow.index]
+            const layout = commit ? layoutMap.get(commit.hash) : undefined
+            if (!commit || !layout) return null
 
-          return (
-            <CommitItem
-              key={commit.hash}
-              commit={commit}
-              isExpanded={expandedHash === commit.hash}
-              onToggle={() => setExpandedHash(prev => (prev === commit.hash ? null : commit.hash))}
-              selectedBranches={selectedBranches}
-              treeWidth={treeWidth}
-              onCommitHover={onCommitHover}
-              row={row}
-              layout={layout}
-              uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
-              dimmed={!matchesSearch(commit, branches, searchTerm)}
-            />
-          )
-        })}
-
-        {hasNextPage && !isFetchingNextPage && (
-          <div ref={loadMoreRef} className="flex h-8 min-h-8 w-full items-center justify-center gap-2 opacity-80" />
-        )}
+            return (
+              <div
+                key={virtualRow.key}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                <CommitItem
+                  commit={commit}
+                  isExpanded={expandedHash === commit.hash}
+                  onToggle={toggleExpanded}
+                  selectedBranches={selectedBranches}
+                  treeWidth={treeWidth}
+                  onCommitHover={onCommitHover}
+                  row={virtualRow.index}
+                  layout={layout}
+                  uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
+                  dimmed={!matchesSearch(commit, branches, searchTerm)}
+                />
+              </div>
+            )
+          })}
+        </div>
       </div>
     </Fragment>
   )

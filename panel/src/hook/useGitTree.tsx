@@ -42,7 +42,7 @@ const UNCOMMITTED_COLOR = 'var(--color-vsc-editor-fg)'
 const MAX_TREE_COLUMNS = 16
 
 const LEFT_PADDING = 8
-const ROW_HEIGHT = 24
+export const ROW_HEIGHT = 24
 export const COL_WIDTH = 16 // If this changes, change the mask calc below too susbtract this size
 const DOT_RADIUS = 5
 const LINE_WIDTH = 2
@@ -93,9 +93,37 @@ interface Result {
   rows: CommitLayout[]
 }
 
-export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
+/** The rows the graph is currently showing, so the tree can draw those and leave the rest out */
+export interface VisibleRows {
+  start: number
+  end: number
+}
+
+export function useGitTree(commits: GitCommit[], expandedRow?: number, visibleRows?: VisibleRows): Result {
   const layout = useMemo(() => computeGraphLayout(commits), [commits])
   const { settings } = useSettings()
+
+  // The layout is computed for every commit that has been loaded, but only the rows on screen are
+  // worth drawing: everything else is a dot nobody can see and a path nobody can follow
+  const visible = useMemo(() => {
+    if (!visibleRows) return layout
+
+    const { start, end } = visibleRows
+
+    return {
+      ...layout,
+      commits: layout.commits.filter(c => c.row >= start && c.row <= end),
+      branches: layout.branches
+        .map(branch => ({
+          ...branch,
+          // A segment spanning the window from outside it still crosses the screen, so it is kept
+          segments: branch.segments.filter(
+            seg => Math.max(seg.p1.y, seg.p2.y) >= start && Math.min(seg.p1.y, seg.p2.y) <= end,
+          ),
+        }))
+        .filter(branch => branch.segments.length > 0),
+    }
+  }, [layout, visibleRows])
 
   const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
@@ -190,7 +218,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
             <mask id="commit-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={treeWidth} height={svgHeight}>
               <rect x="0" y="0" width={treeWidth} height={svgHeight} fill="white" />
 
-              {layout.commits.map(c => {
+              {visible.commits.map(c => {
                 if (c.column > maxVisibleCol) return null
 
                 const dotX = px(c.column)
@@ -227,7 +255,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
           </defs>
 
           <g mask="url(#commit-mask)">
-            {layout.branches.map((branch, bi) => {
+            {visible.branches.map((branch, bi) => {
               const color = getColor({
                 index: branch.colorIndex,
                 theme: settings.theme,
@@ -261,7 +289,7 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
 
           {/* Commit dots — drawn on top */}
           <g>
-            {layout.commits.map(c => {
+            {visible.commits.map(c => {
               if (c.column > maxVisibleCol) return null
 
               const dotX = px(c.column)
@@ -355,8 +383,8 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
       clampedTreeWidth,
       treeWidth,
       svgHeight,
-      layout.commits,
-      layout.branches,
+      visible.commits,
+      visible.branches,
       maxVisibleCol,
       getY,
       settings.theme,
