@@ -535,6 +535,22 @@ export class GitService {
         }
     }
 
+    /**
+     * The root of the repository a folder belongs to, which can be the folder itself or any folder
+     * above it. Answers null when the folder is not inside a repository at all.
+     * @param folderPath The absolute path of the folder.
+     */
+    public async findEnclosingRepoRoot(folderPath: string): Promise<string | null> {
+        try {
+            const gitExecutable = await this.findGitExecutable();
+            const output = await this.spawnGit([gitExecutable.path, 'rev-parse', '--show-toplevel'], folderPath);
+            const root = output.split(EOL_REGEX)[0]?.trim();
+            return root ? path.resolve(root) : null;
+        } catch {
+            return null;
+        }
+    }
+
     public async getGitDirs(): Promise<{ gitDir: string; commonDir: string }> {
         const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();

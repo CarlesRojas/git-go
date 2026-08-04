@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
+import { GitService } from './gitService';
 
 /** A git repository found in the workspace, either a workspace folder itself or a folder inside one */
 export interface GitRepo {
@@ -154,6 +155,26 @@ export class RepoService {
 
         for (const workspaceFolder of workspaceFolders) {
             await scan(workspaceFolder.uri.fsPath, workspaceFolder, 0, new Set());
+        }
+
+        // A folder opened below a repository's root has no '.git' of its own, and the repository it
+        // belongs to is above it rather than inside it, so git itself has to point the way
+        if (found.length === 0) {
+            for (const workspaceFolder of workspaceFolders) {
+                const enclosingRoot = await GitService.getInstance().findEnclosingRepoRoot(
+                    workspaceFolder.uri.fsPath
+                );
+                if (!enclosingRoot || seen.has(enclosingRoot)) continue;
+
+                seen.add(enclosingRoot);
+                found.push({
+                    path: enclosingRoot,
+                    name: path.basename(enclosingRoot) || enclosingRoot,
+                    relativePath: '',
+                    isWorkspaceFolder: false
+                });
+                log(`The folder that is open belongs to the repository at '${enclosingRoot}'`);
+            }
         }
 
         this.repos = found;
