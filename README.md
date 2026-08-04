@@ -61,6 +61,14 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Worktree list** in the toolbar showing main, current, locked, and missing worktrees
 - **Full support** for working inside a linked worktree, including live graph updates
 
+### 📂 Multiple Repositories
+
+- **Repositories in subfolders** are found too, not just the folder that is open, so a workspace holding several clones needs no reopening
+- **Repository selector** in the toolbar, left of the branch selector, appearing as soon as there is more than one repository to choose from
+- **Per repository state** so each one remembers its own selection of branches and hidden remotes
+- **Submodules stay out of the list**, since they belong to the repository that declares them
+- **Always reachable** from the status bar, which says so plainly when neither the folder nor its subfolders hold a repository
+
 ### 🔄 Commit Operations
 
 - **Cherry-pick commits** with origin tracking options
@@ -169,7 +177,8 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
     "git-go.autoOpen.enabled": false, // Open Git Go automatically when a window with a git repository starts
     "git-go.autoOpen.pinTab": true, // Pin the Git Go tab when it opens
     "git-go.statusBar.enabled": true, // Show a status bar item that opens Git Go when clicked
-    "git-go.file.openInSplitView": true // Open files and diffs in a split view next to Git Go
+    "git-go.file.openInSplitView": true, // Open files and diffs in a split view next to Git Go
+    "git-go.repo.scanDepth": 3 // How many folder levels below the open folders to look in for repositories
 }
 ```
 

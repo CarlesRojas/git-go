@@ -11,7 +11,6 @@ export class StatusBarItem {
     private readonly statusBarItem: vscode.StatusBarItem;
     private readonly log: (message: string) => void;
     private isVisible: boolean = false;
-    private isGitRepo: boolean = false;
 
     /**
      * Creates the Git Go Status Bar Item.
@@ -39,19 +38,11 @@ export class StatusBarItem {
     }
 
     /**
-     * Set whether the current workspace is a git repository.
-     * @param isGitRepo Whether the workspace is a git repository.
-     */
-    public setIsGitRepo(isGitRepo: boolean) {
-        this.isGitRepo = isGitRepo;
-        this.refresh();
-    }
-
-    /**
-     * Refresh the status bar item visibility based on configuration and git repository status.
+     * Refresh the status bar item visibility based on configuration. The item shows whether or not the
+     * workspace has a repository, so Git Go can be opened to say that it found none.
      */
     public refresh() {
-        const shouldBeVisible = getConfig().statusBarEnabled && this.isGitRepo;
+        const shouldBeVisible = getConfig().statusBarEnabled;
 
         if (this.isVisible !== shouldBeVisible) {
             if (shouldBeVisible) {

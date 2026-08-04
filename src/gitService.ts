@@ -125,6 +125,7 @@ export class GitService {
     private static instance: GitService;
     private static readonly LS_REMOTE_TIMEOUT_MS = 15_000;
     private cachedGitExecutable: GitExecutable | null = null;
+    private activeRepoPath: string | null = null;
 
     private constructor() {}
 
@@ -133,6 +134,33 @@ export class GitService {
             GitService.instance = new GitService();
         }
         return GitService.instance;
+    }
+
+    /**
+     * Point every git command at a repository, which can be the workspace folder itself or any
+     * repository found inside it. Passing null returns to the default of the first workspace folder.
+     * @param repoPath The absolute path of the repository to work in.
+     */
+    public setActiveRepoPath(repoPath: string | null): void {
+        this.activeRepoPath = repoPath;
+    }
+
+    /**
+     * The repository every git command runs in: the one that was selected, or the first workspace
+     * folder while none has been, or null when there is no workspace folder either.
+     */
+    public tryGetRepoPath(): string | null {
+        return this.activeRepoPath ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+    }
+
+    /**
+     * The repository every git command runs in, for the callers that cannot work without one.
+     */
+    public getRepoPath(): string {
+        const repoPath = this.tryGetRepoPath();
+        if (!repoPath) throw new Error('No workspace folder found');
+
+        return repoPath;
     }
 
     private validatePositional(value: string, kind: string): void {
@@ -281,11 +309,11 @@ export class GitService {
     }
 
     public async isGitRepository(): Promise<boolean> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return false;
+        const workspacePath = this.tryGetRepoPath();
+        if (!workspacePath) return false;
 
         try {
-            await this.spawnGit(['git', 'rev-parse', '--git-dir'], workspaceFolder.uri.fsPath);
+            await this.spawnGit(['git', 'rev-parse', '--git-dir'], workspacePath);
             return true;
         } catch (error) {
             return false;
@@ -293,10 +321,7 @@ export class GitService {
     }
 
     public async getGitBranches(log: (message: string) => void): Promise<GitBranch[]> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         log(`Getting git branches from: ${workspacePath}`);
 
         if (!(await this.isGitRepository())) throw new Error('Not a git repository');
@@ -383,10 +408,7 @@ export class GitService {
     }
 
     public async getWorktrees(log: (message: string) => void): Promise<GitWorktree[]> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -460,10 +482,7 @@ export class GitService {
         worktreePath: string,
         branchName: string
     ): Promise<string> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name and worktree path
@@ -492,10 +511,7 @@ export class GitService {
         force: boolean = false,
         deleteBranch?: string
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate worktree path
@@ -519,11 +535,24 @@ export class GitService {
         }
     }
 
-    public async getGitDirs(): Promise<{ gitDir: string; commonDir: string }> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
+    /**
+     * The root of the repository a folder belongs to, which can be the folder itself or any folder
+     * above it. Answers null when the folder is not inside a repository at all.
+     * @param folderPath The absolute path of the folder.
+     */
+    public async findEnclosingRepoRoot(folderPath: string): Promise<string | null> {
+        try {
+            const gitExecutable = await this.findGitExecutable();
+            const output = await this.spawnGit([gitExecutable.path, 'rev-parse', '--show-toplevel'], folderPath);
+            const root = output.split(EOL_REGEX)[0]?.trim();
+            return root ? path.resolve(root) : null;
+        } catch {
+            return null;
+        }
+    }
 
-        const workspacePath = workspaceFolder.uri.fsPath;
+    public async getGitDirs(): Promise<{ gitDir: string; commonDir: string }> {
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         const output = await this.spawnGit(
@@ -727,10 +756,8 @@ export class GitService {
         log: (message: string) => void,
         includeFiles: boolean = false
     ): Promise<{ commit: GitCommit; files: GitFileChange[] } | null> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return null;
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.tryGetRepoPath();
+        if (!workspacePath) return null;
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -840,10 +867,7 @@ export class GitService {
         maxCount: number = 100,
         skip: number = 0
     ): Promise<{ commits: GitCommit[]; hasMore: boolean; total?: number }> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         log(`Getting git commits from: ${workspacePath}`);
 
         if (!(await this.isGitRepository())) throw new Error('Not a git repository');
@@ -991,10 +1015,7 @@ export class GitService {
         commitHash: string,
         isStash: boolean = false
     ): Promise<GitFileChange[]> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1166,10 +1187,7 @@ export class GitService {
         tagMessage?: string,
         tagType: 'annotated' | 'lightweight' = 'annotated'
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate tag name. Git allows commas in refs, but the extension parses
@@ -1205,10 +1223,7 @@ export class GitService {
         branchName: string,
         checkout: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -1238,10 +1253,7 @@ export class GitService {
         recordOrigin: boolean = false,
         noCommit: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Basic validation for commit hash
@@ -1281,10 +1293,7 @@ export class GitService {
         commitHash: string,
         noCommit: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Basic validation for commit hash
@@ -1312,10 +1321,7 @@ export class GitService {
     }
 
     public async checkoutLocalBranch(log: (message: string) => void, branchName: string): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -1332,10 +1338,7 @@ export class GitService {
     }
 
     public async hasUpstreamBranch(): Promise<boolean> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1350,10 +1353,7 @@ export class GitService {
     }
 
     public async pullCurrentBranch(log: (message: string) => void): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1371,10 +1371,7 @@ export class GitService {
         remoteBranchName: string,
         localBranchName: string
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate both branch names
@@ -1402,10 +1399,7 @@ export class GitService {
      * @returns The file content as a string
      */
     public async getCommitFile(commitHash: string, filePath: string): Promise<string> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1420,10 +1414,8 @@ export class GitService {
     }
 
     public async getCurrentBranch(log: (message: string) => void): Promise<string | null> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return null;
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.tryGetRepoPath();
+        if (!workspacePath) return null;
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1454,10 +1446,7 @@ export class GitService {
     }
 
     public async fetch(log: (message: string) => void, prune: boolean = false): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1481,10 +1470,7 @@ export class GitService {
         setUpstream: boolean = false,
         pushMode: GitPushMode = 'normal'
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -1510,10 +1496,7 @@ export class GitService {
     }
 
     public async renameBranch(log: (message: string) => void, oldName: string, newName: string): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate both old and new branch names
@@ -1535,10 +1518,7 @@ export class GitService {
         branchName: string,
         force: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -1563,10 +1543,7 @@ export class GitService {
         noCommit: boolean = false,
         commitMessage?: string
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -1608,10 +1585,7 @@ export class GitService {
         noCommit: boolean = false,
         commitMessage?: string
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1649,10 +1623,7 @@ export class GitService {
         ignoreDate: boolean = false,
         autoStash: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -1686,10 +1657,7 @@ export class GitService {
         ignoreDate: boolean = false,
         autoStash: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1747,8 +1715,7 @@ export class GitService {
      * marker files in the per-worktree git dir, which is also how 'git status' reports them.
      */
     public async getOperationInProgress(log: (message: string) => void): Promise<GitOperationInProgress | null> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return null;
+        if (!this.tryGetRepoPath()) return null;
 
         try {
             const { gitDir } = await this.getGitDirs();
@@ -1779,12 +1746,9 @@ export class GitService {
     }
 
     public async abortOperation(log: (message: string) => void, operation: GitOperationInProgress): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
         if (!ABORTABLE_OPERATIONS.includes(operation)) throw new Error(`Cannot abort '${operation}'`);
 
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -1873,8 +1837,7 @@ export class GitService {
      * the wrong branch to the wrong place.
      */
     public async getUndoableAction(log: (message: string) => void): Promise<GitUndoableAction | null> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return null;
+        if (!this.tryGetRepoPath()) return null;
 
         try {
             // A halted merge, rebase or cherry-pick ends by aborting it, not by moving the branch
@@ -1885,7 +1848,7 @@ export class GitService {
             if (!branch) return null;
             this.validateRefName(branch);
 
-            const workspacePath = workspaceFolder.uri.fsPath;
+            const workspacePath = this.getRepoPath();
             const gitExecutable = await this.findGitExecutable();
 
             const output = await this.spawnGit(
@@ -1957,16 +1920,13 @@ export class GitService {
         previousHash: string,
         discardChanges: boolean
     ): Promise<GitUndoableAction> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
         const action = await this.getUndoableAction(log);
         if (!action) throw new Error('There is no action to undo');
         if (action.previousHash !== previousHash) {
             throw new Error('The repository changed since this undo was prepared, refresh and try again');
         }
 
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // A soft reset moves the branch and nothing else, leaving what the undone action produced
@@ -1986,10 +1946,7 @@ export class GitService {
     }
 
     public async getGitRemotes(log: (message: string) => void): Promise<GitRemote[]> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -2049,10 +2006,7 @@ export class GitService {
         stashSelector: string,
         reinstateIndex: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Basic validation for stash selector
@@ -2076,10 +2030,7 @@ export class GitService {
         stashSelector: string,
         reinstateIndex: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Basic validation for stash selector
@@ -2099,10 +2050,7 @@ export class GitService {
     }
 
     public async dropStash(log: (message: string) => void, stashSelector: string): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Basic validation for stash selector
@@ -2122,10 +2070,7 @@ export class GitService {
         message: string = '',
         includeUntracked: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -2146,10 +2091,7 @@ export class GitService {
     // Remote branch operations
 
     public async deleteRemoteBranch(log: (message: string) => void, branchName: string, remote: string): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate branch name
@@ -2173,10 +2115,7 @@ export class GitService {
         remoteBranch: string,
         localBranch: string
     ): Promise<boolean> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate remote name
@@ -2226,10 +2165,7 @@ export class GitService {
         forceFetch: boolean = false,
         checkout: boolean = false
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate remote name
@@ -2294,10 +2230,7 @@ export class GitService {
         taggerDate: string;
         message: string;
     }> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate tag name
@@ -2331,10 +2264,7 @@ export class GitService {
     }
 
     public async pushTag(log: (message: string) => void, tagName: string, remotes: string[]): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate tag name
@@ -2362,10 +2292,7 @@ export class GitService {
         deleteOnRemotes: string[] = [],
         deleteLocal: boolean = true
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate tag name
@@ -2399,10 +2326,7 @@ export class GitService {
      * from the result rather than failing the whole call.
      */
     public async getTagRemotes(log: (message: string) => void): Promise<GitTagRemoteStatus[]> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -2482,10 +2406,7 @@ export class GitService {
         cleanUntrackedFiles: boolean = true,
         cleanDirectories: boolean = true
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -2509,10 +2430,7 @@ export class GitService {
         commitHash: string,
         mode: GitResetMode = 'mixed'
     ): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -2526,10 +2444,7 @@ export class GitService {
     }
 
     public async cleanUntrackedFiles(log: (message: string) => void, directories: boolean = false): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         try {
@@ -2550,25 +2465,16 @@ export class GitService {
 
     // Repository operations
     public async getRepoName(): Promise<string> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) {
-            throw new Error('No workspace folder found');
-        }
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
 
         // Use the directory name as repository name
-        const path = require('path');
         const dirName = path.basename(workspacePath);
         return dirName || 'Unknown Repository';
     }
 
     // Git user configuration operations
     public async getGitUserConfig(): Promise<{ userName: string; userEmail: string; isLocal: boolean }> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         let userName = '';
@@ -2610,10 +2516,7 @@ export class GitService {
     }
 
     public async setGitUserConfig(config: { userName?: string; userEmail?: string; isLocal: boolean }): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         if (!config.isLocal) {
@@ -2647,10 +2550,7 @@ export class GitService {
 
     // Additional git remotes operations
     public async addGitRemote(remote: { name: string; fetchUrl: string; pushUrl: string }): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate remote name
@@ -2678,10 +2578,7 @@ export class GitService {
     }
 
     public async removeGitRemote(remoteName: string): Promise<void> {
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) throw new Error('No workspace folder found');
-
-        const workspacePath = workspaceFolder.uri.fsPath;
+        const workspacePath = this.getRepoPath();
         const gitExecutable = await this.findGitExecutable();
 
         // Validate remote name
