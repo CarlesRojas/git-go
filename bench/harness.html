@@ -1,0 +1,177 @@
+<meta charset="utf-8" />
+<title>Git Go panel harness</title>
+<script>
+  // ?bundle=base loads the copy taken from the branch being compared against, anything else loads
+  // the build in media/
+  const bundleDir =
+    new URLSearchParams(location.search).get("bundle") === "base"
+      ? "/bench/base"
+      : "/media";
+  document.write(`<link rel="stylesheet" href="${bundleDir}/webview.css" />`);
+</script>
+<script>
+  // Stand in for the extension host: answer every correlated request with synthetic data so the
+  // panel renders a history far longer than any real page would load.
+  const COMMIT_COUNT = Number(
+    new URLSearchParams(location.search).get("commits") || 10000,
+  );
+  const PAGE = 200;
+
+  const hash = (i) => (i + 1).toString(16).padStart(40, "0");
+
+  const makeCommit = (i) => ({
+    hash: hash(i),
+    parents: i + 1 < COMMIT_COUNT ? [hash(i + 1)] : [],
+    author: "Harness",
+    email: "harness@example.com",
+    date: new Date(Date.UTC(2024, 0, 1, 0, 0, 0) - i * 60000).toISOString(),
+    message: `commit number ${i}`,
+    refs: i === 0 ? "HEAD -> refs/heads/main" : "",
+    tags: [],
+    isStash: false,
+    isHead: i === 0,
+    isUncommitted: false,
+  });
+
+  const branches = [
+    {
+      name: "refs/heads/main",
+      cleanName: "main",
+      hash: hash(0),
+      current: true,
+      remote: false,
+    },
+  ];
+
+  const config = {
+    rounded: true,
+    autoOpenEnabled: false,
+    pinTabEnabled: true,
+    dragAndDropEnabled: true,
+    dragAndDropBranchDefaultAction: "merge",
+    dragAndDropHoldDelay: 300,
+    dragAndDropHideDelay: 300,
+    dragAndDropAutoMerge: false,
+    dragAndDropAutoRebase: false,
+    dragAndDropAutoCherryPick: false,
+    dragAndDropAutoMergeCommit: false,
+    dragAndDropAutoPush: false,
+    dragAndDropAutoFetchIntoLocal: false,
+    branchCreateCheckout: true,
+    branchDeleteForce: false,
+    branchDeleteOnRemote: false,
+    branchPushSetUpstream: true,
+    branchPushMode: "normal",
+    mergeFastForwardIfPossible: true,
+    mergeSquash: false,
+    mergeNoCommit: false,
+    rebaseIgnoreDate: true,
+    rebaseAutoStash: false,
+    cherryPickRecordOrigin: false,
+    cherryPickNoCommit: true,
+    revertNoCommit: true,
+    resetMode: "mixed",
+    remoteDefaultRemote: "origin",
+    remoteFetchForceFetch: false,
+    remoteFetchCheckout: true,
+    remoteFetchConfirmOnlyIfForceNeeded: false,
+    stashIncludeUntracked: true,
+    stashReinstateIndex: false,
+    tagType: "annotated",
+    tagPushAllRemotes: false,
+    tagDeleteOnRemotes: false,
+    worktreeDefaultPath: "../{repo}.worktrees/{branch}",
+    worktreeOpenBehavior: "ask",
+    worktreeOpenAfterCreate: true,
+    worktreeRemoveForce: false,
+    worktreeRemoveDeleteBranch: false,
+    undoEnabled: true,
+    undoKeyboardShortcut: true,
+    undoShow: {
+      commit: true,
+      amend: true,
+      merge: true,
+      rebase: true,
+      "cherry-pick": true,
+      revert: true,
+      reset: true,
+      pull: true,
+      other: true,
+    },
+    confirmMerge: true,
+    confirmRebase: true,
+    confirmPush: true,
+    confirmBranchDelete: true,
+    expandedCommitHeight: 300,
+    showCommitterName: true,
+    theme: "vibrant",
+    customColors: [],
+  };
+
+  window.__pageRequests = 0;
+
+  const answer = (message) => {
+    switch (message.type) {
+      case "getGitCommits": {
+        window.__pageRequests++;
+        const skip = message.skip ?? 0;
+        const max = message.maxCount ?? PAGE;
+        const commits = [];
+        for (let i = skip; i < Math.min(skip + max, COMMIT_COUNT); i++)
+          commits.push(makeCommit(i));
+        return {
+          type: "gitCommits",
+          commits,
+          hasMore: skip + max < COMMIT_COUNT,
+          skip,
+        };
+      }
+      case "getConfig":
+        return { type: "config", config };
+      case "loadRepoState":
+        return { type: "stateValue", value: null };
+      case "saveRepoState":
+        return { type: "stateSaved", success: true };
+      case "getTheme":
+        return { type: "theme", isDark: true };
+      case "getGitBranches":
+        return { type: "branches", branches };
+      case "getWorkingChanges":
+        return { type: "workingChanges", workingChanges: null };
+      case "getCurrentBranch":
+        return { type: "currentBranch", branch: "main" };
+      case "getGitRemotes":
+        return { type: "remotes", remotes: [] };
+      case "getTagRemotes":
+        return { type: "tagRemotes", tagRemotes: [] };
+      case "getWorktrees":
+        return { type: "worktrees", worktrees: [] };
+      case "getUndoableAction":
+        return { type: "undoableAction", undoableAction: null };
+      case "getOperationInProgress":
+        return { type: "operationInProgress", operation: null };
+      case "getRepoName":
+        return { type: "repoName", repoName: "harness" };
+      case "getCommitFiles":
+        return { type: "commitFiles", files: [] };
+      case "getAvatar":
+        return { type: "avatar", avatar: null };
+      default:
+        return { type: `${message.type}Success`, success: true };
+    }
+  };
+
+  window.acquireVsCodeApi = () => ({
+    postMessage: (message) => {
+      const response = answer(message);
+      response.requestId = message.requestId;
+      setTimeout(() => window.postMessage(response, "*"), 0);
+    },
+    getState: () => undefined,
+    setState: () => undefined,
+  });
+</script>
+<div id="root"></div>
+<script>
+  document.write(`<script src="${bundleDir}/webview.js"><\/script>`);
+</script>
