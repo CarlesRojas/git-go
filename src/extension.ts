@@ -5,6 +5,7 @@ import { AvatarService } from './avatarService';
 import { getConfig } from './config';
 import { DiffDocProvider } from './diffDocProvider';
 import { GitService } from './gitService';
+import { RepoService } from './repoService';
 import { StatusBarItem } from './statusBarItem';
 
 // This method is called when your extension is activated
@@ -38,6 +39,26 @@ export function activate(context: vscode.ExtensionContext) {
 
     log('Starting Git Go extension...');
 
+    const repoService = RepoService.getInstance();
+    let gitWatcher: { watchActiveRepo: () => void } | undefined = undefined;
+
+    /**
+     * Look for the workspace's repositories again and keep every git command pointed at the one
+     * being shown, which is the first one found while the user has not chosen another.
+     */
+    const syncActiveRepo = async () => {
+        await repoService.discoverRepos(log);
+        const activeRepo = repoService.getActiveRepo();
+        GitService.getInstance().setActiveRepoPath(activeRepo?.path ?? null);
+        return activeRepo;
+    };
+
+    /**
+     * The path Git Go keeps a repository's own state under, so each repository remembers its own
+     * selection of branches and remotes.
+     */
+    const getStatePath = () => repoService.getActiveRepo()?.path ?? null;
+
     // Listen for configuration changes
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((event) => {
@@ -47,6 +68,11 @@ export function activate(context: vscode.ExtensionContext) {
                 // Refresh status bar item if its setting changed
                 if (event.affectsConfiguration('git-go.statusBar.enabled')) {
                     statusBarItem.refresh();
+                }
+
+                // Scanning deeper or shallower can find a different set of repositories
+                if (event.affectsConfiguration('git-go.repo.scanDepth')) {
+                    currentPanel?.webview.postMessage({ type: 'reposChanged' });
                 }
 
                 // Send updated config to webview if it's open
@@ -114,16 +140,30 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Adding or removing a workspace folder changes which repositories there are
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            currentPanel?.webview.postMessage({ type: 'reposChanged' });
+        })
+    );
+
     // Register the command to open the Git Graph webview
     context.subscriptions.push(
-        vscode.commands.registerCommand('git-go.openGitGraph', () => {
+        vscode.commands.registerCommand('git-go.openGitGraph', async () => {
             log('Opening Git Graph webview');
             const columnToShowIn = vscode.window.activeTextEditor
                 ? vscode.window.activeTextEditor.viewColumn
                 : undefined;
 
+            // Find the repositories before showing anything, so the panel opens on one of them
+            // rather than on the workspace folder, which may not be a repository at all
+            await syncActiveRepo();
+
             if (currentPanel) {
                 (currentPanel as vscode.WebviewPanel).reveal(columnToShowIn);
+
+                // Repositories may have come or gone since the panel last looked
+                currentPanel.webview.postMessage({ type: 'reposChanged' });
 
                 const config = getConfig();
                 if (config.pinTabEnabled) {
@@ -145,9 +185,12 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.commands.executeCommand('workbench.action.pinEditor');
             }
 
-            watchGitChanges(currentPanel, log, diffDocProvider);
+            gitWatcher = watchGitChanges(currentPanel, log, diffDocProvider);
+            currentPanel.onDidDispose(() => {
+                gitWatcher = undefined;
+            });
 
-            if (config.remoteFetchOnOpen) {
+            if (config.remoteFetchOnOpen && RepoService.getInstance().getActiveRepo()) {
                 GitService.getInstance()
                     .fetch(log, getConfig().remoteFetchPrune)
                     .catch((error) => log(`Could not fetch when opening the panel: ${error}`));
@@ -637,6 +680,27 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'resetUncommittedChangesSuccess', success: true };
                 },
 
+                getRepos: async () => {
+                    const activeRepo = await syncActiveRepo();
+                    gitWatcher?.watchActiveRepo();
+                    log(`Successfully retrieved ${repoService.getRepos().length} repositories`);
+                    return { type: 'repos', repos: repoService.getRepos(), activeRepo };
+                },
+
+                setActiveRepo: async (message) => {
+                    const { repoPath } = message;
+                    if (!repoPath || typeof repoPath !== 'string') throw new Error('Repository path is required');
+
+                    const repo = repoService.setActiveRepo(repoPath);
+                    if (!repo) throw new Error(`'${repoPath}' is not one of the repositories found in the workspace`);
+
+                    GitService.getInstance().setActiveRepoPath(repo.path);
+                    gitWatcher?.watchActiveRepo();
+                    diffDocProvider.invalidate();
+                    log(`Now showing the repository at '${repo.path}'`);
+                    return { type: 'activeRepoChanged', activeRepo: repo };
+                },
+
                 getRepoName: async () => {
                     const gitService = GitService.getInstance();
                     const repoName = await gitService.getRepoName();
@@ -750,18 +814,18 @@ export function activate(context: vscode.ExtensionContext) {
 
             const specialHandlers: Record<string, (message: any) => void> = {
                 saveRepoState: (message) => {
-                    const saveRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+                    const saveRepoPath = getStatePath();
                     if (!saveRepoPath) {
-                        log('No workspace folder found, cannot save state');
+                        log('No repository found, cannot save state');
                         return;
                     }
                     context.globalState.update(`${saveRepoPath}:${message.key}`, message.value);
                 },
 
                 loadRepoState: (message) => {
-                    const loadRepoPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+                    const loadRepoPath = getStatePath();
                     if (!loadRepoPath) {
-                        log('No workspace folder found, cannot load state');
+                        log('No repository found, cannot load state');
                         currentPanel?.webview.postMessage({
                             type: 'repoStateLoaded',
                             key: message.key,
@@ -808,11 +872,8 @@ export function activate(context: vscode.ExtensionContext) {
 
                     if (!filePath) throw new Error('File path is required');
 
-                    const workspaceFolders = vscode.workspace.workspaceFolders;
-                    if (!workspaceFolders || workspaceFolders.length === 0)
-                        throw new Error('No workspace folder found');
-
-                    const workspaceUri = workspaceFolders[0].uri;
+                    // Paths git reports are relative to the repository being shown, not the workspace
+                    const workspaceUri = vscode.Uri.file(GitService.getInstance().getRepoPath());
                     const fileUri = vscode.Uri.joinPath(workspaceUri, filePath);
 
                     const makeGitUri = (path: string, ref: string) => {
@@ -1011,14 +1072,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         try {
-            const gitService = GitService.getInstance();
-            const isGitRepo = await gitService.isGitRepository();
+            // A repository anywhere in the workspace is enough, it does not have to be its root
+            const activeRepo = await syncActiveRepo();
 
-            // Update status bar item with git repository status
-            statusBarItem.setIsGitRepo(isGitRepo);
-
-            if (isGitRepo) {
-                log('Auto-opening Git Go as workspace is a git repository and auto-open is enabled');
+            if (activeRepo) {
+                log('Auto-opening Git Go as the workspace has a git repository and auto-open is enabled');
                 await vscode.commands.executeCommand('git-go.openGitGraph');
             }
             return true; // Signal success/completion
@@ -1148,16 +1206,24 @@ export function getNonce() {
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
-function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void, diffDocProvider: DiffDocProvider) {
+/**
+ * Watch the repository Git Go is showing, so the webview is told whenever its state changes.
+ * @returns A way to move the watchers onto another repository, for when the shown one changes.
+ */
+function watchGitChanges(
+    panel: vscode.WebviewPanel,
+    log: (msg: string) => void,
+    diffDocProvider: DiffDocProvider
+): { watchActiveRepo: () => void } {
     const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
-    if (!gitExtension) {
-        log('Git extension not found');
-        return;
-    }
 
-    const git = gitExtension.getAPI(1);
     const disposables: vscode.Disposable[] = [];
+    /** Watchers of the git dirs of the repository being shown, replaced when another one is shown */
+    let repoDisposables: vscode.Disposable[] = [];
     let debounceTimer: NodeJS.Timeout | undefined;
+    let disposed = false;
+    /** Only the newest watching round may install watchers, as resolving the git dirs is async */
+    let watchGeneration = 0;
 
     const notifyChange = () => {
         if (!panel.visible) return;
@@ -1170,25 +1236,37 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
         }, 300);
     };
 
-    for (const repo of git.repositories) {
-        disposables.push(repo.state.onDidChange(notifyChange));
+    if (gitExtension) {
+        const git = gitExtension.getAPI(1);
+
+        for (const repo of git.repositories) {
+            disposables.push(repo.state.onDidChange(notifyChange));
+        }
+
+        disposables.push(
+            git.onDidOpenRepository((repo: any) => {
+                disposables.push(repo.state.onDidChange(notifyChange));
+            })
+        );
+    } else {
+        log('Git extension not found');
     }
 
-    disposables.push(
-        git.onDidOpenRepository((repo: any) => {
-            disposables.push(repo.state.onDidChange(notifyChange));
-        })
-    );
+    const watchActiveRepo = () => {
+        if (disposed) return;
 
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    let disposed = false;
+        const generation = ++watchGeneration;
+        repoDisposables.forEach((d) => d.dispose());
+        repoDisposables = [];
 
-    if (workspaceFolder) {
+        const repoPath = GitService.getInstance().tryGetRepoPath();
+        if (!repoPath) return;
+
         const onRefChange = () => notifyChange();
 
         const watchAll = (base: vscode.Uri, glob: string) => {
             const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(base, glob));
-            disposables.push(
+            repoDisposables.push(
                 watcher.onDidCreate(onRefChange),
                 watcher.onDidChange(onRefChange),
                 watcher.onDidDelete(onRefChange),
@@ -1197,7 +1275,7 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
         };
 
         const addGitDirWatchers = (gitDir: vscode.Uri, commonDir: vscode.Uri) => {
-            if (disposed) return;
+            if (disposed || generation !== watchGeneration) return;
 
             // Refs live in the common git dir (shared across worktrees); HEAD is per-worktree
             watchAll(commonDir, 'refs/**/*');
@@ -1218,7 +1296,7 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
             watchAll(gitDir, 'rebase-apply/**');
         };
 
-        // Resolve the real git dirs so watching works when the workspace is a linked worktree
+        // Resolve the real git dirs so watching works when the repository is a linked worktree
         // (where .git is a file pointing at <main>/.git/worktrees/<name>)
         GitService.getInstance()
             .getGitDirs()
@@ -1227,16 +1305,19 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
                 log(`Watching git dirs (git-dir: ${gitDir}, common-dir: ${commonDir})`);
             })
             .catch((error) => {
-                log(`Could not resolve git dirs, falling back to workspace .git watchers: ${error}`);
-                const fallback = vscode.Uri.joinPath(workspaceFolder.uri, '.git');
+                log(`Could not resolve git dirs, falling back to the repository's .git watchers: ${error}`);
+                const fallback = vscode.Uri.joinPath(vscode.Uri.file(repoPath), '.git');
                 addGitDirWatchers(fallback, fallback);
             });
-    }
+    };
+
+    watchActiveRepo();
 
     panel.onDidDispose(() => {
         disposed = true;
         if (debounceTimer) clearTimeout(debounceTimer);
         disposables.forEach((d) => d.dispose());
+        repoDisposables.forEach((d) => d.dispose());
     });
 
     disposables.push(
@@ -1244,4 +1325,6 @@ function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void,
             if (e.webviewPanel.visible) notifyChange();
         })
     );
+
+    return { watchActiveRepo };
 }

@@ -41,7 +41,7 @@
         "url": "https://github.com/CarlesRojas/git-go/issues"
     },
     "activationEvents": [
-        "workspaceContains:.git"
+        "onStartupFinished"
     ],
     "main": "./out/extension.js",
     "contributes": {
@@ -89,6 +89,14 @@
                         "default": true,
                         "markdownDescription": "Open files and diffs in a split view next to Git Go, reusing an existing split view when there is one.",
                         "order": 4
+                    },
+                    "git-go.repo.scanDepth": {
+                        "type": "number",
+                        "default": 3,
+                        "minimum": 0,
+                        "maximum": 8,
+                        "markdownDescription": "How many folder levels below the workspace folders to look in for git repositories. Set it to `0` to only look at the workspace folders themselves.",
+                        "order": 5
                     }
                 }
             },

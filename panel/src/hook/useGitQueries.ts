@@ -13,6 +13,7 @@ import type {
   GitUndoableAction,
   GitWorktree,
 } from '@git/gitService'
+import type { GitRepo } from '@git/repoService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 
@@ -172,6 +173,7 @@ const defaultConfigState: ConfigState = {
 }
 
 export const queryKeys = {
+  repos: ['repos'] as const,
   branches: ['git', 'branches'] as const,
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
   commitFiles: (commitHash: string) => ['git', 'commit-files', { commitHash }] as const,
@@ -966,6 +968,65 @@ export const useResetUncommittedChanges = () => {
     },
     onSuccess: () => {
       refreshGitData(queryClient)
+    },
+  })
+}
+
+/**
+ * The git repositories of the workspace folders and their subfolders, and the one being shown.
+ */
+export const useRepos = () => {
+  const queryClient = useQueryClient()
+
+  const query = useQuery({
+    queryKey: queryKeys.repos,
+    queryFn: async (): Promise<{ repos: GitRepo[]; activeRepo: GitRepo | null }> => {
+      const response = await sendCorrelatedMessage<{ repos: GitRepo[]; activeRepo: GitRepo | null }>(
+        'getRepos',
+        {},
+        30_000,
+      )
+      return { repos: response.repos ?? [], activeRepo: response.activeRepo ?? null }
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
+
+  // The workspace folders changing, or the depth Git Go scans to, can find other repositories
+  const onReposChanged = useCallback(
+    (event: MessageEvent) => {
+      if (event.data?.type === 'reposChanged') queryClient.invalidateQueries({ queryKey: queryKeys.repos })
+    },
+    [queryClient],
+  )
+
+  useEffect(() => {
+    window.addEventListener('message', onReposChanged)
+    return () => window.removeEventListener('message', onReposChanged)
+  }, [onReposChanged])
+
+  return query
+}
+
+/**
+ * Show another one of the workspace's repositories, dropping everything read from the previous one.
+ */
+export const useSetActiveRepo = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (repoPath: string) => {
+      return await sendCorrelatedMessage<{ activeRepo: GitRepo }>('setActiveRepo', { repoPath }, 10_000)
+    },
+    onSuccess: response => {
+      queryClient.setQueryData(queryKeys.repos, (previous: { repos: GitRepo[] } | undefined) =>
+        previous ? { ...previous, activeRepo: response.activeRepo } : previous,
+      )
+      // Everything else was read from the repository that is no longer being shown
+      queryClient.removeQueries({ queryKey: ['git'] })
+      queryClient.removeQueries({ queryKey: ['remote-tags'] })
+      queryClient.removeQueries({ queryKey: ['avatar'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.state('repoState') })
     },
   })
 }

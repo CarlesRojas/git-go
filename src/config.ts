@@ -85,6 +85,14 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.repo.scanDepth` Extension Setting.
+     */
+    get repoScanDepth(): number {
+        const value = this.config.get('repo.scanDepth', 3);
+        return Number.isFinite(value) ? Math.max(0, Math.min(8, Math.floor(value))) : 3;
+    }
+
+    /**
      * Get the value of the `git-go.dragAndDrop.enabled` Extension Setting.
      */
     get dragAndDropEnabled(): boolean {
