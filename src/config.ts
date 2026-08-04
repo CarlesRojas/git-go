@@ -427,6 +427,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.undo.allowPushed` Extension Setting.
+     */
+    get undoAllowPushed(): boolean {
+        return !!this.config.get('undo.allowPushed', false);
+    }
+
+    /**
      * Get the value of every `git-go.undo.show.*` Extension Setting, keyed by the action it covers.
      */
     get undoShow(): Record<GitUndoActionKind, boolean> {
