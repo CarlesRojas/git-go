@@ -13,7 +13,8 @@ import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
-import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 interface Props {
@@ -81,7 +82,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   }
 
   const handleLocalDoubleClick = useDoubleClick(() => {
-    if (!local || isCurrent) return
+    if (!local || isCurrent || checkoutLocalMutation.isPending) return
 
     if (local.worktreePath) {
       worktreeOpenDialog.openDialog({ worktreePath: local.worktreePath, branchName: local.cleanName })
@@ -185,13 +186,20 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               }}
               onClick={localAndRemote ? handleLocalDoubleClick : undefined}
             >
-              {getBranchIcons({
-                isLocal: !!local,
-                hasRemote: !local && !!remotes.length,
-                inWorktree: !!local?.worktreePath,
-                black: !!local,
-                white: !local,
-              })}
+              {checkoutLocalMutation.isPending ? (
+                <FontAwesomeIcon
+                  icon={faCircleNotch}
+                  className={cn('size-3 animate-spin', local ? 'text-vsc-editor-bg/80' : 'text-vsc-editor-fg/80')}
+                />
+              ) : (
+                getBranchIcons({
+                  isLocal: !!local,
+                  hasRemote: !local && !!remotes.length,
+                  inWorktree: !!local?.worktreePath,
+                  black: !!local,
+                  white: !local,
+                })
+              )}
             </div>,
           )}
 

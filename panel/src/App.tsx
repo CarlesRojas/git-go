@@ -1,6 +1,7 @@
 import { AbortOperationButton } from '@/component/AbortOperationButton'
 import { BranchSelector } from '@/component/BranchSelector'
 import { DragOverlay } from '@/component/DragOverlay'
+import { GitActionIndicator } from '@/component/GitActionIndicator'
 import { Graph } from '@/component/Graph'
 import { RefetchButton } from '@/component/RefreshButton'
 import { RepoSelector } from '@/component/RepoSelector'
@@ -83,7 +84,9 @@ const RepoPanel: FC = () => {
           <WorktreeMenu />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <GitActionIndicator />
+
           <AbortOperationButton />
 
           <UndoButton />
