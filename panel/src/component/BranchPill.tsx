@@ -69,6 +69,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
         remoteBranchName === remote.name || remoteBranchName === `${remote.remoteName}/${remote.cleanName}`,
     )
 
+  const isAnyRemoteLoading = remotes.some(remote => isLoadingRemote(remote))
+
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
   const localAndRemote = !!local && remotes.length > 0
@@ -250,13 +252,23 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
             )}
             onClick={localAndRemote ? handleLocalDoubleClick : undefined}
           >
-            {onlyRemote &&
-              getBranchIcons({
-                isLocal: !!local,
-                hasRemote: !local && !!remotes.length,
-                black: !!local,
-                white: !local,
-              })}
+            {onlyRemote && (
+              <span className={cn('relative flex items-center', isAnyRemoteLoading && '[&>div]:invisible')}>
+                {getBranchIcons({
+                  isLocal: !!local,
+                  hasRemote: !local && !!remotes.length,
+                  black: !!local,
+                  white: !local,
+                })}
+
+                {isAnyRemoteLoading && (
+                  <FontAwesomeIcon
+                    icon={faCircleNotch}
+                    className="text-vsc-editor-fg/80 absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin"
+                  />
+                )}
+              </span>
+            )}
 
             <span
               className={cn('line-clamp-1 text-xs leading-tight font-medium text-nowrap', isCurrent && 'font-bold')}
@@ -296,13 +308,13 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                 <span
                   className={cn(
                     'line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50',
-                    isLoadingRemote(remote) && 'invisible',
+                    !onlyRemote && isLoadingRemote(remote) && 'invisible',
                   )}
                 >
                   {remote.remoteName}
                 </span>
 
-                {isLoadingRemote(remote) && (
+                {!onlyRemote && isLoadingRemote(remote) && (
                   <FontAwesomeIcon
                     icon={faCircleNotch}
                     className="text-vsc-editor-fg/80 absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin"
