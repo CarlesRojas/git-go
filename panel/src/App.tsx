@@ -1,7 +1,7 @@
 import { AbortOperationButton } from '@/component/AbortOperationButton'
 import { BranchSelector } from '@/component/BranchSelector'
 import { DragOverlay } from '@/component/DragOverlay'
-import { GitActionIndicator } from '@/component/GitActionIndicator'
+import { GitActionLoadingToast } from '@/component/GitActionLoadingToast'
 import { Graph } from '@/component/Graph'
 import { RefetchButton } from '@/component/RefreshButton'
 import { RepoSelector } from '@/component/RepoSelector'
@@ -84,9 +84,7 @@ const RepoPanel: FC = () => {
           <WorktreeMenu />
         </div>
 
-        <div className="flex min-w-0 items-center gap-2">
-          <GitActionIndicator />
-
+        <div className="flex items-center gap-2">
           <AbortOperationButton />
 
           <UndoButton />
@@ -147,6 +145,8 @@ const Panel: FC = () => {
           '"Monaspace Neon", "JetBrains Mono", "JetBrainsMono Nerd Font", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace',
       }}
     >
+      <GitActionLoadingToast />
+
       {isLoadingRepos ? null : activeRepo ? <RepoPanel key={activeRepo.path} /> : <NoRepoFound />}
     </div>
   )

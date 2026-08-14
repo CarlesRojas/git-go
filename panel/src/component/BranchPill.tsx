@@ -15,6 +15,8 @@ import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
 import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GitBranch } from '@git/gitService'
+import { useMutationState } from '@tanstack/react-query'
 import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 interface Props {
@@ -40,6 +42,32 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const checkoutLocalMutation = useCheckoutLocalBranch()
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
   const worktreeOpenDialog = useWorktreeOpenDialog()
+
+  const pendingLocalCheckouts = useMutationState({
+    filters: { mutationKey: ['checkoutLocalBranch'], status: 'pending' },
+    select: mutation => (mutation.state.variables as { branchName: string }).branchName,
+  })
+
+  const pendingRemoteFetches = useMutationState({
+    filters: { mutationKey: ['fetchIntoLocalBranch'], status: 'pending' },
+    select: mutation => mutation.state.variables as { remote: string; remoteBranch: string },
+  })
+
+  const pendingRemoteCheckouts = useMutationState({
+    filters: { mutationKey: ['checkoutRemoteBranch'], status: 'pending' },
+    select: mutation => (mutation.state.variables as { remoteBranchName: string }).remoteBranchName,
+  })
+
+  const isCheckingOutLocal = !!local && pendingLocalCheckouts.includes(local.cleanName)
+
+  const isLoadingRemote = (remote: GitBranch) =>
+    pendingRemoteFetches.some(
+      pending => pending.remote === remote.remoteName && pending.remoteBranch === remote.cleanName,
+    ) ||
+    pendingRemoteCheckouts.some(
+      remoteBranchName =>
+        remoteBranchName === remote.name || remoteBranchName === `${remote.remoteName}/${remote.cleanName}`,
+    )
 
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
@@ -82,7 +110,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   }
 
   const handleLocalDoubleClick = useDoubleClick(() => {
-    if (!local || isCurrent || checkoutLocalMutation.isPending) return
+    if (!local || isCurrent || isCheckingOutLocal) return
 
     if (local.worktreePath) {
       worktreeOpenDialog.openDialog({ worktreePath: local.worktreePath, branchName: local.cleanName })
@@ -186,7 +214,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               }}
               onClick={localAndRemote ? handleLocalDoubleClick : undefined}
             >
-              <span className={cn('relative flex items-center', checkoutLocalMutation.isPending && '[&>div]:invisible')}>
+              <span className={cn('relative flex items-center', isCheckingOutLocal && '[&>div]:invisible')}>
                 {getBranchIcons({
                   isLocal: !!local,
                   hasRemote: !local && !!remotes.length,
@@ -195,7 +223,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                   white: !local,
                 })}
 
-                {checkoutLocalMutation.isPending && (
+                {isCheckingOutLocal && (
                   <FontAwesomeIcon
                     icon={faCircleNotch}
                     className={cn(
@@ -256,7 +284,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                 key={`remote-${i}-${remote.remoteName}`}
                 data-branch-remote-segment={i}
                 className={cn(
-                  'flex h-full w-fit min-w-fit items-center px-1.5',
+                  'relative flex h-full w-fit min-w-fit items-center px-1.5',
                   // Colors
                   'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/20',
                   onlyRemote && 'border-vsc-editor-fg/20 border-l',
@@ -265,9 +293,21 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                 )}
                 onClick={localAndRemote ? handleRemoteDoubleClick : undefined}
               >
-                <span className="line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50">
+                <span
+                  className={cn(
+                    'line-clamp-1 text-xs leading-tight font-normal text-nowrap opacity-50',
+                    isLoadingRemote(remote) && 'invisible',
+                  )}
+                >
                   {remote.remoteName}
                 </span>
+
+                {isLoadingRemote(remote) && (
+                  <FontAwesomeIcon
+                    icon={faCircleNotch}
+                    className="text-vsc-editor-fg/80 absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin"
+                  />
+                )}
               </div>,
               true,
               remote,

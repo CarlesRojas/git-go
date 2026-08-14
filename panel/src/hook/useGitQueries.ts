@@ -519,6 +519,7 @@ export const useCheckoutLocalBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['checkoutLocalBranch'],
     meta: { gitActionLabel: 'Checking out' },
     mutationFn: async ({ branchName }: { branchName: string }) => {
       return await sendCorrelatedMessage('checkoutLocalBranch', { branchName })
@@ -533,6 +534,7 @@ export const useCheckoutRemoteBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['checkoutRemoteBranch'],
     meta: { gitActionLabel: 'Checking out' },
     mutationFn: async ({
       remoteBranchName,
@@ -881,6 +883,7 @@ export const useFetchIntoLocalBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['fetchIntoLocalBranch'],
     meta: { gitActionLabel: 'Fetching' },
     mutationFn: async ({
       remote,
