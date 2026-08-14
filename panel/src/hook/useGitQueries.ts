@@ -324,6 +324,7 @@ export const useFetchFromGit = (options?: { onSuccess?: () => void; onError?: (e
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Fetching' },
     mutationFn: async () => {
       return await sendCorrelatedMessage('fetch', {}, 30_000)
     },
@@ -356,6 +357,7 @@ export const useAddTag = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Creating tag' },
     mutationFn: async ({
       commitHash,
       tagName,
@@ -379,6 +381,7 @@ export const useCreateBranchFromCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Creating branch' },
     mutationFn: async ({
       commitHash,
       branchName,
@@ -400,6 +403,7 @@ export const useCherryPickCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Cherry picking' },
     mutationFn: async ({
       commitHash,
       recordOrigin = false,
@@ -421,6 +425,7 @@ export const useRevertCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Reverting' },
     mutationFn: async ({ commitHash, noCommit }: { commitHash: string; noCommit?: boolean }) => {
       return await sendCorrelatedMessage('revertCommit', { commitHash, noCommit })
     },
@@ -434,6 +439,7 @@ export const useResetBranchToCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Resetting branch' },
     mutationFn: async ({ commitHash, mode }: { commitHash: string; mode: 'soft' | 'mixed' | 'hard' }) => {
       return await sendCorrelatedMessage('resetBranchToCommit', { commitHash, mode }, 10_000)
     },
@@ -447,6 +453,7 @@ export const useRebaseBranchToCommit = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Rebasing' },
     mutationFn: async ({
       commitHash,
       ignoreDate = false,
@@ -468,6 +475,7 @@ export const useMergeCommitIntoCurrentBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Merging' },
     mutationFn: async ({
       commitHash,
       fastForwardIfPossible = true,
@@ -511,6 +519,8 @@ export const useCheckoutLocalBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['checkoutLocalBranch'],
+    meta: { gitActionLabel: 'Checking out' },
     mutationFn: async ({ branchName }: { branchName: string }) => {
       return await sendCorrelatedMessage('checkoutLocalBranch', { branchName })
     },
@@ -524,6 +534,8 @@ export const useCheckoutRemoteBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['checkoutRemoteBranch'],
+    meta: { gitActionLabel: 'Checking out' },
     mutationFn: async ({
       remoteBranchName,
       localBranchName,
@@ -569,6 +581,7 @@ export const useAbortOperation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Aborting' },
     mutationFn: async ({ operation }: { operation: GitOperationInProgress }) => {
       return await sendCorrelatedMessage('abortOperation', { operation }, 30_000)
     },
@@ -595,6 +608,7 @@ export const useUndoLastAction = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Undoing' },
     mutationFn: async ({ previousHash, discardChanges }: { previousHash: string; discardChanges: boolean }) => {
       return await sendCorrelatedMessage('undoLastAction', { previousHash, discardChanges }, 30_000)
     },
@@ -620,6 +634,7 @@ export const useAddWorktree = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Creating worktree' },
     mutationFn: async ({ worktreePath, branchName }: { worktreePath: string; branchName: string }) => {
       return await sendCorrelatedMessage<{ worktreePath: string }>('addWorktree', { worktreePath, branchName }, 30_000)
     },
@@ -633,6 +648,7 @@ export const useRemoveWorktree = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Removing worktree' },
     mutationFn: async ({
       worktreePath,
       force = false,
@@ -659,6 +675,7 @@ export const usePushBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Pushing' },
     mutationFn: async ({
       branchName,
       remote = 'origin',
@@ -682,6 +699,7 @@ export const useRenameBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Renaming branch' },
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
       return sendCorrelatedMessage('renameBranch', { oldName, newName })
     },
@@ -695,6 +713,7 @@ export const useDeleteBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Deleting branch' },
     mutationFn: async ({ branchName, force = false }: { branchName: string; force?: boolean }) => {
       return sendCorrelatedMessage('deleteBranch', { branchName, force })
     },
@@ -708,6 +727,7 @@ export const useMergeBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Merging' },
     mutationFn: async ({
       branchName,
       fastForwardIfPossible = false,
@@ -731,6 +751,7 @@ export const useRebaseBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Rebasing' },
     mutationFn: async ({
       branchName,
       ignoreDate = false,
@@ -752,6 +773,7 @@ export const useApplyStash = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Applying stash' },
     mutationFn: async ({
       stashSelector,
       reinstateIndex = false,
@@ -771,6 +793,7 @@ export const usePopStash = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Popping stash' },
     mutationFn: async ({
       stashSelector,
       reinstateIndex = false,
@@ -790,6 +813,7 @@ export const useDropStash = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Dropping stash' },
     mutationFn: async ({ stashSelector }: { stashSelector: string }) => {
       return await sendCorrelatedMessage('dropStash', { stashSelector }, 10_000)
     },
@@ -803,6 +827,7 @@ export const useCreateStash = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Stashing' },
     mutationFn: async ({
       message = '',
       includeUntracked = false,
@@ -822,6 +847,7 @@ export const useDeleteRemoteBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Deleting remote branch' },
     mutationFn: async ({ branchName, remote }: { branchName: string; remote: string }) => {
       return await sendCorrelatedMessage('deleteRemoteBranch', { branchName, remote }, 10_000)
     },
@@ -833,6 +859,7 @@ export const useDeleteRemoteBranch = () => {
 
 export const useFetchIntoLocalBranchNeedsForce = () => {
   return useMutation({
+    meta: { gitActionLabel: 'Checking remote' },
     mutationFn: async ({
       remote,
       remoteBranch,
@@ -856,6 +883,8 @@ export const useFetchIntoLocalBranch = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['fetchIntoLocalBranch'],
+    meta: { gitActionLabel: 'Fetching' },
     mutationFn: async ({
       remote,
       remoteBranch,
@@ -919,6 +948,7 @@ export const usePushTag = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Pushing tag' },
     mutationFn: async ({ tagName, remotes }: { tagName: string; remotes: string[] }) => {
       return await sendCorrelatedMessage('pushTag', { tagName, remotes }, 30_000)
     },
@@ -933,6 +963,7 @@ export const useDeleteTag = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Deleting tag' },
     mutationFn: async ({
       tagName,
       deleteOnRemotes = [],
@@ -959,6 +990,7 @@ export const useResetUncommittedChanges = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Discarding changes' },
     mutationFn: async ({
       mode = 'hard',
     }: {
@@ -1015,6 +1047,7 @@ export const useSetActiveRepo = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Switching repository' },
     mutationFn: async (repoPath: string) => {
       return await sendCorrelatedMessage<{ activeRepo: GitRepo }>('setActiveRepo', { repoPath }, 10_000)
     },
@@ -1174,6 +1207,7 @@ export const useSetGitUserConfig = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Updating git user' },
     mutationFn: async (config: { userName?: string; userEmail?: string; isLocal: boolean }) => {
       return await sendCorrelatedMessage('setGitUserConfig', { config }, 10_000)
     },
@@ -1187,6 +1221,7 @@ export const useAddGitRemote = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Adding remote' },
     mutationFn: async (remote: { name: string; fetchUrl: string; pushUrl: string }) => {
       return await sendCorrelatedMessage('addGitRemote', { remote }, 10_000)
     },
@@ -1201,6 +1236,7 @@ export const useRemoveGitRemote = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: { gitActionLabel: 'Removing remote' },
     mutationFn: async (remoteName: string) => {
       return await sendCorrelatedMessage('removeGitRemote', { remoteName }, 10_000)
     },
