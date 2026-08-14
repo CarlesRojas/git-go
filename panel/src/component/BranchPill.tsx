@@ -186,20 +186,25 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               }}
               onClick={localAndRemote ? handleLocalDoubleClick : undefined}
             >
-              {checkoutLocalMutation.isPending ? (
-                <FontAwesomeIcon
-                  icon={faCircleNotch}
-                  className={cn('size-3 animate-spin', local ? 'text-vsc-editor-bg/80' : 'text-vsc-editor-fg/80')}
-                />
-              ) : (
-                getBranchIcons({
+              <span className={cn('relative flex items-center', checkoutLocalMutation.isPending && '[&>div]:invisible')}>
+                {getBranchIcons({
                   isLocal: !!local,
                   hasRemote: !local && !!remotes.length,
                   inWorktree: !!local?.worktreePath,
                   black: !!local,
                   white: !local,
-                })
-              )}
+                })}
+
+                {checkoutLocalMutation.isPending && (
+                  <FontAwesomeIcon
+                    icon={faCircleNotch}
+                    className={cn(
+                      'absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin',
+                      local ? 'text-vsc-editor-bg/80' : 'text-vsc-editor-fg/80',
+                    )}
+                  />
+                )}
+              </span>
             </div>,
           )}
 
