@@ -25,7 +25,7 @@ export const DragActionBox: FC<Props> = ({ action, hovered, isFirst, isLast }) =
       data-drag-action-disabled={disabled}
       className={cn(
         // Layout & sizing
-        'pointer-events-auto flex w-56 items-center gap-2 px-3 py-3',
+        'pointer-events-auto flex w-56 items-center gap-2 px-3 py-4',
         // Colors — the same surface the context menus use
         'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 text-vsc-editor-fg border backdrop-blur-md',
         // The stack reads as one block, so only its outer corners are rounded and a box with

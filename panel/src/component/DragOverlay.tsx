@@ -63,7 +63,7 @@ interface LayoutRect {
 
 const STACK_GAP_PX = 8
 /** One box, used only to decide whether a stack fits below its pill. */
-const BOX_HEIGHT_ESTIMATE_PX = 42
+const BOX_HEIGHT_ESTIMATE_PX = 50
 const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
 /** Matches the opacity transition on the stacks, so they stay mounted until it finishes. */
@@ -551,7 +551,10 @@ export const DragOverlay: FC = () => {
 
   const targetStackVisible =
     (revealed || revealOnContact) && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
-  const sourceStackVisible = hoveredSource && !!sourceStackPosition && visibleSourceActions.length > 0
+  // Only one stack may be on screen at a time. The target stack wins because it is the one the
+  // pointer is actually over — the source stack only lingers on a dismissal delay by then.
+  const sourceStackVisible =
+    !targetStackVisible && hoveredSource && !!sourceStackPosition && visibleSourceActions.length > 0
 
   // The position and actions are cleared the moment a stack stops being visible, so the last
   // ones are held on to for the duration of the fade.
@@ -563,8 +566,10 @@ export const DragOverlay: FC = () => {
   const sourceSnapshot = useRef<{ position: object; actions: DragAction[] } | null>(null)
   if (sourceStackVisible) sourceSnapshot.current = { position: sourceStackPosition, actions: visibleSourceActions }
 
-  const targetFade = useFadePresence(targetStackVisible, FADE_MS)
-  const sourceFade = useFadePresence(sourceStackVisible, FADE_MS)
+  // While one stack is up, the other skips its exit fade entirely: a stack caught mid-fade
+  // when its counterpart appears would otherwise read as a second group on screen.
+  const targetFade = useFadePresence(targetStackVisible, sourceStackVisible ? 0 : FADE_MS)
+  const sourceFade = useFadePresence(sourceStackVisible, targetStackVisible ? 0 : FADE_MS)
 
   const pendingAction = useMemo<DragAction | null>(() => {
     if (!payload) return null
