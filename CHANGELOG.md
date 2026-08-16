@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Show the full commit message in the expanded commit panel: the body appears below the subject with its line breaks kept, and clicking either copies the whole message. The graph row keeps showing only the subject
+- Show the committer in the expanded commit panel when it differs from the author
+- Rename `git-go.graph.showCommitterName` to `git-go.graph.showAuthorName`, since it always showed the author. A value set under the old name keeps working until the new one is set
+- Remove the deprecated `git-go.branch.delete.deleteOnRemote` setting entry, replaced by `git-go.branch.delete.onRemote` (a value set under the old name is still honored)
+- Remove the unused internal diff document provider; diffs are served by VS Code's built-in git extension
 - Close the graph tab left over from before an extension update or window reload, since it can no longer be revived and a fresh one opens next to it
 - Find the git repositories inside the folders that are open, not only the folders themselves, and pick between them with a selector in the toolbar that appears as soon as there is more than one. Each repository keeps its own selected branches and hidden remotes, submodules are left out of the list, and `git-go.repo.scanDepth` sets how deep the search goes
 - Keep the Git Go status bar item there whether or not the workspace has a repository, so opening it can say that neither the folder nor its subfolders hold one

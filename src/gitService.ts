@@ -12,6 +12,10 @@ export interface GitCommit {
     email: string;
     date: string;
     message: string;
+    /** The message body (everything after the subject), with line breaks preserved */
+    body?: string;
+    committer?: string;
+    committerEmail?: string;
     refs?: string;
     tags: string[];
     isStash?: boolean;
@@ -883,8 +887,11 @@ export class GitService {
                 '%an', // Author name
                 '%ae', // Author email
                 '%ai', // Author date (ISO format)
+                '%cn', // Committer name
+                '%ce', // Committer email
                 '%s', // Subject
-                '%D' // Refs
+                '%D', // Refs
+                '%b' // Body — kept last, as it can span multiple lines (records are NUL-separated via -z)
             ].join(GIT_LOG_SEPARATOR);
 
             log(`Executing git log command (maxCount: ${maxCount}, skip: ${skip})`);
@@ -935,13 +942,15 @@ export class GitService {
                 if (!line.includes(GIT_LOG_SEPARATOR)) continue;
 
                 const parts = line.split(GIT_LOG_SEPARATOR);
-                if (parts.length < 7) {
-                    // We expect exactly 7 parts: hash, parents, author, email, date, message, refs
+                if (parts.length < 10) {
+                    // We expect 10 parts: hash, parents, author, email, date, committer, committer email, subject, refs, body
                     log(`Skipping malformed line: ${line}`);
                     continue;
                 }
 
-                const [hash, parentHashes, author, email, date, message, refs] = parts;
+                const [hash, parentHashes, author, email, date, committer, committerEmail, message, refs] = parts;
+                // The body is the last field so its newlines survive; rejoin in case it contains the separator itself
+                const body = parts.slice(9).join(GIT_LOG_SEPARATOR).trim();
 
                 if (!hash?.trim()) {
                     log(`Skipping line with missing hash: ${line}`);
@@ -983,6 +992,9 @@ export class GitService {
                     email: email?.trim() || '',
                     date: date?.trim() || '',
                     message: message?.trim() || '',
+                    body: body || undefined,
+                    committer: committer?.trim() || undefined,
+                    committerEmail: committerEmail?.trim() || undefined,
                     tags,
                     isStash: false,
                     refs: commitRefs,
@@ -1387,28 +1399,6 @@ export class GitService {
             log(`Successfully created and checked out branch: ${localBranchName}`);
         } catch (error) {
             log(`Error creating branch from remote: ${error}`);
-            throw error;
-        }
-    }
-
-    /**
-     * Get the content of a file at a specific Git revision using git show.
-     * This works with any commit hash including stash commits.
-     * @param commitHash The commit hash to get the file from
-     * @param filePath The path to the file relative to the repository root
-     * @returns The file content as a string
-     */
-    public async getCommitFile(commitHash: string, filePath: string): Promise<string> {
-        const workspacePath = this.getRepoPath();
-        const gitExecutable = await this.findGitExecutable();
-
-        try {
-            const output = await this.spawnGit(
-                [gitExecutable.path, 'show', `${commitHash}:${filePath}`],
-                workspacePath
-            );
-            return output;
-        } catch (error) {
             throw error;
         }
     }
