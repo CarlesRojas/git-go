@@ -458,9 +458,12 @@ export const CommitItem: FC<CommitItemProps> = ({
                       <div
                         className={cn(
                           // Layout & sizing
-                          'my-1 max-h-24 w-fit max-w-full overflow-y-auto px-2 py-1.5',
-                          // Appearance
-                          'rounded-main border-vsc-editor-fg/20 bg-vsc-editor-fg/10 border',
+                          'my-1 max-h-24 w-fit min-w-64 max-w-full overflow-y-auto px-2 py-1.5',
+                          // Appearance — the theme's editor background darkened, so the box reads
+                          // as recessed on light and dark themes alike, with a border only just
+                          // distinguishable from it
+                          'rounded-main border-vsc-editor-fg/10 border',
+                          'bg-[color-mix(in_srgb,var(--vscode-editor-background)_85%,black)]',
                           // Typography
                           'text-xs font-medium whitespace-pre-wrap',
                           // Interactive
