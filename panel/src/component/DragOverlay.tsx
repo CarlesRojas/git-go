@@ -29,9 +29,11 @@ import {
   useMergeCommitIntoCurrentBranch,
   usePopStash,
   usePushBranch,
+  usePushTag,
   useRebaseBranch,
 } from '@/hook/useGitQueries'
 import { qualifiedBranchName } from '@/util/branchName'
+import { resolveDefaultRemote } from '@/util/resolveDefaultRemote'
 import { cn } from '@/util/cn'
 import { DragAction, resolveSourceActions, resolveTargetActions, shortHash } from '@/util/dragAndDrop'
 import {
@@ -151,6 +153,7 @@ export const DragOverlay: FC = () => {
   const cherryPickMutation = useCherryPickCommit()
   const mergeCommitMutation = useMergeCommitIntoCurrentBranch()
   const pushBranchMutation = usePushBranch()
+  const pushTagMutation = usePushTag()
   const fetchIntoLocalMutation = useFetchIntoLocalBranch()
 
   const targetBranch = useMemo(
@@ -356,7 +359,30 @@ export const DragOverlay: FC = () => {
 
         case 'push': {
           if (drop.payload.kind === 'tag') {
-            tagPushDialog.openDialog(drop.payload.commit, drop.payload.name)
+            const pushedTag = drop.payload.name
+            // The remotes the dialog would have opened with preselected.
+            const tagRemoteNames = settings.tagPushAllRemotes
+              ? remotes.map(remote => remote.name)
+              : [resolveDefaultRemote(remotes, settings.remoteDefaultRemote)].filter((name): name is string => !!name)
+
+            // Without a remote there is no command to build, so the dialog handles it.
+            if (settings.dragAndDropAutoPush && tagRemoteNames.length > 0) {
+              pushTagMutation.mutate(
+                { tagName: pushedTag, remotes: tagRemoteNames },
+                {
+                  onSuccess: () =>
+                    showToast({
+                      text: `Tag '${pushedTag}' pushed to ${tagRemoteNames.join(', ')} successfully`,
+                      icon: faUpload,
+                      type: 'success',
+                    }),
+                  onError: error => showToast({ text: error.message, type: 'error', icon: faUpload }),
+                },
+              )
+              return
+            }
+
+            tagPushDialog.openDialog(drop.payload.commit, pushedTag)
             return
           }
           if (drop.payload.kind !== 'branch') return
@@ -508,6 +534,7 @@ export const DragOverlay: FC = () => {
     },
     [
       branches,
+      remotes,
       currentBranch,
       checkoutMutation,
       checkoutRemoteMutation,
@@ -532,6 +559,7 @@ export const DragOverlay: FC = () => {
       cherryPickMutation,
       mergeCommitMutation,
       pushBranchMutation,
+      pushTagMutation,
       fetchIntoLocalMutation,
     ],
   )
@@ -555,8 +583,7 @@ export const DragOverlay: FC = () => {
     [sourceRect, visibleSourceActions],
   )
 
-  const targetStackVisible =
-    revealed && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
+  const targetStackVisible = revealed && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
   // Only one stack may be on screen at a time. The target stack wins because it is the one the
   // pointer is actually over — the source stack only lingers on a dismissal delay by then.
   const sourceStackVisible =
