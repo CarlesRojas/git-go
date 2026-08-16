@@ -494,6 +494,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.graph.joinUncommittedChanges` Extension Setting.
+     */
+    get joinUncommittedChanges(): boolean {
+        return !!this.config.get('graph.joinUncommittedChanges', true);
+    }
+
+    /**
      * Get the value of the `git-go.graph.showAuthorName` Extension Setting.
      */
     get showAuthorName(): boolean {

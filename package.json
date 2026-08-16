@@ -169,6 +169,12 @@
                         "maximum": 800,
                         "markdownDescription": "Height in pixels of the details panel that opens when a commit is expanded.",
                         "order": 6
+                    },
+                    "git-go.graph.joinUncommittedChanges": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Join the uncommitted changes to the checked out commit with a line, kept straight on the leftmost column of the graph. Turn off to show the uncommitted changes as a separate dot.",
+                        "order": 7
                     }
                 }
             },
