@@ -96,7 +96,9 @@ const CommitItemComponent: FC<CommitItemProps> = ({
         const rect = element.getBoundingClientRect()
         const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
 
-        if (!isInView) element.scrollIntoView({ behavior: 'smooth', block: 'end' })
+        // 'nearest' scrolls just enough: navigating up shows the commit at the top of the
+        // viewport, navigating down aligns the expanded panel's bottom with the viewport bottom
+        if (!isInView) element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }, 100)
 
       return () => clearTimeout(timeoutId)
