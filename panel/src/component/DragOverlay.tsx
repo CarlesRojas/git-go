@@ -185,11 +185,6 @@ export const DragOverlay: FC = () => {
     [targetActions],
   )
 
-  // With nothing to perform on release there is no reason to make the user hold: the boxes are
-  // the only way to act, so they open on contact. This covers a target that cannot be checked
-  // out — one held by a worktree, say — as well as a default action turned off in settings.
-  const revealOnContact = visibleTargetActions.length > 0 && !defaultTargetAction
-
   // Layout effect so the default lands in the same frame as the hover that produced it —
   // a plain effect can miss a hover-and-release inside one frame.
   useLayoutEffect(() => {
@@ -199,10 +194,7 @@ export const DragOverlay: FC = () => {
   // Both stacks anchor to a pill the same way: measure it, and re-measure while the graph
   // scrolls under it.
   useLayoutEffect(() => {
-    const selector =
-      (revealed || revealOnContact) && hoveredTargetKey
-        ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]`
-        : undefined
+    const selector = revealed && hoveredTargetKey ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]` : undefined
 
     if (!selector) {
       setStackRect(null)
@@ -218,7 +210,7 @@ export const DragOverlay: FC = () => {
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
     container?.addEventListener('scroll', measure)
     return () => container?.removeEventListener('scroll', measure)
-  }, [revealed, revealOnContact, hoveredTargetKey])
+  }, [revealed, hoveredTargetKey])
 
   useLayoutEffect(() => {
     if (!hoveredSource) {
@@ -550,7 +542,7 @@ export const DragOverlay: FC = () => {
   )
 
   const targetStackVisible =
-    (revealed || revealOnContact) && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
+    revealed && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
   // Only one stack may be on screen at a time. The target stack wins because it is the one the
   // pointer is actually over — the source stack only lingers on a dismissal delay by then.
   const sourceStackVisible =

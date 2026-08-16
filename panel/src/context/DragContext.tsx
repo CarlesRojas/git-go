@@ -346,23 +346,15 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
     clearHideTimer()
 
-    // Sweeping across pills should not close and reopen the stack at each one. Once it is
-    // open, moving to another target re-anchors it at once and only the first pill of a sweep
-    // pays the hold — the same courtesy menus extend when moving between triggers.
-    const alreadyOpen = isRevealed.current
-
+    // Every pill pays the hold, even mid-sweep with another stack open: moving onto a
+    // different target dismisses the open stack and arms a fresh hold there. The only stack
+    // that ever skips the hold is the dragged item's own, at the start of the gesture.
     currentTargetKey.current = resolvedTarget
     setHoveredTargetKey(resolvedTarget)
 
     if (resolvedTarget === null) {
       clearHoldTimer()
       setRevealedTracked(false)
-      return
-    }
-
-    if (alreadyOpen) {
-      clearHoldTimer()
-      setRevealedTracked(true)
       return
     }
 
