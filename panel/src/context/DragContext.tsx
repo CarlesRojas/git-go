@@ -289,7 +289,25 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Boxes sit above the graph; while over one, the target underneath must not change.
-    if (actionElement) return
+    if (actionElement) {
+      // A box inside the source region belongs to the dragged item's own stack, so no pill is
+      // being aimed at. A pill crossed on the way here — before the stack had mounted and could
+      // capture the pointer — is still latched with a hold ticking, and left alone that hold
+      // would fire beneath these boxes and replace them with the crossed pill's stack.
+      if (inRegion && currentTargetKey.current !== null) {
+        clearHoldTimer()
+        clearHideTimer()
+        currentTargetKey.current = null
+        setHoveredTargetKey(null)
+        setRevealedTracked(false)
+
+        if (isPointerOverTarget.current) {
+          isPointerOverTarget.current = false
+          setPointerOverTarget(false)
+        }
+      }
+      return
+    }
 
     const targetElement = element?.closest<HTMLElement>('[data-drop-target]') ?? null
     // The drag handle can be nested inside the drop target, so containment — not identity —
