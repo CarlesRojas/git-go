@@ -400,10 +400,6 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     (dragPayload: DragPayload, event: React.PointerEvent) => {
       if (event.button !== 0) return
 
-      // A drag cancelled with Escape never produces the click it was armed to swallow, so the
-      // flag is cleared per press rather than left to be consumed by an unrelated one later.
-      suppressNextClick.current = false
-
       const origin = { x: event.clientX, y: event.clientY }
       const element = event.currentTarget as HTMLElement
       let started = false
@@ -482,8 +478,17 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   )
 
   // A completed drag ends with a pointerup over a pill, which the browser also reports as a
-  // click. Swallow that one so dropping on a branch never also checks it out.
+  // click. Swallow that one so dropping on a branch never also checks it out. That click is
+  // not guaranteed to arrive though — Chromium skips it entirely when the drop's re-render
+  // replaces the element the press started on, and a drag cancelled with Escape never
+  // produces one either. So any new press disarms the swallow first: whatever click it goes
+  // on to produce is its own, never the leftover of the previous gesture — a stale flag
+  // would otherwise eat the first click on whatever the drop opened, e.g. a confirm dialog.
   useEffect(() => {
+    const disarm = () => {
+      suppressNextClick.current = false
+    }
+
     const handleClick = (event: MouseEvent) => {
       if (!suppressNextClick.current) return
       suppressNextClick.current = false
@@ -491,8 +496,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
       event.preventDefault()
     }
 
+    window.addEventListener('pointerdown', disarm, true)
     window.addEventListener('click', handleClick, true)
-    return () => window.removeEventListener('click', handleClick, true)
+    return () => {
+      window.removeEventListener('pointerdown', disarm, true)
+      window.removeEventListener('click', handleClick, true)
+    }
   }, [])
 
   useEffect(() => teardown, [teardown])
