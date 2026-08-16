@@ -458,11 +458,13 @@ export const CommitItem: FC<CommitItemProps> = ({
                       <div
                         className={cn(
                           // Layout & sizing
-                          'max-h-24 overflow-y-auto',
+                          'my-1 max-h-24 w-fit max-w-full overflow-y-auto px-2 py-1.5',
+                          // Appearance
+                          'rounded-main border-vsc-editor-fg/20 bg-vsc-editor-fg/10 border',
                           // Typography
                           'text-xs font-medium whitespace-pre-wrap',
                           // Interactive
-                          'cursor-pointer opacity-75 transition-opacity hover:opacity-50',
+                          'cursor-pointer transition-opacity hover:opacity-75',
                         )}
                         onClick={() => copyText(fullMessage, 'Message')}
                       >
