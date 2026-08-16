@@ -3,7 +3,6 @@
 import * as vscode from 'vscode';
 import { AvatarService } from './avatarService';
 import { getConfig } from './config';
-import { DiffDocProvider } from './diffDocProvider';
 import { GitService } from './gitService';
 import { RepoService } from './repoService';
 import { StatusBarItem } from './statusBarItem';
@@ -22,13 +21,6 @@ export function activate(context: vscode.ExtensionContext) {
         outputChannel.appendLine(`[${timestamp}] ${message}`);
     });
     context.subscriptions.push({ dispose: () => statusBarItem.dispose() });
-
-    // Register our custom diff document provider
-    const diffDocProvider = new DiffDocProvider();
-    context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, diffDocProvider),
-        diffDocProvider
-    );
 
     const log = (message: string) => {
         const timestamp = new Date().toISOString();
@@ -143,7 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
                             confirmPush: config.confirmPush,
                             confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
-                            showCommitterName: config.showCommitterName,
+                            showAuthorName: config.showAuthorName,
                             theme: config.theme,
                             customColors: config.customColors
                         }
@@ -198,7 +190,7 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.commands.executeCommand('workbench.action.pinEditor');
             }
 
-            gitWatcher = watchGitChanges(currentPanel, log, diffDocProvider);
+            gitWatcher = watchGitChanges(currentPanel, log);
             currentPanel.onDidDispose(() => {
                 gitWatcher = undefined;
             });
@@ -709,7 +701,6 @@ export function activate(context: vscode.ExtensionContext) {
 
                     GitService.getInstance().setActiveRepoPath(repo.path);
                     gitWatcher?.watchActiveRepo();
-                    diffDocProvider.invalidate();
                     log(`Now showing the repository at '${repo.path}'`);
                     return { type: 'activeRepoChanged', activeRepo: repo };
                 },
@@ -804,7 +795,7 @@ export function activate(context: vscode.ExtensionContext) {
                             confirmPush: config.confirmPush,
                             confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
-                            showCommitterName: config.showCommitterName,
+                            showAuthorName: config.showAuthorName,
                             theme: config.theme,
                             customColors: config.customColors
                         }
@@ -1223,11 +1214,7 @@ export function deactivate() {}
  * Watch the repository Git Go is showing, so the webview is told whenever its state changes.
  * @returns A way to move the watchers onto another repository, for when the shown one changes.
  */
-function watchGitChanges(
-    panel: vscode.WebviewPanel,
-    log: (msg: string) => void,
-    diffDocProvider: DiffDocProvider
-): { watchActiveRepo: () => void } {
+function watchGitChanges(panel: vscode.WebviewPanel, log: (msg: string) => void): { watchActiveRepo: () => void } {
     const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 
     const disposables: vscode.Disposable[] = [];
@@ -1243,7 +1230,6 @@ function watchGitChanges(
 
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            diffDocProvider.invalidate();
             panel.webview.postMessage({ type: 'gitChanged' });
             log('Git state changed — notified webview');
         }, 300);

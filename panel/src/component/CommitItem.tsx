@@ -103,6 +103,10 @@ export const CommitItem: FC<CommitItemProps> = ({
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
+  const fullMessage = commit.body ? `${commit.message}\n\n${commit.body}` : commit.message
+  const hasDifferentCommitter =
+    !!commit.committer && (commit.committer !== commit.author || commit.committerEmail !== commit.email)
+
   const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({ commit })
   const { uncommittedChangesContextMenuWrapper, dialogs: uncommittedDialogs } = useUncommittedChangesContextMenu()
 
@@ -259,10 +263,10 @@ export const CommitItem: FC<CommitItemProps> = ({
         author={commit.author}
         commitHash={commit.isUncommitted ? undefined : commit.hash}
         size={20}
-        className={cn(!settings.showCommitterName && 'mr-2', commit.isUncommitted && 'opacity-0')}
+        className={cn(!settings.showAuthorName && 'mr-2', commit.isUncommitted && 'opacity-0')}
       />
 
-      {settings.showCommitterName && (
+      {settings.showAuthorName && (
         <span
           className={cn(
             // Layout & sizing
@@ -404,15 +408,23 @@ export const CommitItem: FC<CommitItemProps> = ({
                       </span>
                     </p>
 
-                    <p className="text-xs font-medium">
-                      <span className="opacity-50">Message: </span>
-                      <span
-                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
-                        onClick={() => copyText(commit.message, 'Message')}
-                      >
-                        {commit.message}
-                      </span>
-                    </p>
+                    {hasDifferentCommitter && (
+                      <p className="text-xs font-medium">
+                        <span className="opacity-50">Committer: </span>
+                        <span
+                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                          onClick={() => copyText(commit.committer ?? '', 'Committer')}
+                        >
+                          {commit.committer}
+                        </span>{' '}
+                        <span
+                          className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                          onClick={() => copyText(commit.committerEmail ?? '', 'Email')}
+                        >
+                          ({commit.committerEmail})
+                        </span>
+                      </p>
+                    )}
 
                     <p className="text-xs font-medium">
                       <span className="opacity-50">Date: </span>
@@ -431,6 +443,37 @@ export const CommitItem: FC<CommitItemProps> = ({
                         })}
                       </time>
                     </p>
+
+                    <p className="text-xs font-medium">
+                      <span className="opacity-50">Message: </span>
+                      <span
+                        className={cn('cursor-pointer transition-opacity hover:opacity-75')}
+                        onClick={() => copyText(fullMessage, 'Message')}
+                      >
+                        {commit.message}
+                      </span>
+                    </p>
+
+                    {commit.body && (
+                      <div
+                        className={cn(
+                          // Layout & sizing
+                          'my-1 max-h-24 w-fit min-w-64 max-w-full overflow-y-auto px-2 py-1.5',
+                          // Appearance — the theme's editor background darkened, so the box reads
+                          // as recessed on light and dark themes alike, with a border only just
+                          // distinguishable from it
+                          'rounded-main border-vsc-editor-fg/10 border',
+                          'bg-[color-mix(in_srgb,var(--vscode-editor-background)_85%,black)]',
+                          // Typography
+                          'text-xs font-medium whitespace-pre-wrap',
+                          // Interactive
+                          'cursor-pointer transition-opacity hover:opacity-75',
+                        )}
+                        onClick={() => copyText(fullMessage, 'Message')}
+                      >
+                        {commit.body}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

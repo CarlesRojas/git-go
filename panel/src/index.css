@@ -36,14 +36,38 @@
     @apply opacity-10 duration-500;
   }
 
-  /* Scrollbar styles */
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+}
 
-  ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
+/*
+ * Scrollbar styles — transparent tracks everywhere, thumbs in the theme's own scrollbar colors.
+ * Kept outside every @layer and marked !important: VS Code injects its own un-layered scrollbar
+ * defaults (_defaultStyles) into the webview, which would otherwise win over layered rules.
+ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background) !important;
+  border-radius: var(--radius-small);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground) !important;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--vscode-scrollbarSlider-activeBackground) !important;
 }
 
 @theme {

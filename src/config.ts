@@ -494,10 +494,10 @@ export class Config {
     }
 
     /**
-     * Get the value of the `git-go.graph.showCommitterName` Extension Setting.
+     * Get the value of the `git-go.graph.showAuthorName` Extension Setting.
      */
-    get showCommitterName(): boolean {
-        return !!this.config.get('graph.showCommitterName', true);
+    get showAuthorName(): boolean {
+        return !!this.getRenamed('graph.showAuthorName', 'graph.showCommitterName', true);
     }
 
     /**

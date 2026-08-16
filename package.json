@@ -143,11 +143,18 @@
                         "markdownDescription": "Round the corners of the branches, pills and boxes in the graph. Turn off for a sharper look.",
                         "order": 3
                     },
+                    "git-go.graph.showAuthorName": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Show the author's name next to each commit's message.",
+                        "order": 4
+                    },
                     "git-go.graph.showCommitterName": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDescription": "Show the name of the person who made each commit next to its message.",
-                        "order": 4
+                        "markdownDescription": "Show the author's name next to each commit's message.",
+                        "markdownDeprecationMessage": "This setting has been renamed to `#git-go.graph.showAuthorName#` (it always showed the author, not the committer), which is used instead whenever it is set.",
+                        "order": 90
                     },
                     "git-go.graph.remoteAvatars": {
                         "type": "boolean",
@@ -402,13 +409,6 @@
                         "default": false,
                         "markdownDescription": "Default value for 'Also delete on the remote' when deleting a branch that tracks an upstream branch.",
                         "order": 6
-                    },
-                    "git-go.branch.delete.deleteOnRemote": {
-                        "type": "boolean",
-                        "default": false,
-                        "markdownDescription": "Default value for 'Also delete on the remote' when deleting a branch that tracks an upstream branch.",
-                        "markdownDeprecationMessage": "This setting has been renamed to `#git-go.branch.delete.onRemote#`, which is used instead whenever it is set.",
-                        "order": 90
                     }
                 }
             },

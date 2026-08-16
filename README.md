@@ -78,8 +78,8 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Reset the current branch** to any commit, soft, mixed or hard
 - **View detailed commit information** including:
     - File changes and diffs
-    - Author and committer details
-    - Parent commit relationships
+    - The full commit message, subject and body
+    - Author details, plus the committer when it differs from the author
 
 ### 🌐 Remote Management
 
@@ -190,7 +190,7 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
     "git-go.graph.theme": "vibrant", // Color palette used for the branches and dots
     "git-go.graph.customColors": [], // Colors used when the theme is 'custom', up to 16 hex codes
     "git-go.graph.rounded": true, // Round the corners of the branches, pills and boxes
-    "git-go.graph.showCommitterName": true, // Show who made each commit next to its message
+    "git-go.graph.showAuthorName": true, // Show the author's name next to each commit's message
     "git-go.graph.remoteAvatars": true, // Show author pictures from the remote, falling back to Gravatar
     "git-go.graph.expandedCommitHeight": 300 // Height in pixels of an expanded commit (200-800)
 }
