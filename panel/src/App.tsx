@@ -61,6 +61,7 @@ const NoRepoFound: FC = () => {
 const RepoPanel: FC = () => {
   const [selectedBranches, setSelectedBranches] = useState<GitBranch[]>([])
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const scrollRef = useRef<HTMLElement>(null)
 
   return (
     <>
@@ -97,8 +98,8 @@ const RepoPanel: FC = () => {
         </div>
       </div>
 
-      <main className="graph-h relative flex flex-col overflow-y-auto" data-drag-scroll-container>
-        <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} />
+      <main ref={scrollRef} className="graph-h relative flex flex-col overflow-y-auto" data-drag-scroll-container>
+        <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} scrollRef={scrollRef} />
       </main>
 
       <DragOverlay />

@@ -15,13 +15,14 @@ import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
-import { FC, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react'
+import { FC, memo, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface CommitItemProps {
   commit: GitCommit
   isExpanded: boolean
-  onToggle: () => void
+  /** Keyed by hash so the callback can stay identity-stable and the row memoized */
+  onToggle: (hash: string) => void
   selectedBranches: GitBranch[]
   treeWidth: number
   onCommitHover: (hash: string | null, row: number | null) => void
@@ -31,10 +32,10 @@ interface CommitItemProps {
   dimmed?: boolean
 }
 
-export const CommitItem: FC<CommitItemProps> = ({
+const CommitItemComponent: FC<CommitItemProps> = ({
   commit,
   isExpanded,
-  onToggle,
+  onToggle: onToggleHash,
   selectedBranches,
   treeWidth,
   onCommitHover,
@@ -43,6 +44,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   uncommitedFiles,
   dimmed,
 }) => {
+  const onToggle = useCallback(() => onToggleHash(commit.hash), [onToggleHash, commit.hash])
   const { settings } = useSettings()
 
   const sectionRef = useRef<HTMLElement>(null)
@@ -458,7 +460,7 @@ export const CommitItem: FC<CommitItemProps> = ({
                       <div
                         className={cn(
                           // Layout & sizing
-                          'my-1 max-h-24 w-fit min-w-64 max-w-full overflow-y-auto px-2 py-1.5',
+                          'my-1 max-h-24 w-fit max-w-full min-w-64 overflow-y-auto px-2 py-1.5',
                           // Appearance — the theme's editor background darkened, so the box reads
                           // as recessed on light and dark themes alike, with a border only just
                           // distinguishable from it
@@ -492,3 +494,6 @@ export const CommitItem: FC<CommitItemProps> = ({
     </>
   )
 }
+
+/** Memoized: with virtualization every scroll renders the parent, and rows are expensive to mount */
+export const CommitItem = memo(CommitItemComponent)
