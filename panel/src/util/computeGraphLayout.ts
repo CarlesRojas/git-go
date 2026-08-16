@@ -13,6 +13,8 @@ interface Segment {
   /** TRUE => transition happens near p2 (branch peeling off downward)
    *  FALSE => transition happens near p1 (branch merging back upward) */
   readonly lockedFirst: boolean
+  /** FALSE => part of the uncommitted-changes line (drawn in the uncommitted style) */
+  readonly isCommitted: boolean
 }
 
 interface UnavailablePoint {
@@ -25,19 +27,17 @@ interface UnavailablePoint {
 export class GraphBranch {
   public readonly colorIndex: number
   public readonly isStash: boolean
-  public readonly isUncommitted: boolean
   public segments: Segment[] = []
   public end: number = 0
   public hashes: Set<number> = new Set()
 
-  constructor(colorIndex: number, isStash: boolean, isUncommitted: boolean) {
+  constructor(colorIndex: number, isStash: boolean) {
     this.colorIndex = colorIndex
     this.isStash = isStash
-    this.isUncommitted = isUncommitted
   }
 
-  addSegment(p1: Point, p2: Point, lockedFirst: boolean) {
-    this.segments.push({ p1, p2, lockedFirst })
+  addSegment(p1: Point, p2: Point, isCommitted: boolean, lockedFirst: boolean) {
+    this.segments.push({ p1, p2, lockedFirst, isCommitted })
   }
 }
 
@@ -139,7 +139,6 @@ export interface CommitLayout {
 export interface BranchPath {
   colorIndex: number
   isStash: boolean
-  isUncommitted: boolean
   segments: Segment[]
   commitRows: number[]
 }
@@ -155,11 +154,18 @@ const NULL_VERTEX = new GraphVertex(-1, false, false, false)
 
 // ─── Main layout function ─────────────────────────────────────────────────────
 
+export interface GraphLayoutOptions {
+  /** Join the uncommitted-changes row to the checked out commit with a line kept
+   *  straight on the leftmost column. When off, it is shown as a separate dot. */
+  joinUncommittedChanges?: boolean
+}
+
 /**
  * Port of vscode-git-graph's Graph class layout algorithm.
  * Commits must be newest-first.
  */
-export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
+export function computeGraphLayout(commits: GitCommit[], options: GraphLayoutOptions = {}): GraphLayout {
+  const { joinUncommittedChanges = true } = options
   if (commits.length === 0) return { commits: [], branches: [] }
 
   // Build vertex list
@@ -221,7 +227,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
 
         const lockedFirst = !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true
 
-        parentBranch.addSegment(lastPoint, curPoint, lockedFirst)
+        parentBranch.addSegment(lastPoint, curPoint, !vertex.isUncommitted, lockedFirst)
         curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch)
         lastPoint = curPoint
 
@@ -232,7 +238,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
       }
     } else {
       // Normal branch
-      const branch = new GraphBranch(getAvailableColor(startAt), vertex.isStash, vertex.isUncommitted)
+      const branch = new GraphBranch(getAvailableColor(startAt), vertex.isStash)
       vertex.addToBranch(branch, lastPoint.x)
       branch.hashes.add(startAt)
       vertex.registerUnavailablePoint(lastPoint.x, vertex, branch)
@@ -242,7 +248,7 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
         const curPoint =
           parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint()
 
-        branch.addSegment(lastPoint, curPoint, lastPoint.x < curPoint.x)
+        branch.addSegment(lastPoint, curPoint, !vertex.isUncommitted, lastPoint.x < curPoint.x)
 
         if (!(vertices[startAt]!.isStash && parentVertex === curVertex))
           curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch)
@@ -277,7 +283,12 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
 
   let i = 0
   while (i < vertices.length) {
-    if (vertices[i]!.isUncommitted) {
+    // When joined, the uncommitted-changes vertex is processed like any other commit (its
+    // parent is HEAD), and being row 0 it is processed first — so its line down to HEAD claims
+    // the leftmost column at every row it crosses, forcing all other branches to shift right
+    // around it. It is left unconnected when the setting is off, and also when HEAD isn't
+    // among the loaded commits, to avoid drawing a line running off the bottom of the graph.
+    if (vertices[i]!.isUncommitted && (!joinUncommittedChanges || vertices[i]!.getNextParent() === NULL_VERTEX)) {
       i++
       continue
     }
@@ -304,7 +315,6 @@ export function computeGraphLayout(commits: GitCommit[]): GraphLayout {
   const branchPaths: BranchPath[] = branches.map(b => ({
     colorIndex: b.colorIndex,
     isStash: b.isStash,
-    isUncommitted: b.isUncommitted,
     segments: b.segments,
     commitRows: [...b.hashes],
   }))

@@ -135,6 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
                             confirmPush: config.confirmPush,
                             confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
+                            joinUncommittedChanges: config.joinUncommittedChanges,
                             showAuthorName: config.showAuthorName,
                             theme: config.theme,
                             customColors: config.customColors
@@ -795,6 +796,7 @@ export function activate(context: vscode.ExtensionContext) {
                             confirmPush: config.confirmPush,
                             confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
+                            joinUncommittedChanges: config.joinUncommittedChanges,
                             showAuthorName: config.showAuthorName,
                             theme: config.theme,
                             customColors: config.customColors

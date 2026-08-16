@@ -2,7 +2,7 @@ import { useSettings } from '@/context/SettingsContext'
 import { cn } from '@/util/cn'
 import { CommitLayout, computeGraphLayout } from '@/util/computeGraphLayout'
 import type { GitCommit } from '@git/gitService'
-import { ReactNode, useMemo } from 'react'
+import { Fragment, ReactNode, useMemo } from 'react'
 
 const COLOR_THEMES_DARK = {
   vibrant: ['#3b82f6', '#ec4899', '#84cc16', '#f97316', '#a855f7', '#f43f5e', '#14b8a6', '#eab308'],
@@ -94,8 +94,11 @@ interface Result {
 }
 
 export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
-  const layout = useMemo(() => computeGraphLayout(commits), [commits])
   const { settings } = useSettings()
+  const layout = useMemo(
+    () => computeGraphLayout(commits, { joinUncommittedChanges: settings.joinUncommittedChanges }),
+    [commits, settings.joinUncommittedChanges],
+  )
 
   const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
@@ -234,27 +237,34 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
                 isDark: settings.isDark,
                 customColors: settings.customColors,
                 isStash: branch.isStash,
-                isUncommitted: branch.isUncommitted,
               })
+
+              // The segments joining the uncommitted-changes row to HEAD are part of the same
+              // branch but drawn in the uncommitted style, so split them into their own path
               let d = ''
+              let dUncommitted = ''
               for (const seg of branch.segments) {
                 if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
-                d += buildSegmentPath(seg)
+                if (seg.isCommitted) d += buildSegmentPath(seg)
+                else dUncommitted += buildSegmentPath(seg)
               }
-              if (!d) return null
+              if (!d && !dUncommitted) return null
+
+              const sharedProps = {
+                fill: 'none',
+                strokeWidth: LINE_WIDTH,
+                strokeLinecap: 'round',
+                strokeLinejoin: 'round',
+                opacity: 0.7,
+                'data-rows': branch.commitRows.join(','),
+                className: 'transition-opacity duration-500',
+              } as const
+
               return (
-                <path
-                  key={`branch-${bi}`}
-                  d={d}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={LINE_WIDTH}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  opacity={0.7}
-                  data-rows={branch.commitRows.join(',')}
-                  className="transition-opacity duration-500"
-                />
+                <Fragment key={`branch-${bi}`}>
+                  {d && <path d={d} stroke={color} {...sharedProps} />}
+                  {dUncommitted && <path d={dUncommitted} stroke={UNCOMMITTED_COLOR} {...sharedProps} />}
+                </Fragment>
               )
             })}
           </g>
