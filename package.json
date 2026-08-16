@@ -234,7 +234,7 @@
                     "git-go.dragAndDrop.auto.push": {
                         "type": "boolean",
                         "default": false,
-                        "markdownDescription": "Push straight away when a branch is dropped onto its push action, instead of opening the push dialog. The push uses the values the dialog would have opened with.",
+                        "markdownDescription": "Push straight away when a branch or tag is dropped onto its push action, instead of opening the push dialog. The push uses the values the dialog would have opened with.",
                         "order": 9
                     },
                     "git-go.dragAndDrop.auto.fetchIntoLocal": {
