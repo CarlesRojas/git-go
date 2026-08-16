@@ -427,6 +427,24 @@ export const CommitItem: FC<CommitItemProps> = ({
                     )}
 
                     <p className="text-xs font-medium">
+                      <span className="opacity-50">Date: </span>
+                      <time dateTime={commit.date.split('T')[0]}>
+                        {new Date(commit.date).toLocaleDateString('en-CA', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </time>{' '}
+                      <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
+                        {new Date(commit.date).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })}
+                      </time>
+                    </p>
+
+                    <p className="text-xs font-medium">
                       <span className="opacity-50">Message: </span>
                       <span
                         className={cn('cursor-pointer transition-opacity hover:opacity-75')}
@@ -451,24 +469,6 @@ export const CommitItem: FC<CommitItemProps> = ({
                         {commit.body}
                       </div>
                     )}
-
-                    <p className="text-xs font-medium">
-                      <span className="opacity-50">Date: </span>
-                      <time dateTime={commit.date.split('T')[0]}>
-                        {new Date(commit.date).toLocaleDateString('en-CA', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </time>{' '}
-                      <time dateTime={commit.date.split('T')[1]?.split('+')[0] || commit.date}>
-                        {new Date(commit.date).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false,
-                        })}
-                      </time>
-                    </p>
                   </div>
                 </div>
               )}
