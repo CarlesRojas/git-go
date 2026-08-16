@@ -13,7 +13,7 @@ export const SOURCE_ATTRIBUTE = 'data-drag-source-active'
 
 export interface PendingDrop {
   payload: DragPayload
-  /** cleanName of the local branch dropped on, or null for actions that need no target. */
+  /** Full ref name of the branch dropped on, or null for actions that need no target. */
   targetKey: string | null
   actionId: DragActionId
 }

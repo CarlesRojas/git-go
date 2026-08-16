@@ -5,6 +5,7 @@ import { Label } from '@/component/ui/Label'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCurrentBranch, useMergeBranch } from '@/hook/useGitQueries'
+import { qualifiedBranchName } from '@/util/branchName'
 import { faCircleNotch, faCodeMerge } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -20,9 +21,10 @@ export const useRemoteBranchMergeDialog = () => {
   const { settings } = useSettings()
 
   const merge = (branch: GitBranch, values: { fastForwardIfPossible: boolean; squash: boolean; noCommit: boolean }) => {
+    // Merged by its remote-qualified name, so a same-named local branch is never merged instead.
     mergeBranchMutation.mutate(
       {
-        branchName: branch.cleanName,
+        branchName: qualifiedBranchName(branch),
         fastForwardIfPossible: values.fastForwardIfPossible,
         squash: values.squash,
         noCommit: values.noCommit,

@@ -5,6 +5,7 @@ import { Label } from '@/component/ui/Label'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCurrentBranch, useRebaseBranch } from '@/hook/useGitQueries'
+import { qualifiedBranchName } from '@/util/branchName'
 import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -21,6 +22,9 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
   const rebaseBranchMutation = useRebaseBranch()
   const { data: currentBranch } = useCurrentBranch()
   const { settings } = useSettings()
+  // A remote branch is rebased onto by its remote-qualified name, so a same-named local branch
+  // is never used in its place.
+  const rebaseRef = qualifiedBranchName(branch)
 
   const rebaseForm = useForm({
     defaultValues: {
@@ -30,14 +34,14 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
     onSubmit: async ({ value }) => {
       rebaseBranchMutation.mutate(
         {
-          branchName: branch.cleanName,
+          branchName: rebaseRef,
           ignoreDate: value.ignoreDate,
           autoStash: value.autoStash,
         },
         {
           onSuccess: () => {
             showToast({
-              text: `Current branch rebased onto '${branch.cleanName}' successfully`,
+              text: `Current branch rebased onto '${rebaseRef}' successfully`,
               icon: faCodeBranch,
               type: 'success',
             })
@@ -69,7 +73,7 @@ export const useRebaseCurrentBranchIntoBranch = ({ branch }: UseRebaseCurrentBra
         <DialogHeader>
           <DialogTitle>
             Rebase branch {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch) on branch{' '}
-            <strong>{branch.cleanName}</strong>
+            <strong>{qualifiedBranchName(branch)}</strong>
           </DialogTitle>
         </DialogHeader>
 

@@ -19,6 +19,7 @@ import { useFadePresence } from '@/hook/useFadePresence'
 import {
   useApplyStash,
   useCheckoutLocalBranch,
+  useCheckoutRemoteBranch,
   useCherryPickCommit,
   useCurrentBranch,
   useFetchIntoLocalBranch,
@@ -30,6 +31,7 @@ import {
   usePushBranch,
   useRebaseBranch,
 } from '@/hook/useGitQueries'
+import { qualifiedBranchName } from '@/util/branchName'
 import { cn } from '@/util/cn'
 import { DragAction, resolveSourceActions, resolveTargetActions, shortHash } from '@/util/dragAndDrop'
 import {
@@ -119,6 +121,7 @@ export const DragOverlay: FC = () => {
   const { data: remotes = [] } = useGitRemotes()
   const { data: currentBranch } = useCurrentBranch()
   const checkoutMutation = useCheckoutLocalBranch()
+  const checkoutRemoteMutation = useCheckoutRemoteBranch()
 
   const [dropBranch, setDropBranch] = useState<GitBranch | null>(null)
   const [dropCommit, setDropCommit] = useState<GitCommit | null>(null)
@@ -151,14 +154,14 @@ export const DragOverlay: FC = () => {
   const fetchIntoLocalMutation = useFetchIntoLocalBranch()
 
   const targetBranch = useMemo(
-    () => branches.find(branch => !branch.remote && branch.cleanName === hoveredTargetKey) ?? null,
+    () => branches.find(branch => branch.name === hoveredTargetKey) ?? null,
     [branches, hoveredTargetKey],
   )
 
   const targetActions = useMemo(() => {
     if (!payload || !targetBranch) return []
-    return resolveTargetActions({ payload, target: targetBranch, config: settings })
-  }, [payload, targetBranch, settings])
+    return resolveTargetActions({ payload, target: targetBranch, branches, config: settings })
+  }, [payload, targetBranch, branches, settings])
 
   const sourceActions = useMemo(() => {
     if (!payload) return []
@@ -231,12 +234,11 @@ export const DragOverlay: FC = () => {
 
   const execute = useCallback(
     async (drop: PendingDrop) => {
-      const target = drop.targetKey
-        ? (branches.find(branch => !branch.remote && branch.cleanName === drop.targetKey) ?? null)
-        : null
+      const target = drop.targetKey ? (branches.find(branch => branch.name === drop.targetKey) ?? null) : null
 
       // Merging moves the target so the target is checked out; rebasing moves the source so
-      // the source is. Both then run the existing HEAD-relative command.
+      // the source is. Both then run the existing HEAD-relative command. Checking out a remote
+      // branch lands on its local counterpart, created from the remote when it does not exist.
       const checkoutSubject = (['merge', 'cherryPick', 'mergeCommit', 'revert'] as const).some(
         id => id === drop.actionId,
       )
@@ -246,8 +248,19 @@ export const DragOverlay: FC = () => {
           : null
 
       if (checkoutSubject && checkoutSubject.cleanName !== currentBranch) {
+        const hasLocalCounterpart =
+          !checkoutSubject.remote ||
+          branches.some(branch => !branch.remote && branch.cleanName === checkoutSubject.cleanName)
+
         try {
-          await checkoutMutation.mutateAsync({ branchName: checkoutSubject.cleanName })
+          if (hasLocalCounterpart) {
+            await checkoutMutation.mutateAsync({ branchName: checkoutSubject.cleanName })
+          } else {
+            await checkoutRemoteMutation.mutateAsync({
+              remoteBranchName: qualifiedBranchName(checkoutSubject),
+              localBranchName: checkoutSubject.cleanName,
+            })
+          }
         } catch (error) {
           showToast({
             text: error instanceof Error ? error.message : `Could not check out '${checkoutSubject.cleanName}'`,
@@ -270,7 +283,7 @@ export const DragOverlay: FC = () => {
           if (settings.dragAndDropAutoMerge) {
             mergeBranchMutation.mutate(
               {
-                branchName: merged.cleanName,
+                branchName: qualifiedBranchName(merged),
                 fastForwardIfPossible: settings.mergeFastForwardIfPossible,
                 squash: settings.mergeSquash,
                 noCommit: settings.mergeNoCommit,
@@ -278,7 +291,7 @@ export const DragOverlay: FC = () => {
               {
                 onSuccess: () =>
                   showToast({
-                    text: `Branch '${merged.cleanName}' merged into '${target?.cleanName}' successfully`,
+                    text: `Branch '${qualifiedBranchName(merged)}' merged into '${target?.cleanName}' successfully`,
                     icon: faCodeMerge,
                     type: 'success',
                   }),
@@ -298,11 +311,11 @@ export const DragOverlay: FC = () => {
 
           if (settings.dragAndDropAutoRebase) {
             rebaseBranchMutation.mutate(
-              { branchName: target.cleanName, ignoreDate: settings.rebaseIgnoreDate },
+              { branchName: qualifiedBranchName(target), ignoreDate: settings.rebaseIgnoreDate },
               {
                 onSuccess: () =>
                   showToast({
-                    text: `Current branch rebased onto '${target.cleanName}' successfully`,
+                    text: `Current branch rebased onto '${qualifiedBranchName(target)}' successfully`,
                     icon: faCodeBranch,
                     type: 'success',
                   }),
@@ -497,6 +510,7 @@ export const DragOverlay: FC = () => {
       branches,
       currentBranch,
       checkoutMutation,
+      checkoutRemoteMutation,
       showToast,
       mergeDialog,
       rebaseDialog,

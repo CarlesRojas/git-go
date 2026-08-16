@@ -22,7 +22,7 @@ export const usePendingPillMutations = (): PendingPillMutation[] =>
 
 /**
  * Mutations that act on a branch they name by its clean name. Merging or rebasing a remote
- * branch goes through these too, so a remote-only pill also checks its own clean name here.
+ * branch passes its remote-qualified name instead, which is matched in isRemoteBranchLoading.
  */
 export const isBranchNameLoading = (pending: PendingPillMutation[], cleanName: string): boolean =>
   pending.some(({ key, variables }) => {
@@ -61,6 +61,10 @@ export const isRemoteBranchLoading = (pending: PendingPillMutation[], remote: Gi
           variables.remoteBranchName === remote.name ||
           variables.remoteBranchName === `${remote.remoteName}/${remote.cleanName}`
         )
+      // Remote branches are merged and rebased onto by their remote-qualified name.
+      case 'mergeBranch':
+      case 'rebaseBranch':
+        return variables.branchName === `${remote.remoteName}/${remote.cleanName}`
       case 'deleteRemoteBranch':
         return variables.remote === remote.remoteName && variables.branchName === remote.cleanName
       default:
