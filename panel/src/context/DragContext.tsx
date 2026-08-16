@@ -289,7 +289,25 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Boxes sit above the graph; while over one, the target underneath must not change.
-    if (actionElement) return
+    if (actionElement) {
+      // A box inside the source region belongs to the dragged item's own stack, so no pill is
+      // being aimed at. A pill crossed on the way here — before the stack had mounted and could
+      // capture the pointer — is still latched with a hold ticking, and left alone that hold
+      // would fire beneath these boxes and replace them with the crossed pill's stack.
+      if (inRegion && currentTargetKey.current !== null) {
+        clearHoldTimer()
+        clearHideTimer()
+        currentTargetKey.current = null
+        setHoveredTargetKey(null)
+        setRevealedTracked(false)
+
+        if (isPointerOverTarget.current) {
+          isPointerOverTarget.current = false
+          setPointerOverTarget(false)
+        }
+      }
+      return
+    }
 
     const targetElement = element?.closest<HTMLElement>('[data-drop-target]') ?? null
     // The drag handle can be nested inside the drop target, so containment — not identity —
@@ -328,23 +346,15 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
     clearHideTimer()
 
-    // Sweeping across pills should not close and reopen the stack at each one. Once it is
-    // open, moving to another target re-anchors it at once and only the first pill of a sweep
-    // pays the hold — the same courtesy menus extend when moving between triggers.
-    const alreadyOpen = isRevealed.current
-
+    // Every pill pays the hold, even mid-sweep with another stack open: moving onto a
+    // different target dismisses the open stack and arms a fresh hold there. The only stack
+    // that ever skips the hold is the dragged item's own, at the start of the gesture.
     currentTargetKey.current = resolvedTarget
     setHoveredTargetKey(resolvedTarget)
 
     if (resolvedTarget === null) {
       clearHoldTimer()
       setRevealedTracked(false)
-      return
-    }
-
-    if (alreadyOpen) {
-      clearHoldTimer()
-      setRevealedTracked(true)
       return
     }
 

@@ -63,7 +63,7 @@ interface LayoutRect {
 
 const STACK_GAP_PX = 8
 /** One box, used only to decide whether a stack fits below its pill. */
-const BOX_HEIGHT_ESTIMATE_PX = 42
+const BOX_HEIGHT_ESTIMATE_PX = 50
 const BOX_WIDTH_PX = 224
 const VIEWPORT_MARGIN_PX = 8
 /** Matches the opacity transition on the stacks, so they stay mounted until it finishes. */
@@ -185,11 +185,6 @@ export const DragOverlay: FC = () => {
     [targetActions],
   )
 
-  // With nothing to perform on release there is no reason to make the user hold: the boxes are
-  // the only way to act, so they open on contact. This covers a target that cannot be checked
-  // out — one held by a worktree, say — as well as a default action turned off in settings.
-  const revealOnContact = visibleTargetActions.length > 0 && !defaultTargetAction
-
   // Layout effect so the default lands in the same frame as the hover that produced it —
   // a plain effect can miss a hover-and-release inside one frame.
   useLayoutEffect(() => {
@@ -199,10 +194,7 @@ export const DragOverlay: FC = () => {
   // Both stacks anchor to a pill the same way: measure it, and re-measure while the graph
   // scrolls under it.
   useLayoutEffect(() => {
-    const selector =
-      (revealed || revealOnContact) && hoveredTargetKey
-        ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]`
-        : undefined
+    const selector = revealed && hoveredTargetKey ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]` : undefined
 
     if (!selector) {
       setStackRect(null)
@@ -218,7 +210,7 @@ export const DragOverlay: FC = () => {
     const container = document.querySelector<HTMLElement>('[data-drag-scroll-container]')
     container?.addEventListener('scroll', measure)
     return () => container?.removeEventListener('scroll', measure)
-  }, [revealed, revealOnContact, hoveredTargetKey])
+  }, [revealed, hoveredTargetKey])
 
   useLayoutEffect(() => {
     if (!hoveredSource) {
@@ -550,8 +542,11 @@ export const DragOverlay: FC = () => {
   )
 
   const targetStackVisible =
-    (revealed || revealOnContact) && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
-  const sourceStackVisible = hoveredSource && !!sourceStackPosition && visibleSourceActions.length > 0
+    revealed && !!targetStackPosition && !!hoveredTargetKey && visibleTargetActions.length > 0
+  // Only one stack may be on screen at a time. The target stack wins because it is the one the
+  // pointer is actually over — the source stack only lingers on a dismissal delay by then.
+  const sourceStackVisible =
+    !targetStackVisible && hoveredSource && !!sourceStackPosition && visibleSourceActions.length > 0
 
   // The position and actions are cleared the moment a stack stops being visible, so the last
   // ones are held on to for the duration of the fade.
@@ -563,8 +558,10 @@ export const DragOverlay: FC = () => {
   const sourceSnapshot = useRef<{ position: object; actions: DragAction[] } | null>(null)
   if (sourceStackVisible) sourceSnapshot.current = { position: sourceStackPosition, actions: visibleSourceActions }
 
-  const targetFade = useFadePresence(targetStackVisible, FADE_MS)
-  const sourceFade = useFadePresence(sourceStackVisible, FADE_MS)
+  // While one stack is up, the other skips its exit fade entirely: a stack caught mid-fade
+  // when its counterpart appears would otherwise read as a second group on screen.
+  const targetFade = useFadePresence(targetStackVisible, sourceStackVisible ? 0 : FADE_MS)
+  const sourceFade = useFadePresence(sourceStackVisible, targetStackVisible ? 0 : FADE_MS)
 
   const pendingAction = useMemo<DragAction | null>(() => {
     if (!payload) return null
@@ -612,11 +609,15 @@ export const DragOverlay: FC = () => {
         {/* Actions on the dragged item itself, shown under it whenever the pointer is on it. */}
         {sourceFade.mounted && sourceSnapshot.current && (
           <div
-            data-drag-source-zone={sourceFade.shown ? '' : undefined}
+            // Interactivity follows the intent to show, not the fade: the boxes capture the
+            // pointer from the same render the decision is made — before they are fully
+            // visible — so a fast gesture cannot latch a pill sitting under their footprint.
+            // While fading out the intent is gone, so a release cannot land on a stale box.
+            data-drag-source-zone={sourceStackVisible ? '' : undefined}
             className={cn(
               'absolute z-10 flex flex-col transition-opacity duration-150',
-              // Untargetable while fading out, so a release cannot land on a stale box.
-              sourceFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+              sourceStackVisible ? 'pointer-events-auto' : 'pointer-events-none',
+              sourceFade.shown ? 'opacity-100' : 'opacity-0',
             )}
             style={sourceSnapshot.current.position}
           >
@@ -636,11 +637,15 @@ export const DragOverlay: FC = () => {
           <div
             // Carries the target key so the padding bridging back to the pill counts as the
             // pill: the stack stays open and a release there still performs its action.
-            data-drop-target={targetFade.shown ? targetSnapshot.current.key : undefined}
+            // Interactivity follows the intent to show, not the fade: the boxes capture the
+            // pointer from the same render the decision is made — before they are fully
+            // visible — so a fast gesture cannot latch a pill sitting under their footprint.
+            // While fading out the intent is gone, so a release cannot land on a stale box.
+            data-drop-target={targetStackVisible ? targetSnapshot.current.key : undefined}
             className={cn(
               'absolute z-10 flex flex-col transition-opacity duration-150',
-              // Untargetable while fading out, so a release cannot land on a stale box.
-              targetFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+              targetStackVisible ? 'pointer-events-auto' : 'pointer-events-none',
+              targetFade.shown ? 'opacity-100' : 'opacity-0',
             )}
             style={targetSnapshot.current.position}
           >
