@@ -42,6 +42,19 @@ export function activate(context: vscode.ExtensionContext) {
     const repoService = RepoService.getInstance();
     let gitWatcher: { watchActiveRepo: () => void } | undefined = undefined;
 
+    // A graph tab from before this activation (an extension update or window reload) is dead and
+    // cannot be revived, so close it rather than leave it next to the tab that opens fresh
+    const leftoverGraphTabs = vscode.window.tabGroups.all
+        .flatMap((group) => group.tabs)
+        .filter((tab) => tab.input instanceof vscode.TabInputWebview && tab.input.viewType.includes('gitGoGraph'));
+
+    if (leftoverGraphTabs.length > 0) {
+        log(`Closing ${leftoverGraphTabs.length} Git Go tab(s) left over from a previous session`);
+        vscode.window.tabGroups
+            .close(leftoverGraphTabs, true)
+            .then(undefined, (error) => log(`Could not close leftover Git Go tab(s): ${error}`));
+    }
+
     /**
      * Look for the workspace's repositories again and keep every git command pointed at the one
      * being shown, which is the first one found while the user has not chosen another.
