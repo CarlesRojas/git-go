@@ -36,13 +36,32 @@
     @apply opacity-10 duration-500;
   }
 
-  /* Scrollbar styles */
+  /* Scrollbar styles — transparent tracks everywhere, thumbs in the theme's own scrollbar colors */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
 
   ::-webkit-scrollbar-corner {
     background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background);
+    border-radius: var(--radius-small);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--vscode-scrollbarSlider-activeBackground);
   }
 }
 
