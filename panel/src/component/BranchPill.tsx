@@ -5,18 +5,23 @@ import { useLocalBranchContextMenu } from '@/hook/contextMenu/useLocalBranchCont
 import { useRemoteBranchContextMenu } from '@/hook/contextMenu/useRemoteBranchContextMenu'
 import { useCheckoutDialog } from '@/hook/dialog/useCheckoutDialog'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
+import { PillSpinner } from '@/component/PillSpinner'
 import { useDragHoverScale } from '@/hook/useDragHoverScale'
 import { useDoubleClick } from '@/hook/useDoubleClick'
 import { useCheckoutLocalBranch, useCurrentBranch } from '@/hook/useGitQueries'
 import { getColor } from '@/hook/useGitTree'
+import {
+  isBranchNameLoading,
+  isLocalBranchLoading,
+  isRemoteBranchLoading,
+  usePendingPillMutations,
+} from '@/hook/usePillLoading'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { GroupedBranch } from '@/util/groupBranches'
-import { faCircleNotch, faCodeBranch } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { GitBranch } from '@git/gitService'
-import { useMutationState } from '@tanstack/react-query'
 import { FC, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 interface Props {
@@ -43,37 +48,21 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const checkoutDialog = useCheckoutDialog({ remoteBranch: remotes[0], hasLocalBranch })
   const worktreeOpenDialog = useWorktreeOpenDialog()
 
-  const pendingLocalCheckouts = useMutationState({
-    filters: { mutationKey: ['checkoutLocalBranch'], status: 'pending' },
-    select: mutation => (mutation.state.variables as { branchName: string }).branchName,
-  })
+  const pendingPillMutations = usePendingPillMutations()
 
-  const pendingRemoteFetches = useMutationState({
-    filters: { mutationKey: ['fetchIntoLocalBranch'], status: 'pending' },
-    select: mutation => mutation.state.variables as { remote: string; remoteBranch: string },
-  })
-
-  const pendingRemoteCheckouts = useMutationState({
-    filters: { mutationKey: ['checkoutRemoteBranch'], status: 'pending' },
-    select: mutation => (mutation.state.variables as { remoteBranchName: string }).remoteBranchName,
-  })
-
-  const isCheckingOutLocal = !!local && pendingLocalCheckouts.includes(local.cleanName)
-
-  const isLoadingRemote = (remote: GitBranch) =>
-    pendingRemoteFetches.some(
-      pending => pending.remote === remote.remoteName && pending.remoteBranch === remote.cleanName,
-    ) ||
-    pendingRemoteCheckouts.some(
-      remoteBranchName =>
-        remoteBranchName === remote.name || remoteBranchName === `${remote.remoteName}/${remote.cleanName}`,
-    )
-
+  const isLocalLoading = !!local && isLocalBranchLoading(pendingPillMutations, local)
+  const isLoadingRemote = (remote: GitBranch) => isRemoteBranchLoading(pendingPillMutations, remote)
   const isAnyRemoteLoading = remotes.some(remote => isLoadingRemote(remote))
 
   const onlyLocal = !!local && remotes.length === 0
   const onlyRemote = !local && remotes.length > 0
   const localAndRemote = !!local && remotes.length > 0
+
+  // With no local segment, actions addressing the branch by name — merging a remote branch
+  // into current, say — can only mean this pill, so its icon covers those too.
+  const isRemotePillLoading =
+    isAnyRemoteLoading ||
+    (onlyRemote && remotes.some(remote => isBranchNameLoading(pendingPillMutations, remote.cleanName)))
   // %(HEAD) from git itself is the authoritative per-worktree marker; the name comparison only
   // covers branch data that predates it
   const isCurrent = !!local && (local.current || currentBranch === local.cleanName)
@@ -112,7 +101,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   }
 
   const handleLocalDoubleClick = useDoubleClick(() => {
-    if (!local || isCurrent || isCheckingOutLocal) return
+    if (!local || isCurrent || isLocalLoading) return
 
     if (local.worktreePath) {
       worktreeOpenDialog.openDialog({ worktreePath: local.worktreePath, branchName: local.cleanName })
@@ -137,6 +126,8 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   })
 
   const handleRemoteDoubleClick = useDoubleClick(() => {
+    if (isRemotePillLoading) return
+
     const remoteBranch = remotes[0]
     if (localBranchOnDifferentCommit && remoteBranch) {
       remoteDialogs.fetchIntoLocalDialog.openDialog(remoteBranch)
@@ -216,7 +207,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
               }}
               onClick={localAndRemote ? handleLocalDoubleClick : undefined}
             >
-              <span className={cn('relative flex items-center', isCheckingOutLocal && '[&>div]:invisible')}>
+              <span className={cn('relative flex items-center', isLocalLoading && '[&>div]:invisible')}>
                 {getBranchIcons({
                   isLocal: !!local,
                   hasRemote: !local && !!remotes.length,
@@ -225,15 +216,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                   white: !local,
                 })}
 
-                {isCheckingOutLocal && (
-                  <FontAwesomeIcon
-                    icon={faCircleNotch}
-                    className={cn(
-                      'absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin',
-                      local ? 'text-vsc-editor-bg/80' : 'text-vsc-editor-fg/80',
-                    )}
-                  />
-                )}
+                {isLocalLoading && <PillSpinner className={cn(local && 'text-vsc-editor-bg/80')} />}
               </span>
             </div>,
           )}
@@ -253,7 +236,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
             onClick={localAndRemote ? handleLocalDoubleClick : undefined}
           >
             {onlyRemote && (
-              <span className={cn('relative flex items-center', isAnyRemoteLoading && '[&>div]:invisible')}>
+              <span className={cn('relative flex items-center', isRemotePillLoading && '[&>div]:invisible')}>
                 {getBranchIcons({
                   isLocal: !!local,
                   hasRemote: !local && !!remotes.length,
@@ -261,12 +244,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                   white: !local,
                 })}
 
-                {isAnyRemoteLoading && (
-                  <FontAwesomeIcon
-                    icon={faCircleNotch}
-                    className="text-vsc-editor-fg/80 absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin"
-                  />
-                )}
+                {isRemotePillLoading && <PillSpinner />}
               </span>
             )}
 
@@ -314,12 +292,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
                   {remote.remoteName}
                 </span>
 
-                {!onlyRemote && isLoadingRemote(remote) && (
-                  <FontAwesomeIcon
-                    icon={faCircleNotch}
-                    className="text-vsc-editor-fg/80 absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 animate-spin"
-                  />
-                )}
+                {!onlyRemote && isLoadingRemote(remote) && <PillSpinner />}
               </div>,
               true,
               remote,

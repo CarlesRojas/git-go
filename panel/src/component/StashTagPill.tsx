@@ -1,9 +1,11 @@
+import { PillSpinner } from '@/component/PillSpinner'
 import { useDragActions, useDragState } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useStashContextMenu } from '@/hook/contextMenu/useStashContextMenu'
 import { useTagContextMenu } from '@/hook/contextMenu/useTagContextMenu'
 import { useDragHoverScale } from '@/hook/useDragHoverScale'
 import { useTagRemotes } from '@/hook/useGitQueries'
+import { isStashLoading, isTagLoading, usePendingPillMutations } from '@/hook/usePillLoading'
 import { cn } from '@/util/cn'
 import { faInbox, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -47,6 +49,10 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
     (dragPayload?.kind === 'stash' && type === 'stash' && dragPayload.ref === label)
 
   const { ref: pillRef, scale, unclipped } = useDragHoverScale<HTMLDivElement>(isDraggedPill && pointerOverSource)
+
+  const pendingPillMutations = usePendingPillMutations()
+  const isLoading =
+    type === 'tag' ? isTagLoading(pendingPillMutations, label) : isStashLoading(pendingPillMutations, label)
 
   // Early returns after hooks
   if (type === 'stash' && !settings.showStashes) return null
@@ -112,7 +118,11 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
             )}
           >
             <div className="flex h-full min-w-fit items-center gap-1.5 px-1">
-              <FontAwesomeIcon icon={icon} className={cn('size-3 max-w-3', iconColor)} />
+              <span className="relative flex items-center">
+                <FontAwesomeIcon icon={icon} className={cn('size-3 max-w-3', iconColor, isLoading && 'invisible')} />
+
+                {isLoading && <PillSpinner />}
+              </span>
 
               <span className="line-clamp-1 text-xs leading-tight font-medium text-nowrap">
                 {type === 'stash' ? formatStash(label) : label}
