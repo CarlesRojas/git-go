@@ -194,8 +194,8 @@ export class GraphLayoutBuilder {
   private availableColors: number[] = []
   private pending: PendingPath[] = []
   private commitLayouts: CommitLayout[] = []
-  /** Row of an uncommitted vertex waiting for the checked out commit to be loaded */
-  private deferredUncommittedRow: number | null = null
+  /** Hash of the checked out commit an uncommitted row is waiting for (not loaded yet) */
+  private deferredUncommittedParent: string | null = null
 
   constructor(options: GraphLayoutOptions = {}) {
     this.joinUncommittedChanges = options.joinUncommittedChanges ?? true
@@ -212,6 +212,15 @@ export class GraphLayoutBuilder {
    */
   canExtend(commits: GitCommit[]): boolean {
     if (commits.length < this.commits.length) return false
+
+    // The checked out commit an uncommitted row is waiting for arriving means the join must be
+    // laid out from the top (it claims the leftmost column at every row it crosses), which only
+    // a rebuild can do — extending would thread the line down the right side instead
+    if (this.deferredUncommittedParent !== null) {
+      for (let i = this.commits.length; i < commits.length; i++) {
+        if (commits[i]!.hash === this.deferredUncommittedParent) return false
+      }
+    }
 
     for (let i = 0; i < this.commits.length; i++) {
       const prev = this.commits[i]!
@@ -272,20 +281,6 @@ export class GraphLayoutBuilder {
       this.extendPath({ ...path, parentProcessed: true }, startRow)
     }
 
-    // An uncommitted row whose checked out commit was not loaded yet joins it now that it is
-    if (this.deferredUncommittedRow !== null) {
-      const row = this.deferredUncommittedRow
-      const vertex = this.vertices[row]!
-      if (this.resolveParent(vertex.getNextParentHash()) !== NULL_VERTEX) {
-        this.deferredUncommittedRow = null
-        while (vertex.getNextParentHash() !== null || vertex.isNotOnBranch()) this.determinePath(row)
-
-        const layoutEntry = this.commitLayouts[row]!
-        layoutEntry.column = vertex.getPoint().x
-        layoutEntry.colorIndex = vertex.getColorIndex()
-      }
-    }
-
     // Rows before startRow are fully processed (every parent handled, every vertex on a branch)
     let i = startRow
     while (i < this.vertices.length) {
@@ -294,13 +289,14 @@ export class GraphLayoutBuilder {
       // When joined, the uncommitted-changes vertex is processed like any other commit (its
       // parent is HEAD), and being row 0 it is processed first — so its line down to HEAD claims
       // the leftmost column at every row it crosses, forcing all other branches to shift right
-      // around it. It is left unconnected when the setting is off, and deferred when HEAD isn't
-      // among the loaded commits yet, to avoid drawing a line running off the bottom of the graph.
+      // around it. It is left unconnected when the setting is off, and also when HEAD isn't
+      // among the loaded commits yet — its hash is remembered so canExtend can force a rebuild
+      // once the page holding it arrives.
       if (
         vertex.isUncommitted &&
         (!this.joinUncommittedChanges || this.resolveParent(vertex.getNextParentHash()) === NULL_VERTEX)
       ) {
-        if (this.joinUncommittedChanges) this.deferredUncommittedRow = i
+        if (this.joinUncommittedChanges) this.deferredUncommittedParent = vertex.getNextParentHash()
         i++
         continue
       }
