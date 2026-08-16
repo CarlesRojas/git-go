@@ -617,11 +617,15 @@ export const DragOverlay: FC = () => {
         {/* Actions on the dragged item itself, shown under it whenever the pointer is on it. */}
         {sourceFade.mounted && sourceSnapshot.current && (
           <div
-            data-drag-source-zone={sourceFade.shown ? '' : undefined}
+            // Interactivity follows the intent to show, not the fade: the boxes capture the
+            // pointer from the same render the decision is made — before they are fully
+            // visible — so a fast gesture cannot latch a pill sitting under their footprint.
+            // While fading out the intent is gone, so a release cannot land on a stale box.
+            data-drag-source-zone={sourceStackVisible ? '' : undefined}
             className={cn(
               'absolute z-10 flex flex-col transition-opacity duration-150',
-              // Untargetable while fading out, so a release cannot land on a stale box.
-              sourceFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+              sourceStackVisible ? 'pointer-events-auto' : 'pointer-events-none',
+              sourceFade.shown ? 'opacity-100' : 'opacity-0',
             )}
             style={sourceSnapshot.current.position}
           >
@@ -641,11 +645,15 @@ export const DragOverlay: FC = () => {
           <div
             // Carries the target key so the padding bridging back to the pill counts as the
             // pill: the stack stays open and a release there still performs its action.
-            data-drop-target={targetFade.shown ? targetSnapshot.current.key : undefined}
+            // Interactivity follows the intent to show, not the fade: the boxes capture the
+            // pointer from the same render the decision is made — before they are fully
+            // visible — so a fast gesture cannot latch a pill sitting under their footprint.
+            // While fading out the intent is gone, so a release cannot land on a stale box.
+            data-drop-target={targetStackVisible ? targetSnapshot.current.key : undefined}
             className={cn(
               'absolute z-10 flex flex-col transition-opacity duration-150',
-              // Untargetable while fading out, so a release cannot land on a stale box.
-              targetFade.shown ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+              targetStackVisible ? 'pointer-events-auto' : 'pointer-events-none',
+              targetFade.shown ? 'opacity-100' : 'opacity-0',
             )}
             style={targetSnapshot.current.position}
           >
