@@ -99,6 +99,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 ### 🧲 Drag and Drop
 
 - **Drop a branch on a branch** to merge or rebase, with the default action set in the settings
+- **Remote branches** work on both ends of a drop - the remote branch is checked out (as its local counterpart) first, then the action runs
 - **Drop a commit on a branch** to cherry-pick, merge, or revert it
 - **Hold over a pill** to open every action it accepts instead of taking the default one
 - **Drag an item on its own** for the actions that need no target - push, delete, fetch into local, and apply, pop or drop a stash

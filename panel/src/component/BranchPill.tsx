@@ -70,16 +70,18 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   const { beginPress } = useDragActions()
   const { payload: dragPayload, hoveredTargetKey, pointerOverSource } = useDragState()
 
-  const isDropTarget = !!dragPayload && !!local
+  // A remote-only pill is targeted as its first remote branch — dropping there checks out the
+  // remote branch (as its local counterpart) before the action runs.
+  const dropTargetBranch = local ?? remotes[0] ?? null
+  const isDropTarget = !!dragPayload && !!dropTargetBranch
   // The pill being dragged is hoverable too — returning to it reveals its own actions — so it
   // reacts exactly like any other target rather than being singled out.
-  // A remote branch shares its name with the local one, so the kind of ref has to match too.
+  // A remote branch shares its clean name with the local one, so pills match on the full ref name.
   const isDraggedPill =
-    !!local &&
     dragPayload?.kind === 'branch' &&
-    !dragPayload.branch.remote &&
-    dragPayload.branch.cleanName === local.cleanName
-  const isHoveredTarget = (isDropTarget && hoveredTargetKey === local.cleanName) || (isDraggedPill && pointerOverSource)
+    [local, ...remotes].some(candidate => candidate?.name === dragPayload.branch.name)
+  const isHoveredTarget =
+    (isDropTarget && hoveredTargetKey === dropTargetBranch?.name) || (isDraggedPill && pointerOverSource)
 
   const {
     ref: pillRef,
@@ -146,8 +148,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
     <>
       <button
         ref={pillRef}
-        data-drop-target={local ? local.cleanName : undefined}
-        data-drag-dimmable={onlyRemote ? '' : undefined}
+        data-drop-target={dropTargetBranch ? dropTargetBranch.name : undefined}
         data-drag-hovered={unclipRow ? '' : undefined}
         onPointerDown={handlePointerDown}
         className={cn(

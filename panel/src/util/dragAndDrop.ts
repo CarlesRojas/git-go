@@ -12,6 +12,7 @@ import {
   faUpload,
 } from '@fortawesome/free-solid-svg-icons'
 import { formatStash } from '@/component/StashTagPill'
+import { qualifiedBranchName } from '@/util/branchName'
 import { GitBranch, GitCommit } from '@git/gitService'
 
 export type DragActionId =
@@ -77,11 +78,15 @@ export const payloadLabel = (payload: DragPayload) => {
 /**
  * Why the given branch cannot be checked out, or undefined when it can.
  * Every drag action runs as `checkout subject` followed by a HEAD-relative git command,
- * so this is the only gate an action has to pass.
+ * so this is the only gate an action has to pass. Checking out a remote branch lands on its
+ * local counterpart — created from the remote when it does not exist yet — so a remote subject
+ * is blocked only when that counterpart is.
  */
-const checkoutBlocker = (branch: GitBranch): string | undefined => {
-  if (branch.remote) return 'Remote branches cannot be checked out'
-  if (branch.worktreePath) return `Checked out in worktree ${branch.worktreePath}`
+const checkoutBlocker = (branch: GitBranch, branches: GitBranch[]): string | undefined => {
+  const subject = branch.remote
+    ? (branches.find(other => !other.remote && other.cleanName === branch.cleanName) ?? null)
+    : branch
+  if (subject?.worktreePath) return `Checked out in worktree ${subject.worktreePath}`
   return undefined
 }
 
@@ -93,23 +98,26 @@ const checkoutBlocker = (branch: GitBranch): string | undefined => {
 export const resolveTargetActions = ({
   payload,
   target,
+  branches,
   config,
 }: {
   payload: DragPayload
   target: GitBranch
+  branches: GitBranch[]
   config: ConfigState
 }): DragAction[] => {
   if (payload.kind === 'tag' || payload.kind === 'stash') return []
 
   if (payload.kind === 'commit') {
     const hash = shortHash(payload.commit.hash)
-    const blocked = checkoutBlocker(target)
+    const blocked = checkoutBlocker(target, branches)
+    const targetLabel = qualifiedBranchName(target)
 
     return [
       {
         id: 'cherryPick',
         verb: 'Cherry-pick',
-        description: ['Cherry pick commit ', { ref: hash }, ' into ', { ref: target.cleanName }],
+        description: ['Cherry pick commit ', { ref: hash }, ' into ', { ref: targetLabel }],
         icon: faCodeCommit,
         destructive: false,
         isDefault: true,
@@ -118,7 +126,7 @@ export const resolveTargetActions = ({
       {
         id: 'mergeCommit',
         verb: 'Merge',
-        description: ['Merge commit ', { ref: hash }, ' into ', { ref: target.cleanName }],
+        description: ['Merge commit ', { ref: hash }, ' into ', { ref: targetLabel }],
         icon: faCodeMerge,
         destructive: false,
         isDefault: false,
@@ -127,7 +135,7 @@ export const resolveTargetActions = ({
       {
         id: 'revert',
         verb: 'Revert',
-        description: ['Revert commit ', { ref: hash }, ' on ', { ref: target.cleanName }],
+        description: ['Revert commit ', { ref: hash }, ' on ', { ref: targetLabel }],
         icon: faRotateLeft,
         destructive: true,
         isDefault: false,
@@ -137,32 +145,46 @@ export const resolveTargetActions = ({
   }
 
   const source = payload.branch
-  if (source.cleanName === target.cleanName && source.remote === target.remote) return []
+  if (source.name === target.name) return []
 
-  const actions: DragAction[] = [
-    {
+  // The same branch as local and remote counterpart. Since checking out either side of the
+  // pair lands on the same local branch, only the direction that moves something is offered —
+  // the other would check out the counterpart and act on itself.
+  const counterparts = source.cleanName === target.cleanName
+
+  const actions: DragAction[] = []
+
+  if (!(counterparts && !source.remote && target.remote)) {
+    actions.push({
       id: 'merge',
       verb: 'Merge',
-      description: ['Merge branch ', { ref: source.cleanName }, ' into ', { ref: target.cleanName }],
+      description: [
+        'Merge branch ',
+        { ref: qualifiedBranchName(source) },
+        ' into ',
+        { ref: qualifiedBranchName(target) },
+      ],
       icon: faCodeMerge,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'merge',
-      disabledReason: checkoutBlocker(target),
-    },
-  ]
+      disabledReason: checkoutBlocker(target, branches),
+    })
+  }
 
-  // Rebasing moves the source, so it needs the source checked out. A remote ref never can be,
-  // which is a property of the ref rather than a passing state, so the action is left out
-  // entirely instead of offered and refused.
-  if (!source.remote) {
+  if (!(counterparts && source.remote && !target.remote)) {
     actions.push({
       id: 'rebase',
       verb: 'Rebase',
-      description: ['Rebase branch ', { ref: source.cleanName }, ' on branch ', { ref: target.cleanName }],
+      description: [
+        'Rebase branch ',
+        { ref: qualifiedBranchName(source) },
+        ' on branch ',
+        { ref: qualifiedBranchName(target) },
+      ],
       icon: faCodeBranch,
       destructive: false,
       isDefault: config.dragAndDropBranchDefaultAction === 'rebase',
-      disabledReason: checkoutBlocker(source),
+      disabledReason: checkoutBlocker(source, branches),
     })
   }
 

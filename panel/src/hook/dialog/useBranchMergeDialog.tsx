@@ -5,6 +5,7 @@ import { Label } from '@/component/ui/Label'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCurrentBranch, useMergeBranch } from '@/hook/useGitQueries'
+import { qualifiedBranchName } from '@/util/branchName'
 import { faCircleNotch, faCodeMerge } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -21,6 +22,9 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
   const mergeBranchMutation = useMergeBranch()
   const { data: currentBranch } = useCurrentBranch()
   const { settings } = useSettings()
+  // A remote branch is merged by its remote-qualified name, so a same-named local branch is
+  // never merged in its place.
+  const mergeRef = qualifiedBranchName(branch)
 
   const mergeForm = useForm({
     defaultValues: {
@@ -31,7 +35,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
     onSubmit: async ({ value }) => {
       mergeBranchMutation.mutate(
         {
-          branchName: branch.cleanName,
+          branchName: mergeRef,
           fastForwardIfPossible: value.fastForwardIfPossible,
           squash: value.squash,
           noCommit: value.noCommit,
@@ -39,7 +43,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
         {
           onSuccess: () => {
             showToast({
-              text: `Branch '${branch.cleanName}' merged into '${currentBranch}' successfully`,
+              text: `Branch '${mergeRef}' merged into '${currentBranch}' successfully`,
               icon: faCodeMerge,
               type: 'success',
             })
@@ -70,7 +74,7 @@ export const useBranchMergeIntoCurrentDialog = ({ branch }: UseBranchMergeIntoCu
       <DialogContent data-disable-commit-highlight>
         <DialogHeader>
           <DialogTitle>
-            Merge branch <strong>{branch.cleanName}</strong> into{' '}
+            Merge branch <strong>{qualifiedBranchName(branch)}</strong> into{' '}
             {currentBranch ? <strong>{currentBranch}</strong> : ''} (current branch)
           </DialogTitle>
         </DialogHeader>
