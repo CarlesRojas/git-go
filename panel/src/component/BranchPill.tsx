@@ -78,8 +78,7 @@ const BranchPill: FC<Props> = ({ branch, baseName, layout, hasLocalBranch, local
   // reacts exactly like any other target rather than being singled out.
   // A remote branch shares its clean name with the local one, so pills match on the full ref name.
   const isDraggedPill =
-    dragPayload?.kind === 'branch' &&
-    [local, ...remotes].some(candidate => candidate?.name === dragPayload.branch.name)
+    dragPayload?.kind === 'branch' && [local, ...remotes].some(candidate => candidate?.name === dragPayload.branch.name)
   const isHoveredTarget =
     (isDropTarget && hoveredTargetKey === dropTargetBranch?.name) || (isDraggedPill && pointerOverSource)
 

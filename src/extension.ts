@@ -241,6 +241,20 @@ export function activate(context: vscode.ExtensionContext) {
                     };
                 },
 
+                searchCommits: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const term = message.term;
+                    if (typeof term !== 'string' || !term.trim()) throw new Error('Search term is required');
+                    const branches = message.branches || undefined;
+                    const result = await gitService.searchCommits(log, term, branches);
+                    return { type: 'searchResults', hashes: result.hashes };
+                },
+
+                cancelSearch: async () => {
+                    GitService.getInstance().cancelSearch();
+                    return { type: 'searchCancelled' };
+                },
+
                 getGitBranches: async () => {
                     const gitService = GitService.getInstance();
                     const branches = await gitService.getGitBranches(log);

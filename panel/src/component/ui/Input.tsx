@@ -1,4 +1,3 @@
-import { Button } from '@/component/ui/Button'
 import { cn } from '@/util/cn'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -40,20 +39,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={type}
             data-type={dataType}
-            className={cn(inputVariants({ className }), hasValue && 'pr-9')}
+            className={cn(inputVariants({ className }), hasValue && 'pr-7')}
             {...props}
           />
 
           {hasValue && (
-            <Button
+            <button
               type="button"
-              size="icon"
-              variant="ghost"
+              tabIndex={-1}
+              title="Clear"
+              onMouseDown={e => e.preventDefault()}
               onClick={onClear}
-              className="absolute top-1/2 right-1 -translate-y-1/2"
+              className={cn(
+                'absolute top-1/2 right-1 -translate-y-1/2',
+                'flex size-5 cursor-pointer items-center justify-center rounded-sm transition-opacity',
+                'hover:bg-vsc-editor-fg/10',
+              )}
             >
-              <FontAwesomeIcon icon={faTimes} className="pointer-events-none size-3" />
-            </Button>
+              <FontAwesomeIcon icon={faTimes} className="pointer-events-none size-2.5" />
+            </button>
           )}
         </div>
       )

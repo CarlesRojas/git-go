@@ -35,7 +35,6 @@
   .dimmed {
     @apply opacity-10 duration-500;
   }
-
 }
 
 /*

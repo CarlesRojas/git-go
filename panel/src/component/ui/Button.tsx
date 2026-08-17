@@ -19,7 +19,7 @@ const buttonVariants = cva(
         default: 'border-vsc-button-fg/15 bg-vsc-button-bg text-vsc-button-fg hover:bg-vsc-button-hover-bg border',
         secondary: 'border-vsc-editor-fg/15 text-vsc-editor-fg hover:bg-vsc-editor-fg/10 border bg-transparent',
         destructive: 'border-vsc-error-fg/15 bg-vsc-error-bg text-vsc-error-fg hover:bg-vsc-error-bg/80 border',
-        ghost: 'text-vsc-button-fg/70 hover:text-vsc-button-fg',
+        ghost: 'text-vsc-editor-fg/70 hover:text-vsc-editor-fg',
       },
       size: {
         default: 'h-7 px-3',

@@ -15,7 +15,7 @@ import type {
 } from '@git/gitService'
 import type { GitRepo } from '@git/repoService'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect } from 'react'
+import { RefObject, useCallback, useEffect } from 'react'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -261,27 +261,39 @@ export const useGitCommits = (branches?: GitBranch[]) => {
   })
 }
 
-export const useInfiniteGitCommits = (branches?: GitBranch[], maxCount: number = 200) => {
+export const useInfiniteGitCommits = (
+  branches?: GitBranch[],
+  maxCount: number = 200,
+  /**
+   * When set, the next page is fetched with this size instead of maxCount. Search jumps use it
+   * to cross a large gap in a few big requests rather than hundreds of small ones; pages record
+   * the size they were fetched with so the skip math survives the mixed sizes.
+   */
+  pageSizeOverrideRef?: RefObject<number | null>,
+) => {
   const branchNames = branches?.map(b => b.name)
 
   return useInfiniteQuery({
     queryKey: queryKeys.infiniteCommits(branches),
-    queryFn: async ({ pageParam = 0 }): Promise<{ commits: GitCommit[]; hasMore: boolean; skip: number }> => {
+    queryFn: async ({
+      pageParam = 0,
+    }): Promise<{ commits: GitCommit[]; hasMore: boolean; skip: number; pageSize: number }> => {
+      const pageSize = Math.max(maxCount, pageSizeOverrideRef?.current ?? 0)
       const response = await sendCorrelatedMessage<{ commits: GitCommit[]; hasMore: boolean; skip: number }>(
         'getGitCommits',
         {
           branches: branchNames && branchNames.length > 0 ? branchNames : undefined,
-          maxCount: maxCount,
+          maxCount: pageSize,
           skip: pageParam,
         },
-        15000,
+        Math.max(15000, pageSize * 15),
       )
 
-      return { commits: response.commits, hasMore: response.hasMore, skip: response.skip }
+      return { commits: response.commits, hasMore: response.hasMore, skip: response.skip, pageSize }
     },
     initialPageParam: 0,
     getNextPageParam: lastPage => {
-      return lastPage.hasMore ? lastPage.skip + maxCount : undefined
+      return lastPage.hasMore ? lastPage.skip + (lastPage.pageSize ?? maxCount) : undefined
     },
     placeholderData: previousData => previousData,
     staleTime: 2 * 60 * 1000,

@@ -1,8 +1,9 @@
+import { useSearch } from '@/context/SearchContext'
 import { Input } from '@/component/ui/Input'
 import { cn } from '@/util/cn'
-import { faSearch } from '@fortawesome/free-solid-svg-icons'
+import { faArrowDown, faArrowUp, faCircleNotch, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { FC, KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 
 interface SearchInputProps {
@@ -15,15 +16,44 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
   const [expanded, setExpanded] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debouncedOnChange = useDebounceCallback(onChange, 300)
+  const { matchState, navigate } = useSearch()
 
   useEffect(() => {
     if (localValue !== value) debouncedOnChange(localValue)
   }, [localValue, debouncedOnChange, value])
 
+  // Holding an arrow auto-repeats the navigation, with the same feel as holding Enter down
+  // (one step on press, a pause, then steady repeats until release)
+  const holdDelayRef = useRef<NodeJS.Timeout | null>(null)
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const stopHold = useCallback(() => {
+    if (holdDelayRef.current) clearTimeout(holdDelayRef.current)
+    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current)
+    holdDelayRef.current = null
+    holdIntervalRef.current = null
+  }, [])
+
+  const startHold = useCallback(
+    (direction: 'next' | 'prev') => {
+      stopHold()
+      navigate(direction)
+      holdDelayRef.current = setTimeout(() => {
+        holdIntervalRef.current = setInterval(() => navigate(direction), 100)
+      }, 400)
+    },
+    [navigate, stopHold],
+  )
+
+  useEffect(() => stopHold, [stopHold])
+
+  // Clearing (the button or Esc) also collapses the field: the blur alone would not, as its
+  // handler still sees the pre-clear value
   const handleClear = () => {
     setLocalValue('')
     onChange('')
-    inputRef.current?.focus()
+    setExpanded(false)
+    inputRef.current?.blur()
   }
 
   // Expansion follows focus rather than the click, so the Cmd+F shortcut opens it too.
@@ -35,12 +65,20 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      navigate(event.shiftKey ? 'prev' : 'next')
+      return
+    }
+
     if (event.key !== 'Escape') return
 
-    setLocalValue('')
-    onChange('')
-    inputRef.current?.blur()
+    handleClear()
   }
+
+  // The counter and prev/next only make sense once the active term produced a match state
+  const showMatches = matchState !== null && localValue.trim().length > 0
+  const hasMatches = matchState !== null && matchState.total > 0
 
   return (
     <div
@@ -50,7 +88,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         // Animations & Transitions
         'transition-[width] duration-200 ease-out',
         // Sizing
-        expanded ? 'w-48' : 'w-7',
+        expanded ? (showMatches ? 'w-72' : 'w-48') : 'w-7',
       ])}
     >
       {/* Collapsed, the field drops its padding — 28px of box cannot hold it, and the overflow
@@ -65,6 +103,8 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         onKeyDown={handleKeyDown}
         placeholder="Search commits..."
         className={cn('w-full pl-7', !expanded && 'cursor-pointer px-0 placeholder:opacity-0')}
+        // The clear button owns right-1; the counter and arrows sit left of it, over the input
+        style={showMatches ? { paddingRight: '7rem' } : undefined}
         dataType="search"
         onClear={handleClear}
       />
@@ -78,6 +118,56 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
       >
         <FontAwesomeIcon icon={faSearch} className="pointer-events-none size-3" />
       </button>
+
+      {/* right-6 lands flush against the clear button (which spans right-1 + size-5), so the
+          three icon buttons read as one group; only the counter keeps a margin */}
+      {showMatches && (
+        <div className="absolute right-6 flex items-center">
+          {matchState.isSearching && (
+            <FontAwesomeIcon icon={faCircleNotch} className="mr-1 size-2.5 animate-spin opacity-60" />
+          )}
+
+          <span className="mr-1 min-w-fit text-[10px] leading-none tabular-nums opacity-60">
+            {`${matchState.current}/${matchState.total}`}
+          </span>
+
+          <button
+            type="button"
+            tabIndex={-1}
+            title="Previous match (Shift+Enter)"
+            disabled={!hasMatches}
+            onMouseDown={e => e.preventDefault()}
+            onPointerDown={() => startHold('prev')}
+            onPointerUp={stopHold}
+            onPointerLeave={stopHold}
+            onPointerCancel={stopHold}
+            className={cn(
+              'flex size-5 cursor-pointer items-center justify-center rounded-sm transition-opacity',
+              hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
+            )}
+          >
+            <FontAwesomeIcon icon={faArrowUp} className="pointer-events-none size-2.5!" />
+          </button>
+
+          <button
+            type="button"
+            tabIndex={-1}
+            title="Next match (Enter)"
+            disabled={!hasMatches}
+            onMouseDown={e => e.preventDefault()}
+            onPointerDown={() => startHold('next')}
+            onPointerUp={stopHold}
+            onPointerLeave={stopHold}
+            onPointerCancel={stopHold}
+            className={cn(
+              'flex size-5 cursor-pointer items-center justify-center rounded-sm transition-opacity',
+              hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
+            )}
+          >
+            <FontAwesomeIcon icon={faArrowDown} className="pointer-events-none size-2.5!" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -236,7 +236,7 @@ export class GitService {
         throw new Error('Unable to find Git executable. Please install Git or configure the git.path setting.');
     }
 
-    private spawnGit(args: string[], cwd: string, timeoutMs?: number): Promise<string> {
+    private spawnGit(args: string[], cwd: string, timeoutMs?: number, signal?: AbortSignal): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!args.length || !args[0]) {
                 reject(new Error('No command provided'));
@@ -245,7 +245,8 @@ export class GitService {
 
             const gitProcess = cp.spawn(args[0], args.slice(1), {
                 cwd: cwd,
-                stdio: ['ignore', 'pipe', 'pipe']
+                stdio: ['ignore', 'pipe', 'pipe'],
+                signal
             });
 
             let stdout = '';
@@ -909,20 +910,7 @@ export class GitService {
                 '--decorate=full'
             ];
 
-            if (branches && branches.length > 0) {
-                const existingBranches = await this.filterToExistingRefs(workspacePath, gitExecutable.path, branches);
-
-                if (existingBranches.length > 0) {
-                    gitArgs.push(...existingBranches);
-                    log(`Filtering commits for branches: ${existingBranches.join(', ')}`);
-                } else {
-                    log('No valid branches found, showing all');
-                    gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
-                }
-            } else {
-                gitArgs.push('--branches', '--tags', '--remotes', 'HEAD');
-                log('Showing commits from all branches');
-            }
+            gitArgs.push(...(await this.resolveLogRefArgs(workspacePath, gitExecutable.path, branches, log)));
 
             gitArgs.push('--');
 
@@ -1019,6 +1007,133 @@ export class GitService {
         } catch (error) {
             log(`Error getting git commits: ${error}`);
             throw error;
+        }
+    }
+
+    /**
+     * The ref arguments the graph's `git log` runs over: the selected branches when they still
+     * exist, or every branch, tag, remote and HEAD otherwise.
+     */
+    private async resolveLogRefArgs(
+        workspacePath: string,
+        gitPath: string,
+        branches: string[] | undefined,
+        log: (message: string) => void
+    ): Promise<string[]> {
+        if (branches && branches.length > 0) {
+            const existingBranches = await this.filterToExistingRefs(workspacePath, gitPath, branches);
+
+            if (existingBranches.length > 0) {
+                log(`Filtering commits for branches: ${existingBranches.join(', ')}`);
+                return existingBranches;
+            }
+            log('No valid branches found, showing all');
+        } else {
+            log('Showing commits from all branches');
+        }
+
+        return ['--branches', '--tags', '--remotes', 'HEAD'];
+    }
+
+    private static readonly SEARCH_TIMEOUT_MS = 30_000;
+    private searchAbortController: AbortController | null = null;
+
+    /** Stop the search still running, for when its term was cleared rather than replaced. */
+    public cancelSearch(): void {
+        this.searchAbortController?.abort();
+        this.searchAbortController = null;
+    }
+
+    /**
+     * Search the whole history (not just the loaded pages) over the same ref set the graph shows,
+     * returning the matching hashes in the graph's own `--date-order`. The term supports the
+     * `author:`, `file:` and `hash:` prefixes; a plain term matches the commit message, the author,
+     * or a hash prefix. Starting a new search aborts the one still running.
+     */
+    public async searchCommits(
+        log: (message: string) => void,
+        term: string,
+        branches?: string[]
+    ): Promise<{ hashes: string[] }> {
+        const workspacePath = this.getRepoPath();
+        const trimmed = term.trim();
+        if (!trimmed) return { hashes: [] };
+
+        this.searchAbortController?.abort();
+        const abort = new AbortController();
+        this.searchAbortController = abort;
+
+        if (!(await this.isGitRepository())) throw new Error('Not a git repository');
+
+        const gitExecutable = await this.findGitExecutable();
+        const refArgs = await this.resolveLogRefArgs(workspacePath, gitExecutable.path, branches, () => {});
+
+        const logHashes = async (extraArgs: string[], pathspec?: string): Promise<string[]> => {
+            const args = [
+                gitExecutable.path,
+                '-c',
+                'log.showSignature=false',
+                'log',
+                '--format=%H',
+                '--date-order',
+                ...extraArgs,
+                ...refArgs,
+                '--'
+            ];
+            if (pathspec) args.push(pathspec);
+
+            const output = await this.spawnGit(args, workspacePath, GitService.SEARCH_TIMEOUT_MS, abort.signal);
+            return output
+                .split(EOL_REGEX)
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0);
+        };
+
+        const prefixed = /^(author|file|hash):([\s\S]*)$/i.exec(trimmed);
+        const kind = prefixed?.[1]?.toLowerCase() ?? 'plain';
+        const value = (prefixed?.[2] ?? trimmed).trim();
+
+        try {
+            let ordered: string[] = [];
+
+            if (!value) {
+                // A bare prefix like `author:` matches nothing yet
+            } else if (kind === 'author') {
+                ordered = await logHashes(['-i', '--fixed-strings', `--author=${value}`]);
+            } else if (kind === 'file') {
+                // Substring match anywhere in the path, unless the user already wrote a glob
+                const pathspec = /[*?[\]]/.test(value) ? value : `*${value}*`;
+                ordered = await logHashes([], pathspec);
+            } else {
+                const lower = value.toLowerCase();
+                const wantsHashMatch =
+                    kind === 'hash' ? /^[0-9a-f]{1,40}$/.test(lower) : /^[0-9a-f]{4,40}$/.test(lower);
+
+                // The full ordered hash list both resolves prefix matches and orders the union
+                const [allHashes, grepMatches, authorMatches] = await Promise.all([
+                    logHashes([]),
+                    kind === 'plain' ? logHashes(['-i', '--fixed-strings', `--grep=${value}`]) : [],
+                    kind === 'plain' ? logHashes(['-i', '--fixed-strings', `--author=${value}`]) : []
+                ]);
+
+                const matches = new Set<string>([...grepMatches, ...authorMatches]);
+                if (wantsHashMatch) {
+                    for (const hash of allHashes) {
+                        if (hash.startsWith(lower)) matches.add(hash);
+                    }
+                }
+
+                ordered = allHashes.filter((hash) => matches.has(hash));
+            }
+
+            log(`Search '${trimmed}' matched ${ordered.length} commit(s)`);
+            return { hashes: ordered };
+        } catch (error) {
+            if (abort.signal.aborted) throw new Error('Search cancelled');
+            log(`Error searching commits: ${error}`);
+            throw error;
+        } finally {
+            if (this.searchAbortController === abort) this.searchAbortController = null;
         }
     }
 

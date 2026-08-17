@@ -1,9 +1,10 @@
 import { CommitItem } from '@/component/CommitItem'
+import { useSearch } from '@/context/SearchContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
+import { useCommitSearch } from '@/hook/useCommitSearch'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
 import { LIST_PADDING, ROW_HEIGHT, useGitTree } from '@/hook/useGitTree'
-import { matchesSearch } from '@/util/searchCommits'
 import { faCircleNotch, faCodeBranch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -24,8 +25,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   const [expandedHash, setExpandedHash] = useState<string | null>(null)
   const { settings } = useSettings()
 
+  // Set by search jumps so the pages crossing the gap to a far-away match come in big chunks
+  const jumpPageSizeRef = useRef<number | null>(null)
+
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } =
-    useInfiniteGitCommits(selectedBranches)
+    useInfiniteGitCommits(selectedBranches, 200, jumpPageSizeRef)
 
   const { data: workingChangesData } = useWorkingChanges(true)
   const { data: branches = [], error: gitError, isLoading: isBranchesLoading } = useGitBranches()
@@ -161,6 +165,36 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   const { treeComponent, treeWidth, rows } = useGitTree(commits, expandedRow, range)
 
   const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
+
+  const scrollToRow = useCallback((row: number) => virtualizer.scrollToIndex(row, { align: 'center' }), [virtualizer])
+
+  const {
+    isMatch,
+    currentMatchHash,
+    matchState,
+    navigate: navigateSearch,
+  } = useCommitSearch({
+    searchTerm,
+    selectedBranches,
+    branches,
+    commits,
+    hasNextPage: hasNextPage ?? false,
+    isFetchingNextPage,
+    fetchNextPage,
+    scrollToRow,
+    jumpPageSizeRef,
+  })
+
+  // Publish the match counter and the prev/next navigator to the toolbar's search input
+  const { setMatchState, registerNavigator } = useSearch()
+  useEffect(() => {
+    setMatchState(matchState)
+    return () => setMatchState(null)
+  }, [matchState, setMatchState])
+  useEffect(() => {
+    registerNavigator(navigateSearch)
+    return () => registerNavigator(null)
+  }, [navigateSearch, registerNavigator])
 
   const toggleCommit = useCallback((hash: string) => {
     expandAnimationRef.current = 'click'
@@ -306,7 +340,8 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
               row={virtualRow.index}
               layout={layout}
               uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
-              dimmed={!matchesSearch(commit, branches, searchTerm)}
+              dimmed={!isMatch(commit)}
+              isCurrentSearchMatch={currentMatchHash === commit.hash}
             />
           </div>
         )
