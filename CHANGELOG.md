@@ -5,6 +5,7 @@
 - Virtualize the commit list: only the rows in view are rendered, so scrolling stays smooth and memory stable no matter how many commits are loaded
 - Draw only the visible window of the graph, with lines connecting seamlessly across it, and lay out newly loaded pages incrementally instead of recomputing the whole graph — already drawn rows never shift when a page arrives
 - Keep the viewport anchored when a commit expanded above it collapses or another one expands
+- Keep the loaded history and the scroll position when a branch ref appears or disappears — creating a branch, pushing it (its remote counterpart appearing), or fetching new remote refs no longer resets the graph to the top
 - Show the full commit message in the expanded commit panel: the body appears below the subject with its line breaks kept, and clicking either copies the whole message. The graph row keeps showing only the subject
 - Show the committer in the expanded commit panel when it differs from the author
 - Rename `git-go.graph.showCommitterName` to `git-go.graph.showAuthorName`, since it always showed the author. A value set under the old name keeps working until the new one is set
