@@ -62,9 +62,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   })
 
   // How the expansion last changed: a click animates the commit into view, while arrow-key
-  // navigation pans the scroll by exactly one row (set as a pending instant scroll delta)
+  // navigation pans the scroll itself. The pending object marks a keyboard move (its presence
+  // skips the anchor compensation); target is the absolute scrollTop to jump to, or null when
+  // the new selection already fits and no scroll is needed.
   const expandAnimationRef = useRef<'click' | 'keyboard' | null>(null)
-  const pendingNavScrollRef = useRef<number | null>(null)
+  const pendingNavScrollRef = useRef<{ target: number | null } | null>(null)
 
   // Row sizes are derived, not measured, so a changed expanded row must flush the size cache.
   // When the resized row sits above the viewport, shifting the scroll offset by the same amount
@@ -84,12 +86,12 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
       return
     }
 
-    // Arrow-key navigation: pan by exactly one row height, instantly, and skip the anchor
-    // compensation below — the pan itself is what keeps the selected commit in place
+    // Arrow-key navigation: jump to the precomputed absolute offset, instantly, and skip the
+    // anchor compensation below — the jump itself is what keeps the selected commit in place
     if (pendingNavScrollRef.current !== null) {
-      const navDelta = pendingNavScrollRef.current
+      const { target } = pendingNavScrollRef.current
       pendingNavScrollRef.current = null
-      if (navDelta !== 0) container.scrollTop = container.scrollTop + navDelta
+      if (target !== null) container.scrollTop = target
       return
     }
 
@@ -162,10 +164,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
       const nextCommit = commits[nextIndex]
       if (nextIndex === expandedRow || !nextCommit) return
 
-      // If the newly selected commit and its panel won't fit in the viewport as-is, pan by
-      // exactly one row towards it — moving the expansion one row moves the section one row,
-      // so the pan keeps it pinned at the viewport edge
-      let navDelta = 0
+      // If the newly selected commit and its panel won't fit in the viewport as-is, pin the
+      // new section to the exact screen position the old one occupies: the target scrollTop is
+      // computed from the old section's measured position, so repeated presses cannot drift by
+      // rounding (a relative pan would accumulate sub-pixel quantization on scaled displays)
+      let target: number | null = null
       const container = scrollRef.current
       if (container) {
         const newTop = LIST_PADDING + nextIndex * ROW_HEIGHT
@@ -173,12 +176,18 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
         const viewTop = container.scrollTop
         const viewBottom = viewTop + container.clientHeight
 
-        if (newTop < viewTop) navDelta = -ROW_HEIGHT
-        else if (newBottom > viewBottom) navDelta = ROW_HEIGHT
+        if (newTop < viewTop || newBottom > viewBottom) {
+          const oldSection = container.querySelector(`[data-commit-row="${expandedRow}"]`)
+          const currentOffset = oldSection
+            ? oldSection.getBoundingClientRect().top - container.getBoundingClientRect().top
+            : LIST_PADDING + expandedRow * ROW_HEIGHT - viewTop
+
+          target = newTop - currentOffset
+        }
       }
 
       expandAnimationRef.current = 'keyboard'
-      pendingNavScrollRef.current = navDelta
+      pendingNavScrollRef.current = { target }
       setExpandedHash(nextCommit.hash)
     },
     [expandedRow, commits, scrollRef, expandedCommitHeight],

@@ -95,21 +95,25 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   }
 
   useEffect(() => {
-    if (isExpanded && sectionRef.current) {
-      // Only a click-driven expansion animates; keyboard navigation pans the scroll itself
-      if (!shouldAnimateIntoView()) return
+    if (!isExpanded || !sectionRef.current) return
+    // Only a click-driven expansion moves the scroll; keyboard navigation pans it itself
+    if (!shouldAnimateIntoView()) return
 
+    const element = sectionRef.current
+    const container = element.closest('[data-drag-scroll-container]')
+    if (!container) return
+
+    const containerRect = container.getBoundingClientRect()
+    const rect = element.getBoundingClientRect()
+
+    if (rect.top < containerRect.top) {
+      // The commit sits above the fold: snap it to the top immediately — never animate upwards
+      container.scrollTop += rect.top - containerRect.top
+    } else if (rect.bottom > containerRect.bottom) {
+      // The opened panel runs below the fold: animate down until its bottom edge is in view
       const timeoutId = setTimeout(() => {
-        const element = sectionRef.current
-        if (!element) return
-
-        const rect = element.getBoundingClientRect()
-        const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
-
-        // 'nearest' scrolls just enough to bring the row and its panel fully into view
-        if (!isInView) element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }, 100)
-
       return () => clearTimeout(timeoutId)
     }
   }, [isExpanded, shouldAnimateIntoView])
