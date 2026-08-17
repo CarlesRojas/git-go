@@ -22,10 +22,13 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
     if (localValue !== value) debouncedOnChange(localValue)
   }, [localValue, debouncedOnChange, value])
 
+  // Clearing (the button or Esc) also collapses the field: the blur alone would not, as its
+  // handler still sees the pre-clear value
   const handleClear = () => {
     setLocalValue('')
     onChange('')
-    inputRef.current?.focus()
+    setExpanded(false)
+    inputRef.current?.blur()
   }
 
   // Expansion follows focus rather than the click, so the Cmd+F shortcut opens it too.
@@ -45,9 +48,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
 
     if (event.key !== 'Escape') return
 
-    setLocalValue('')
-    onChange('')
-    inputRef.current?.blur()
+    handleClear()
   }
 
   // The counter and prev/next only make sense once the active term produced a match state
