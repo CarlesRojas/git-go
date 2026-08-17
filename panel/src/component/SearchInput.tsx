@@ -118,7 +118,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
             )}
           >
-            <FontAwesomeIcon icon={faArrowUp} className="pointer-events-none size-2!" />
+            <FontAwesomeIcon icon={faArrowUp} className="pointer-events-none size-2.5!" />
           </button>
 
           <button
@@ -133,7 +133,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
             )}
           >
-            <FontAwesomeIcon icon={faArrowDown} className="pointer-events-none size-2!" />
+            <FontAwesomeIcon icon={faArrowDown} className="pointer-events-none size-2.5!" />
           </button>
         </div>
       )}
