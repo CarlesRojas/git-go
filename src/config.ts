@@ -276,6 +276,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.reword.allowPushed` Extension Setting.
+     */
+    get rewordAllowPushed(): boolean {
+        return !!this.config.get('reword.allowPushed', false);
+    }
+
+    /**
      * Get the value of the `git-go.reset.mode` Extension Setting.
      */
     get resetMode(): 'soft' | 'mixed' | 'hard' {

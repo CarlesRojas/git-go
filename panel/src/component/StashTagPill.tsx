@@ -30,6 +30,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
   // Move hooks before any early returns to comply with React rules
   const { stashContextMenuWrapper, dialogs: stashDialogs } = useStashContextMenu({
     stash: type === 'stash' ? label : undefined,
+    commit: type === 'stash' ? commit : undefined,
   })
 
   const { tagContextMenuWrapper, dialogs: tagDialogs } = useTagContextMenu({
@@ -142,6 +143,7 @@ const StashTagPill: FC<StashTagPillProps> = ({ type, label, commit, remoteOnly =
       </div>
 
       {stashDialogs.stashDropDialog.DialogComponent}
+      {stashDialogs.stashBranchDialog.DialogComponent}
       {tagDialogs.detailsDialog.DialogComponent}
       {tagDialogs.pushDialog.DialogComponent}
       {tagDialogs.deleteDialog.DialogComponent}

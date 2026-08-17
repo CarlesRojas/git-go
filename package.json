@@ -474,8 +474,20 @@
                 }
             },
             {
-                "title": "Cherry-Pick and Revert",
+                "title": "Reword",
                 "order": 9,
+                "properties": {
+                    "git-go.reword.allowPushed": {
+                        "type": "boolean",
+                        "default": false,
+                        "markdownDescription": "Offer to edit the message of a commit that is already pushed to its upstream. Rewording rewrites the commit and everything above it, so the remote ends up holding different history and pushing afterwards needs a force push. Off by default, which hides the action for pushed commits.",
+                        "order": 1
+                    }
+                }
+            },
+            {
+                "title": "Cherry-Pick and Revert",
+                "order": 10,
                 "properties": {
                     "git-go.cherryPick.recordOrigin": {
                         "type": "boolean",
@@ -499,7 +511,7 @@
             },
             {
                 "title": "Reset and Discard",
-                "order": 10,
+                "order": 11,
                 "properties": {
                     "git-go.reset.mode": {
                         "type": "string",
@@ -533,7 +545,7 @@
             },
             {
                 "title": "Stashes",
-                "order": 11,
+                "order": 12,
                 "properties": {
                     "git-go.stash.includeUntracked": {
                         "type": "boolean",
@@ -551,7 +563,7 @@
             },
             {
                 "title": "Tags",
-                "order": 12,
+                "order": 13,
                 "properties": {
                     "git-go.tag.type": {
                         "type": "string",
@@ -583,7 +595,7 @@
             },
             {
                 "title": "Remotes",
-                "order": 13,
+                "order": 14,
                 "properties": {
                     "git-go.remote.defaultRemote": {
                         "type": "string",
@@ -632,7 +644,7 @@
             },
             {
                 "title": "Worktrees",
-                "order": 14,
+                "order": 15,
                 "properties": {
                     "git-go.worktree.defaultPath": {
                         "type": "string",

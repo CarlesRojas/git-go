@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Edit a commit's message from its context menu or by dragging the commit: the tip of the branch is amended in place, and an older commit is reworded by replaying its descendants onto the amended copy — a rewrite that cannot conflict, since only the message changes. Offered for commits on the current branch that are not pushed to its upstream and whose path to the tip does not cross a merge; the dialog says how many descendants will be rewritten and offers to autostash uncommitted changes. `git-go.reword.allowPushed` offers the action for pushed commits too, with a force-push warning
+- Create a branch from a stash, from its context menu or by dragging it: the branch starts at the commit the stash was made from and is checked out, and the stash is applied onto it and dropped on success. Refused while the working tree has uncommitted changes or an operation is in progress
+
 - Virtualize the commit list: only the rows in view are rendered, so scrolling stays smooth and memory stable no matter how many commits are loaded
 - Draw only the visible window of the graph, with lines connecting seamlessly across it, and lay out newly loaded pages incrementally instead of recomputing the whole graph — already drawn rows never shift when a page arrives
 - Keep the viewport anchored when a commit expanded above it collapses or another one expands
