@@ -14,13 +14,14 @@ import {
   ComboboxValue,
 } from '@/component/ui/Combobox'
 import { useSettings } from '@/context/SettingsContext'
-import { useGitBranches, useRepoState } from '@/hook/useGitQueries'
+import { queryKeys, useGitBranches, useRepoState } from '@/hook/useGitQueries'
 import { getBranchIcons } from '@/util/branchIcons'
 import { cn } from '@/util/cn'
 import { groupBranches } from '@/util/groupBranches'
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
+import { useQueryClient } from '@tanstack/react-query'
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface BranchSelectorProps {
@@ -39,6 +40,7 @@ const SELECTED_LIMIT = 16
 export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) => {
   const { data: allBranches = [], ...branchesQuery } = useGitBranches()
   const { setRepoState } = useRepoState()
+  const queryClient = useQueryClient()
   const { settings } = useSettings()
 
   const branches = useMemo(() => {
@@ -110,6 +112,21 @@ export const BranchSelector: FC<BranchSelectorProps> = ({ onBranchesChange }) =>
     const validCleanNames = new Set(branches.map(b => b.cleanName))
     const selectedWithoutDeletedBranches = selectedBranches.filter(name => validCleanNames.has(name))
     const newSelection = [...new Set([...selectedWithoutDeletedBranches, ...newBranches.map(b => b.cleanName)])]
+
+    // Auto-selecting a just-created branch changes the commit query's key, which would throw
+    // away every loaded page and reset the scroll to the top. The old selection's commits are
+    // still valid (the selection only grew), so seed the new key with them and refetch in the
+    // background — the graph updates in place and the scroll position survives.
+    if (newBranches.length > 0 && selectedWithoutDeletedBranches.length === selectedBranches.length) {
+      const oldKey = queryKeys.infiniteCommits(branches.filter(b => selectedBranches.includes(b.cleanName)))
+      const newKey = queryKeys.infiniteCommits(branches.filter(b => newSelection.includes(b.cleanName)))
+      const oldData = queryClient.getQueryData(oldKey)
+
+      if (oldData && !queryClient.getQueryData(newKey)) {
+        queryClient.setQueryData(newKey, oldData)
+        queryClient.invalidateQueries({ queryKey: newKey })
+      }
+    }
 
     setSelectedBranches(newSelection)
     // eslint-disable-next-line react-hooks/exhaustive-deps

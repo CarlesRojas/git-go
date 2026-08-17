@@ -8,20 +8,27 @@ import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
 import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
 import { useCurrentBranch, useGitBranches, useGitCommitFiles, useTagRemotes } from '@/hook/useGitQueries'
-import { getColor } from '@/hook/useGitTree'
+import { getColor, LIST_PADDING, ROW_HEIGHT } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
-import { FC, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react'
+import { FC, memo, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface CommitItemProps {
   commit: GitCommit
   isExpanded: boolean
-  onToggle: () => void
+  /** Keyed by hash so the callback can stay identity-stable and the row memoized */
+  onToggle: (hash: string) => void
+  /**
+   * Consulted (and consumed) when the row becomes expanded: TRUE plays the smooth
+   * scroll-into-view animation. Arrow-key navigation pans the scroll itself instead, and a
+   * re-mount of an already-expanded row while scrolling past it must not move the scroll.
+   */
+  shouldAnimateIntoView: () => boolean
   selectedBranches: GitBranch[]
   treeWidth: number
   onCommitHover: (hash: string | null, row: number | null) => void
@@ -31,10 +38,11 @@ interface CommitItemProps {
   dimmed?: boolean
 }
 
-export const CommitItem: FC<CommitItemProps> = ({
+const CommitItemComponent: FC<CommitItemProps> = ({
   commit,
   isExpanded,
-  onToggle,
+  onToggle: onToggleHash,
+  shouldAnimateIntoView,
   selectedBranches,
   treeWidth,
   onCommitHover,
@@ -43,6 +51,7 @@ export const CommitItem: FC<CommitItemProps> = ({
   uncommitedFiles,
   dimmed,
 }) => {
+  const onToggle = useCallback(() => onToggleHash(commit.hash), [onToggleHash, commit.hash])
   const { settings } = useSettings()
 
   const sectionRef = useRef<HTMLElement>(null)
@@ -86,20 +95,30 @@ export const CommitItem: FC<CommitItemProps> = ({
   }
 
   useEffect(() => {
-    if (isExpanded && sectionRef.current) {
+    if (!isExpanded || !sectionRef.current) return
+    // Only a click-driven expansion moves the scroll; keyboard navigation pans it itself
+    if (!shouldAnimateIntoView()) return
+
+    const element = sectionRef.current
+    const container = element.closest('[data-drag-scroll-container]')
+    if (!container) return
+
+    const containerRect = container.getBoundingClientRect()
+    const rect = element.getBoundingClientRect()
+
+    if (rect.top < containerRect.top) {
+      // The commit sits above the fold: snap it to the top immediately — never animate
+      // upwards. The target is computed in layout units (rows above this one are collapsed,
+      // so its top is exact); rect deltas are zoom-scaled in webviews and would land short.
+      container.scrollTop = LIST_PADDING + row * ROW_HEIGHT
+    } else if (rect.bottom > containerRect.bottom) {
+      // The opened panel runs below the fold: animate down until its bottom edge is in view
       const timeoutId = setTimeout(() => {
-        const element = sectionRef.current
-        if (!element) return
-
-        const rect = element.getBoundingClientRect()
-        const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
-
-        if (!isInView) element.scrollIntoView({ behavior: 'smooth', block: 'end' })
+        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }, 100)
-
       return () => clearTimeout(timeoutId)
     }
-  }, [isExpanded])
+  }, [isExpanded, shouldAnimateIntoView, row])
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
@@ -458,7 +477,7 @@ export const CommitItem: FC<CommitItemProps> = ({
                       <div
                         className={cn(
                           // Layout & sizing
-                          'my-1 max-h-24 w-fit min-w-64 max-w-full overflow-y-auto px-2 py-1.5',
+                          'my-1 max-h-24 w-fit max-w-full min-w-64 overflow-y-auto px-2 py-1.5',
                           // Appearance — the theme's editor background darkened, so the box reads
                           // as recessed on light and dark themes alike, with a border only just
                           // distinguishable from it
@@ -492,3 +511,6 @@ export const CommitItem: FC<CommitItemProps> = ({
     </>
   )
 }
+
+/** Memoized: with virtualization every scroll renders the parent, and rows are expensive to mount */
+export const CommitItem = memo(CommitItemComponent)

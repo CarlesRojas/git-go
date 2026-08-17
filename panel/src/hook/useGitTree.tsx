@@ -1,8 +1,8 @@
 import { useSettings } from '@/context/SettingsContext'
 import { cn } from '@/util/cn'
-import { CommitLayout, computeGraphLayout } from '@/util/computeGraphLayout'
+import { CommitLayout, GraphLayout, GraphLayoutBuilder } from '@/util/computeGraphLayout'
 import type { GitCommit } from '@git/gitService'
-import { Fragment, ReactNode, useMemo } from 'react'
+import { Fragment, ReactNode, useMemo, useRef } from 'react'
 
 const COLOR_THEMES_DARK = {
   vibrant: ['#3b82f6', '#ec4899', '#84cc16', '#f97316', '#a855f7', '#f43f5e', '#14b8a6', '#eab308'],
@@ -42,7 +42,9 @@ const UNCOMMITTED_COLOR = 'var(--color-vsc-editor-fg)'
 const MAX_TREE_COLUMNS = 16
 
 const LEFT_PADDING = 8
-const ROW_HEIGHT = 24
+export const ROW_HEIGHT = 24
+/** Vertical padding above the first and below the last row (the old container's py-3) */
+export const LIST_PADDING = 12
 export const COL_WIDTH = 16 // If this changes, change the mask calc below too susbtract this size
 const DOT_RADIUS = 5
 const LINE_WIDTH = 2
@@ -87,18 +89,42 @@ function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
   return `M${x1},${y1}C${x1},${(y1 + CURVE_D).toFixed(1)} ${x2},${(y2 - CURVE_D).toFixed(1)} ${x2},${y2}`
 }
 
+/** The visible row window (inclusive), typically the virtualizer's rendered range */
+export interface RowRange {
+  startRow: number
+  endRow: number
+}
+
 interface Result {
   treeComponent: ReactNode
   treeWidth: number
   rows: CommitLayout[]
 }
 
-export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
+/**
+ * Reuses one layout builder across renders: when the commit list merely grows (a page was
+ * appended), only the new rows are laid out; anything else (branch selection, HEAD move,
+ * stashes toggled, the join-uncommitted setting...) rebuilds from scratch.
+ */
+function useIncrementalGraphLayout(commits: GitCommit[], joinUncommittedChanges: boolean): GraphLayout {
+  const builderRef = useRef<GraphLayoutBuilder | null>(null)
+
+  return useMemo(() => {
+    let builder = builderRef.current
+
+    if (builder === null || builder.joinUncommittedChanges !== joinUncommittedChanges || !builder.canExtend(commits)) {
+      builder = new GraphLayoutBuilder({ joinUncommittedChanges })
+      builderRef.current = builder
+    }
+
+    builder.extendTo(commits)
+    return builder.getLayout()
+  }, [commits, joinUncommittedChanges])
+}
+
+export function useGitTree(commits: GitCommit[], expandedRow: number | undefined, range: RowRange): Result {
   const { settings } = useSettings()
-  const layout = useMemo(
-    () => computeGraphLayout(commits, { joinUncommittedChanges: settings.joinUncommittedChanges }),
-    [commits, settings.joinUncommittedChanges],
-  )
+  const layout = useIncrementalGraphLayout(commits, settings.joinUncommittedChanges)
 
   const maxVisibleCol = MAX_TREE_COLUMNS + 1
 
@@ -160,6 +186,22 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
     }
   }, [expandedRow, getY])
 
+  // Per-branch row extents and the precomputed data-rows string, so scrolling only touches
+  // branches that intersect the window and never re-joins a long branch's row list
+  const branchMeta = useMemo(
+    () =>
+      layout.branches.map(branch => {
+        let minRow = Infinity
+        let maxRow = -Infinity
+        for (const seg of branch.segments) {
+          if (seg.p1.y < minRow) minRow = seg.p1.y
+          if (seg.p2.y > maxRow) maxRow = seg.p2.y
+        }
+        return { minRow, maxRow, rowsAttr: branch.commitRows.join(',') }
+      }),
+    [layout],
+  )
+
   const treeWidth = useMemo(() => {
     let maxCol = 0
     for (const c of layout.commits) {
@@ -177,204 +219,243 @@ export function useGitTree(commits: GitCommit[], expandedRow?: number): Result {
   const isOverflowing = treeWidth > MAX_TREE_COLUMNS * COL_WIDTH
   const clampedTreeWidth = Math.min(treeWidth, (MAX_TREE_COLUMNS + 1) * COL_WIDTH) + LEFT_PADDING
 
-  const svgHeight = commits.length * ROW_HEIGHT + (expandedRow !== undefined ? settings.expandedCommitHeight : 0)
+  const startRow = Math.max(0, range.startRow)
+  const endRow = Math.min(layout.commits.length - 1, range.endRow)
 
-  const treeComponent = useMemo(
-    () => (
+  const treeComponent = useMemo(() => {
+    if (endRow < startRow) return null
+
+    const expandedHeight = settings.expandedCommitHeight
+
+    // Top of a row in the svg's coordinate space (getY space: row centers at getY(row))
+    const rowTopY = (row: number) =>
+      row * ROW_HEIGHT + (expandedRow !== undefined && row > expandedRow ? expandedHeight : 0)
+
+    const windowTop = rowTopY(startRow)
+    const windowBottom = rowTopY(endRow) + ROW_HEIGHT + (expandedRow === endRow ? expandedHeight : 0)
+    const svgHeight = windowBottom - windowTop
+
+    // Segments spilling one row past the window keep lines seamless at its edges; the mask
+    // covers that margin so they are not clipped by the mask's own bounds
+    const maskMargin = ROW_HEIGHT * 2 + expandedHeight
+    const visibleCommits = layout.commits.slice(startRow, endRow + 1)
+
+    return (
       <div
         className={cn(
-          'pointer-events-none absolute top-0 z-10 h-fit py-3',
+          'pointer-events-none absolute z-10',
           isOverflowing && 'mask-r-from-[calc(100%-1rem)] mask-r-to-100%',
         )}
-        style={{ width: clampedTreeWidth, left: LEFT_PADDING }}
+        style={{ width: clampedTreeWidth, left: LEFT_PADDING, top: LIST_PADDING + windowTop }}
       >
         <svg width={treeWidth} height={svgHeight} style={{ display: 'block', overflow: 'visible' }}>
-          <defs>
-            <mask id="commit-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={treeWidth} height={svgHeight}>
-              <rect x="0" y="0" width={treeWidth} height={svgHeight} fill="white" />
+          <g transform={`translate(0, ${-windowTop})`}>
+            <defs>
+              <mask
+                id="commit-mask"
+                maskUnits="userSpaceOnUse"
+                x="0"
+                y={windowTop - maskMargin}
+                width={treeWidth}
+                height={svgHeight + maskMargin * 2}
+              >
+                <rect
+                  x="0"
+                  y={windowTop - maskMargin}
+                  width={treeWidth}
+                  height={svgHeight + maskMargin * 2}
+                  fill="white"
+                />
 
-              {layout.commits.map(c => {
+                {visibleCommits.map(c => {
+                  if (c.column > maxVisibleCol) return null
+
+                  const dotX = px(c.column)
+                  const dotY = getY(c.row)
+
+                  if (c.isStash) {
+                    const squareSize = DOT_RADIUS * 2 + LINE_WIDTH * 3
+                    const halfSize = squareSize / 2
+                    return (
+                      <rect
+                        key={`mask-${c.commit.hash}`}
+                        x={dotX - halfSize}
+                        y={dotY - halfSize}
+                        width={squareSize}
+                        height={squareSize}
+                        rx={squareSize * 0.25}
+                        ry={squareSize * 0.25}
+                        fill="black"
+                      />
+                    )
+                  }
+
+                  return (
+                    <circle
+                      key={`mask-${c.commit.hash}`}
+                      cx={dotX}
+                      cy={dotY}
+                      r={DOT_RADIUS + LINE_WIDTH * 1.5}
+                      fill="black"
+                    />
+                  )
+                })}
+              </mask>
+            </defs>
+
+            <g mask="url(#commit-mask)">
+              {layout.branches.map((branch, bi) => {
+                const meta = branchMeta[bi]!
+                if (meta.maxRow < startRow || meta.minRow > endRow) return null
+
+                const color = getColor({
+                  index: branch.colorIndex,
+                  theme: settings.theme,
+                  isDark: settings.isDark,
+                  customColors: settings.customColors,
+                  isStash: branch.isStash,
+                })
+
+                // The segments joining the uncommitted-changes row to HEAD are part of the same
+                // branch but drawn in the uncommitted style, so split them into their own path
+                let d = ''
+                let dUncommitted = ''
+                for (const seg of branch.segments) {
+                  if (seg.p2.y < startRow || seg.p1.y > endRow) continue
+                  if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
+                  if (seg.isCommitted) d += buildSegmentPath(seg)
+                  else dUncommitted += buildSegmentPath(seg)
+                }
+                if (!d && !dUncommitted) return null
+
+                const sharedProps = {
+                  fill: 'none',
+                  strokeWidth: LINE_WIDTH,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                  opacity: 0.7,
+                  'data-rows': meta.rowsAttr,
+                  className: 'transition-opacity duration-500',
+                } as const
+
+                return (
+                  <Fragment key={`branch-${bi}`}>
+                    {d && <path d={d} stroke={color} {...sharedProps} />}
+                    {dUncommitted && <path d={dUncommitted} stroke={UNCOMMITTED_COLOR} {...sharedProps} />}
+                  </Fragment>
+                )
+              })}
+            </g>
+
+            {/* Commit dots — drawn on top */}
+            <g>
+              {visibleCommits.map(c => {
                 if (c.column > maxVisibleCol) return null
 
                 const dotX = px(c.column)
                 const dotY = getY(c.row)
+                const color = getColor({
+                  index: c.colorIndex,
+                  theme: settings.theme,
+                  isDark: settings.isDark,
+                  customColors: settings.customColors,
+                  isStash: c.isStash,
+                  isUncommitted: c.isUncommitted,
+                })
+
+                if (c.isUncommitted) {
+                  return (
+                    <g
+                      key={c.commit.hash}
+                      data-hash={c.commit.hash}
+                      data-row={c.row}
+                      className="origin-center transition-opacity duration-500 transform-fill"
+                    >
+                      <circle
+                        cx={dotX}
+                        cy={dotY}
+                        r={DOT_RADIUS}
+                        className="fill-vsc-editor-bg"
+                        stroke={color}
+                        strokeWidth={LINE_WIDTH}
+                      />
+
+                      <circle cx={dotX} cy={dotY} r={DOT_RADIUS * 0.25} fill={color} />
+                    </g>
+                  )
+                }
 
                 if (c.isStash) {
-                  const squareSize = DOT_RADIUS * 2 + LINE_WIDTH * 3
+                  const squareSize = DOT_RADIUS * 1.8
                   const halfSize = squareSize / 2
                   return (
                     <rect
-                      key={`mask-${c.commit.hash}`}
+                      key={c.commit.hash}
                       x={dotX - halfSize}
                       y={dotY - halfSize}
                       width={squareSize}
                       height={squareSize}
                       rx={squareSize * 0.25}
                       ry={squareSize * 0.25}
-                      fill="black"
+                      stroke={color}
+                      strokeWidth={LINE_WIDTH}
+                      data-hash={c.commit.hash}
+                      data-row={c.row}
+                      className="origin-center fill-transparent transition-opacity duration-500 transform-fill"
                     />
                   )
                 }
 
-                return (
-                  <circle
-                    key={`mask-${c.commit.hash}`}
-                    cx={dotX}
-                    cy={dotY}
-                    r={DOT_RADIUS + LINE_WIDTH * 1.5}
-                    fill="black"
-                  />
-                )
-              })}
-            </mask>
-          </defs>
-
-          <g mask="url(#commit-mask)">
-            {layout.branches.map((branch, bi) => {
-              const color = getColor({
-                index: branch.colorIndex,
-                theme: settings.theme,
-                isDark: settings.isDark,
-                customColors: settings.customColors,
-                isStash: branch.isStash,
-              })
-
-              // The segments joining the uncommitted-changes row to HEAD are part of the same
-              // branch but drawn in the uncommitted style, so split them into their own path
-              let d = ''
-              let dUncommitted = ''
-              for (const seg of branch.segments) {
-                if (seg.p1.x > maxVisibleCol && seg.p2.x > maxVisibleCol) continue
-                if (seg.isCommitted) d += buildSegmentPath(seg)
-                else dUncommitted += buildSegmentPath(seg)
-              }
-              if (!d && !dUncommitted) return null
-
-              const sharedProps = {
-                fill: 'none',
-                strokeWidth: LINE_WIDTH,
-                strokeLinecap: 'round',
-                strokeLinejoin: 'round',
-                opacity: 0.7,
-                'data-rows': branch.commitRows.join(','),
-                className: 'transition-opacity duration-500',
-              } as const
-
-              return (
-                <Fragment key={`branch-${bi}`}>
-                  {d && <path d={d} stroke={color} {...sharedProps} />}
-                  {dUncommitted && <path d={dUncommitted} stroke={UNCOMMITTED_COLOR} {...sharedProps} />}
-                </Fragment>
-              )
-            })}
-          </g>
-
-          {/* Commit dots — drawn on top */}
-          <g>
-            {layout.commits.map(c => {
-              if (c.column > maxVisibleCol) return null
-
-              const dotX = px(c.column)
-              const dotY = getY(c.row)
-              const color = getColor({
-                index: c.colorIndex,
-                theme: settings.theme,
-                isDark: settings.isDark,
-                customColors: settings.customColors,
-                isStash: c.isStash,
-                isUncommitted: c.isUncommitted,
-              })
-
-              if (c.isUncommitted) {
-                return (
-                  <g
-                    key={c.commit.hash}
-                    data-hash={c.commit.hash}
-                    data-row={c.row}
-                    className="origin-center transition-opacity duration-500 transform-fill"
-                  >
+                if (c.isHead)
+                  return (
                     <circle
+                      key={c.commit.hash}
                       cx={dotX}
                       cy={dotY}
                       r={DOT_RADIUS}
-                      className="fill-vsc-editor-bg"
                       stroke={color}
                       strokeWidth={LINE_WIDTH}
+                      data-hash={c.commit.hash}
+                      data-row={c.row}
+                      className="fill-vsc-editor-bg origin-center transition-opacity duration-500 transform-fill"
                     />
+                  )
 
-                    <circle cx={dotX} cy={dotY} r={DOT_RADIUS * 0.25} fill={color} />
-                  </g>
-                )
-              }
-
-              if (c.isStash) {
-                const squareSize = DOT_RADIUS * 1.8
-                const halfSize = squareSize / 2
-                return (
-                  <rect
-                    key={c.commit.hash}
-                    x={dotX - halfSize}
-                    y={dotY - halfSize}
-                    width={squareSize}
-                    height={squareSize}
-                    rx={squareSize * 0.25}
-                    ry={squareSize * 0.25}
-                    stroke={color}
-                    strokeWidth={LINE_WIDTH}
-                    data-hash={c.commit.hash}
-                    data-row={c.row}
-                    className="origin-center fill-transparent transition-opacity duration-500 transform-fill"
-                  />
-                )
-              }
-
-              if (c.isHead)
                 return (
                   <circle
                     key={c.commit.hash}
                     cx={dotX}
                     cy={dotY}
                     r={DOT_RADIUS}
-                    stroke={color}
-                    strokeWidth={LINE_WIDTH}
+                    fill={color}
                     data-hash={c.commit.hash}
                     data-row={c.row}
-                    className="fill-vsc-editor-bg origin-center transition-opacity duration-500 transform-fill"
+                    className="origin-center transition-opacity duration-500 transform-fill"
                   />
                 )
-
-              return (
-                <circle
-                  key={c.commit.hash}
-                  cx={dotX}
-                  cy={dotY}
-                  r={DOT_RADIUS}
-                  fill={color}
-                  data-hash={c.commit.hash}
-                  data-row={c.row}
-                  className="origin-center transition-opacity duration-500 transform-fill"
-                />
-              )
-            })}
+              })}
+            </g>
           </g>
         </svg>
       </div>
-    ),
-    [
-      isOverflowing,
-      clampedTreeWidth,
-      treeWidth,
-      svgHeight,
-      layout.commits,
-      layout.branches,
-      maxVisibleCol,
-      getY,
-      settings.theme,
-      settings.isDark,
-      settings.customColors,
-      buildSegmentPath,
-    ],
-  )
+    )
+  }, [
+    isOverflowing,
+    clampedTreeWidth,
+    treeWidth,
+    layout,
+    branchMeta,
+    startRow,
+    endRow,
+    expandedRow,
+    maxVisibleCol,
+    getY,
+    settings.theme,
+    settings.isDark,
+    settings.customColors,
+    settings.expandedCommitHeight,
+    buildSegmentPath,
+  ])
 
   return { treeComponent, treeWidth: clampedTreeWidth, rows: layout.commits }
 }
