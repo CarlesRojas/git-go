@@ -2,7 +2,7 @@
 
 **A beautiful, interactive Git visualization extension for VS Code**
 
-[![Version](https://img.shields.io/badge/version-1.1.5-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.1.6-blue.svg)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.116.0+-blue.svg)](https://code.visualstudio.com/)
 
