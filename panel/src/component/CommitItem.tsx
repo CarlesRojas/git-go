@@ -375,7 +375,16 @@ const CommitItemComponent: FC<CommitItemProps> = ({
               data-drag-clip
               className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
             >
-              {compareRole && <CompareBadge role={compareRole} className="mr-2 self-center" />}
+              {/* The marker itself takes no pointer events, but the slot it occupies is part of
+                  the row: clicking it expands the commit and modifier-clicking it picks the
+                  commit, so the marked row answers a click anywhere along it like any other */}
+              {compareRole &&
+                commitContextMenuWrapper(
+                  <div className="flex h-full cursor-pointer items-center pr-2" onClick={onToggle}>
+                    <CompareBadge role={compareRole} />
+                  </div>,
+                  !commit.isUncommitted,
+                )}
 
               {!!hasPills && pills}
 
