@@ -14,8 +14,8 @@ import type {
   GitWorktree,
 } from '@git/gitService'
 import type { GitRepo } from '@git/repoService'
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { RefObject, useCallback, useEffect } from 'react'
+import { hashKey, InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { RefObject, useCallback, useEffect, useRef } from 'react'
 
 interface VSCodeApi {
   postMessage(message: any): void
@@ -180,8 +180,10 @@ export const queryKeys = {
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
   commitFiles: (commitHash: string) => ['git', 'commit-files', { commitHash }] as const,
   stashes: ['git', 'stashes'] as const,
+  // Sorted so a mere reordering of the branch list (e.g. after a fetch) keeps the same cache
+  // entry instead of resetting every loaded page
   infiniteCommits: (branches?: GitBranch[]) =>
-    ['git', 'infinite-commits', { branches: branches?.map(b => b.name) }] as const,
+    ['git', 'infinite-commits', { branches: branches?.map(b => b.name).sort() }] as const,
   workingChanges: ['git', 'working-changes'] as const,
   currentBranch: ['git', 'current-branch'] as const,
   operationInProgress: ['git', 'operation-in-progress'] as const,
@@ -271,10 +273,33 @@ export const useInfiniteGitCommits = (
    */
   pageSizeOverrideRef?: RefObject<number | null>,
 ) => {
+  const queryClient = useQueryClient()
   const branchNames = branches?.map(b => b.name)
+  const queryKey = queryKeys.infiniteCommits(branches)
+
+  // The key changes whenever a branch ref appears or disappears — a created branch getting
+  // auto-selected, a push creating its remote counterpart, a rename swapping one name for
+  // another, a fetch discovering or pruning refs, a remote being hidden... A fresh key would
+  // start over from the first page, collapsing every loaded page and resetting the scroll. As
+  // long as the old and new ref sets share a name, the loaded commits are still essentially
+  // the same graph, so the new query is seeded from the previous key's pages, marked stale so
+  // all of them refetch in the background, and the graph updates in place with the scroll
+  // untouched. Only replacing the selection with unrelated branches starts clean, as before.
+  const previousKeyRef = useRef<{ names: string[]; key: readonly unknown[] } | null>(null)
+  const previous = previousKeyRef.current
+  let seedKey: readonly unknown[] | null = null
+
+  if (previous && branchNames && hashKey(previous.key) !== hashKey(queryKey)) {
+    const currentNames = new Set(branchNames)
+    if (previous.names.some(name => currentNames.has(name))) seedKey = previous.key
+  }
+
+  useEffect(() => {
+    previousKeyRef.current = { names: branchNames ?? [], key: queryKey }
+  })
 
   return useInfiniteQuery({
-    queryKey: queryKeys.infiniteCommits(branches),
+    queryKey,
     queryFn: async ({
       pageParam = 0,
     }): Promise<{ commits: GitCommit[]; hasMore: boolean; skip: number; pageSize: number }> => {
@@ -295,6 +320,13 @@ export const useInfiniteGitCommits = (
     getNextPageParam: lastPage => {
       return lastPage.hasMore ? lastPage.skip + (lastPage.pageSize ?? maxCount) : undefined
     },
+    ...(seedKey !== null && {
+      initialData: () =>
+        queryClient.getQueryData<
+          InfiniteData<{ commits: GitCommit[]; hasMore: boolean; skip: number; pageSize: number }>
+        >(seedKey),
+      initialDataUpdatedAt: 0,
+    }),
     placeholderData: previousData => previousData,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
