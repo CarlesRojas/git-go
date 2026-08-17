@@ -75,6 +75,8 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Revert commits** safely
 - **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
 - **Never undo pushed history** by default, since the button and its shortcut are hidden once the branch tip is on its upstream, so an undo cannot leave you needing a force push
+- **Browse the reflog** from the toolbar button beside the undo button - everywhere `HEAD` or any local branch has been, newest first, each entry naming the action it recorded with its `HEAD@{n}` index, short hash and how long ago it was
+- **Rescue lost commits** through the **Recoverable** badge, which marks the reflog entries no branch or tag reaches any more - the commits an amend, a reset or a rebase left behind. Right-click one to create a branch there, cherry-pick it, reset the current branch to it, or copy its hash
 - **Reset the current branch** to any commit, soft, mixed or hard
 - **Compare two commits or refs** by picking a first side - `Ctrl`/`Cmd`+click a commit, or "Select to compare" in the context menu of a commit, branch or tag - and then picking a second the same way, or by dropping one commit onto another. The changed files appear in a panel beside the graph, with the direction swappable and both compared rows marked `A` and `B`. Picking a marked side again steps back: `B` drops out and leaves `A` ready for another, `A` clears the selection
 - **View detailed commit information** including:
@@ -172,6 +174,8 @@ as branches are drawn.
     - **Right-click** on commits, branches, stashes, or tags for context menus
     - **Drag** a branch, commit, tag, or stash onto a branch, or hold over it for more actions
     - **Undo** the last one from the toolbar button, which names the action it will undo
+    - **Browse the reflog** from the toolbar button beside it, and right-click an entry to get back to a commit no
+      branch points at any more
 
 4. **Keyboard shortcuts**:
     - `Ctrl+F` / `Cmd+F` focuses the search, `Esc` clears it

@@ -517,6 +517,16 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'undoLastActionSuccess', success: true };
                 },
 
+                getReflog: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const ref = typeof message.ref === 'string' && message.ref.trim() ? message.ref.trim() : 'HEAD';
+                    const maxCount = message.maxCount || 50;
+                    const skip = message.skip || 0;
+                    const result = await gitService.getReflog(log, ref, maxCount, skip);
+                    log(`Successfully retrieved ${result.entries.length} reflog entries for ${ref}`);
+                    return { type: 'reflog', entries: result.entries, hasMore: result.hasMore, skip };
+                },
+
                 getWorktrees: async () => {
                     const gitService = GitService.getInstance();
                     const worktrees = await gitService.getWorktrees(log);

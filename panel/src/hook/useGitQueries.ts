@@ -8,6 +8,7 @@ import type {
   GitFileChange,
   GitOperationInProgress,
   GitPushMode,
+  GitReflogEntry,
   GitRemote,
   GitRewordableCommit,
   GitTagRemoteStatus,
@@ -205,6 +206,7 @@ export const queryKeys = {
   currentBranch: ['git', 'current-branch'] as const,
   operationInProgress: ['git', 'operation-in-progress'] as const,
   undoableAction: ['git', 'undoable-action'] as const,
+  reflog: (ref: string) => ['git', 'reflog', { ref }] as const,
   rewordableCommits: ['git', 'rewordable-commits'] as const,
   worktrees: ['git', 'worktrees'] as const,
   remotes: ['git', 'remotes'] as const,
@@ -736,6 +738,31 @@ export const useUndoLastAction = () => {
     onSuccess: () => {
       refreshGitData(queryClient)
     },
+  })
+}
+
+export const REFLOG_PAGE_SIZE = 50
+
+/**
+ * A ref's reflog, newest first, a page at a time — `HEAD` for everywhere the working tree has been,
+ * or a local branch's own name for everywhere that branch has pointed.
+ */
+export const useReflog = (ref: string, enabled = true) => {
+  return useInfiniteQuery({
+    queryKey: queryKeys.reflog(ref),
+    queryFn: async ({ pageParam = 0 }): Promise<{ entries: GitReflogEntry[]; hasMore: boolean; skip: number }> => {
+      const response = await sendCorrelatedMessage<{ entries: GitReflogEntry[]; hasMore: boolean; skip: number }>(
+        'getReflog',
+        { ref, maxCount: REFLOG_PAGE_SIZE, skip: pageParam },
+        15_000,
+      )
+      return { entries: response.entries, hasMore: response.hasMore, skip: response.skip }
+    },
+    initialPageParam: 0,
+    getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.skip + REFLOG_PAGE_SIZE : undefined),
+    enabled: enabled && !!ref,
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
   })
 }
 

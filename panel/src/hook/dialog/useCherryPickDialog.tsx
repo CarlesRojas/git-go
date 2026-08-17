@@ -12,7 +12,8 @@ import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
 interface UseCherryPickDialogProps {
-  commit: GitCommit
+  /** Only the hash is needed, so a reflog entry can open the same dialog a commit row does */
+  commit: Pick<GitCommit, 'hash'>
 }
 
 export const useCherryPickDialog = ({ commit }: UseCherryPickDialogProps) => {

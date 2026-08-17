@@ -12,7 +12,8 @@ import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
 interface UseResetBranchDialogProps {
-  commit: GitCommit
+  /** Only the hash is needed, so a reflog entry can open the same dialog a commit row does */
+  commit: Pick<GitCommit, 'hash'>
 }
 
 const RESET_MODES: GitResetMode[] = ['soft', 'mixed', 'hard']

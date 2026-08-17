@@ -4,6 +4,7 @@ import { ComparePanel } from '@/component/ComparePanel'
 import { DragOverlay } from '@/component/DragOverlay'
 import { GitActionLoadingToast } from '@/component/GitActionLoadingToast'
 import { Graph } from '@/component/Graph'
+import { ReflogPanel } from '@/component/ReflogPanel'
 import { RefetchButton } from '@/component/RefreshButton'
 import { RepoSelector } from '@/component/RepoSelector'
 import { SearchInput } from '@/component/SearchInput'
@@ -93,6 +94,8 @@ const RepoPanel: FC = () => {
             <AbortOperationButton />
 
             <UndoButton />
+
+            <ReflogPanel />
 
             <SearchInput value={searchTerm} onChange={setSearchTerm} />
 
