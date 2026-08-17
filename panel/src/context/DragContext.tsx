@@ -1,5 +1,12 @@
 import { useSettings } from '@/context/SettingsContext'
-import { commitTargetKey, DragActionId, DragPayload, SOURCE_ACTION_IDS, TARGETLESS_KINDS } from '@/util/dragAndDrop'
+import {
+  commitTargetKey,
+  DragActionId,
+  DragPayload,
+  hoverScaleFor,
+  SOURCE_ACTION_IDS,
+  TARGETLESS_KINDS,
+} from '@/util/dragAndDrop'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 const DRAG_THRESHOLD_PX = 5
@@ -10,6 +17,13 @@ const GHOST_CURSOR_OFFSET_PX = 16
 
 /** Set on the dragged item so it can be styled as picked-up without a React re-render. */
 export const SOURCE_ATTRIBUTE = 'data-drag-source-active'
+
+/**
+ * Set on the message of the commit row under the pointer, which grows the same way a hovered
+ * pill does. Applied to the DOM directly rather than through state: every row would otherwise
+ * re-render each time the pointer crossed one.
+ */
+const COMMIT_HOVER_ATTRIBUTE = 'data-drag-message-hovered'
 
 export interface PendingDrop {
   payload: DragPayload
@@ -85,6 +99,8 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
   const scrollContainer = useRef<HTMLElement | null>(null)
   const isAutoScrolling = useRef(false)
   const sourceElement = useRef<HTMLElement | null>(null)
+  /** The commit message currently grown, so it can be released when the pointer moves on. */
+  const hoveredCommitMessage = useRef<HTMLElement | null>(null)
   const currentTargetKey = useRef<string | null>(null)
   const currentActionId = useRef<DragActionId | null>(null)
   const currentActionDisabled = useRef(false)
@@ -163,6 +179,8 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
 
     sourceElement.current?.removeAttribute(SOURCE_ATTRIBUTE)
     sourceElement.current = null
+    hoveredCommitMessage.current?.removeAttribute(COMMIT_HOVER_ATTRIBUTE)
+    hoveredCommitMessage.current = null
     document.documentElement.removeAttribute('data-dragging')
 
     // Commit-highlight classes are suppressed while dragging rather than prevented, so any the
@@ -327,6 +345,23 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
         : commitElement !== null
           ? commitTargetKey(commitElement.getAttribute('data-drop-commit') ?? '')
           : (pillElement?.getAttribute('data-drop-target') ?? null)
+
+    // A commit row has no pill to grow, so the message stands in for one. The scale is measured
+    // per message so a short one and a long one grow by the same amount on screen, exactly as
+    // the pills do — and it is written straight to the DOM, since a row that re-rendered on
+    // every crossing would undo what virtualization bought.
+    const hoveredMessage =
+      commitElement !== null && !isSource ? commitElement.querySelector<HTMLElement>('[data-drag-message]') : null
+
+    if (hoveredMessage !== hoveredCommitMessage.current) {
+      hoveredCommitMessage.current?.removeAttribute(COMMIT_HOVER_ATTRIBUTE)
+      hoveredCommitMessage.current = hoveredMessage
+
+      if (hoveredMessage) {
+        hoveredMessage.style.setProperty('--hover-scale', String(hoverScaleFor(hoveredMessage.offsetWidth)))
+        hoveredMessage.setAttribute(COMMIT_HOVER_ATTRIBUTE, '')
+      }
+    }
 
     if ((resolvedTarget !== null) !== isPointerOverTarget.current) {
       isPointerOverTarget.current = resolvedTarget !== null

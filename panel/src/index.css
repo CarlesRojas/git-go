@@ -157,6 +157,18 @@
   opacity: 1;
 }
 
+/* A commit row has no pill to grow, so the message under the pointer is what reacts, with the
+   same feedback and timing a hovered pill gives. The scale is set on the element itself, since
+   it depends on how wide that particular message is. */
+[data-dragging='commit'] [data-drag-message] {
+  transform-origin: left center;
+  transition: transform 150ms;
+}
+
+[data-dragging='commit'] [data-drag-message-hovered] {
+  transform: scale(var(--hover-scale, 1.02));
+}
+
 /*
  * A hovered target scales up, which the row's own clipping and right-edge fade would cut off.
  * Scoped to the row actually holding the hovered pill, so the rest of the graph keeps clipping

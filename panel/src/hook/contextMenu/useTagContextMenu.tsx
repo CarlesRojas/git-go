@@ -83,17 +83,17 @@ const TagContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
-          <ContextMenuItem onClick={onDelete} variant="destructive">
-            <FontAwesomeIcon icon={faTrash} className="size-3" />
-            Delete
-          </ContextMenuItem>
-
           {showCompare && (
             <ContextMenuItem onClick={onCompare}>
               <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
               Compare with selected
             </ContextMenuItem>
           )}
+
+          <ContextMenuItem onClick={onDelete} variant="destructive">
+            <FontAwesomeIcon icon={faTrash} className="size-3" />
+            Delete
+          </ContextMenuItem>
 
           <ContextMenuSeparator />
 

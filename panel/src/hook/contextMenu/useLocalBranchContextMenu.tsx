@@ -172,11 +172,6 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
                   <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
                   Rebase Current Branch Here
                 </ContextMenuItem>
-
-                <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
-                  <FontAwesomeIcon icon={faTrash} className="size-3" />
-                  Delete
-                </ContextMenuItem>
               </>
             )}
 
@@ -184,6 +179,14 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
               <ContextMenuItem onClick={handleCompare}>
                 <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
                 Compare with selected
+              </ContextMenuItem>
+            )}
+
+            {/* Last before the separator: the destructive entry ends every one of these menus */}
+            {!branch.current && (
+              <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
+                <FontAwesomeIcon icon={faTrash} className="size-3" />
+                Delete
               </ContextMenuItem>
             )}
 

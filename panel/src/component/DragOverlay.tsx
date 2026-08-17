@@ -207,7 +207,13 @@ export const DragOverlay: FC = () => {
 
   // Refused actions are dropped from the stack rather than shown greyed. The unfiltered lists
   // survive so the dragged item's label can still say why a blocked default is unavailable.
-  const visibleTargetActions = useMemo(() => targetActions.filter(action => !action.disabledReason), [targetActions])
+  // A commit target offers comparing and nothing else, which a plain release already performs —
+  // a stack of one box would be a step with no choice in it, so it is left out and the ghost's
+  // label carries the feedback instead.
+  const visibleTargetActions = useMemo(
+    () => (targetCommitHash !== null ? [] : targetActions.filter(action => !action.disabledReason)),
+    [targetActions, targetCommitHash],
+  )
   const visibleSourceActions = useMemo(() => sourceActions.filter(action => !action.disabledReason), [sourceActions])
 
   const defaultTargetAction = useMemo(

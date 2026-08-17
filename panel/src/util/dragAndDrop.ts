@@ -34,6 +34,19 @@ export type DragActionId =
   | 'compare'
 
 /**
+ * A hovered target grows by roughly this many pixels rather than by a fixed ratio, so a long
+ * branch name or commit message does not balloon while a short one barely moves. Clamped at
+ * both ends.
+ */
+const HOVER_GROWTH_PX = 8
+const MIN_HOVER_SCALE = 1.02
+const MAX_HOVER_SCALE = 1.12
+
+/** Shared by the pills and the commit messages, so every drop target reacts identically. */
+export const hoverScaleFor = (width: number): number =>
+  width > 0 ? Math.min(Math.max(1 + HOVER_GROWTH_PX / width, MIN_HOVER_SCALE), MAX_HOVER_SCALE) : 1
+
+/**
  * Marks a drop target as a commit row rather than a branch pill. Both kinds share one key, so
  * the prefix is what tells them apart when the drop is resolved.
  */

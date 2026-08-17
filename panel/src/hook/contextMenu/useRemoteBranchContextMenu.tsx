@@ -91,17 +91,17 @@ const RemoteBranchContextMenuWrapper = memo(
             Merge into Current
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={() => onDelete(branch)} variant="destructive">
-            <FontAwesomeIcon icon={faTrash} className="size-3" />
-            Delete
-          </ContextMenuItem>
-
           {showCompare && (
             <ContextMenuItem onClick={() => onCompare(branch)}>
               <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
               Compare with selected
             </ContextMenuItem>
           )}
+
+          <ContextMenuItem onClick={() => onDelete(branch)} variant="destructive">
+            <FontAwesomeIcon icon={faTrash} className="size-3" />
+            Delete
+          </ContextMenuItem>
 
           <ContextMenuSeparator />
 

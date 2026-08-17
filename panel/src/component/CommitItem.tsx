@@ -1,4 +1,5 @@
 import BranchPill from '@/component/BranchPill'
+import { CompareBadge } from '@/component/CompareBadge'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
@@ -243,6 +244,8 @@ const CommitItemComponent: FC<CommitItemProps> = ({
       onClick={onToggle}
     >
       <h3
+        // Stands in for a pill while a commit is dragged over this row: it is what grows
+        data-drag-message
         className={cn(
           // Typography
           'line-clamp-1 truncate text-xs leading-tight font-semibold',
@@ -378,21 +381,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
               data-drag-clip
               className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
             >
-              {compareRole && (
-                <div
-                  className={cn(
-                    // Layout & sizing
-                    'mr-2 flex h-4 min-w-4 items-center justify-center self-center px-1',
-                    // Appearance
-                    'rounded-main border-vsc-list-highlight-fg/40 text-vsc-list-highlight-fg border',
-                    // Typography
-                    'text-[0.6rem] leading-none font-bold',
-                  )}
-                  title={compareRole === 'from' ? 'The commit being compared from' : 'The commit being compared to'}
-                >
-                  {compareRole === 'from' ? 'A' : 'B'}
-                </div>
-              )}
+              {compareRole && <CompareBadge role={compareRole} className="mr-2 self-center" />}
 
               {!!hasPills && pills}
 
