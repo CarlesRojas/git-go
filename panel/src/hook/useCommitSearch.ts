@@ -4,7 +4,11 @@ import { matchesSearch } from '@/util/searchCommits'
 import { sendCorrelatedMessage } from '@/util/sendCorrelatedMessage'
 import type { GitBranch, GitCommit } from '@git/gitService'
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+/** The first oversized page a jump fetches; each further page while still jumping doubles it */
+const INITIAL_JUMP_PAGE_SIZE = 1000
+const MAX_JUMP_PAGE_SIZE = 5000
 
 interface UseCommitSearchProps {
   searchTerm: string
@@ -16,6 +20,8 @@ interface UseCommitSearchProps {
   isFetchingNextPage: boolean
   fetchNextPage: () => void
   scrollToRow: (row: number) => void
+  /** Shared with useInfiniteGitCommits so a jump can cross the gap in a few big pages */
+  jumpPageSizeRef: RefObject<number | null>
 }
 
 interface UseCommitSearchResult {
@@ -42,6 +48,7 @@ export const useCommitSearch = ({
   isFetchingNextPage,
   fetchNextPage,
   scrollToRow,
+  jumpPageSizeRef,
 }: UseCommitSearchProps): UseCommitSearchResult => {
   const term = searchTerm.trim()
   const active = term.length > 0
@@ -110,7 +117,8 @@ export const useCommitSearch = ({
   useEffect(() => {
     setCurrentMatchHash(null)
     setPendingHash(null)
-  }, [term])
+    jumpPageSizeRef.current = null
+  }, [term, jumpPageSizeRef])
 
   const navigate = useCallback(
     (direction: 'next' | 'prev') => {
@@ -130,12 +138,14 @@ export const useCommitSearch = ({
       const row = loadedMatchRows.get(target)
       if (row !== undefined) {
         setPendingHash(null)
+        jumpPageSizeRef.current = null
         scrollToRow(row)
       } else {
+        jumpPageSizeRef.current = null // each jump starts its page growth over
         setPendingHash(target)
       }
     },
-    [matchHashes, currentMatchHash, loadedMatchRows, scrollToRow],
+    [matchHashes, currentMatchHash, loadedMatchRows, scrollToRow, jumpPageSizeRef],
   )
 
   useEffect(() => {
@@ -144,14 +154,24 @@ export const useCommitSearch = ({
     const row = commits.findIndex(commit => commit.hash === pendingHash)
     if (row !== -1) {
       setPendingHash(null)
+      jumpPageSizeRef.current = null
       scrollToRow(row)
       return
     }
 
     if (isFetchingNextPage) return
-    if (hasNextPage) fetchNextPage()
-    else setPendingHash(null) // every page is loaded and the hash never appeared: give up
-  }, [pendingHash, commits, isFetchingNextPage, hasNextPage, fetchNextPage, scrollToRow])
+    if (hasNextPage) {
+      // Cross the gap in a few growing pages instead of hundreds of regular ones
+      jumpPageSizeRef.current =
+        jumpPageSizeRef.current === null
+          ? INITIAL_JUMP_PAGE_SIZE
+          : Math.min(MAX_JUMP_PAGE_SIZE, jumpPageSizeRef.current * 2)
+      fetchNextPage()
+    } else {
+      setPendingHash(null) // every page is loaded and the hash never appeared: give up
+      jumpPageSizeRef.current = null
+    }
+  }, [pendingHash, commits, isFetchingNextPage, hasNextPage, fetchNextPage, scrollToRow, jumpPageSizeRef])
 
   const currentIndex = currentMatchHash ? matchHashes.indexOf(currentMatchHash) : -1
 

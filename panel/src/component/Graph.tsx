@@ -25,8 +25,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   const [expandedHash, setExpandedHash] = useState<string | null>(null)
   const { settings } = useSettings()
 
+  // Set by search jumps so the pages crossing the gap to a far-away match come in big chunks
+  const jumpPageSizeRef = useRef<number | null>(null)
+
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } =
-    useInfiniteGitCommits(selectedBranches)
+    useInfiniteGitCommits(selectedBranches, 200, jumpPageSizeRef)
 
   const { data: workingChangesData } = useWorkingChanges(true)
   const { data: branches = [], error: gitError, isLoading: isBranchesLoading } = useGitBranches()
@@ -179,6 +182,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
     isFetchingNextPage,
     fetchNextPage,
     scrollToRow,
+    jumpPageSizeRef,
   })
 
   // Publish the match counter and the prev/next navigator to the toolbar's search input
