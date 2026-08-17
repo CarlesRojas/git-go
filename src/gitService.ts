@@ -903,6 +903,11 @@ export class GitService {
 
             log(`Executing git log command (maxCount: ${maxCount}, skip: ${skip})`);
 
+            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
+            log(`Found ${stashMap.size} stash(es)`);
+            const stashCommits =
+                stashMap.size > 0 ? await this.getStashCommits(workspacePath, gitExecutable.path, stashMap) : [];
+
             const gitArgs = [
                 gitExecutable.path,
                 '-c',
@@ -917,6 +922,14 @@ export class GitService {
             ];
 
             gitArgs.push(...(await this.resolveLogRefArgs(workspacePath, gitExecutable.path, branches, log)));
+
+            // A stash's base commit can be unreachable from every ref — rewording, resetting or
+            // undoing rewrites the commit a stash was made on — so each base is walked explicitly,
+            // keeping the stash and the commit it sits on visible in the graph.
+            const stashBases = [
+                ...new Set(stashCommits.map((stash) => stash.parents[0]).filter((hash): hash is string => !!hash))
+            ];
+            gitArgs.push(...stashBases);
 
             gitArgs.push('--');
 
@@ -996,16 +1009,10 @@ export class GitService {
                 });
             }
 
-            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
-            log(`Found ${stashMap.size} stash(es)`);
+            for (const stash of stashCommits) {
+                const parentIdx = commits.findIndex((c) => c.hash === stash.parents[0]);
 
-            if (stashMap.size > 0) {
-                const stashCommits = await this.getStashCommits(workspacePath, gitExecutable.path, stashMap);
-                for (const stash of stashCommits) {
-                    const parentIdx = commits.findIndex((c) => c.hash === stash.parents[0]);
-
-                    if (parentIdx !== -1) commits.splice(parentIdx, 0, stash);
-                }
+                if (parentIdx !== -1) commits.splice(parentIdx, 0, stash);
             }
 
             log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
