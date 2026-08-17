@@ -94,15 +94,15 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         <FontAwesomeIcon icon={faSearch} className="pointer-events-none size-3" />
       </button>
 
-      {/* right-7 leaves the same 4px to the clear button (which spans right-1 + size-5) as the
-          gap between the controls themselves */}
+      {/* right-6 lands flush against the clear button (which spans right-1 + size-5), so the
+          three icon buttons read as one group; only the counter keeps a margin */}
       {showMatches && (
-        <div className="absolute right-7 flex items-center gap-1">
+        <div className="absolute right-6 flex items-center">
           {matchState.isSearching && (
-            <FontAwesomeIcon icon={faCircleNotch} className="size-2.5 animate-spin opacity-60" />
+            <FontAwesomeIcon icon={faCircleNotch} className="mr-1 size-2.5 animate-spin opacity-60" />
           )}
 
-          <span className="min-w-fit text-[10px] leading-none tabular-nums opacity-60">
+          <span className="mr-1 min-w-fit text-[10px] leading-none tabular-nums opacity-60">
             {`${matchState.current}/${matchState.total}`}
           </span>
 
