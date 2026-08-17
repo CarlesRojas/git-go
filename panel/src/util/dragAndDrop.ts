@@ -258,7 +258,7 @@ export const resolveSourceActions = ({
       },
       {
         id: 'branchFromStash',
-        verb: 'Branch',
+        verb: 'Create Branch',
         description: ['Create a branch from ', { ref: formatStash(payload.ref) }],
         icon: faCodeBranch,
         destructive: false,

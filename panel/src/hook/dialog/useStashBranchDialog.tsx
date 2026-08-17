@@ -115,7 +115,8 @@ export const useStashBranchDialog = ({ stash, commit }: UseStashBranchDialogProp
             ) : (
               'the commit the stash was created from'
             )}{' '}
-            and is checked out. The stash is applied onto it and removed from the stash list.
+            and is checked out. The stashed changes come back as uncommitted changes on the new branch, ready to commit,
+            and the stash is removed from the stash list.
           </p>
 
           {blockedReason && (
