@@ -8,6 +8,7 @@ import type {
   GitOperationInProgress,
   GitPushMode,
   GitRemote,
+  GitRewordableCommit,
   GitTagRemoteStatus,
   GitUndoActionKind,
   GitUndoableAction,
@@ -79,6 +80,7 @@ export interface ConfigState {
   cherryPickRecordOrigin: boolean
   cherryPickNoCommit: boolean
   revertNoCommit: boolean
+  rewordAllowPushed: boolean
   resetMode: 'soft' | 'mixed' | 'hard'
   remoteDefaultRemote: string
   remoteFetchForceFetch: boolean
@@ -135,6 +137,7 @@ const defaultConfigState: ConfigState = {
   cherryPickRecordOrigin: false,
   cherryPickNoCommit: true,
   revertNoCommit: true,
+  rewordAllowPushed: false,
   resetMode: 'mixed',
   remoteDefaultRemote: 'origin',
   remoteFetchForceFetch: false,
@@ -188,6 +191,7 @@ export const queryKeys = {
   currentBranch: ['git', 'current-branch'] as const,
   operationInProgress: ['git', 'operation-in-progress'] as const,
   undoableAction: ['git', 'undoable-action'] as const,
+  rewordableCommits: ['git', 'rewordable-commits'] as const,
   worktrees: ['git', 'worktrees'] as const,
   remotes: ['git', 'remotes'] as const,
   repoName: ['git', 'repo-name'] as const,
@@ -657,6 +661,61 @@ export const useUndoLastAction = () => {
     meta: { gitActionLabel: 'Undoing' },
     mutationFn: async ({ previousHash, discardChanges }: { previousHash: string; discardChanges: boolean }) => {
       return await sendCorrelatedMessage('undoLastAction', { previousHash, discardChanges }, 30_000)
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+/**
+ * The commits whose message can be rewritten: the first-parent chain from HEAD up to the first
+ * merge, each marked with whether the upstream already has it. Whether published commits are
+ * offered is decided by the caller against `rewordAllowPushed`.
+ */
+export const useRewordableCommits = () => {
+  return useQuery({
+    queryKey: queryKeys.rewordableCommits,
+    queryFn: async (): Promise<GitRewordableCommit[]> => {
+      const response = await sendCorrelatedMessage<{ commits: GitRewordableCommit[] }>('getRewordableCommits')
+      return response.commits
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
+export const useRewordCommit = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: ['rewordCommit'],
+    meta: { gitActionLabel: 'Rewording' },
+    mutationFn: async ({
+      commitHash,
+      message,
+      autoStash = false,
+    }: {
+      commitHash: string
+      message: string
+      autoStash?: boolean
+    }) => {
+      return await sendCorrelatedMessage('rewordCommit', { commitHash, message, autoStash }, 30_000)
+    },
+    onSuccess: () => {
+      refreshGitData(queryClient)
+    },
+  })
+}
+
+export const useBranchFromStash = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: ['branchFromStash'],
+    meta: { gitActionLabel: 'Creating branch' },
+    mutationFn: async ({ stashSelector, branchName }: { stashSelector: string; branchName: string }) => {
+      return await sendCorrelatedMessage('branchFromStash', { stashSelector, branchName }, 30_000)
     },
     onSuccess: () => {
       refreshGitData(queryClient)

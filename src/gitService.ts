@@ -121,6 +121,12 @@ export interface GitUndoableAction {
 /** Actions that wrote their result into the working tree, rather than only recording what was in it */
 const WORKING_TREE_UNDO_KINDS: GitUndoActionKind[] = ['merge', 'rebase', 'cherry-pick', 'reset', 'pull', 'other'];
 
+export interface GitRewordableCommit {
+    hash: string;
+    /** Whether the commit is already contained in the current branch's upstream */
+    published: boolean;
+}
+
 // Use ASCII character 0x1E (Record Separator) for field separation
 const GIT_LOG_SEPARATOR = '\x1E';
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -897,6 +903,11 @@ export class GitService {
 
             log(`Executing git log command (maxCount: ${maxCount}, skip: ${skip})`);
 
+            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
+            log(`Found ${stashMap.size} stash(es)`);
+            const stashCommits =
+                stashMap.size > 0 ? await this.getStashCommits(workspacePath, gitExecutable.path, stashMap) : [];
+
             const gitArgs = [
                 gitExecutable.path,
                 '-c',
@@ -911,6 +922,14 @@ export class GitService {
             ];
 
             gitArgs.push(...(await this.resolveLogRefArgs(workspacePath, gitExecutable.path, branches, log)));
+
+            // A stash's base commit can be unreachable from every ref — rewording, resetting or
+            // undoing rewrites the commit a stash was made on — so each base is walked explicitly,
+            // keeping the stash and the commit it sits on visible in the graph.
+            const stashBases = [
+                ...new Set(stashCommits.map((stash) => stash.parents[0]).filter((hash): hash is string => !!hash))
+            ];
+            gitArgs.push(...stashBases);
 
             gitArgs.push('--');
 
@@ -990,16 +1009,10 @@ export class GitService {
                 });
             }
 
-            const stashMap = await this.getStashInfo(workspacePath, gitExecutable.path);
-            log(`Found ${stashMap.size} stash(es)`);
+            for (const stash of stashCommits) {
+                const parentIdx = commits.findIndex((c) => c.hash === stash.parents[0]);
 
-            if (stashMap.size > 0) {
-                const stashCommits = await this.getStashCommits(workspacePath, gitExecutable.path, stashMap);
-                for (const stash of stashCommits) {
-                    const parentIdx = commits.findIndex((c) => c.hash === stash.parents[0]);
-
-                    if (parentIdx !== -1) commits.splice(parentIdx, 0, stash);
-                }
+                if (parentIdx !== -1) commits.splice(parentIdx, 0, stash);
             }
 
             log(`Parsed ${commits.length} commits (hasMore: ${hasMore})`);
@@ -2046,6 +2059,269 @@ export class GitService {
             return action;
         } catch (error) {
             log(`Error undoing the last action: ${error}`);
+            throw error;
+        }
+    }
+
+    private static readonly REWORD_CHAIN_LIMIT = 1000;
+
+    /**
+     * The commits whose message can be rewritten: the first-parent chain from HEAD, cut at the
+     * first merge commit — rewording an older commit rebases everything between it and HEAD, and
+     * that range must not cross a merge. HEAD itself is amended rather than rebased, so a merge
+     * at HEAD is still rewordable. Each commit carries whether the upstream already has it, and
+     * the caller decides whether published commits are offered.
+     */
+    public async getRewordableCommits(log: (message: string) => void): Promise<GitRewordableCommit[]> {
+        if (!this.tryGetRepoPath()) return [];
+
+        try {
+            // Rewording rewrites the branch, which cannot start while an operation is halted mid-way
+            if (await this.getOperationInProgress(log)) return [];
+
+            // A detached HEAD has no branch to rewrite
+            const branch = await this.getCurrentBranch(log);
+            if (!branch) return [];
+            this.validateRefName(branch);
+
+            const workspacePath = this.getRepoPath();
+            const gitExecutable = await this.findGitExecutable();
+
+            const chainOutput = await this.spawnGit(
+                [
+                    gitExecutable.path,
+                    '-c',
+                    'log.showSignature=false',
+                    'log',
+                    '--first-parent',
+                    `--format=%H${GIT_LOG_SEPARATOR}%P`,
+                    '-n',
+                    String(GitService.REWORD_CHAIN_LIMIT),
+                    'HEAD',
+                    '--'
+                ],
+                workspacePath
+            );
+
+            // The chain hashes the upstream does not have yet; everything else is published.
+            // With no upstream (or one that no longer exists locally) nothing is published,
+            // matching how isPublished treats it.
+            let unpushed: Set<string> | null = null;
+            try {
+                const upstreamOutput = await this.spawnGit(
+                    [gitExecutable.path, 'for-each-ref', '--format=%(upstream)', `refs/heads/${branch}`],
+                    workspacePath
+                );
+                const upstream = upstreamOutput
+                    .split(EOL_REGEX)
+                    .map((line) => line.trim())
+                    .find((line) => line.length > 0);
+
+                if (upstream) {
+                    const unpushedOutput = await this.spawnGit(
+                        [
+                            gitExecutable.path,
+                            '-c',
+                            'log.showSignature=false',
+                            'log',
+                            '--first-parent',
+                            '--format=%H',
+                            '-n',
+                            String(GitService.REWORD_CHAIN_LIMIT),
+                            'HEAD',
+                            '--not',
+                            upstream,
+                            '--'
+                        ],
+                        workspacePath
+                    );
+                    unpushed = new Set(
+                        unpushedOutput
+                            .split(EOL_REGEX)
+                            .map((line) => line.trim())
+                            .filter(Boolean)
+                    );
+                }
+            } catch {
+                // The upstream is configured but missing locally — treat nothing as published
+            }
+
+            const commits: GitRewordableCommit[] = [];
+            const lines = chainOutput.split(EOL_REGEX).filter((line) => line.trim());
+
+            for (let i = 0; i < lines.length; i++) {
+                const [hash, parents] = lines[i]!.split(GIT_LOG_SEPARATOR);
+                const trimmedHash = hash?.trim();
+                if (!trimmedHash) continue;
+
+                const isMerge = (parents?.trim().split(' ').filter(Boolean).length ?? 0) > 1;
+                // A merge below HEAD cannot be reworded, and neither can anything older: the
+                // rebase from there to HEAD would cross the merge and flatten it
+                if (isMerge && i > 0) break;
+
+                commits.push({ hash: trimmedHash, published: unpushed ? !unpushed.has(trimmedHash) : false });
+
+                // HEAD being a merge is amendable itself, but nothing older is reachable past it
+                if (isMerge) break;
+            }
+
+            log(`Found ${commits.length} rewordable commit(s) on ${branch}`);
+            return commits;
+        } catch (error) {
+            log(`Error getting rewordable commits: ${error}`);
+            return [];
+        }
+    }
+
+    /**
+     * Rewrite a commit's message. HEAD is amended in place; an older commit is amended on a
+     * detached HEAD and the branch's commits above it are rebased onto the amended copy. The
+     * replayed commits carry the exact same trees, so that rebase cannot conflict.
+     */
+    public async rewordCommit(
+        log: (message: string) => void,
+        commitHash: string,
+        message: string,
+        autoStash: boolean = false
+    ): Promise<void> {
+        const workspacePath = this.getRepoPath();
+        const gitExecutable = await this.findGitExecutable();
+
+        this.validatePositional(commitHash, 'commit hash');
+        if (!message.trim()) throw new Error('The commit message cannot be empty');
+
+        const operation = await this.getOperationInProgress(log);
+        if (operation) throw new Error(`Cannot reword while a ${operation} is in progress`);
+
+        // Re-derived rather than trusted from the caller, so a reword prepared against a stale
+        // view of the repository cannot rewrite the wrong commits
+        const rewordable = await this.getRewordableCommits(log);
+        const index = rewordable.findIndex((commit) => commit.hash === commitHash);
+        if (index === -1) {
+            throw new Error(
+                'This commit can no longer be reworded: it is not on the current branch, or the path from it to HEAD crosses a merge commit'
+            );
+        }
+
+        if (rewordable[index]!.published && !getConfig().rewordAllowPushed) {
+            throw new Error(
+                'This commit is already pushed to the upstream. Enable git-go.reword.allowPushed to reword it anyway'
+            );
+        }
+
+        try {
+            if (index === 0) {
+                // '--only' with no paths commits from the current HEAD tree, so staged changes
+                // are not swept into the amend — only the message changes
+                await this.spawnGit(
+                    [gitExecutable.path, 'commit', '--amend', '--only', '-m', message],
+                    workspacePath
+                );
+                log(`Successfully reworded HEAD (${commitHash.substring(0, 7)})`);
+                return;
+            }
+
+            const branch = await this.getCurrentBranch(log);
+            if (!branch) throw new Error('No branch is checked out');
+            this.validateRefName(branch);
+
+            // Changed tracked files would block the detach below; untracked files survive it
+            const statusOutput = await this.spawnGit(
+                [gitExecutable.path, 'status', '--porcelain', '--untracked-files=no'],
+                workspacePath
+            );
+            let stashed = false;
+            if (statusOutput.split(EOL_REGEX).some((line) => line.trim())) {
+                if (!autoStash) {
+                    throw new Error(
+                        'The working tree has uncommitted changes. Stash them first, or reword with autostash'
+                    );
+                }
+                await this.spawnGit(
+                    [gitExecutable.path, 'stash', 'push', '--include-untracked', '-m', 'git-go: reword autostash'],
+                    workspacePath
+                );
+                stashed = true;
+            }
+
+            try {
+                await this.spawnGit([gitExecutable.path, 'checkout', '--detach', commitHash], workspacePath);
+                await this.spawnGit(
+                    [gitExecutable.path, 'commit', '--amend', '--only', '-m', message],
+                    workspacePath
+                );
+                const rewordedHash = (
+                    await this.spawnGit([gitExecutable.path, 'rev-parse', 'HEAD'], workspacePath)
+                ).trim();
+                await this.spawnGit(
+                    [gitExecutable.path, 'rebase', '--onto', rewordedHash, commitHash, branch],
+                    workspacePath
+                );
+                log(
+                    `Successfully reworded commit ${commitHash.substring(0, 7)} and rewrote ${index} descendant commit(s) on ${branch}`
+                );
+            } catch (error) {
+                // Put the repository back on the branch it started from before rethrowing
+                try {
+                    await this.spawnGit([gitExecutable.path, 'rebase', '--abort'], workspacePath);
+                } catch {
+                    // No rebase was in progress
+                }
+                try {
+                    await this.spawnGit([gitExecutable.path, 'checkout', branch], workspacePath);
+                } catch {
+                    // Already on the branch
+                }
+                throw error;
+            } finally {
+                if (stashed) {
+                    try {
+                        await this.spawnGit([gitExecutable.path, 'stash', 'pop'], workspacePath);
+                    } catch {
+                        log('Could not restore the autostashed changes; they remain in the stash list');
+                    }
+                }
+            }
+        } catch (error) {
+            log(`Error rewording commit: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Create a branch at the commit a stash was made from, check it out and apply the stash onto
+     * it, dropping the stash on success — 'git stash branch'. The checkout and the apply both
+     * need a working tree without uncommitted changes.
+     */
+    public async branchFromStash(
+        log: (message: string) => void,
+        stashSelector: string,
+        branchName: string
+    ): Promise<void> {
+        const workspacePath = this.getRepoPath();
+        const gitExecutable = await this.findGitExecutable();
+
+        this.validatePositional(stashSelector, 'stash selector');
+        this.validateRefName(`refs/heads/${branchName}`);
+
+        const operation = await this.getOperationInProgress(log);
+        if (operation) throw new Error(`Cannot create a branch from a stash while a ${operation} is in progress`);
+
+        const statusOutput = await this.spawnGit(
+            [gitExecutable.path, 'status', '--porcelain', '--untracked-files=no'],
+            workspacePath
+        );
+        if (statusOutput.split(EOL_REGEX).some((line) => line.trim())) {
+            throw new Error(
+                'The working tree has uncommitted changes. Commit or stash them before creating a branch from a stash'
+            );
+        }
+
+        try {
+            await this.spawnGit([gitExecutable.path, 'stash', 'branch', branchName, stashSelector], workspacePath);
+            log(`Successfully created branch '${branchName}' from ${stashSelector} and dropped the stash`);
+        } catch (error) {
+            log(`Error creating branch from stash: ${error}`);
             throw error;
         }
     }

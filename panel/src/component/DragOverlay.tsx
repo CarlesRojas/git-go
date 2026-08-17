@@ -12,10 +12,13 @@ import { useMergeCommitIntoCurrentBranchDialog } from '@/hook/dialog/useMergeCom
 import { useRemoteBranchDeleteDialog } from '@/hook/dialog/useRemoteBranchDeleteDialog'
 import { useRemoteBranchFetchIntoLocalDialog } from '@/hook/dialog/useRemoteBranchFetchIntoLocalDialog'
 import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
+import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
+import { useStashBranchDialog } from '@/hook/dialog/useStashBranchDialog'
 import { useStashDropDialog } from '@/hook/dialog/useStashDropDialog'
 import { useTagDeleteDialog } from '@/hook/dialog/useTagDeleteDialog'
 import { useTagPushDialog } from '@/hook/dialog/useTagPushDialog'
 import { useFadePresence } from '@/hook/useFadePresence'
+import { useRewordEligibility } from '@/hook/useRewordEligibility'
 import {
   useApplyStash,
   useCheckoutLocalBranch,
@@ -27,10 +30,12 @@ import {
   useGitRemotes,
   useMergeBranch,
   useMergeCommitIntoCurrentBranch,
+  useOperationInProgress,
   usePopStash,
   usePushBranch,
   usePushTag,
   useRebaseBranch,
+  useWorkingChanges,
 } from '@/hook/useGitQueries'
 import { qualifiedBranchName } from '@/util/branchName'
 import { resolveDefaultRemote } from '@/util/resolveDefaultRemote'
@@ -128,6 +133,7 @@ export const DragOverlay: FC = () => {
   const [dropBranch, setDropBranch] = useState<GitBranch | null>(null)
   const [dropCommit, setDropCommit] = useState<GitCommit | null>(null)
   const [dropStashRef, setDropStashRef] = useState('')
+  const [dropStashCommit, setDropStashCommit] = useState<GitCommit | null>(null)
   const [stackRect, setStackRect] = useState<LayoutRect | null>(null)
   const [sourceRect, setSourceRect] = useState<LayoutRect | null>(null)
 
@@ -140,7 +146,9 @@ export const DragOverlay: FC = () => {
   const tagDeleteDialog = useTagDeleteDialog()
   const mergeCommitDialog = useMergeCommitIntoCurrentBranchDialog({ commit: dropCommit ?? EMPTY_COMMIT })
   const revertDialog = useRevertDialog({ commit: dropCommit ?? EMPTY_COMMIT })
+  const rewordDialog = useRewordDialog({ commit: dropCommit ?? EMPTY_COMMIT })
   const stashDropDialog = useStashDropDialog({ stash: dropStashRef })
+  const stashBranchDialog = useStashBranchDialog({ stash: dropStashRef, commit: dropStashCommit ?? undefined })
   const remoteFetchDialog = useRemoteBranchFetchIntoLocalDialog()
   const remoteDeleteDialog = useRemoteBranchDeleteDialog()
   const applyStashMutation = useApplyStash()
@@ -166,14 +174,21 @@ export const DragOverlay: FC = () => {
     return resolveTargetActions({ payload, target: targetBranch, branches, config: settings })
   }, [payload, targetBranch, branches, settings])
 
+  const { data: operationInProgress } = useOperationInProgress()
+  const { data: workingChanges } = useWorkingChanges()
+  const rewordEligibility = useRewordEligibility(payload?.kind === 'commit' ? payload.commit.hash : undefined)
+
   const sourceActions = useMemo(() => {
     if (!payload) return []
     return resolveSourceActions({
       payload,
       remoteNames: remotes.map(remote => remote.name),
       currentBranch: currentBranch ?? undefined,
+      rewordable: !!rewordEligibility,
+      operationInProgress: operationInProgress ?? null,
+      workingTreeDirty: !!workingChanges,
     })
-  }, [payload, remotes, currentBranch])
+  }, [payload, remotes, currentBranch, rewordEligibility, operationInProgress, workingChanges])
 
   // Refused actions are dropped from the stack rather than shown greyed. The unfiltered lists
   // survive so the dragged item's label can still say why a blocked default is unavailable.
@@ -530,6 +545,19 @@ export const DragOverlay: FC = () => {
           setDropStashRef(drop.payload.ref)
           stashDropDialog.openDialog()
           return
+
+        case 'branchFromStash':
+          if (drop.payload.kind !== 'stash') return
+          setDropStashRef(drop.payload.ref)
+          setDropStashCommit(drop.payload.commit)
+          stashBranchDialog.openDialog()
+          return
+
+        case 'reword':
+          if (drop.payload.kind !== 'commit') return
+          setDropCommit(drop.payload.commit)
+          rewordDialog.openDialog()
+          return
       }
     },
     [
@@ -548,7 +576,9 @@ export const DragOverlay: FC = () => {
       tagDeleteDialog,
       mergeCommitDialog,
       revertDialog,
+      rewordDialog,
       stashDropDialog,
+      stashBranchDialog,
       remoteFetchDialog,
       remoteDeleteDialog,
       applyStashMutation,
@@ -634,7 +664,9 @@ export const DragOverlay: FC = () => {
       {tagDeleteDialog.DialogComponent}
       {mergeCommitDialog.DialogComponent}
       {revertDialog.DialogComponent}
+      {rewordDialog.DialogComponent}
       {stashDropDialog.DialogComponent}
+      {stashBranchDialog.DialogComponent}
       {remoteFetchDialog.DialogComponent}
       {remoteDeleteDialog.DialogComponent}
     </>

@@ -12,8 +12,10 @@ import { useMergeCommitIntoCurrentBranchDialog } from '@/hook/dialog/useMergeCom
 import { useRebaseOntoCommitDialog } from '@/hook/dialog/useRebaseOntoCommitDialog'
 import { useResetBranchDialog } from '@/hook/dialog/useResetBranchDialog'
 import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
+import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
-import { faCodeBranch, faCodeCommit, faCodeMerge, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
+import { useRewordEligibility } from '@/hook/useRewordEligibility'
+import { faCodeBranch, faCodeCommit, faCodeMerge, faPen, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode, memo } from 'react'
@@ -25,10 +27,13 @@ interface UseCommitContextMenuProps {
 interface CommitContextMenuWrapperProps {
   children: ReactNode
   enabled: boolean
+  /** Whether the commit's message can be rewritten, which shows the edit-message entry */
+  canReword: boolean
   onBranchClick: () => void
   onTagClick: () => void
   onCherryPickClick: () => void
   onRevertClick: () => void
+  onRewordClick: () => void
   onMergeClick: () => void
   onRebaseClick: () => void
   onResetClick: () => void
@@ -38,10 +43,12 @@ const CommitContextMenuWrapper = memo(
   ({
     children,
     enabled,
+    canReword,
     onBranchClick,
     onTagClick,
     onCherryPickClick,
     onRevertClick,
+    onRewordClick,
     onMergeClick,
     onRebaseClick,
     onResetClick,
@@ -76,6 +83,13 @@ const CommitContextMenuWrapper = memo(
             <FontAwesomeIcon icon={faCodeCommit} className="size-3" />
             Cherry Pick
           </ContextMenuItem>
+
+          {canReword && (
+            <ContextMenuItem onClick={onRewordClick}>
+              <FontAwesomeIcon icon={faPen} className="size-3" />
+              Edit Commit Message
+            </ContextMenuItem>
+          )}
 
           <ContextMenuItem onClick={onRevertClick} variant="destructive">
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
@@ -113,17 +127,21 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
   const branchDialog = useBranchDialog({ commit })
   const cherryPickDialog = useCherryPickDialog({ commit })
   const revertDialog = useRevertDialog({ commit })
+  const rewordDialog = useRewordDialog({ commit })
   const mergeDialog = useMergeCommitIntoCurrentBranchDialog({ commit })
   const rebaseDialog = useRebaseOntoCommitDialog({ commit })
   const resetDialog = useResetBranchDialog({ commit })
+  const rewordEligibility = useRewordEligibility(commit.isStash || commit.isUncommitted ? undefined : commit.hash)
 
   const commitContextMenuWrapper = (children: ReactNode, enabled: boolean) => (
     <CommitContextMenuWrapper
       enabled={enabled}
+      canReword={!!rewordEligibility}
       onBranchClick={branchDialog.openDialog}
       onTagClick={tagDialog.openDialog}
       onCherryPickClick={cherryPickDialog.openDialog}
       onRevertClick={revertDialog.openDialog}
+      onRewordClick={rewordDialog.openDialog}
       onMergeClick={mergeDialog.openDialog}
       onRebaseClick={rebaseDialog.openDialog}
       onResetClick={resetDialog.openDialog}
@@ -140,6 +158,7 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
         {branchDialog.DialogComponent}
         {cherryPickDialog.DialogComponent}
         {revertDialog.DialogComponent}
+        {rewordDialog.DialogComponent}
         {mergeDialog.DialogComponent}
         {rebaseDialog.DialogComponent}
         {resetDialog.DialogComponent}

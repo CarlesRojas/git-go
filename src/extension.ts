@@ -112,6 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
+                            rewordAllowPushed: config.rewordAllowPushed,
                             resetMode: config.resetMode,
                             remoteDefaultRemote: config.remoteDefaultRemote,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,
@@ -361,6 +362,35 @@ export function activate(context: vscode.ExtensionContext) {
                     const action = noCommit ? 'staged revert changes for' : 'reverted';
                     log(`Successfully ${action} commit ${commitHash.substring(0, 7)}`);
                     return { type: 'commitReverted', success: true };
+                },
+
+                getRewordableCommits: async () => {
+                    const gitService = GitService.getInstance();
+                    const commits = await gitService.getRewordableCommits(log);
+                    log(`Successfully retrieved ${commits.length} rewordable commit(s)`);
+                    return { type: 'rewordableCommits', commits };
+                },
+
+                rewordCommit: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { commitHash, message: newMessage, autoStash } = message;
+                    if (!commitHash || typeof newMessage !== 'string') {
+                        throw new Error('Commit hash and message are required');
+                    }
+                    await gitService.rewordCommit(log, commitHash, newMessage, autoStash === true);
+                    log(`Successfully reworded commit ${commitHash.substring(0, 7)}`);
+                    return { type: 'rewordCommitSuccess', success: true };
+                },
+
+                branchFromStash: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { stashSelector, branchName } = message;
+                    if (!stashSelector || !branchName) {
+                        throw new Error('Stash selector and branch name are required');
+                    }
+                    await gitService.branchFromStash(log, stashSelector, branchName);
+                    log(`Successfully created branch '${branchName}' from ${stashSelector}`);
+                    return { type: 'branchFromStashSuccess', success: true };
                 },
 
                 resetBranchToCommit: async (message) => {
@@ -787,6 +817,7 @@ export function activate(context: vscode.ExtensionContext) {
                             cherryPickRecordOrigin: config.cherryPickRecordOrigin,
                             cherryPickNoCommit: config.cherryPickNoCommit,
                             revertNoCommit: config.revertNoCommit,
+                            rewordAllowPushed: config.rewordAllowPushed,
                             resetMode: config.resetMode,
                             remoteDefaultRemote: config.remoteDefaultRemote,
                             remoteFetchForceFetch: config.remoteFetchForceFetch,

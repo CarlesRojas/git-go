@@ -6,6 +6,7 @@ import {
   faCodeCommit,
   faCodeMerge,
   faDownload,
+  faPen,
   faPlay,
   faRotateLeft,
   faTrash,
@@ -27,6 +28,8 @@ export type DragActionId =
   | 'applyStash'
   | 'popStash'
   | 'dropStash'
+  | 'branchFromStash'
+  | 'reword'
 
 export type DragPayload =
   | { kind: 'branch'; branch: GitBranch; colorIndex: number }
@@ -45,6 +48,8 @@ export const SOURCE_ACTION_IDS: DragActionId[] = [
   'applyStash',
   'popStash',
   'dropStash',
+  'branchFromStash',
+  'reword',
 ]
 
 /** A ref is kept separate from the surrounding words so it can be emphasised when rendered. */
@@ -193,20 +198,47 @@ export const resolveTargetActions = ({
 
 /**
  * Actions that operate on the dragged item itself, shown beneath it rather than on a target.
- * Empty for a commit, which has no action that does not need a target.
+ * A commit offers only rewording its message, and only while it is eligible for it.
  */
 export const resolveSourceActions = ({
   payload,
   remoteNames,
   currentBranch,
+  rewordable = false,
+  operationInProgress = null,
+  workingTreeDirty = false,
 }: {
   payload: DragPayload
   remoteNames: string[]
   currentBranch?: string
+  /** Whether the dragged commit's message can be rewritten, per useRewordEligibility. */
+  rewordable?: boolean
+  operationInProgress?: string | null
+  workingTreeDirty?: boolean
 }): DragAction[] => {
-  if (payload.kind === 'commit') return []
+  if (payload.kind === 'commit') {
+    if (!rewordable) return []
+
+    return [
+      {
+        id: 'reword',
+        verb: 'Edit Message',
+        description: ['Edit the message of commit ', { ref: shortHash(payload.commit.hash) }],
+        icon: faPen,
+        destructive: false,
+        isDefault: false,
+        disabledReason: operationInProgress ? `A ${operationInProgress} is in progress` : undefined,
+      },
+    ]
+  }
 
   if (payload.kind === 'stash') {
+    const branchFromStashBlocked = operationInProgress
+      ? `A ${operationInProgress} is in progress`
+      : workingTreeDirty
+        ? 'The working tree has uncommitted changes'
+        : undefined
+
     return [
       {
         id: 'applyStash',
@@ -223,6 +255,15 @@ export const resolveSourceActions = ({
         icon: faArrowRightFromBracket,
         destructive: false,
         isDefault: false,
+      },
+      {
+        id: 'branchFromStash',
+        verb: 'Create Branch',
+        description: ['Create a branch from ', { ref: formatStash(payload.ref) }],
+        icon: faCodeBranch,
+        destructive: false,
+        isDefault: false,
+        disabledReason: branchFromStashBlocked,
       },
       {
         id: 'dropStash',
