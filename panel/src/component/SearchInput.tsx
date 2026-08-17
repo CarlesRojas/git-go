@@ -3,7 +3,7 @@ import { Input } from '@/component/ui/Input'
 import { cn } from '@/util/cn'
 import { faArrowDown, faArrowUp, faCircleNotch, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { FC, KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 
 interface SearchInputProps {
@@ -21,6 +21,31 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
   useEffect(() => {
     if (localValue !== value) debouncedOnChange(localValue)
   }, [localValue, debouncedOnChange, value])
+
+  // Holding an arrow auto-repeats the navigation, with the same feel as holding Enter down
+  // (one step on press, a pause, then steady repeats until release)
+  const holdDelayRef = useRef<NodeJS.Timeout | null>(null)
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const stopHold = useCallback(() => {
+    if (holdDelayRef.current) clearTimeout(holdDelayRef.current)
+    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current)
+    holdDelayRef.current = null
+    holdIntervalRef.current = null
+  }, [])
+
+  const startHold = useCallback(
+    (direction: 'next' | 'prev') => {
+      stopHold()
+      navigate(direction)
+      holdDelayRef.current = setTimeout(() => {
+        holdIntervalRef.current = setInterval(() => navigate(direction), 100)
+      }, 400)
+    },
+    [navigate, stopHold],
+  )
+
+  useEffect(() => stopHold, [stopHold])
 
   // Clearing (the button or Esc) also collapses the field: the blur alone would not, as its
   // handler still sees the pre-clear value
@@ -112,7 +137,10 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
             title="Previous match (Shift+Enter)"
             disabled={!hasMatches}
             onMouseDown={e => e.preventDefault()}
-            onClick={() => navigate('prev')}
+            onPointerDown={() => startHold('prev')}
+            onPointerUp={stopHold}
+            onPointerLeave={stopHold}
+            onPointerCancel={stopHold}
             className={cn(
               'flex size-5 cursor-pointer items-center justify-center rounded-sm transition-opacity',
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
@@ -127,7 +155,10 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
             title="Next match (Enter)"
             disabled={!hasMatches}
             onMouseDown={e => e.preventDefault()}
-            onClick={() => navigate('next')}
+            onPointerDown={() => startHold('next')}
+            onPointerUp={stopHold}
+            onPointerLeave={stopHold}
+            onPointerCancel={stopHold}
             className={cn(
               'flex size-5 cursor-pointer items-center justify-center rounded-sm transition-opacity',
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
