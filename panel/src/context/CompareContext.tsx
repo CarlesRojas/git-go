@@ -16,18 +16,28 @@ export interface Comparison {
   to: CompareSide
 }
 
-interface CompareContextType {
-  comparison: Comparison | null
+interface CompareState {
   /**
-   * The commit the graph has expanded. Every entry point compares it with whatever was picked
-   * next, so "compare with selected" always reads from this side to the other.
+   * The side picked as A — either waiting for its counterpart or the left side of the open
+   * comparison, which are the same thing as far as picking a second side goes.
    */
-  selected: CompareSide | null
-  setSelected: (side: CompareSide | null) => void
+  pending: CompareSide | null
+  comparison: Comparison | null
+}
+
+interface CompareContextType extends CompareState {
+  /**
+   * What every entry point does, whatever the state: arm A when nothing is picked, complete the
+   * comparison when something is, and clear the pick when it is the one already armed.
+   */
+  pick: (side: CompareSide) => void
+  /** Compare two sides outright, for the gestures that name both at once */
   compare: (from: CompareSide, to: CompareSide) => void
   swap: () => void
   close: () => void
 }
+
+const EMPTY: CompareState = { pending: null, comparison: null }
 
 const CompareContext = createContext<CompareContextType | null>(null)
 
@@ -37,34 +47,61 @@ export const useCompare = (): CompareContextType => {
   return context
 }
 
-/** Whether two sides address the same thing, so a re-publish of the selection changes nothing. */
-const sameSide = (a: CompareSide | null, b: CompareSide | null) =>
-  a === b || (!!a && !!b && a.ref === b.ref && a.hash === b.hash && a.label === b.label)
+/**
+ * The compare entry for one thing that can be compared — a commit, a branch tip, a tag — as the
+ * context menus render it: arming a side, completing the pair, or taking the pick back. Null for
+ * the rows that cannot take part, so the entry is left out. A plain function rather than a hook,
+ * since a menu handed its subject per invocation cannot call one.
+ */
+export const compareEntryFor = (
+  { pending, pick }: Pick<CompareContextType, 'pending' | 'pick'>,
+  side: CompareSide | null,
+) => {
+  if (side === null) return null
+
+  const isPending = pending !== null && pending.hash === side.hash
+
+  return {
+    label: pending === null ? 'Select to compare' : isPending ? 'Clear compare selection' : 'Compare with selected',
+    onSelect: () => pick(side),
+  }
+}
+
+export const useCompareEntry = (side: CompareSide | null) => compareEntryFor(useCompare(), side)
 
 export const CompareProvider = ({ children }: { children: ReactNode }) => {
-  const [comparison, setComparison] = useState<Comparison | null>(null)
-  const [selected, setSelectedState] = useState<CompareSide | null>(null)
+  const [state, setState] = useState<CompareState>(EMPTY)
 
-  // The graph republishes the selection whenever its commit list changes, which is every page
-  // fetch — so an unchanged selection must not re-render everything subscribed to it.
-  const setSelected = useCallback((side: CompareSide | null) => {
-    setSelectedState(previous => (sameSide(previous, side) ? previous : side))
+  const pick = useCallback((side: CompareSide) => {
+    setState(previous => {
+      if (previous.pending === null) return { pending: side, comparison: null }
+      // Picking the armed side again is how a selection is taken back
+      if (previous.pending.hash === side.hash) return EMPTY
+      return { pending: previous.pending, comparison: { from: previous.pending, to: side } }
+    })
   }, [])
 
+  // A is left armed at the compared-from side, so a second pick keeps comparing against the same
+  // baseline rather than starting over
   const compare = useCallback((from: CompareSide, to: CompareSide) => {
-    setComparison({ from, to })
+    setState({ pending: from, comparison: { from, to } })
   }, [])
 
   const swap = useCallback(() => {
-    setComparison(previous => (previous ? { from: previous.to, to: previous.from } : previous))
+    setState(previous =>
+      previous.comparison
+        ? {
+            pending: previous.comparison.to,
+            comparison: { from: previous.comparison.to, to: previous.comparison.from },
+          }
+        : previous,
+    )
   }, [])
 
-  const close = useCallback(() => setComparison(null), [])
+  // Dismissing the panel drops the selection too, so the graph is left unmarked
+  const close = useCallback(() => setState(EMPTY), [])
 
-  const value = useMemo(
-    () => ({ comparison, selected, setSelected, compare, swap, close }),
-    [comparison, selected, setSelected, compare, swap, close],
-  )
+  const value = useMemo(() => ({ ...state, pick, compare, swap, close }), [state, pick, compare, swap, close])
 
   return <CompareContext.Provider value={value}>{children}</CompareContext.Provider>
 }

@@ -15,8 +15,8 @@ import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
 import { useWorktreeCreateDialog } from '@/hook/dialog/useWorktreeCreateDialog'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
-import { useCompare } from '@/context/CompareContext'
-import { branchSide, canCompare } from '@/util/compare'
+import { useCompareEntry } from '@/context/CompareContext'
+import { branchSide } from '@/util/compare'
 import {
   faCheck,
   faClone,
@@ -90,15 +90,8 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
     )
   }
 
-  // The branch tip is compared with whatever commit the graph has expanded
-  const { selected, compare } = useCompare()
-  const compareSide = branch ? branchSide(branch) : null
-  const showCompare = !!compareSide && canCompare(selected, compareSide)
-
-  const handleCompare = () => {
-    if (!selected || !compareSide) return
-    compare(selected, compareSide)
-  }
+  // The branch's tip commit is what takes part in the comparison
+  const compareEntry = useCompareEntry(branch ? branchSide(branch) : null)
 
   const handleCopyBranchName = async () => {
     try {
@@ -175,10 +168,10 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
               </>
             )}
 
-            {showCompare && (
-              <ContextMenuItem onClick={handleCompare}>
+            {compareEntry && (
+              <ContextMenuItem onClick={compareEntry.onSelect}>
                 <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
-                Compare with selected
+                {compareEntry.label}
               </ContextMenuItem>
             )}
 

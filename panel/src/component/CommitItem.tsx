@@ -3,6 +3,7 @@ import { CompareBadge } from '@/component/CompareBadge'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
+import { useCompare } from '@/context/CompareContext'
 import { useDragActions } from '@/context/DragContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
@@ -12,7 +13,7 @@ import { useCurrentBranch, useGitBranches, useGitCommitFiles, useTagRemotes } fr
 import { getColor, LIST_PADDING, ROW_HEIGHT } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
-import { isCompareModifier } from '@/util/compare'
+import { commitSide, isCompareModifier } from '@/util/compare'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
@@ -49,11 +50,7 @@ interface CommitItemProps {
   dimmed?: boolean
   /** The match prev/next search navigation is currently on, marked so it stands out among matches */
   isCurrentSearchMatch?: boolean
-  /** Compares this commit with the expanded one — a Ctrl/Cmd+click, or the context menu */
-  onCompareWithSelected: (hash: string) => void
-  /** Whether there is another commit expanded to compare this one with */
-  canCompare: boolean
-  /** Which end of the open comparison this commit is, if either */
+  /** Which end of the comparison this commit is, or the side armed and awaiting its pair */
   compareRole?: 'from' | 'to'
 }
 
@@ -70,22 +67,23 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   uncommitedFiles,
   dimmed,
   isCurrentSearchMatch,
-  onCompareWithSelected,
-  canCompare,
   compareRole,
 }) => {
-  // Ctrl/Cmd+click compares with the expanded commit instead of expanding this one. With nothing
-  // to compare against it falls through to a plain toggle, so the modifier is never a dead click.
+  const { pick } = useCompare()
+
+  // Ctrl/Cmd+click picks this commit for comparison rather than expanding it: arming it when
+  // nothing is picked yet, comparing against the armed one when there is, and taking the pick
+  // back when it is the armed one itself. The uncommitted row has no commit to compare.
   const onToggle = useCallback(
     (event?: ReactMouseEvent) => {
-      if (event && isCompareModifier(event) && canCompare) {
+      if (event && isCompareModifier(event) && !commit.isUncommitted) {
         event.preventDefault()
-        onCompareWithSelected(commit.hash)
+        pick(commitSide(commit))
         return
       }
       onToggleHash(commit.hash)
     },
-    [onToggleHash, onCompareWithSelected, canCompare, commit.hash],
+    [onToggleHash, pick, commit],
   )
 
   const { settings } = useSettings()
@@ -162,11 +160,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   const hasDifferentCommitter =
     !!commit.committer && (commit.committer !== commit.author || commit.committerEmail !== commit.email)
 
-  const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({
-    commit,
-    canCompare,
-    onCompare: () => onCompareWithSelected(commit.hash),
-  })
+  const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({ commit })
   const { uncommittedChangesContextMenuWrapper, dialogs: uncommittedDialogs } = useUncommittedChangesContextMenu()
 
   const { beginPress } = useDragActions()

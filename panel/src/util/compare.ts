@@ -28,13 +28,6 @@ export const tagSide = (name: string, commit: GitCommit): CompareSide => ({
   hash: commit.hash,
 })
 
-/**
- * Whether the two sides address different commits. Comparing something with itself is always
- * empty, so the entry points offering it hide the action instead.
- */
-export const canCompare = (selected: CompareSide | null, other: CompareSide): boolean =>
-  !!selected && selected.hash !== other.hash
-
 const IS_MAC =
   typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
 

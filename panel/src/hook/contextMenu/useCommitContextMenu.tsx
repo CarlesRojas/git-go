@@ -15,6 +15,8 @@ import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { useRewordEligibility } from '@/hook/useRewordEligibility'
+import { useCompareEntry } from '@/context/CompareContext'
+import { commitSide } from '@/util/compare'
 import {
   faCodeBranch,
   faCodeCommit,
@@ -30,9 +32,6 @@ import { ReactNode, memo } from 'react'
 
 interface UseCommitContextMenuProps {
   commit: GitCommit
-  /** Whether another commit is expanded for this one to be compared with */
-  canCompare: boolean
-  onCompare: () => void
 }
 
 interface CommitContextMenuWrapperProps {
@@ -40,7 +39,8 @@ interface CommitContextMenuWrapperProps {
   enabled: boolean
   /** Whether the commit's message can be rewritten, which shows the edit-message entry */
   canReword: boolean
-  canCompare: boolean
+  /** How the compare entry reads in the current state, or null when it does not apply */
+  compareLabel: string | null
   onCompare: () => void
   onBranchClick: () => void
   onTagClick: () => void
@@ -57,7 +57,7 @@ const CommitContextMenuWrapper = memo(
     children,
     enabled,
     canReword,
-    canCompare,
+    compareLabel,
     onCompare,
     onBranchClick,
     onTagClick,
@@ -106,10 +106,10 @@ const CommitContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
-          {canCompare && (
+          {compareLabel && (
             <ContextMenuItem onClick={onCompare}>
               <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
-              Compare with selected
+              {compareLabel}
             </ContextMenuItem>
           )}
 
@@ -144,7 +144,10 @@ const CommitContextMenuWrapper = memo(
 
 CommitContextMenuWrapper.displayName = 'CommitContextMenuWrapper'
 
-export const useCommitContextMenu = ({ commit, canCompare, onCompare }: UseCommitContextMenuProps) => {
+export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
+  // The uncommitted row is not a commit, so it has nothing to compare
+  const compareEntry = useCompareEntry(commit.isUncommitted ? null : commitSide(commit))
+
   const tagDialog = useTagDialog({ commit })
   const branchDialog = useBranchDialog({ commit })
   const cherryPickDialog = useCherryPickDialog({ commit })
@@ -159,8 +162,8 @@ export const useCommitContextMenu = ({ commit, canCompare, onCompare }: UseCommi
     <CommitContextMenuWrapper
       enabled={enabled}
       canReword={!!rewordEligibility}
-      canCompare={canCompare}
-      onCompare={onCompare}
+      compareLabel={compareEntry?.label ?? null}
+      onCompare={() => compareEntry?.onSelect()}
       onBranchClick={branchDialog.openDialog}
       onTagClick={tagDialog.openDialog}
       onCherryPickClick={cherryPickDialog.openDialog}

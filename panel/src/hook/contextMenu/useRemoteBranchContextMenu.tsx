@@ -11,8 +11,8 @@ import { useRemoteBranchCheckoutDialog } from '@/hook/dialog/useRemoteBranchChec
 import { useRemoteBranchDeleteDialog } from '@/hook/dialog/useRemoteBranchDeleteDialog'
 import { useRemoteBranchFetchIntoLocalDialog } from '@/hook/dialog/useRemoteBranchFetchIntoLocalDialog'
 import { useRemoteBranchMergeDialog } from '@/hook/dialog/useRemoteBranchMergeDialog'
-import { useCompare } from '@/context/CompareContext'
-import { branchSide, canCompare } from '@/util/compare'
+import { compareEntryFor, useCompare } from '@/context/CompareContext'
+import { branchSide } from '@/util/compare'
 import { faCheck, faClone, faCodeCompare, faCodeMerge, faDownload, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -37,9 +37,9 @@ interface RemoteBranchContextMenuWrapperProps {
   children: ReactNode
   enabled?: boolean
   branch?: GitBranch
-  /** Whether a commit is expanded for this branch's tip to be compared with */
-  showCompare: boolean
-  onCompare: (branch: GitBranch) => void
+  /** How the compare entry reads in the current state, or null when it does not apply */
+  compareLabel: string | null
+  onCompare: () => void
   onCheckout: (branch: GitBranch) => void
   onFetchIntoLocal: (branch: GitBranch) => void
   onMerge: (branch: GitBranch) => void
@@ -52,7 +52,7 @@ const RemoteBranchContextMenuWrapper = memo(
     children,
     enabled = true,
     branch,
-    showCompare,
+    compareLabel,
     onCompare,
     onCheckout,
     onFetchIntoLocal,
@@ -91,10 +91,10 @@ const RemoteBranchContextMenuWrapper = memo(
             Merge into Current
           </ContextMenuItem>
 
-          {showCompare && (
-            <ContextMenuItem onClick={() => onCompare(branch)}>
+          {compareLabel && (
+            <ContextMenuItem onClick={onCompare}>
               <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
-              Compare with selected
+              {compareLabel}
             </ContextMenuItem>
           )}
 
@@ -125,15 +125,11 @@ export const useRemoteBranchContextMenu = () => {
   const fetchIntoLocalDialog = useRemoteBranchFetchIntoLocalDialog()
   const deleteDialog = useRemoteBranchDeleteDialog()
 
-  const { selected, compare } = useCompare()
+  const compareState = useCompare()
 
   const remoteBranchContextMenuWrapper = (children: ReactNode, enabled = true, branch?: GitBranch) => {
-    const compareSide = branch ? branchSide(branch) : null
-
-    const handleCompare = (target: GitBranch) => {
-      if (!selected) return
-      compare(selected, branchSide(target))
-    }
+    // The branch's tip commit is what takes part in the comparison
+    const compareEntry = compareEntryFor(compareState, branch ? branchSide(branch) : null)
 
     const handleCopyBranchName = async () => {
       try {
@@ -150,8 +146,8 @@ export const useRemoteBranchContextMenu = () => {
       <RemoteBranchContextMenuWrapper
         enabled={enabled}
         branch={branch}
-        showCompare={!!compareSide && canCompare(selected, compareSide)}
-        onCompare={handleCompare}
+        compareLabel={compareEntry?.label ?? null}
+        onCompare={() => compareEntry?.onSelect()}
         onCheckout={checkoutDialog.openDialog}
         onFetchIntoLocal={fetchIntoLocalDialog.openDialog}
         onMerge={mergeDialog.openDialog}
