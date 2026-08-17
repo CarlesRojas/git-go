@@ -4,9 +4,9 @@ import {
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
-  ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/component/ui/ContextMenu'
+import { Shortcut } from '@/component/Shortcut'
 import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
 import { useMergeCommitIntoCurrentBranchDialog } from '@/hook/dialog/useMergeCommitIntoCurrentBranchDialog'
@@ -17,7 +17,7 @@ import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { useRewordEligibility } from '@/hook/useRewordEligibility'
 import { useCompareEntry } from '@/context/CompareContext'
-import { commitSide, COMPARE_CLICK_HINT } from '@/util/compare'
+import { commitSide } from '@/util/compare'
 import {
   faCodeBranch,
   faCodeCommit,
@@ -113,7 +113,7 @@ const CommitContextMenuWrapper = memo(
               {compareLabel}
 
               {/* Only the commit rows take the modifier-click, so only this menu advertises it */}
-              <ContextMenuShortcut className="tracking-normal">{COMPARE_CLICK_HINT}</ContextMenuShortcut>
+              <Shortcut keys="Mod+Click" className="ml-auto pl-2" />
             </ContextMenuItem>
           )}
 

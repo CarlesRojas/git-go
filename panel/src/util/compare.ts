@@ -1,6 +1,7 @@
 import { CompareSide } from '@/context/CompareContext'
 import { qualifiedBranchName } from '@/util/branchName'
 import { shortHash } from '@/util/dragAndDrop'
+import { IS_MAC } from '@/util/platform'
 import { GitBranch, GitCommit } from '@git/gitService'
 
 /**
@@ -28,16 +29,11 @@ export const tagSide = (name: string, commit: GitCommit): CompareSide => ({
   hash: commit.hash,
 })
 
-const IS_MAC =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
-
 /**
  * Whether a click asked for a comparison rather than an expansion. Ctrl+click is the right-click
  * gesture on macOS, so there the modifier is Cmd alone — accepting both would open the context
- * menu and compare at once.
+ * menu and compare at once. The menus print this same gesture as `Mod+Click`, which resolves the
+ * platform the same way.
  */
 export const isCompareModifier = (event: { metaKey: boolean; ctrlKey: boolean }): boolean =>
   IS_MAC ? event.metaKey : event.ctrlKey
-
-/** How the menus write that gesture. Kept beside it, since the two have to name the same key. */
-export const COMPARE_CLICK_HINT = IS_MAC ? '⌘ Click' : 'Ctrl Click'
