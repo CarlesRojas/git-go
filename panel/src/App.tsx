@@ -9,6 +9,7 @@ import { SearchInput } from '@/component/SearchInput'
 import { UndoButton } from '@/component/UndoButton'
 import { WorktreeMenu } from '@/component/WorktreeMenu'
 import { DragProvider } from '@/context/DragContext'
+import { SearchProvider } from '@/context/SearchContext'
 import { SettingsProvider } from '@/context/SettingsContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { Button } from '@/component/ui/Button'
@@ -64,7 +65,7 @@ const RepoPanel: FC = () => {
   const scrollRef = useRef<HTMLElement>(null)
 
   return (
-    <>
+    <SearchProvider>
       <div
         className={cn([
           // Position & Layout
@@ -103,7 +104,7 @@ const RepoPanel: FC = () => {
       </main>
 
       <DragOverlay />
-    </>
+    </SearchProvider>
   )
 }
 

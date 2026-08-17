@@ -1,9 +1,10 @@
 import { CommitItem } from '@/component/CommitItem'
+import { useSearch } from '@/context/SearchContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
+import { useCommitSearch } from '@/hook/useCommitSearch'
 import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook/useGitQueries'
 import { LIST_PADDING, ROW_HEIGHT, useGitTree } from '@/hook/useGitTree'
-import { matchesSearch } from '@/util/searchCommits'
 import { faCircleNotch, faCodeBranch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -162,6 +163,35 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
 
   const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
 
+  const scrollToRow = useCallback((row: number) => virtualizer.scrollToIndex(row, { align: 'center' }), [virtualizer])
+
+  const {
+    isMatch,
+    currentMatchHash,
+    matchState,
+    navigate: navigateSearch,
+  } = useCommitSearch({
+    searchTerm,
+    selectedBranches,
+    branches,
+    commits,
+    hasNextPage: hasNextPage ?? false,
+    isFetchingNextPage,
+    fetchNextPage,
+    scrollToRow,
+  })
+
+  // Publish the match counter and the prev/next navigator to the toolbar's search input
+  const { setMatchState, registerNavigator } = useSearch()
+  useEffect(() => {
+    setMatchState(matchState)
+    return () => setMatchState(null)
+  }, [matchState, setMatchState])
+  useEffect(() => {
+    registerNavigator(navigateSearch)
+    return () => registerNavigator(null)
+  }, [navigateSearch, registerNavigator])
+
   const toggleCommit = useCallback((hash: string) => {
     expandAnimationRef.current = 'click'
     pinnedNavOffsetRef.current = null
@@ -306,7 +336,8 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
               row={virtualRow.index}
               layout={layout}
               uncommitedFiles={commit.isUncommitted ? workingChangesData?.files : undefined}
-              dimmed={!matchesSearch(commit, branches, searchTerm)}
+              dimmed={!isMatch(commit)}
+              isCurrentSearchMatch={currentMatchHash === commit.hash}
             />
           </div>
         )

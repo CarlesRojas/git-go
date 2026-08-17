@@ -36,6 +36,8 @@ interface CommitItemProps {
   layout: CommitLayout
   uncommitedFiles?: GitFileChange[]
   dimmed?: boolean
+  /** The match prev/next search navigation is currently on, marked so it stands out among matches */
+  isCurrentSearchMatch?: boolean
 }
 
 const CommitItemComponent: FC<CommitItemProps> = ({
@@ -50,6 +52,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   layout,
   uncommitedFiles,
   dimmed,
+  isCurrentSearchMatch,
 }) => {
   const onToggle = useCallback(() => onToggleHash(commit.hash), [onToggleHash, commit.hash])
   const { settings } = useSettings()
@@ -318,6 +321,8 @@ const CommitItemComponent: FC<CommitItemProps> = ({
               // Interactive
               isExpanded && !layout.isHead && 'bg-vsc-editor-fg/10 hover:bg-vsc-editor-fg/15',
               'hover:bg-vsc-editor-fg/10 cursor-pointer',
+              // Search
+              isCurrentSearchMatch && 'bg-vsc-list-highlight-fg/10 ring-vsc-list-highlight-fg/50 ring-1 ring-inset',
             )}
             style={{ paddingLeft: `${treeWidth + 8}px` }}
             onMouseEnter={() => onCommitHover(commit.hash, row)}
