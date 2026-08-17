@@ -94,8 +94,10 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
         <FontAwesomeIcon icon={faSearch} className="pointer-events-none size-3" />
       </button>
 
+      {/* right-7 leaves the same 4px to the clear button (which spans right-1 + size-5) as the
+          gap between the controls themselves */}
       {showMatches && (
-        <div className="absolute right-8 flex items-center gap-0.5">
+        <div className="absolute right-7 flex items-center gap-1">
           {matchState.isSearching && (
             <FontAwesomeIcon icon={faCircleNotch} className="size-2.5 animate-spin opacity-60" />
           )}
@@ -116,7 +118,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
             )}
           >
-            <FontAwesomeIcon icon={faArrowUp} className="pointer-events-none size-2.5" />
+            <FontAwesomeIcon icon={faArrowUp} className="pointer-events-none size-2" />
           </button>
 
           <button
@@ -131,7 +133,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
             )}
           >
-            <FontAwesomeIcon icon={faArrowDown} className="pointer-events-none size-2.5" />
+            <FontAwesomeIcon icon={faArrowDown} className="pointer-events-none size-2" />
           </button>
         </div>
       )}
