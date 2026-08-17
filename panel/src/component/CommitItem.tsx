@@ -1,5 +1,7 @@
 import BranchPill from '@/component/BranchPill'
 import { CompareBadge } from '@/component/CompareBadge'
+import { GitHubIssueText } from '@/component/GitHubIssueText'
+import { GitHubLink } from '@/component/GitHubLink'
 import StashTagPill from '@/component/StashTagPill'
 import { TreeView } from '@/component/Tree'
 import { Avatar } from '@/component/ui/Avatar'
@@ -9,11 +11,13 @@ import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
 import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
+import { useGitHubLinks } from '@/hook/useGitHubLinks'
 import { useCurrentBranch, useGitBranches, useGitCommitFiles, useTagRemotes } from '@/hook/useGitQueries'
 import { getColor, LIST_PADDING, ROW_HEIGHT } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
 import { commitSide, isCompareModifier } from '@/util/compare'
+import { gitHubCommitUrl } from '@/util/github'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
@@ -94,11 +98,24 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   const { data: currentBranch } = useCurrentBranch()
   const { data: branches = [] } = useGitBranches()
 
+  const gitHub = useGitHubLinks()
+
+  // A stash is not on the remote, and neither is the working directory, so their files have no
+  // page on GitHub even when the repository does
+  const gitHubFiles =
+    gitHub.files && gitHub.repo && !commit.isStash && !commit.isUncommitted
+      ? { repo: gitHub.repo, ref: commit.hash }
+      : undefined
+
+  /** The repository `#123` in this commit's message links into, or null when it links nowhere */
+  const issueRepo = gitHub.issues ? gitHub.repo : null
+
   const fileTree = useGitCommitFiles({
     commitHash: commit.hash,
     isRootCommit: commit.parents.length === 0,
     isStash: commit.isStash ?? false,
     enabled: isExpanded && !commit.isUncommitted,
+    gitHub: gitHubFiles,
   })
 
   const groupedBranches = useMemo(
@@ -463,6 +480,15 @@ const CommitItemComponent: FC<CommitItemProps> = ({
                       >
                         {commit.hash}
                       </code>
+
+                      {/* A stash never left this machine, so it has no page on GitHub */}
+                      {gitHub.commits && gitHub.repo && !commit.isStash && (
+                        <GitHubLink
+                          url={gitHubCommitUrl(gitHub.repo, commit.hash)}
+                          title="Open commit on GitHub"
+                          className="ml-1"
+                        />
+                      )}
                     </p>
 
                     <p className="text-xs font-medium">
@@ -523,7 +549,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
                         className={cn('cursor-pointer transition-opacity hover:opacity-75')}
                         onClick={() => copyText(fullMessage, 'Message')}
                       >
-                        {commit.message}
+                        <GitHubIssueText text={commit.message} repo={issueRepo} />
                       </span>
                     </p>
 
@@ -544,7 +570,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
                         )}
                         onClick={() => copyText(fullMessage, 'Message')}
                       >
-                        {commit.body}
+                        <GitHubIssueText text={commit.body} repo={issueRepo} />
                       </div>
                     )}
                   </div>

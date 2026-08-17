@@ -1,6 +1,8 @@
 import { TreeDataItem } from '@/component/Tree'
 import { openComparisonFile, openFile } from '@/hook/useGitQueries'
+import { gitHubBlobUrl, openOnGitHub } from '@/util/github'
 import type { GitFileChange } from '@git/gitService'
+import type { GitHubRepo } from '@git/util/githubRepo'
 
 const STATUS_LABELS: Record<string, string> = {
   A: 'Added',
@@ -18,6 +20,8 @@ export function buildFileTree(
   isStash?: boolean,
   /** When set, a file opens as the diff between these two refs rather than against a parent */
   comparison?: { fromRef: string; toRef: string },
+  /** When set, each file also links to how it looked at that commit on GitHub */
+  gitHub?: { repo: GitHubRepo; ref: string },
 ): TreeDataItem[] {
   const root: Record<string, any> = {}
 
@@ -71,6 +75,11 @@ export function buildFileTree(
             ['D'].includes(file.status) || (isStash && ['D', 'A'].includes(file.status))
               ? undefined
               : () => openFile(file, undefined, isRootCommit, isStash),
+          // A file deleted by the commit has no page at that commit to open
+          onOpenOnGitHub:
+            gitHub && file.status !== 'D'
+              ? () => openOnGitHub(gitHubBlobUrl(gitHub.repo, gitHub.ref, file.path))
+              : undefined,
         })
       } else {
         items.push({

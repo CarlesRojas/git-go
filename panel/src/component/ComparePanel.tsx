@@ -3,6 +3,7 @@ import { TreeView } from '@/component/Tree'
 import { Button } from '@/component/ui/Button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/component/ui/Sheet'
 import { useCompare } from '@/context/CompareContext'
+import { useGitHubLinks } from '@/hook/useGitHubLinks'
 import { useComparison } from '@/hook/useGitQueries'
 import { buildFileTree } from '@/util/buildFileTree'
 import { faArrowRight, faCircleNotch, faRightLeft, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
@@ -26,12 +27,24 @@ export const ComparePanel: FC = () => {
     )
   }, [data])
 
+  const gitHub = useGitHubLinks()
+
   // The refs are resolved to hashes before diffing, so a branch moving while the panel is open
-  // cannot make the file list and the diffs it opens disagree.
+  // cannot make the file list and the diffs it opens disagree. A file links to how it looks at
+  // the far end of the comparison, which is the side the listed changes arrive at.
   const fileTree = useMemo(
     () =>
-      data ? buildFileTree(data.files, undefined, false, false, { fromRef: data.fromHash, toRef: data.toHash }) : null,
-    [data],
+      data
+        ? buildFileTree(
+            data.files,
+            undefined,
+            false,
+            false,
+            { fromRef: data.fromHash, toRef: data.toHash },
+            gitHub.files && gitHub.repo ? { repo: gitHub.repo, ref: data.toHash } : undefined,
+          )
+        : null,
+    [data, gitHub.files, gitHub.repo],
   )
 
   return (

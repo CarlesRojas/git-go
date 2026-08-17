@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Link to GitHub from the graph when the repository has a `github.com` remote — `origin` when it is one, otherwise the first that is. The GitHub mark next to a commit's hash opens the commit, files in the expanded tree open at that commit when hovered, and the context menus of commits, branches and tags open them on GitHub. A tag opens its release page, falling back to its tree when there is no release for it
+- Turn `#123` in a commit message into a link to that issue, in the subject and the body of the expanded commit
+- Open GitHub's pull request form for a local branch from its context menu, comparing the branch against the branch the remote's HEAD points at. Shown for branches that have an upstream on the GitHub remote and are not that default branch themselves
+- Add `git-go.github.commitLinks`, `git-go.github.refLinks`, `git-go.github.fileLinks`, `git-go.github.issueLinks` and `git-go.github.createPullRequest` to turn each of these off on its own. All are on by default, and none of them shows anything unless the repository is on GitHub
+
 - Scroll the file list in the comparison panel instead of cutting it off: a comparison touching more files than fit in the panel used to show only the first few, with the rest unreachable
 
 - Compare any two commits or refs. A comparison is picked in two steps, so it is never tangled up with which commit happens to be expanded: `Ctrl`/`Cmd`+click a commit, or pick "Select to compare" in the context menu of a commit, a branch pill or a tag, and that side is marked `A` in the graph. The same gesture on anything else then compares the two, and repeating it steps back one pick at a time: on the `B` side it drops that side and leaves `A` armed for another, on `A` it clears the selection entirely. Dropping one commit onto another compares them outright. A branch or a tag compares the commit it points at, keeping its own name in the header

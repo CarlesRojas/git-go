@@ -694,6 +694,42 @@
                         "order": 90
                     }
                 }
+            },
+            {
+                "title": "GitHub",
+                "order": 16,
+                "properties": {
+                    "git-go.github.commitLinks": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Open a commit on GitHub, from an icon next to its hash in the expanded commit and from its context menu. Only takes effect when the repository has a `github.com` remote.",
+                        "order": 1
+                    },
+                    "git-go.github.refLinks": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Open a branch or a tag on GitHub from its context menu. A branch opens its tree, and a tag its release page when it has one, its tree otherwise. Only takes effect when the repository has a `github.com` remote.",
+                        "order": 2
+                    },
+                    "git-go.github.fileLinks": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Open a file on GitHub, as it was at that commit, from an icon that appears when the pointer is over it in the file tree. Only takes effect when the repository has a `github.com` remote.",
+                        "order": 3
+                    },
+                    "git-go.github.issueLinks": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Turn `#123` references in the message of an expanded commit into links to that issue or pull request. Only takes effect when the repository has a `github.com` remote.",
+                        "order": 4
+                    },
+                    "git-go.github.createPullRequest": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Open GitHub's pull request form for a local branch from its context menu, which needs the branch to have an upstream. Only takes effect when the repository has a `github.com` remote.",
+                        "order": 5
+                    }
+                }
             }
         ]
     },

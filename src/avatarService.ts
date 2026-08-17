@@ -1,5 +1,6 @@
 import * as https from 'https';
 import * as vscode from 'vscode';
+import { parseGitHubRepo, type GitHubRepo } from './util/githubRepo';
 
 /**
  * Resolves author avatars from the repository's hosting provider.
@@ -25,11 +26,6 @@ interface CachedAvatarUrl {
     /** The avatar image URL, or null when the provider has no avatar for this author. */
     url: string | null;
     timestamp: number;
-}
-
-interface GitHubRepo {
-    owner: string;
-    repo: string;
 }
 
 interface HttpResponse {
@@ -243,29 +239,6 @@ function getGitHubNoReplyAvatarUrl(email: string): string | null {
     const match = email.match(/^(\d+)\+[^@]+@users\.noreply\.github\.com$/);
     if (!match?.[1]) return null;
     return withSize(`https://avatars.githubusercontent.com/u/${match[1]}?v=4`);
-}
-
-/**
- * Extract the owner and repository from a github.com remote URL, in any of the forms git supports.
- */
-export function parseGitHubRepo(remoteUrl: string): GitHubRepo | null {
-    const url = remoteUrl.trim();
-    const match =
-        url.match(/^(?:https?:\/\/|ssh:\/\/|git:\/\/)(?:[^@/]+@)?([^/:]+)(?::\d+)?\/(.+)$/) ??
-        url.match(/^(?:[^@/]+@)([^:/]+):(.+)$/);
-    if (!match?.[1] || !match[2]) return null;
-
-    const host = match[1].toLowerCase();
-    if (host !== 'github.com' && host !== 'www.github.com') return null;
-
-    const segments = match[2].replace(/\.git$/, '').replace(/\/$/, '').split('/');
-    if (segments.length < 2) return null;
-
-    const owner = segments[segments.length - 2];
-    const repo = segments[segments.length - 1];
-    if (!owner || !repo) return null;
-
-    return { owner, repo };
 }
 
 function getHeader(headers: HttpResponse['headers'], name: string): string | undefined {

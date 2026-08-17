@@ -14,9 +14,12 @@ import { useRebaseCurrentBranchIntoBranch } from '@/hook/dialog/useBranchRebaseD
 import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
 import { useWorktreeCreateDialog } from '@/hook/dialog/useWorktreeCreateDialog'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
+import { useGitHubLinks } from '@/hook/useGitHubLinks'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
 import { useCompareEntry } from '@/context/CompareContext'
 import { branchSide } from '@/util/compare'
+import { gitHubPullRequestUrl, gitHubTreeUrl, openOnGitHub } from '@/util/github'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import {
   faCheck,
   faClone,
@@ -92,6 +95,19 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
 
   // The branch's tip commit is what takes part in the comparison
   const compareEntry = useCompareEntry(branch ? branchSide(branch) : null)
+
+  const gitHub = useGitHubLinks()
+
+  // GitHub only knows the branch under the name it was pushed as, so both links go through its
+  // upstream: a branch that was never pushed — or was pushed to another remote — has nothing on
+  // GitHub to open, and nothing to open a pull request from either
+  const upstreamBranch = branch?.upstreamRemote === gitHub.repo?.remote ? branch?.upstreamBranch : undefined
+  const gitHubBranchUrl =
+    gitHub.refs && gitHub.repo && upstreamBranch ? gitHubTreeUrl(gitHub.repo, upstreamBranch) : null
+  const gitHubPullUrl =
+    gitHub.pullRequests && gitHub.repo && upstreamBranch && upstreamBranch !== gitHub.repo.defaultBranch
+      ? gitHubPullRequestUrl(gitHub.repo, upstreamBranch, gitHub.repo.defaultBranch)
+      : null
 
   const handleCopyBranchName = async () => {
     try {
@@ -181,6 +197,29 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
                 <FontAwesomeIcon icon={faTrash} className="size-3" />
                 Delete
               </ContextMenuItem>
+            )}
+
+            {/* Its own section, and no section at all when the settings leave it nothing to show */}
+            {(gitHubBranchUrl || gitHubPullUrl) && (
+              <>
+                <ContextMenuSeparator />
+
+                <ContextMenuLabel>GitHub</ContextMenuLabel>
+
+                {gitHubPullUrl && (
+                  <ContextMenuItem onClick={() => openOnGitHub(gitHubPullUrl)}>
+                    <FontAwesomeIcon icon={faGithub} className="size-3" />
+                    Create Pull Request
+                  </ContextMenuItem>
+                )}
+
+                {gitHubBranchUrl && (
+                  <ContextMenuItem onClick={() => openOnGitHub(gitHubBranchUrl)}>
+                    <FontAwesomeIcon icon={faGithub} className="size-3" />
+                    Open on GitHub
+                  </ContextMenuItem>
+                )}
+              </>
             )}
 
             <ContextMenuSeparator />

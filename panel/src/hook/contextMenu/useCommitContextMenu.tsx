@@ -15,9 +15,12 @@ import { useResetBranchDialog } from '@/hook/dialog/useResetBranchDialog'
 import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
+import { useGitHubLinks } from '@/hook/useGitHubLinks'
 import { useRewordEligibility } from '@/hook/useRewordEligibility'
 import { useCompareEntry } from '@/context/CompareContext'
 import { commitSide } from '@/util/compare'
+import { gitHubCommitUrl, openOnGitHub } from '@/util/github'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import {
   faCodeBranch,
   faCodeCommit,
@@ -42,6 +45,8 @@ interface CommitContextMenuWrapperProps {
   canReword: boolean
   /** How the compare entry reads in the current state, or null when it does not apply */
   compareLabel: string | null
+  /** The commit's page on GitHub, or null when there is none to open */
+  gitHubUrl: string | null
   onCompare: () => void
   onBranchClick: () => void
   onTagClick: () => void
@@ -59,6 +64,7 @@ const CommitContextMenuWrapper = memo(
     enabled,
     canReword,
     compareLabel,
+    gitHubUrl,
     onCompare,
     onBranchClick,
     onTagClick,
@@ -140,6 +146,20 @@ const CommitContextMenuWrapper = memo(
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
             Reset current branch here
           </ContextMenuItem>
+
+          {/* Its own section, and no section at all when the settings leave it nothing to show */}
+          {gitHubUrl && (
+            <>
+              <ContextMenuSeparator />
+
+              <ContextMenuLabel>GitHub</ContextMenuLabel>
+
+              <ContextMenuItem onClick={() => openOnGitHub(gitHubUrl)}>
+                <FontAwesomeIcon icon={faGithub} className="size-3" />
+                Open on GitHub
+              </ContextMenuItem>
+            </>
+          )}
         </ContextMenuContent>
       </ContextMenu>
     )
@@ -162,11 +182,19 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
   const resetDialog = useResetBranchDialog({ commit })
   const rewordEligibility = useRewordEligibility(commit.isStash || commit.isUncommitted ? undefined : commit.hash)
 
+  // A stash only exists on this machine, so it has no page on GitHub
+  const gitHub = useGitHubLinks()
+  const gitHubUrl =
+    gitHub.commits && gitHub.repo && !commit.isStash && !commit.isUncommitted
+      ? gitHubCommitUrl(gitHub.repo, commit.hash)
+      : null
+
   const commitContextMenuWrapper = (children: ReactNode, enabled: boolean) => (
     <CommitContextMenuWrapper
       enabled={enabled}
       canReword={!!rewordEligibility}
       compareLabel={compareEntry?.label ?? null}
+      gitHubUrl={gitHubUrl}
       onCompare={() => compareEntry?.onSelect()}
       onBranchClick={branchDialog.openDialog}
       onTagClick={tagDialog.openDialog}
