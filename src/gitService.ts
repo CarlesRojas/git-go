@@ -2436,6 +2436,38 @@ export class GitService {
         }
     }
 
+    /**
+     * The branch a remote's HEAD points at, which is the branch a pull request opens against.
+     * Read from `refs/remotes/<remote>/HEAD`, which clone writes and `fetch --prune` keeps up to
+     * date; null when the repository never learned it (a remote added by hand, for instance).
+     * @param remote The name of the remote to ask about.
+     * @returns The branch name without the remote prefix, or null when it is not recorded.
+     */
+    public async getRemoteDefaultBranch(log: (message: string) => void, remote: string): Promise<string | null> {
+        const workspacePath = this.getRepoPath();
+        const gitExecutable = await this.findGitExecutable();
+
+        try {
+            // Inside the try like the lookup itself: a remote named something git would not take
+            // as a ref simply has no default branch to report, it is not an error to raise
+            this.validateRefName(`refs/remotes/${remote}/HEAD`);
+
+            const output = await this.spawnGit(
+                [gitExecutable.path, 'symbolic-ref', '--quiet', `refs/remotes/${remote}/HEAD`],
+                workspacePath
+            );
+
+            const ref = output.trim();
+            const prefix = `refs/remotes/${remote}/`;
+            if (!ref.startsWith(prefix)) return null;
+
+            return ref.slice(prefix.length) || null;
+        } catch (error) {
+            log(`The default branch of '${remote}' is not recorded: ${error}`);
+            return null;
+        }
+    }
+
     // Stash operations
 
     public async applyStash(

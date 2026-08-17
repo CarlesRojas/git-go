@@ -89,6 +89,16 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Push/pull operations** to/from remotes
 - **Remote branch tracking** and management
 
+### 🐙 GitHub Links
+
+Shown only when the repository has a `github.com` remote, and each one can be turned off on its own:
+
+- **Open a commit** on GitHub from the mark next to its hash, or from its context menu
+- **Open a branch or a tag** from its context menu - a tag opens its release page, or its tree when it has no release
+- **Open a file** as it was at that commit, from the mark that appears when the pointer is over it in the file tree
+- **Follow `#123`** in a commit message to that issue or pull request
+- **Create a pull request** for a local branch that has an upstream, against the branch the remote's HEAD points at
+
 ### 📁 File Operations
 
 - **Browse repository** file tree at any commit or stash
@@ -350,6 +360,20 @@ asks.
     "git-go.worktree.remove.deleteBranch": false // Default 'Also delete branch' when removing a worktree
 }
 ```
+
+### GitHub
+
+```json
+{
+    "git-go.github.commitLinks": true, // Open a commit on GitHub from its hash and its context menu
+    "git-go.github.refLinks": true, // Open a branch or a tag on GitHub from its context menu
+    "git-go.github.fileLinks": true, // Open a file on GitHub, as it was at that commit, from the file tree
+    "git-go.github.issueLinks": true, // Link #123 in a commit message to that issue
+    "git-go.github.createPullRequest": true // Open GitHub's pull request form for a branch with an upstream
+}
+```
+
+These only take effect when the repository has a `github.com` remote: `origin` when it is one, and otherwise the first remote that is.
 
 ## 🔧 Requirements
 

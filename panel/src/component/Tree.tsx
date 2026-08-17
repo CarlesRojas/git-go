@@ -1,5 +1,6 @@
 import { Button } from '@/component/ui/Button'
 import { cn } from '@/util/cn'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faChevronRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitFileChange } from '@git/gitService'
@@ -35,6 +36,7 @@ interface TreeDataItem {
   onClick?: () => void
   onOpenDiff?: () => void
   onOpenFile?: () => void
+  onOpenOnGitHub?: () => void
   draggable?: boolean
   droppable?: boolean
   disabled?: boolean
@@ -487,6 +489,21 @@ const TreeLeaf = ({
               title="Open file directly"
             >
               <FontAwesomeIcon icon={faExternalLinkAlt} className="h-3 w-3" />
+            </Button>
+          )}
+
+          {item.fileChange && !!item.onOpenOnGitHub && (
+            <Button
+              variant="ghost"
+              size="iconSmall"
+              className="ml-1 opacity-0 transition-opacity duration-200 group-hover:opacity-80"
+              onClick={e => {
+                e.stopPropagation()
+                item.onOpenOnGitHub?.()
+              }}
+              title="Open file on GitHub"
+            >
+              <FontAwesomeIcon icon={faGithub} className="h-3 w-3" />
             </Button>
           )}
 

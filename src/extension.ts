@@ -6,6 +6,8 @@ import { getConfig } from './config';
 import { GitService } from './gitService';
 import { RepoService } from './repoService';
 import { StatusBarItem } from './statusBarItem';
+import { isGitHubUrl, resolveGitHubRemote } from './util/githubRepo';
+import { probeUrl } from './util/probeUrl';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -128,6 +130,11 @@ export function activate(context: vscode.ExtensionContext) {
                             worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
                             worktreeRemoveForce: config.worktreeRemoveForce,
                             worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
+                            githubCommitLinks: config.githubCommitLinks,
+                            githubRefLinks: config.githubRefLinks,
+                            githubFileLinks: config.githubFileLinks,
+                            githubIssueLinks: config.githubIssueLinks,
+                            githubCreatePullRequest: config.githubCreatePullRequest,
                             undoEnabled: config.undoEnabled,
                             undoKeyboardShortcut: config.undoKeyboardShortcut,
                             undoShow: config.undoShow,
@@ -740,6 +747,24 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'resetUncommittedChangesSuccess', success: true };
                 },
 
+                getGitHubRepo: async () => {
+                    const gitService = GitService.getInstance();
+                    const remotes = await gitService.getGitRemotes(log);
+                    const gitHubRemote = resolveGitHubRemote(remotes);
+
+                    if (!gitHubRemote) {
+                        log('No github.com remote, GitHub links are unavailable');
+                        return { type: 'gitHubRepo', repo: null };
+                    }
+
+                    const defaultBranch = await gitService.getRemoteDefaultBranch(log, gitHubRemote.remote);
+                    log(
+                        `GitHub repository '${gitHubRemote.owner}/${gitHubRemote.repo}' on remote '${gitHubRemote.remote}'` +
+                            ` (default branch: ${defaultBranch ?? 'unknown'})`
+                    );
+                    return { type: 'gitHubRepo', repo: { ...gitHubRemote, defaultBranch } };
+                },
+
                 getRepos: async () => {
                     const activeRepo = await syncActiveRepo();
                     gitWatcher?.watchActiveRepo();
@@ -843,6 +868,11 @@ export function activate(context: vscode.ExtensionContext) {
                             worktreeOpenAfterCreate: config.worktreeOpenAfterCreate,
                             worktreeRemoveForce: config.worktreeRemoveForce,
                             worktreeRemoveDeleteBranch: config.worktreeRemoveDeleteBranch,
+                            githubCommitLinks: config.githubCommitLinks,
+                            githubRefLinks: config.githubRefLinks,
+                            githubFileLinks: config.githubFileLinks,
+                            githubIssueLinks: config.githubIssueLinks,
+                            githubCreatePullRequest: config.githubCreatePullRequest,
                             undoEnabled: config.undoEnabled,
                             undoKeyboardShortcut: config.undoKeyboardShortcut,
                             undoShow: config.undoShow,
@@ -903,6 +933,34 @@ export function activate(context: vscode.ExtensionContext) {
                         value: stateValue ?? null,
                         requestId: message.requestId
                     });
+                },
+
+                openExternal: async (message) => {
+                    const url = message.url;
+                    const fallbackUrl = message.fallbackUrl;
+
+                    if (typeof url !== 'string' || !isGitHubUrl(url)) {
+                        log(`Refusing to open '${url}': only github.com links are opened from the graph`);
+                        return;
+                    }
+
+                    // A page that may not be there (a tag with no release) comes with the one that
+                    // always is, so the link lands somewhere useful either way. When the question
+                    // cannot be answered — offline, or the request blocked — the first URL wins.
+                    let target = url;
+                    if (typeof fallbackUrl === 'string' && isGitHubUrl(fallbackUrl)) {
+                        const exists = await probeUrl(url);
+                        if (exists === false) target = fallbackUrl;
+                    }
+
+                    try {
+                        log(`Opening ${target} in the browser`);
+                        await vscode.env.openExternal(vscode.Uri.parse(target));
+                    } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                        log(`Error opening ${target}: ${errorMessage}`);
+                        vscode.window.showErrorMessage(`Failed to open the link: ${errorMessage}`);
+                    }
                 },
 
                 openWorktree: async (message) => {

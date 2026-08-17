@@ -16,6 +16,7 @@ import type {
   GitWorktree,
 } from '@git/gitService'
 import type { GitRepo } from '@git/repoService'
+import type { GitHubRepo, GitHubRepoInfo } from '@git/util/githubRepo'
 import { hashKey, InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefObject, useCallback, useEffect, useRef } from 'react'
 
@@ -97,6 +98,11 @@ export interface ConfigState {
   worktreeOpenAfterCreate: boolean
   worktreeRemoveForce: boolean
   worktreeRemoveDeleteBranch: boolean
+  githubCommitLinks: boolean
+  githubRefLinks: boolean
+  githubFileLinks: boolean
+  githubIssueLinks: boolean
+  githubCreatePullRequest: boolean
   undoEnabled: boolean
   undoKeyboardShortcut: boolean
   undoShow: Record<GitUndoActionKind, boolean>
@@ -154,6 +160,11 @@ const defaultConfigState: ConfigState = {
   worktreeOpenAfterCreate: true,
   worktreeRemoveForce: false,
   worktreeRemoveDeleteBranch: false,
+  githubCommitLinks: true,
+  githubRefLinks: true,
+  githubFileLinks: true,
+  githubIssueLinks: true,
+  githubCreatePullRequest: true,
   undoEnabled: true,
   undoKeyboardShortcut: true,
   undoShow: {
@@ -182,7 +193,8 @@ export const queryKeys = {
   repos: ['repos'] as const,
   branches: ['git', 'branches'] as const,
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
-  commitFiles: (commitHash: string) => ['git', 'commit-files', { commitHash }] as const,
+  commitFiles: (commitHash: string, gitHubLinks = false) =>
+    ['git', 'commit-files', { commitHash, gitHubLinks }] as const,
   comparison: (fromRef: string, toRef: string) => ['git', 'comparison', { fromRef, toRef }] as const,
   stashes: ['git', 'stashes'] as const,
   // Sorted so a mere reordering of the branch list (e.g. after a fetch) keeps the same cache
@@ -196,6 +208,7 @@ export const queryKeys = {
   rewordableCommits: ['git', 'rewordable-commits'] as const,
   worktrees: ['git', 'worktrees'] as const,
   remotes: ['git', 'remotes'] as const,
+  gitHubRepo: ['git', 'github-repo'] as const,
   repoName: ['git', 'repo-name'] as const,
   gitUserConfig: ['git', 'user-config'] as const,
   tagDetails: (tagName: string) => ['git', 'tag-details', tagName] as const,
@@ -226,6 +239,22 @@ export const useGitRemotes = () => {
     queryFn: async (): Promise<GitRemote[]> => {
       const response = await sendCorrelatedMessage<{ remotes: GitRemote[] }>('getGitRemotes')
       return response.remotes
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
+/**
+ * The GitHub repository the remotes point at, or null when none of them is on github.com.
+ * `origin` wins when it is a GitHub remote, otherwise the first one that is.
+ */
+export const useGitHubRepo = () => {
+  return useQuery({
+    queryKey: queryKeys.gitHubRepo,
+    queryFn: async (): Promise<GitHubRepoInfo | null> => {
+      const response = await sendCorrelatedMessage<{ repo: GitHubRepoInfo | null }>('getGitHubRepo')
+      return response.repo
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -345,6 +374,8 @@ interface GitCommitFilesProps {
   isRootCommit?: boolean
   isStash?: boolean
   enabled?: boolean
+  /** When set, each file also links to how it looked at that commit on GitHub */
+  gitHub?: { repo: GitHubRepo; ref: string }
 }
 
 export const useGitCommitFiles = ({
@@ -352,15 +383,18 @@ export const useGitCommitFiles = ({
   isRootCommit = false,
   isStash = false,
   enabled = true,
+  gitHub,
 }: GitCommitFilesProps) => {
   return useQuery({
-    queryKey: queryKeys.commitFiles(commitHash),
+    // The tree is built here, links and all, so whether it carries GitHub links is part of what
+    // is cached: turning the setting off rebuilds it rather than leaving the links behind
+    queryKey: queryKeys.commitFiles(commitHash, !!gitHub),
     queryFn: async (): Promise<TreeDataItem[]> => {
       const response = await sendCorrelatedMessage<{ files: GitFileChange[] }>('getCommitFiles', {
         commitHash: commitHash,
         isStash: isStash,
       })
-      return buildFileTree(response.files, commitHash, isRootCommit, isStash)
+      return buildFileTree(response.files, commitHash, isRootCommit, isStash, undefined, gitHub)
     },
     enabled: !!commitHash && enabled,
     staleTime: 5 * 60 * 1000,

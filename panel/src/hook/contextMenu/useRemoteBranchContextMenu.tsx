@@ -11,8 +11,11 @@ import { useRemoteBranchCheckoutDialog } from '@/hook/dialog/useRemoteBranchChec
 import { useRemoteBranchDeleteDialog } from '@/hook/dialog/useRemoteBranchDeleteDialog'
 import { useRemoteBranchFetchIntoLocalDialog } from '@/hook/dialog/useRemoteBranchFetchIntoLocalDialog'
 import { useRemoteBranchMergeDialog } from '@/hook/dialog/useRemoteBranchMergeDialog'
+import { useGitHubLinks } from '@/hook/useGitHubLinks'
 import { compareEntryFor, useCompare } from '@/context/CompareContext'
 import { branchSide } from '@/util/compare'
+import { gitHubTreeUrl, openOnGitHub } from '@/util/github'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faCheck, faClone, faCodeCompare, faCodeMerge, faDownload, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
@@ -39,6 +42,8 @@ interface RemoteBranchContextMenuWrapperProps {
   branch?: GitBranch
   /** How the compare entry reads in the current state, or null when it does not apply */
   compareLabel: string | null
+  /** The branch's page on GitHub, or null when there is none to open */
+  gitHubUrl: string | null
   onCompare: () => void
   onCheckout: (branch: GitBranch) => void
   onFetchIntoLocal: (branch: GitBranch) => void
@@ -53,6 +58,7 @@ const RemoteBranchContextMenuWrapper = memo(
     enabled = true,
     branch,
     compareLabel,
+    gitHubUrl,
     onCompare,
     onCheckout,
     onFetchIntoLocal,
@@ -98,6 +104,13 @@ const RemoteBranchContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
+          {gitHubUrl && (
+            <ContextMenuItem onClick={() => openOnGitHub(gitHubUrl)}>
+              <FontAwesomeIcon icon={faGithub} className="size-3" />
+              Open on GitHub
+            </ContextMenuItem>
+          )}
+
           <ContextMenuItem onClick={() => onDelete(branch)} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
             Delete
@@ -126,10 +139,17 @@ export const useRemoteBranchContextMenu = () => {
   const deleteDialog = useRemoteBranchDeleteDialog()
 
   const compareState = useCompare()
+  const gitHub = useGitHubLinks()
 
   const remoteBranchContextMenuWrapper = (children: ReactNode, enabled = true, branch?: GitBranch) => {
     // The branch's tip commit is what takes part in the comparison
     const compareEntry = compareEntryFor(compareState, branch ? branchSide(branch) : null)
+
+    // Only the branches of the GitHub remote itself are on GitHub, whatever other remotes hold
+    const gitHubUrl =
+      gitHub.refs && gitHub.repo && branch && branch.remoteName === gitHub.repo.remote
+        ? gitHubTreeUrl(gitHub.repo, branch.cleanName)
+        : null
 
     const handleCopyBranchName = async () => {
       try {
@@ -147,6 +167,7 @@ export const useRemoteBranchContextMenu = () => {
         enabled={enabled}
         branch={branch}
         compareLabel={compareEntry?.label ?? null}
+        gitHubUrl={gitHubUrl}
         onCompare={() => compareEntry?.onSelect()}
         onCheckout={checkoutDialog.openDialog}
         onFetchIntoLocal={fetchIntoLocalDialog.openDialog}

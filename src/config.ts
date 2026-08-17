@@ -428,6 +428,41 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.github.commitLinks` Extension Setting.
+     */
+    get githubCommitLinks(): boolean {
+        return !!this.config.get('github.commitLinks', true);
+    }
+
+    /**
+     * Get the value of the `git-go.github.refLinks` Extension Setting.
+     */
+    get githubRefLinks(): boolean {
+        return !!this.config.get('github.refLinks', true);
+    }
+
+    /**
+     * Get the value of the `git-go.github.fileLinks` Extension Setting.
+     */
+    get githubFileLinks(): boolean {
+        return !!this.config.get('github.fileLinks', true);
+    }
+
+    /**
+     * Get the value of the `git-go.github.issueLinks` Extension Setting.
+     */
+    get githubIssueLinks(): boolean {
+        return !!this.config.get('github.issueLinks', true);
+    }
+
+    /**
+     * Get the value of the `git-go.github.createPullRequest` Extension Setting.
+     */
+    get githubCreatePullRequest(): boolean {
+        return !!this.config.get('github.createPullRequest', true);
+    }
+
+    /**
      * Get the value of the `git-go.undo.enabled` Extension Setting.
      */
     get undoEnabled(): boolean {

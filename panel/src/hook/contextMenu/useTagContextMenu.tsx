@@ -10,8 +10,11 @@ import { useToast } from '@/context/ToastContext'
 import { useTagDeleteDialog } from '@/hook/dialog/useTagDeleteDialog'
 import { useTagDetailsDialog } from '@/hook/dialog/useTagDetailsDialog'
 import { useTagPushDialog } from '@/hook/dialog/useTagPushDialog'
+import { useGitHubLinks } from '@/hook/useGitHubLinks'
 import { useCompareEntry } from '@/context/CompareContext'
 import { tagSide } from '@/util/compare'
+import { gitHubReleaseUrl, gitHubTreeUrl, openOnGitHub } from '@/util/github'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faClone, faCodeCompare, faEye, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
@@ -32,6 +35,8 @@ interface TagContextMenuWrapperProps {
   remoteOnly?: boolean
   /** How the compare entry reads in the current state, or null when it does not apply */
   compareLabel: string | null
+  /** The tag's release page and the tree to fall back on, or null when there is none to open */
+  gitHubUrls: { url: string; fallbackUrl: string } | null
   onCompare: () => void
   onViewDetails: () => void
   onPush: () => void
@@ -47,6 +52,7 @@ const TagContextMenuWrapper = memo(
     tagName,
     remoteOnly = false,
     compareLabel,
+    gitHubUrls,
     onCompare,
     onViewDetails,
     onPush,
@@ -90,6 +96,13 @@ const TagContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
+          {gitHubUrls && (
+            <ContextMenuItem onClick={() => openOnGitHub(gitHubUrls.url, gitHubUrls.fallbackUrl)}>
+              <FontAwesomeIcon icon={faGithub} className="size-3" />
+              Open on GitHub
+            </ContextMenuItem>
+          )}
+
           <ContextMenuItem onClick={onDelete} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
             Delete
@@ -124,6 +137,15 @@ export const useTagContextMenu = ({ commit, tagName, remoteOnly = false }: UseTa
   // The tagged commit is what takes part in the comparison
   const compareEntry = useCompareEntry(tagName ? tagSide(tagName, commit) : null)
 
+  const gitHub = useGitHubLinks()
+
+  // A tag with a release opens it, and one without opens the repository as of the tag instead —
+  // which of the two it is only GitHub knows, so both are offered and the link resolves itself
+  const gitHubUrls =
+    gitHub.refs && gitHub.repo && tagName
+      ? { url: gitHubReleaseUrl(gitHub.repo, tagName), fallbackUrl: gitHubTreeUrl(gitHub.repo, tagName) }
+      : null
+
   const handleCopyTagName = async () => {
     try {
       if (!tagName) throw new Error('No tag to copy')
@@ -141,6 +163,7 @@ export const useTagContextMenu = ({ commit, tagName, remoteOnly = false }: UseTa
       tagName={tagName}
       remoteOnly={remoteOnly}
       compareLabel={compareEntry?.label ?? null}
+      gitHubUrls={gitHubUrls}
       onCompare={() => compareEntry?.onSelect()}
       onViewDetails={handleViewDetails}
       onPush={() => tagName && pushDialog.openDialog(commit, tagName)}
