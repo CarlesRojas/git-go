@@ -21,9 +21,17 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Infinite scrolling** for large repositories
 - **Keyboard navigation** (↑/↓ arrows when commit is expanded)
 
+### 🚀 Big Repositories
+
+Built to stay fast no matter how much history is loaded:
+
+- **Virtualized commit list** - only the rows in view are rendered, so scrolling stays smooth and memory stays flat with tens of thousands of commits loaded
+- **Windowed graph drawing** - only the visible slice of the graph is drawn, with the lines connecting seamlessly across it
+
 ### 🔍 Smart Search & Filtering
 
-- **Search commits** by message, author, or hash
+- **Search the whole history**, not only the pages that happen to be loaded - the search runs on the Git side over the same refs the graph shows
+- **Scope a search** with `author:`, `file:` and `hash:` prefixes; a plain term matches the message, the author and the hash. Terms are matched literally, so `feat/foo`, `v1.2.3` and file paths work
 - **Filter by branches** - view specific branches or all at once
 - **Toggle visibility** of stashes, tags, and remote branches
 - **Advanced branch selector** with grouping
@@ -42,8 +50,9 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 
 - **Create stashes** with optional messages and untracked files
 - **Apply, pop, or drop** stashes
+- **Create a branch from a stash**, from its context menu or by dragging it - the branch starts at the commit the stash was made from, is checked out, and the stash is applied onto it and dropped on success
 - **View stash contents** and file changes
-- **Visual stash indicators** in the graph
+- **Visual stash indicators** in the graph, kept visible even when the commit the stash was made on is no longer reachable from any ref
 
 ### 🏷️ Tag Management
 
@@ -75,14 +84,21 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Revert commits** safely
 - **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
 - **Never undo pushed history** by default, since the button and its shortcut are hidden once the branch tip is on its upstream, so an undo cannot leave you needing a force push
-- **Browse the reflog** from the toolbar button beside the undo button - everywhere `HEAD` or any local branch has been, newest first, each entry naming the action it recorded with its `HEAD@{n}` index, short hash and how long ago it was
-- **Rescue lost commits** through the **Recoverable** badge, which marks the reflog entries no branch or tag reaches any more - the commits an amend, a reset or a rebase left behind. Right-click one to create a branch there, cherry-pick it, reset the current branch to it, or copy its hash
 - **Reset the current branch** to any commit, soft, mixed or hard
-- **Compare two commits or refs** by picking a first side - `Ctrl`/`Cmd`+click a commit, or "Select to compare" in the context menu of a commit, branch or tag - and then picking a second the same way, or by dropping one commit onto another. The changed files appear in a panel beside the graph, with the direction swappable and both compared rows marked `A` and `B`. Picking a marked side again steps back: `B` drops out and leaves `A` ready for another, `A` clears the selection
+- **Edit a commit message** from its context menu or by dragging the commit
+- **Compare two commits or refs** The changed files appear in a panel beside the graph
 - **View detailed commit information** including:
     - File changes and diffs
     - The full commit message, subject and body
     - Author details, plus the committer when it differs from the author
+
+### 🕘 Reflog Panel
+
+Opened from the toolbar button beside the undo button, in a panel beside the graph:
+
+- **Everywhere a ref has been**, newest first, with a selector to switch between `HEAD` - which records checkouts too - and any local branch, loading further entries a page at a time
+- **A Recoverable badge** on the entries no branch or tag reaches any more: the commits an amend, a reset or a rebase left behind, which the graph no longer shows and only the reflog still points at
+- **Act on any entry** from its context menu - create a branch there (prefilled `recovered-<hash>`), cherry-pick it, reset the current branch to it, or copy its hash
 
 ### 🌐 Remote Management
 
@@ -91,9 +107,9 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Push/pull operations** to/from remotes
 - **Remote branch tracking** and management
 
-### 🐙 GitHub Links
+### 🐙 GitHub Integration
 
-Shown only when the repository has a `github.com` remote, and each one can be turned off on its own:
+Shown only when the repository has a `github.com` remote
 
 - **Open a commit** on GitHub from the mark next to its hash, or from its context menu
 - **Open a branch or a tag** from its context menu - a tag opens its release page, or its tree when it has no release
@@ -116,7 +132,7 @@ Shown only when the repository has a `github.com` remote, and each one can be tu
 - **Drop a commit on a branch** to cherry-pick, merge, or revert it
 - **Drop a commit on another commit** to compare the two
 - **Hold over a pill** to open every action it accepts instead of taking the default one
-- **Drag an item on its own** for the actions that need no target - push, delete, fetch into local, and apply, pop or drop a stash
+- **Drag an item on its own** for the actions that need no target - push, delete, fetch into local, edit a commit message, and apply, pop, drop or branch from a stash
 - **Refused actions** stay visible with the reason, such as a branch checked out in another worktree
 - **Auto mode** per action, to run it on drop with the values its dialog would have opened with
 
@@ -179,6 +195,7 @@ as branches are drawn.
 
 4. **Keyboard shortcuts**:
     - `Ctrl+F` / `Cmd+F` focuses the search, `Esc` clears it
+    - `Enter` / `Shift+Enter` jump to the next and previous search match
     - `↑` / `↓` move between commits while one is expanded
     - `Ctrl+Z` / `Cmd+Z` undoes the last action on the current branch
 
@@ -208,7 +225,8 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
     "git-go.graph.rounded": true, // Round the corners of the branches, pills and boxes
     "git-go.graph.showAuthorName": true, // Show the author's name next to each commit's message
     "git-go.graph.remoteAvatars": true, // Show author pictures from the remote, falling back to Gravatar
-    "git-go.graph.expandedCommitHeight": 300 // Height in pixels of an expanded commit (200-800)
+    "git-go.graph.expandedCommitHeight": 300, // Height in pixels of an expanded commit (200-800)
+    "git-go.graph.joinUncommittedChanges": true // Join the uncommitted changes to the checked out commit with a line
 }
 ```
 
@@ -310,6 +328,16 @@ asks.
     "git-go.rebase.autoStash": false // Default 'Autostash uncommitted changes' when rebasing
 }
 ```
+
+### Reword
+
+```json
+{
+    "git-go.reword.allowPushed": false // Offer to edit the message of a commit that is already pushed
+}
+```
+
+Rewording rewrites the commit and everything above it, so a pushed commit needs a force push afterwards.
 
 ### Cherry-Pick and Revert
 
