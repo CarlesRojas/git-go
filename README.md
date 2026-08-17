@@ -76,6 +76,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
 - **Never undo pushed history** by default, since the button and its shortcut are hidden once the branch tip is on its upstream, so an undo cannot leave you needing a force push
 - **Reset the current branch** to any commit, soft, mixed or hard
+- **Compare two commits or refs** by picking a first side - `Ctrl`/`Cmd`+click a commit, or "Select to compare" in the context menu of a commit, branch or tag - and then picking a second the same way, or by dropping one commit onto another. The changed files appear in a panel beside the graph, with the direction swappable and both compared rows marked `A` and `B`. Picking a marked side again steps back: `B` drops out and leaves `A` ready for another, `A` clears the selection
 - **View detailed commit information** including:
     - File changes and diffs
     - The full commit message, subject and body
@@ -101,6 +102,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Drop a branch on a branch** to merge or rebase, with the default action set in the settings
 - **Remote branches** work on both ends of a drop - the remote branch is checked out (as its local counterpart) first, then the action runs
 - **Drop a commit on a branch** to cherry-pick, merge, or revert it
+- **Drop a commit on another commit** to compare the two
 - **Hold over a pill** to open every action it accepts instead of taking the default one
 - **Drag an item on its own** for the actions that need no target - push, delete, fetch into local, and apply, pop or drop a stash
 - **Refused actions** stay visible with the reason, such as a branch checked out in another worktree

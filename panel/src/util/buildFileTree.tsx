@@ -1,5 +1,5 @@
 import { TreeDataItem } from '@/component/Tree'
-import { openFile } from '@/hook/useGitQueries'
+import { openComparisonFile, openFile } from '@/hook/useGitQueries'
 import type { GitFileChange } from '@git/gitService'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -16,6 +16,8 @@ export function buildFileTree(
   commitHash?: string,
   isRootCommit?: boolean,
   isStash?: boolean,
+  /** When set, a file opens as the diff between these two refs rather than against a parent */
+  comparison?: { fromRef: string; toRef: string },
 ): TreeDataItem[] {
   const root: Record<string, any> = {}
 
@@ -60,7 +62,11 @@ export function buildFileTree(
           className: statusClass(file.status),
           fileChange: file,
           filePath: file.path,
-          onOpenDiff: commitHash ? () => openFile(file, commitHash, isRootCommit, isStash) : undefined,
+          onOpenDiff: comparison
+            ? () => openComparisonFile(file, comparison.fromRef, comparison.toRef)
+            : commitHash
+              ? () => openFile(file, commitHash, isRootCommit, isStash)
+              : undefined,
           onOpenFile:
             ['D'].includes(file.status) || (isStash && ['D', 'A'].includes(file.status))
               ? undefined

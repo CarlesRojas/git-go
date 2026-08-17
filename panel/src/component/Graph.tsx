@@ -1,4 +1,5 @@
 import { CommitItem } from '@/component/CommitItem'
+import { useCompare } from '@/context/CompareContext'
 import { useSearch } from '@/context/SearchContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
@@ -202,6 +203,15 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
     setExpandedHash(prev => (prev === hash ? null : hash))
   }, [])
 
+  // The comparison is its own selection, independent of which commit is expanded
+  const { comparison, pending } = useCompare()
+
+  /** Which end of the comparison a row is, or the side armed and still waiting for its pair */
+  const compareRoleOf = (hash: string): 'from' | 'to' | undefined => {
+    if (comparison) return comparison.from.hash === hash ? 'from' : comparison.to.hash === hash ? 'to' : undefined
+    return pending?.hash === hash ? 'from' : undefined
+  }
+
   // Consumed once by the newly expanded row: only a click plays the scroll-into-view animation
   const consumeExpandAnimation = useCallback(() => {
     const source = expandAnimationRef.current
@@ -333,6 +343,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
               commit={commit}
               isExpanded={expandedHash === commit.hash}
               onToggle={toggleCommit}
+              compareRole={compareRoleOf(commit.hash)}
               shouldAnimateIntoView={consumeExpandAnimation}
               selectedBranches={selectedBranches}
               treeWidth={treeWidth}

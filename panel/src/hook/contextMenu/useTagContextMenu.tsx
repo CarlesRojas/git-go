@@ -10,7 +10,9 @@ import { useToast } from '@/context/ToastContext'
 import { useTagDeleteDialog } from '@/hook/dialog/useTagDeleteDialog'
 import { useTagDetailsDialog } from '@/hook/dialog/useTagDetailsDialog'
 import { useTagPushDialog } from '@/hook/dialog/useTagPushDialog'
-import { faClone, faEye, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons'
+import { useCompareEntry } from '@/context/CompareContext'
+import { tagSide } from '@/util/compare'
+import { faClone, faCodeCompare, faEye, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode, memo } from 'react'
@@ -28,6 +30,9 @@ interface TagContextMenuWrapperProps {
   commit?: GitCommit
   tagName?: string
   remoteOnly?: boolean
+  /** How the compare entry reads in the current state, or null when it does not apply */
+  compareLabel: string | null
+  onCompare: () => void
   onViewDetails: () => void
   onPush: () => void
   onDelete: () => void
@@ -41,6 +46,8 @@ const TagContextMenuWrapper = memo(
     commit,
     tagName,
     remoteOnly = false,
+    compareLabel,
+    onCompare,
     onViewDetails,
     onPush,
     onDelete,
@@ -76,6 +83,13 @@ const TagContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
+          {compareLabel && (
+            <ContextMenuItem onClick={onCompare}>
+              <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
+              {compareLabel}
+            </ContextMenuItem>
+          )}
+
           <ContextMenuItem onClick={onDelete} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
             Delete
@@ -107,6 +121,9 @@ export const useTagContextMenu = ({ commit, tagName, remoteOnly = false }: UseTa
     if (tagName) detailsDialog.openDialog(commit, tagName)
   }
 
+  // The tagged commit is what takes part in the comparison
+  const compareEntry = useCompareEntry(tagName ? tagSide(tagName, commit) : null)
+
   const handleCopyTagName = async () => {
     try {
       if (!tagName) throw new Error('No tag to copy')
@@ -123,6 +140,8 @@ export const useTagContextMenu = ({ commit, tagName, remoteOnly = false }: UseTa
       commit={commit}
       tagName={tagName}
       remoteOnly={remoteOnly}
+      compareLabel={compareEntry?.label ?? null}
+      onCompare={() => compareEntry?.onSelect()}
       onViewDetails={handleViewDetails}
       onPush={() => tagName && pushDialog.openDialog(commit, tagName)}
       onDelete={() => tagName && deleteDialog.openDialog(tagName, { deleteLocal: !remoteOnly })}

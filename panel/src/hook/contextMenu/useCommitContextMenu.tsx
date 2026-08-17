@@ -6,6 +6,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/component/ui/ContextMenu'
+import { Shortcut } from '@/component/Shortcut'
 import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
 import { useMergeCommitIntoCurrentBranchDialog } from '@/hook/dialog/useMergeCommitIntoCurrentBranchDialog'
@@ -15,7 +16,17 @@ import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { useRewordEligibility } from '@/hook/useRewordEligibility'
-import { faCodeBranch, faCodeCommit, faCodeMerge, faPen, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
+import { useCompareEntry } from '@/context/CompareContext'
+import { commitSide } from '@/util/compare'
+import {
+  faCodeBranch,
+  faCodeCommit,
+  faCodeCompare,
+  faCodeMerge,
+  faPen,
+  faRotateLeft,
+  faTag,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode, memo } from 'react'
@@ -29,6 +40,9 @@ interface CommitContextMenuWrapperProps {
   enabled: boolean
   /** Whether the commit's message can be rewritten, which shows the edit-message entry */
   canReword: boolean
+  /** How the compare entry reads in the current state, or null when it does not apply */
+  compareLabel: string | null
+  onCompare: () => void
   onBranchClick: () => void
   onTagClick: () => void
   onCherryPickClick: () => void
@@ -44,6 +58,8 @@ const CommitContextMenuWrapper = memo(
     children,
     enabled,
     canReword,
+    compareLabel,
+    onCompare,
     onBranchClick,
     onTagClick,
     onCherryPickClick,
@@ -91,6 +107,16 @@ const CommitContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
+          {compareLabel && (
+            <ContextMenuItem onClick={onCompare}>
+              <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
+              {compareLabel}
+
+              {/* Only the commit rows take the modifier-click, so only this menu advertises it */}
+              <Shortcut keys="Mod+Click" className="ml-auto pl-2" />
+            </ContextMenuItem>
+          )}
+
           <ContextMenuItem onClick={onRevertClick} variant="destructive">
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
             Revert
@@ -123,6 +149,9 @@ const CommitContextMenuWrapper = memo(
 CommitContextMenuWrapper.displayName = 'CommitContextMenuWrapper'
 
 export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
+  // The uncommitted row is not a commit, so it has nothing to compare
+  const compareEntry = useCompareEntry(commit.isUncommitted ? null : commitSide(commit))
+
   const tagDialog = useTagDialog({ commit })
   const branchDialog = useBranchDialog({ commit })
   const cherryPickDialog = useCherryPickDialog({ commit })
@@ -137,6 +166,8 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
     <CommitContextMenuWrapper
       enabled={enabled}
       canReword={!!rewordEligibility}
+      compareLabel={compareEntry?.label ?? null}
+      onCompare={() => compareEntry?.onSelect()}
       onBranchClick={branchDialog.openDialog}
       onTagClick={tagDialog.openDialog}
       onCherryPickClick={cherryPickDialog.openDialog}

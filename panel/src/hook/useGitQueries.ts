@@ -4,6 +4,7 @@ import { sendCorrelatedMessage } from '@/util/sendCorrelatedMessage'
 import type {
   GitBranch,
   GitCommit,
+  GitComparison,
   GitFileChange,
   GitOperationInProgress,
   GitPushMode,
@@ -182,6 +183,7 @@ export const queryKeys = {
   branches: ['git', 'branches'] as const,
   commits: (branches?: GitBranch[]) => ['git', 'commits', { branches: branches?.map(b => b.name) }] as const,
   commitFiles: (commitHash: string) => ['git', 'commit-files', { commitHash }] as const,
+  comparison: (fromRef: string, toRef: string) => ['git', 'comparison', { fromRef, toRef }] as const,
   stashes: ['git', 'stashes'] as const,
   // Sorted so a mere reordering of the branch list (e.g. after a fetch) keeps the same cache
   // entry instead of resetting every loaded page
@@ -562,6 +564,41 @@ export const openFile = (file: GitFileChange, commitHash?: string, isRootCommit?
     isRootCommit: isRootCommit ?? false,
     isUncommitted: commitHash === 'working-changes',
     isStash: isStash ?? false,
+  })
+}
+
+/** The diff of one file between the two sides of a comparison, rather than against a parent */
+export const openComparisonFile = (file: GitFileChange, fromRef: string, toRef: string): void => {
+  const vscode = getVSCodeApi()
+
+  vscode.postMessage({
+    type: 'openFile',
+    filePath: file.path,
+    oldPath: file.oldPath,
+    status: file.status,
+    compareFrom: fromRef,
+    compareTo: toRef,
+  })
+}
+
+/**
+ * The files that differ between two refs. Keyed by the pair, so swapping direction and swapping
+ * back reuses what was already fetched.
+ */
+export const useComparison = (fromRef: string | null, toRef: string | null) => {
+  return useQuery({
+    queryKey: queryKeys.comparison(fromRef ?? '', toRef ?? ''),
+    queryFn: async (): Promise<GitComparison> => {
+      const response = await sendCorrelatedMessage<{ comparison: GitComparison }>(
+        'compareRefs',
+        { fromRef, toRef },
+        30_000,
+      )
+      return response.comparison
+    },
+    enabled: !!fromRef && !!toRef,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 }
 

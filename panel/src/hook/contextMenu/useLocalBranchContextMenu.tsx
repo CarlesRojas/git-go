@@ -15,10 +15,13 @@ import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
 import { useWorktreeCreateDialog } from '@/hook/dialog/useWorktreeCreateDialog'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
+import { useCompareEntry } from '@/context/CompareContext'
+import { branchSide } from '@/util/compare'
 import {
   faCheck,
   faClone,
   faCodeBranch,
+  faCodeCompare,
   faCodeMerge,
   faFolderTree,
   faPen,
@@ -86,6 +89,9 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
       },
     )
   }
+
+  // The branch's tip commit is what takes part in the comparison
+  const compareEntry = useCompareEntry(branch ? branchSide(branch) : null)
 
   const handleCopyBranchName = async () => {
     try {
@@ -159,12 +165,22 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
                   <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
                   Rebase Current Branch Here
                 </ContextMenuItem>
-
-                <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
-                  <FontAwesomeIcon icon={faTrash} className="size-3" />
-                  Delete
-                </ContextMenuItem>
               </>
+            )}
+
+            {compareEntry && (
+              <ContextMenuItem onClick={compareEntry.onSelect}>
+                <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
+                {compareEntry.label}
+              </ContextMenuItem>
+            )}
+
+            {/* Last before the separator: the destructive entry ends every one of these menus */}
+            {!branch.current && (
+              <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
+                <FontAwesomeIcon icon={faTrash} className="size-3" />
+                Delete
+              </ContextMenuItem>
             )}
 
             <ContextMenuSeparator />
