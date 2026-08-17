@@ -14,7 +14,7 @@ const LeftClickIcon: FC<{ className?: string }> = ({ className }) => (
         leaves draws the button split without needing divider strokes of its own. */}
     <path d="M7.5 3A3 3 0 0 0 5 6v1h2.5Z" fill="currentColor" />
 
-    <rect x="3.5" y="1.5" width="9" height="13" rx="4.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+    <rect x="3.5" y="1.5" width="9" height="13" rx="4.5" fill="none" stroke="currentColor" strokeWidth="1" />
   </svg>
 )
 
@@ -80,14 +80,20 @@ export const Shortcut: FC<ShortcutProps> = ({ keys, className }) => {
             aria-hidden="true"
             className={cn(
               // Layout & sizing — square for a single glyph, stretching only for a spelled-out key
-              'flex h-4 min-w-4 items-center justify-center px-0.5',
+              'flex h-5 min-w-5 items-center justify-center px-1',
               // Appearance
               'rounded-small border-vsc-editor-fg/25 border',
               // Typography
-              'font-inherit text-[0.65rem] leading-none font-medium tracking-normal',
+              'font-inherit text-[0.7rem] leading-none font-medium tracking-normal',
             )}
           >
-            {Icon ? <Icon className="size-3.5" /> : (GLYPHS[token] ?? (part.length === 1 ? part.toUpperCase() : part))}
+            {/* Held back a little: a drawn glyph carries more ink than a typeface's, so at equal
+                colour it reads as the heavier of the two beside a ⌘ or a ⇧ */}
+            {Icon ? (
+              <Icon className="size-4 opacity-80" />
+            ) : (
+              (GLYPHS[token] ?? (part.length === 1 ? part.toUpperCase() : part))
+            )}
           </kbd>
         )
       })}
