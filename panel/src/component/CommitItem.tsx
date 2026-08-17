@@ -23,6 +23,12 @@ interface CommitItemProps {
   isExpanded: boolean
   /** Keyed by hash so the callback can stay identity-stable and the row memoized */
   onToggle: (hash: string) => void
+  /**
+   * Consulted (and consumed) when the row becomes expanded: TRUE plays the smooth
+   * scroll-into-view animation. Arrow-key navigation pans the scroll itself instead, and a
+   * re-mount of an already-expanded row while scrolling past it must not move the scroll.
+   */
+  shouldAnimateIntoView: () => boolean
   selectedBranches: GitBranch[]
   treeWidth: number
   onCommitHover: (hash: string | null, row: number | null) => void
@@ -36,6 +42,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   commit,
   isExpanded,
   onToggle: onToggleHash,
+  shouldAnimateIntoView,
   selectedBranches,
   treeWidth,
   onCommitHover,
@@ -89,6 +96,9 @@ const CommitItemComponent: FC<CommitItemProps> = ({
 
   useEffect(() => {
     if (isExpanded && sectionRef.current) {
+      // Only a click-driven expansion animates; keyboard navigation pans the scroll itself
+      if (!shouldAnimateIntoView()) return
+
       const timeoutId = setTimeout(() => {
         const element = sectionRef.current
         if (!element) return
@@ -96,14 +106,13 @@ const CommitItemComponent: FC<CommitItemProps> = ({
         const rect = element.getBoundingClientRect()
         const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
 
-        // 'nearest' scrolls just enough: navigating up shows the commit at the top of the
-        // viewport, navigating down aligns the expanded panel's bottom with the viewport bottom
+        // 'nearest' scrolls just enough to bring the row and its panel fully into view
         if (!isInView) element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }, 100)
 
       return () => clearTimeout(timeoutId)
     }
-  }, [isExpanded])
+  }, [isExpanded, shouldAnimateIntoView])
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 

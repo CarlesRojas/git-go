@@ -61,6 +61,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
     paddingEnd: LIST_PADDING,
   })
 
+  // How the expansion last changed: a click animates the commit into view, while arrow-key
+  // navigation pans the scroll by exactly one row (set as a pending instant scroll delta)
+  const expandAnimationRef = useRef<'click' | 'keyboard' | null>(null)
+  const pendingNavScrollRef = useRef<number | null>(null)
+
   // Row sizes are derived, not measured, so a changed expanded row must flush the size cache.
   // When the resized row sits above the viewport, shifting the scroll offset by the same amount
   // keeps the rows on screen exactly where they were.
@@ -74,7 +79,19 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
     virtualizer.measure()
 
     const container = scrollRef.current
-    if (!container) return
+    if (!container) {
+      pendingNavScrollRef.current = null
+      return
+    }
+
+    // Arrow-key navigation: pan by exactly one row height, instantly, and skip the anchor
+    // compensation below — the pan itself is what keeps the selected commit in place
+    if (pendingNavScrollRef.current !== null) {
+      const navDelta = pendingNavScrollRef.current
+      pendingNavScrollRef.current = null
+      if (navDelta !== 0) container.scrollTop = container.scrollTop + navDelta
+      return
+    }
 
     const rowTop = (row: number, expanded: number | undefined, height: number) =>
       LIST_PADDING + row * ROW_HEIGHT + (expanded !== undefined && row > expanded ? height : 0)
@@ -122,7 +139,17 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
 
   const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
 
-  const toggleCommit = useCallback((hash: string) => setExpandedHash(prev => (prev === hash ? null : hash)), [])
+  const toggleCommit = useCallback((hash: string) => {
+    expandAnimationRef.current = 'click'
+    setExpandedHash(prev => (prev === hash ? null : hash))
+  }, [])
+
+  // Consumed once by the newly expanded row: only a click plays the scroll-into-view animation
+  const consumeExpandAnimation = useCallback(() => {
+    const source = expandAnimationRef.current
+    expandAnimationRef.current = null
+    return source === 'click'
+  }, [])
 
   const navigateCommit = useCallback(
     (direction: 'up' | 'down') => {
@@ -135,10 +162,26 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
       const nextCommit = commits[nextIndex]
       if (nextIndex === expandedRow || !nextCommit) return
 
+      // If the newly selected commit and its panel won't fit in the viewport as-is, pan by
+      // exactly one row towards it — moving the expansion one row moves the section one row,
+      // so the pan keeps it pinned at the viewport edge
+      let navDelta = 0
+      const container = scrollRef.current
+      if (container) {
+        const newTop = LIST_PADDING + nextIndex * ROW_HEIGHT
+        const newBottom = newTop + ROW_HEIGHT + expandedCommitHeight
+        const viewTop = container.scrollTop
+        const viewBottom = viewTop + container.clientHeight
+
+        if (newTop < viewTop) navDelta = -ROW_HEIGHT
+        else if (newBottom > viewBottom) navDelta = ROW_HEIGHT
+      }
+
+      expandAnimationRef.current = 'keyboard'
+      pendingNavScrollRef.current = navDelta
       setExpandedHash(nextCommit.hash)
-      virtualizer.scrollToIndex(nextIndex, { align: 'auto' })
     },
-    [expandedRow, commits, virtualizer],
+    [expandedRow, commits, scrollRef, expandedCommitHeight],
   )
 
   useEventListener(
@@ -220,6 +263,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
               commit={commit}
               isExpanded={expandedHash === commit.hash}
               onToggle={toggleCommit}
+              shouldAnimateIntoView={consumeExpandAnimation}
               selectedBranches={selectedBranches}
               treeWidth={treeWidth}
               onCommitHover={onCommitHover}
