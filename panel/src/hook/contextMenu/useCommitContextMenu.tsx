@@ -4,6 +4,7 @@ import {
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/component/ui/ContextMenu'
 import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
@@ -16,7 +17,7 @@ import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { useRewordEligibility } from '@/hook/useRewordEligibility'
 import { useCompareEntry } from '@/context/CompareContext'
-import { commitSide } from '@/util/compare'
+import { commitSide, COMPARE_CLICK_HINT } from '@/util/compare'
 import {
   faCodeBranch,
   faCodeCommit,
@@ -110,6 +111,9 @@ const CommitContextMenuWrapper = memo(
             <ContextMenuItem onClick={onCompare}>
               <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
               {compareLabel}
+
+              {/* Only the commit rows take the modifier-click, so only this menu advertises it */}
+              <ContextMenuShortcut className="tracking-normal">{COMPARE_CLICK_HINT}</ContextMenuShortcut>
             </ContextMenuItem>
           )}
 

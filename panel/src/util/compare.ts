@@ -38,3 +38,6 @@ const IS_MAC =
  */
 export const isCompareModifier = (event: { metaKey: boolean; ctrlKey: boolean }): boolean =>
   IS_MAC ? event.metaKey : event.ctrlKey
+
+/** How the menus write that gesture. Kept beside it, since the two have to name the same key. */
+export const COMPARE_CLICK_HINT = IS_MAC ? '⌘ Click' : 'Ctrl Click'
