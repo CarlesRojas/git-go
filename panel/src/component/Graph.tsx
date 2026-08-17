@@ -64,9 +64,30 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   // How the expansion last changed: a click animates the commit into view, while arrow-key
   // navigation pans the scroll itself. The pending object marks a keyboard move (its presence
   // skips the anchor compensation); target is the absolute scrollTop to jump to, or null when
-  // the new selection already fits and no scroll is needed.
+  // the new selection already fits and no scroll is needed. The pinned offset anchors where a
+  // run of pinning presses keeps the selection on screen: computed once in layout units when
+  // the run starts, so neither scroll quantization nor webview zoom can drift it press by
+  // press (rect measurements are zoom-scaled and must not enter this math).
   const expandAnimationRef = useRef<'click' | 'keyboard' | null>(null)
   const pendingNavScrollRef = useRef<{ target: number | null } | null>(null)
+  const pinnedNavOffsetRef = useRef<number | null>(null)
+  const lastNavTargetRef = useRef<number | null>(null)
+
+  // A manual scroll (wheel, scrollbar...) between presses ends the pinning run: the next press
+  // re-anchors to wherever the selection sits then. Our own jumps land on the last target.
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const onScroll = () => {
+      if (pinnedNavOffsetRef.current === null) return
+      const expected = lastNavTargetRef.current
+      if (expected === null || Math.abs(container.scrollTop - expected) > 2) pinnedNavOffsetRef.current = null
+    }
+
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => container.removeEventListener('scroll', onScroll)
+  }, [scrollRef])
 
   // Row sizes are derived, not measured, so a changed expanded row must flush the size cache.
   // When the resized row sits above the viewport, shifting the scroll offset by the same amount
@@ -143,6 +164,7 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
 
   const toggleCommit = useCallback((hash: string) => {
     expandAnimationRef.current = 'click'
+    pinnedNavOffsetRef.current = null
     setExpandedHash(prev => (prev === hash ? null : hash))
   }, [])
 
@@ -164,25 +186,30 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
       const nextCommit = commits[nextIndex]
       if (nextIndex === expandedRow || !nextCommit) return
 
-      // If the newly selected commit and its panel won't fit in the viewport as-is, pin the
-      // new section to the exact screen position the old one occupies: the target scrollTop is
-      // computed from the old section's measured position, so repeated presses cannot drift by
-      // rounding (a relative pan would accumulate sub-pixel quantization on scaled displays)
+      // If the newly selected commit and its panel won't fit in the viewport as-is, pin it to
+      // the screen position the selection had when this run of presses started crossing the
+      // edge — every press targets an absolute scrollTop derived from that one anchor, so the
+      // selection lands in exactly the same place press after press
       let target: number | null = null
       const container = scrollRef.current
       if (container) {
+        const sectionHeight = ROW_HEIGHT + expandedCommitHeight
         const newTop = LIST_PADDING + nextIndex * ROW_HEIGHT
-        const newBottom = newTop + ROW_HEIGHT + expandedCommitHeight
         const viewTop = container.scrollTop
-        const viewBottom = viewTop + container.clientHeight
+        const viewHeight = container.clientHeight
 
-        if (newTop < viewTop || newBottom > viewBottom) {
-          const oldSection = container.querySelector(`[data-commit-row="${expandedRow}"]`)
-          const currentOffset = oldSection
-            ? oldSection.getBoundingClientRect().top - container.getBoundingClientRect().top
-            : LIST_PADDING + expandedRow * ROW_HEIGHT - viewTop
+        if (newTop < viewTop || newTop + sectionHeight > viewTop + viewHeight) {
+          if (pinnedNavOffsetRef.current === null) {
+            // Where the current selection sits now, clamped so the pin lands fully in view
+            const currentOffset = LIST_PADDING + expandedRow * ROW_HEIGHT - viewTop
+            const maxOffset = Math.max(0, viewHeight - sectionHeight)
+            pinnedNavOffsetRef.current = Math.max(0, Math.min(currentOffset, maxOffset))
+          }
 
-          target = newTop - currentOffset
+          target = newTop - pinnedNavOffsetRef.current
+          lastNavTargetRef.current = target
+        } else {
+          pinnedNavOffsetRef.current = null
         }
       }
 

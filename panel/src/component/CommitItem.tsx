@@ -8,7 +8,7 @@ import { useToast } from '@/context/ToastContext'
 import { useCommitContextMenu } from '@/hook/contextMenu/useCommitContextMenu'
 import { useUncommittedChangesContextMenu } from '@/hook/contextMenu/useUncommittedChangesContextMenu'
 import { useCurrentBranch, useGitBranches, useGitCommitFiles, useTagRemotes } from '@/hook/useGitQueries'
-import { getColor } from '@/hook/useGitTree'
+import { getColor, LIST_PADDING, ROW_HEIGHT } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
 import { CommitLayout } from '@/util/computeGraphLayout'
@@ -107,8 +107,10 @@ const CommitItemComponent: FC<CommitItemProps> = ({
     const rect = element.getBoundingClientRect()
 
     if (rect.top < containerRect.top) {
-      // The commit sits above the fold: snap it to the top immediately — never animate upwards
-      container.scrollTop += rect.top - containerRect.top
+      // The commit sits above the fold: snap it to the top immediately — never animate
+      // upwards. The target is computed in layout units (rows above this one are collapsed,
+      // so its top is exact); rect deltas are zoom-scaled in webviews and would land short.
+      container.scrollTop = LIST_PADDING + row * ROW_HEIGHT
     } else if (rect.bottom > containerRect.bottom) {
       // The opened panel runs below the fold: animate down until its bottom edge is in view
       const timeoutId = setTimeout(() => {
@@ -116,7 +118,7 @@ const CommitItemComponent: FC<CommitItemProps> = ({
       }, 100)
       return () => clearTimeout(timeoutId)
     }
-  }, [isExpanded, shouldAnimateIntoView])
+  }, [isExpanded, shouldAnimateIntoView, row])
 
   const isFromThisYear = new Date(commit.date).getFullYear() === new Date().getFullYear()
 
