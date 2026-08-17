@@ -263,8 +263,10 @@ export const RepoSettings: FC = () => {
 
               {remotes.map(remote => (
                 <div key={remote.name} className="flex items-center justify-between gap-2">
-                  <div className="flec grow flex-col">
-                    <div className="font-semibold">{remote.name}</div>
+                  <div className="flex min-w-0 grow flex-col">
+                    <div className="truncate font-semibold" title={remote.name}>
+                      {remote.name}
+                    </div>
 
                     <div
                       className="cursor-pointer truncate text-[0.7rem] opacity-50 hover:opacity-80"
@@ -283,14 +285,24 @@ export const RepoSettings: FC = () => {
                     </div>
                   </div>
 
-                  <Button variant="secondary" size="icon" onClick={() => handleToggleRemoteVisibility(remote.name)}>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => handleToggleRemoteVisibility(remote.name)}
+                  >
                     <FontAwesomeIcon
                       icon={settings.hiddenRemotes && settings.hiddenRemotes.includes(remote.name) ? faEyeSlash : faEye}
                       className="size-3"
                     />
                   </Button>
 
-                  <Button variant="destructive" size="icon" onClick={() => removeRemoteDialog.openDialog(remote.name)}>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => removeRemoteDialog.openDialog(remote.name)}
+                  >
                     <FontAwesomeIcon icon={faTrash} className="size-3" />
                   </Button>
                 </div>
