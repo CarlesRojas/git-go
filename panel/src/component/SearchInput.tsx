@@ -1,7 +1,7 @@
 import { useSearch } from '@/context/SearchContext'
 import { Input } from '@/component/ui/Input'
 import { cn } from '@/util/cn'
-import { faChevronDown, faChevronUp, faCircleNotch, faSearch } from '@fortawesome/free-solid-svg-icons'
+import { faArrowDown, faArrowUp, faCircleNotch, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { FC, KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
@@ -115,7 +115,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
             )}
           >
-            <FontAwesomeIcon icon={faChevronUp} className="pointer-events-none size-2.5" />
+            <FontAwesomeIcon icon={faArrowUp} className="pointer-events-none size-2.5" />
           </button>
 
           <button
@@ -130,7 +130,7 @@ export const SearchInput: FC<SearchInputProps> = ({ value, onChange }) => {
               hasMatches ? 'hover:bg-vsc-editor-fg/10' : 'cursor-default opacity-30',
             )}
           >
-            <FontAwesomeIcon icon={faChevronDown} className="pointer-events-none size-2.5" />
+            <FontAwesomeIcon icon={faArrowDown} className="pointer-events-none size-2.5" />
           </button>
         </div>
       )}
