@@ -143,7 +143,10 @@ const TreeView = ({
   }, [data, expandAll, initialSelectedItemId])
 
   return (
-    <div className={cn('relative overflow-hidden py-3 pr-2', className)}>
+    // shrink-0: the tree clips its own overflow, which as a flex item means its automatic minimum
+    // size is zero — inside a height-constrained flex column it would shrink to the space going
+    // and clip the rest of the files away, instead of overflowing so an ancestor can scroll them
+    <div className={cn('relative shrink-0 overflow-hidden py-3 pr-2', className)}>
       <TreeItem
         data={data}
         selectedItemId={selectedItemId}
