@@ -303,6 +303,16 @@ export function activate(context: vscode.ExtensionContext) {
                     return { type: 'gitCommitFiles', files, commitHash };
                 },
 
+                compareRefs: async (message) => {
+                    const gitService = GitService.getInstance();
+                    const { fromRef, toRef } = message;
+                    if (!fromRef || !toRef) throw new Error('Both refs are required');
+
+                    const comparison = await gitService.compareRefs(log, fromRef, toRef);
+                    log(`Successfully compared '${fromRef}' with '${toRef}': ${comparison.files.length} file(s)`);
+                    return { type: 'comparison', comparison };
+                },
+
                 getWorkingChanges: async (message) => {
                     const gitService = GitService.getInstance();
                     const includeFiles = message.includeFiles ?? false;
@@ -958,6 +968,54 @@ export function activate(context: vscode.ExtensionContext) {
                     const showOptions: vscode.TextDocumentShowOptions = getConfig().fileOpenInSplitView
                         ? { viewColumn: resolveSplitViewColumn() }
                         : {};
+
+                    // ── Comparison between two arbitrary refs ────────────────
+                    const compareFrom = message.compareFrom;
+                    const compareTo = message.compareTo;
+                    if (compareFrom && compareTo) {
+                        const range = `${compareFrom.substring(0, 7)} → ${compareTo.substring(0, 7)}`;
+
+                        if (status === 'A') {
+                            await vscode.commands.executeCommand(
+                                'vscode.diff',
+                                emptyUri,
+                                makeGitUri(filePath, compareTo),
+                                `${fileName} (added, ${range})`,
+                                showOptions
+                            );
+                        } else if (status === 'D') {
+                            await vscode.commands.executeCommand(
+                                'vscode.diff',
+                                makeGitUri(filePath, compareFrom),
+                                emptyUri,
+                                `${fileName} (deleted, ${range})`,
+                                showOptions
+                            );
+                        } else if ((status === 'R' || status === 'C') && oldPath) {
+                            const label =
+                                status === 'R'
+                                    ? `${fileName} (renamed, ${range})`
+                                    : `${fileName} (copied from ${oldPath}, ${range})`;
+                            await vscode.commands.executeCommand(
+                                'vscode.diff',
+                                makeGitUri(oldPath, compareFrom),
+                                makeGitUri(filePath, compareTo),
+                                label,
+                                showOptions
+                            );
+                        } else {
+                            await vscode.commands.executeCommand(
+                                'vscode.diff',
+                                makeGitUri(filePath, compareFrom),
+                                makeGitUri(filePath, compareTo),
+                                `${fileName} (${range})`,
+                                showOptions
+                            );
+                        }
+
+                        log(`Opened comparison diff for ${fileName} [${status}] ${range}`);
+                        return;
+                    }
 
                     if (commitHash) {
                         if (message.isUncommitted) {

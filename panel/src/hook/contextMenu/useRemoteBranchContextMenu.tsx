@@ -11,7 +11,9 @@ import { useRemoteBranchCheckoutDialog } from '@/hook/dialog/useRemoteBranchChec
 import { useRemoteBranchDeleteDialog } from '@/hook/dialog/useRemoteBranchDeleteDialog'
 import { useRemoteBranchFetchIntoLocalDialog } from '@/hook/dialog/useRemoteBranchFetchIntoLocalDialog'
 import { useRemoteBranchMergeDialog } from '@/hook/dialog/useRemoteBranchMergeDialog'
-import { faCheck, faClone, faCodeMerge, faDownload, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { useCompare } from '@/context/CompareContext'
+import { branchSide, canCompare } from '@/util/compare'
+import { faCheck, faClone, faCodeCompare, faCodeMerge, faDownload, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitBranch } from '@git/gitService'
 import { ReactNode, memo } from 'react'
@@ -35,6 +37,9 @@ interface RemoteBranchContextMenuWrapperProps {
   children: ReactNode
   enabled?: boolean
   branch?: GitBranch
+  /** Whether a commit is expanded for this branch's tip to be compared with */
+  showCompare: boolean
+  onCompare: (branch: GitBranch) => void
   onCheckout: (branch: GitBranch) => void
   onFetchIntoLocal: (branch: GitBranch) => void
   onMerge: (branch: GitBranch) => void
@@ -47,6 +52,8 @@ const RemoteBranchContextMenuWrapper = memo(
     children,
     enabled = true,
     branch,
+    showCompare,
+    onCompare,
     onCheckout,
     onFetchIntoLocal,
     onMerge,
@@ -89,6 +96,13 @@ const RemoteBranchContextMenuWrapper = memo(
             Delete
           </ContextMenuItem>
 
+          {showCompare && (
+            <ContextMenuItem onClick={() => onCompare(branch)}>
+              <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
+              Compare with selected
+            </ContextMenuItem>
+          )}
+
           <ContextMenuSeparator />
 
           <ContextMenuItem onClick={onCopy}>
@@ -111,7 +125,16 @@ export const useRemoteBranchContextMenu = () => {
   const fetchIntoLocalDialog = useRemoteBranchFetchIntoLocalDialog()
   const deleteDialog = useRemoteBranchDeleteDialog()
 
+  const { selected, compare } = useCompare()
+
   const remoteBranchContextMenuWrapper = (children: ReactNode, enabled = true, branch?: GitBranch) => {
+    const compareSide = branch ? branchSide(branch) : null
+
+    const handleCompare = (target: GitBranch) => {
+      if (!selected) return
+      compare(selected, branchSide(target))
+    }
+
     const handleCopyBranchName = async () => {
       try {
         if (!branch) throw new Error('No branch to copy')
@@ -127,6 +150,8 @@ export const useRemoteBranchContextMenu = () => {
       <RemoteBranchContextMenuWrapper
         enabled={enabled}
         branch={branch}
+        showCompare={!!compareSide && canCompare(selected, compareSide)}
+        onCompare={handleCompare}
         onCheckout={checkoutDialog.openDialog}
         onFetchIntoLocal={fetchIntoLocalDialog.openDialog}
         onMerge={mergeDialog.openDialog}

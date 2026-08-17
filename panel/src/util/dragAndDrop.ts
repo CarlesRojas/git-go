@@ -4,6 +4,7 @@ import {
   faArrowRightFromBracket,
   faCodeBranch,
   faCodeCommit,
+  faCodeCompare,
   faCodeMerge,
   faDownload,
   faPen,
@@ -30,6 +31,19 @@ export type DragActionId =
   | 'dropStash'
   | 'branchFromStash'
   | 'reword'
+  | 'compare'
+
+/**
+ * Marks a drop target as a commit row rather than a branch pill. Both kinds share one key, so
+ * the prefix is what tells them apart when the drop is resolved.
+ */
+export const COMMIT_TARGET_PREFIX = 'commit:'
+
+export const commitTargetKey = (hash: string) => `${COMMIT_TARGET_PREFIX}${hash}`
+
+/** The hash a commit target key addresses, or null when the key belongs to a branch. */
+export const commitTargetHash = (key: string): string | null =>
+  key.startsWith(COMMIT_TARGET_PREFIX) ? key.slice(COMMIT_TARGET_PREFIX.length) : null
 
 export type DragPayload =
   | { kind: 'branch'; branch: GitBranch; colorIndex: number }
@@ -194,6 +208,33 @@ export const resolveTargetActions = ({
   }
 
   return actions
+}
+
+/**
+ * Actions offered by the commit row being hovered. Only another commit can be dropped there,
+ * and comparing the two is the only thing that means — nothing is rewritten, so it is never
+ * refused.
+ */
+export const resolveCommitTargetActions = ({
+  payload,
+  targetHash,
+}: {
+  payload: DragPayload
+  targetHash: string
+}): DragAction[] => {
+  if (payload.kind !== 'commit') return []
+  if (payload.commit.hash === targetHash) return []
+
+  return [
+    {
+      id: 'compare',
+      verb: 'Compare',
+      description: ['Compare ', { ref: shortHash(payload.commit.hash) }, ' with ', { ref: shortHash(targetHash) }],
+      icon: faCodeCompare,
+      destructive: false,
+      isDefault: true,
+    },
+  ]
 }
 
 /**

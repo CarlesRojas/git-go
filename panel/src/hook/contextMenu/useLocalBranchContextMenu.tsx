@@ -15,10 +15,13 @@ import { useBranchRenameDialog } from '@/hook/dialog/useBranchRenameDialog'
 import { useWorktreeCreateDialog } from '@/hook/dialog/useWorktreeCreateDialog'
 import { useWorktreeOpenDialog } from '@/hook/dialog/useWorktreeOpenDialog'
 import { useCheckoutLocalBranch, useGitRemotes } from '@/hook/useGitQueries'
+import { useCompare } from '@/context/CompareContext'
+import { branchSide, canCompare } from '@/util/compare'
 import {
   faCheck,
   faClone,
   faCodeBranch,
+  faCodeCompare,
   faCodeMerge,
   faFolderTree,
   faPen,
@@ -85,6 +88,16 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
         },
       },
     )
+  }
+
+  // The branch tip is compared with whatever commit the graph has expanded
+  const { selected, compare } = useCompare()
+  const compareSide = branch ? branchSide(branch) : null
+  const showCompare = !!compareSide && canCompare(selected, compareSide)
+
+  const handleCompare = () => {
+    if (!selected || !compareSide) return
+    compare(selected, compareSide)
   }
 
   const handleCopyBranchName = async () => {
@@ -165,6 +178,13 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
                   Delete
                 </ContextMenuItem>
               </>
+            )}
+
+            {showCompare && (
+              <ContextMenuItem onClick={handleCompare}>
+                <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
+                Compare with selected
+              </ContextMenuItem>
             )}
 
             <ContextMenuSeparator />

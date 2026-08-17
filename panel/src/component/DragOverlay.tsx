@@ -40,7 +40,16 @@ import {
 import { qualifiedBranchName } from '@/util/branchName'
 import { resolveDefaultRemote } from '@/util/resolveDefaultRemote'
 import { cn } from '@/util/cn'
-import { DragAction, resolveSourceActions, resolveTargetActions, shortHash } from '@/util/dragAndDrop'
+import {
+  commitTargetHash,
+  DragAction,
+  resolveCommitTargetActions,
+  resolveSourceActions,
+  resolveTargetActions,
+  shortHash,
+} from '@/util/dragAndDrop'
+import { commitSide, hashSide } from '@/util/compare'
+import { useCompare } from '@/context/CompareContext'
 import {
   faCodeBranch,
   faCodeCommit,
@@ -153,6 +162,7 @@ export const DragOverlay: FC = () => {
   const remoteDeleteDialog = useRemoteBranchDeleteDialog()
   const applyStashMutation = useApplyStash()
   const popStashMutation = usePopStash()
+  const { compare } = useCompare()
 
   // Auto mode runs these in place of their dialog, with the values the dialog would have
   // opened with, so confirming a dialog and skipping it produce the same command.
@@ -164,15 +174,20 @@ export const DragOverlay: FC = () => {
   const pushTagMutation = usePushTag()
   const fetchIntoLocalMutation = useFetchIntoLocalBranch()
 
+  // A hovered target is either a branch pill or a commit row; the key says which.
+  const targetCommitHash = hoveredTargetKey === null ? null : commitTargetHash(hoveredTargetKey)
+
   const targetBranch = useMemo(
-    () => branches.find(branch => branch.name === hoveredTargetKey) ?? null,
-    [branches, hoveredTargetKey],
+    () => (targetCommitHash !== null ? null : (branches.find(branch => branch.name === hoveredTargetKey) ?? null)),
+    [branches, hoveredTargetKey, targetCommitHash],
   )
 
   const targetActions = useMemo(() => {
-    if (!payload || !targetBranch) return []
+    if (!payload) return []
+    if (targetCommitHash !== null) return resolveCommitTargetActions({ payload, targetHash: targetCommitHash })
+    if (!targetBranch) return []
     return resolveTargetActions({ payload, target: targetBranch, branches, config: settings })
-  }, [payload, targetBranch, branches, settings])
+  }, [payload, targetBranch, targetCommitHash, branches, settings])
 
   const { data: operationInProgress } = useOperationInProgress()
   const { data: workingChanges } = useWorkingChanges()
@@ -215,7 +230,14 @@ export const DragOverlay: FC = () => {
   // Both stacks anchor to a pill the same way: measure it, and re-measure while the graph
   // scrolls under it.
   useLayoutEffect(() => {
-    const selector = revealed && hoveredTargetKey ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]` : undefined
+    const hoveredCommitHash = hoveredTargetKey === null ? null : commitTargetHash(hoveredTargetKey)
+    const selector = !revealed
+      ? undefined
+      : hoveredCommitHash !== null
+        ? `[data-drop-commit="${CSS.escape(hoveredCommitHash)}"]`
+        : hoveredTargetKey
+          ? `[data-drop-target="${CSS.escape(hoveredTargetKey)}"]`
+          : undefined
 
     if (!selector) {
       setStackRect(null)
@@ -558,6 +580,15 @@ export const DragOverlay: FC = () => {
           setDropCommit(drop.payload.commit)
           rewordDialog.openDialog()
           return
+
+        case 'compare': {
+          if (drop.payload.kind !== 'commit') return
+          // Only a commit row produces this action, so its key carries the hash to compare with
+          const targetHash = drop.targetKey === null ? null : commitTargetHash(drop.targetKey)
+          if (!targetHash) return
+          compare(commitSide(drop.payload.commit), hashSide(targetHash))
+          return
+        }
       }
     },
     [
@@ -591,6 +622,7 @@ export const DragOverlay: FC = () => {
       pushBranchMutation,
       pushTagMutation,
       fetchIntoLocalMutation,
+      compare,
     ],
   )
 

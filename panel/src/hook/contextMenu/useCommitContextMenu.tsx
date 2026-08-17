@@ -15,13 +15,24 @@ import { useRevertDialog } from '@/hook/dialog/useRevertDialog'
 import { useRewordDialog } from '@/hook/dialog/useRewordDialog'
 import { useTagDialog } from '@/hook/dialog/useTagDialog'
 import { useRewordEligibility } from '@/hook/useRewordEligibility'
-import { faCodeBranch, faCodeCommit, faCodeMerge, faPen, faRotateLeft, faTag } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCodeBranch,
+  faCodeCommit,
+  faCodeCompare,
+  faCodeMerge,
+  faPen,
+  faRotateLeft,
+  faTag,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GitCommit } from '@git/gitService'
 import { ReactNode, memo } from 'react'
 
 interface UseCommitContextMenuProps {
   commit: GitCommit
+  /** Whether another commit is expanded for this one to be compared with */
+  canCompare: boolean
+  onCompare: () => void
 }
 
 interface CommitContextMenuWrapperProps {
@@ -29,6 +40,8 @@ interface CommitContextMenuWrapperProps {
   enabled: boolean
   /** Whether the commit's message can be rewritten, which shows the edit-message entry */
   canReword: boolean
+  canCompare: boolean
+  onCompare: () => void
   onBranchClick: () => void
   onTagClick: () => void
   onCherryPickClick: () => void
@@ -44,6 +57,8 @@ const CommitContextMenuWrapper = memo(
     children,
     enabled,
     canReword,
+    canCompare,
+    onCompare,
     onBranchClick,
     onTagClick,
     onCherryPickClick,
@@ -91,6 +106,13 @@ const CommitContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
+          {canCompare && (
+            <ContextMenuItem onClick={onCompare}>
+              <FontAwesomeIcon icon={faCodeCompare} className="size-3" />
+              Compare with selected
+            </ContextMenuItem>
+          )}
+
           <ContextMenuItem onClick={onRevertClick} variant="destructive">
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
             Revert
@@ -122,7 +144,7 @@ const CommitContextMenuWrapper = memo(
 
 CommitContextMenuWrapper.displayName = 'CommitContextMenuWrapper'
 
-export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
+export const useCommitContextMenu = ({ commit, canCompare, onCompare }: UseCommitContextMenuProps) => {
   const tagDialog = useTagDialog({ commit })
   const branchDialog = useBranchDialog({ commit })
   const cherryPickDialog = useCherryPickDialog({ commit })
@@ -137,6 +159,8 @@ export const useCommitContextMenu = ({ commit }: UseCommitContextMenuProps) => {
     <CommitContextMenuWrapper
       enabled={enabled}
       canReword={!!rewordEligibility}
+      canCompare={canCompare}
+      onCompare={onCompare}
       onBranchClick={branchDialog.openDialog}
       onTagClick={tagDialog.openDialog}
       onCherryPickClick={cherryPickDialog.openDialog}

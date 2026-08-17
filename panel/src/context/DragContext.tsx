@@ -1,5 +1,5 @@
 import { useSettings } from '@/context/SettingsContext'
-import { DragActionId, DragPayload, SOURCE_ACTION_IDS, TARGETLESS_KINDS } from '@/util/dragAndDrop'
+import { commitTargetKey, DragActionId, DragPayload, SOURCE_ACTION_IDS, TARGETLESS_KINDS } from '@/util/dragAndDrop'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 const DRAG_THRESHOLD_PX = 5
@@ -306,7 +306,14 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    const targetElement = element?.closest<HTMLElement>('[data-drop-target]') ?? null
+    const pillElement = element?.closest<HTMLElement>('[data-drop-target]') ?? null
+    // A commit row accepts only another commit — the compare gesture. Pills sit inside rows, so
+    // a pill under the pointer wins over the row holding it.
+    const commitElement =
+      pillElement === null && payloadKind.current === 'commit'
+        ? (element?.closest<HTMLElement>('[data-drop-commit]') ?? null)
+        : null
+    const targetElement = pillElement ?? commitElement
     // The drag handle can be nested inside the drop target, so containment — not identity —
     // is what marks a pill as the one being dragged.
     const isSource = !!sourceElement.current && !!targetElement?.contains(sourceElement.current)
@@ -314,7 +321,12 @@ export const DragProvider = ({ children }: { children: ReactNode }) => {
     const canTarget = !TARGETLESS_KINDS.includes(payloadKind.current!)
     // The stack carries its pill's key on the padding bridging the two, so the gap belongs to
     // the pill: crossing it keeps the stack open and a release there still acts on the pill.
-    const resolvedTarget = isSource || !canTarget ? null : (targetElement?.getAttribute('data-drop-target') ?? null)
+    const resolvedTarget =
+      isSource || !canTarget
+        ? null
+        : commitElement !== null
+          ? commitTargetKey(commitElement.getAttribute('data-drop-commit') ?? '')
+          : (pillElement?.getAttribute('data-drop-target') ?? null)
 
     if ((resolvedTarget !== null) !== isPointerOverTarget.current) {
       isPointerOverTarget.current = resolvedTarget !== null

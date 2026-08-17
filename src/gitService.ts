@@ -68,6 +68,13 @@ export interface GitRemote {
     pushUrl: string;
 }
 
+/** The result of diffing two arbitrary refs, with each side resolved to the commit it names */
+export interface GitComparison {
+    fromHash: string;
+    toHash: string;
+    files: GitFileChange[];
+}
+
 export interface GitTagDetails {
     hash: string;
     taggerName: string;
@@ -1150,6 +1157,83 @@ export class GitService {
         }
     }
 
+    /**
+     * The file list of a diff, from the `--name-status` and `--numstat` renderings of the same
+     * `git diff`/`diff-tree` invocation. Renames and copies are reported as `old\tnew`, and the
+     * stats are keyed by the new path.
+     */
+    private static parseFileChanges(statusOutput: string, numstatOutput: string): GitFileChange[] {
+        const statsMap = new Map<string, { additions: number; deletions: number }>();
+        for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+            const parts = line.split('\t');
+            if (parts.length < 3) continue;
+            const additions = parts[0] === '-' ? 0 : parseInt(parts[0]!, 10);
+            const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]!, 10);
+            const path = parts[parts.length - 1]!.trim();
+            statsMap.set(path, { additions, deletions });
+        }
+
+        const files: GitFileChange[] = [];
+        for (const line of statusOutput.split(EOL_REGEX).filter((l) => l.trim())) {
+            const parts = line.split('\t');
+            if (parts.length < 2) continue;
+
+            const statusRaw = parts[0]!.trim();
+            const status = statusRaw[0] as GitFileChange['status'];
+
+            if (status === 'R' || status === 'C') {
+                const oldPath = parts[1]?.trim() || '';
+                const newPath = parts[2]?.trim() || '';
+                const stats = statsMap.get(newPath) ?? { additions: 0, deletions: 0 };
+                files.push({ path: newPath, status, oldPath, ...stats });
+            } else {
+                const path = parts[1]?.trim() || '';
+                const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
+                files.push({ path, status, ...stats });
+            }
+        }
+
+        return files;
+    }
+
+    /**
+     * The files that differ between two arbitrary refs, as `git diff A B` sees them: a file added
+     * in B counts as added, one only in A as deleted. Both refs are resolved to full hashes so the
+     * caller can address the two sides by commit even when it was handed branch or tag names.
+     */
+    public async compareRefs(
+        log: (message: string) => void,
+        fromRef: string,
+        toRef: string
+    ): Promise<GitComparison> {
+        const workspacePath = this.getRepoPath();
+        const gitExecutable = await this.findGitExecutable();
+
+        this.validatePositional(fromRef, 'ref');
+        this.validatePositional(toRef, 'ref');
+
+        try {
+            const [fromHash, toHash] = await Promise.all([
+                this.spawnGit([gitExecutable.path, 'rev-parse', `${fromRef}^{commit}`], workspacePath),
+                this.spawnGit([gitExecutable.path, 'rev-parse', `${toRef}^{commit}`], workspacePath)
+            ]);
+
+            const baseArgs = [gitExecutable.path, 'diff', '-M', fromHash.trim(), toHash.trim()];
+            const [statusOutput, numstatOutput] = await Promise.all([
+                this.spawnGit([...baseArgs, '--name-status', '--'], workspacePath),
+                this.spawnGit([...baseArgs, '--numstat', '--'], workspacePath)
+            ]);
+
+            const files = GitService.parseFileChanges(statusOutput, numstatOutput);
+
+            log(`Comparison ${fromRef}..${toRef} has ${files.length} changed file(s)`);
+            return { fromHash: fromHash.trim(), toHash: toHash.trim(), files };
+        } catch (error) {
+            log(`Error comparing '${fromRef}' with '${toRef}': ${error}`);
+            throw error;
+        }
+    }
+
     public async getCommitFiles(
         log: (message: string) => void,
         commitHash: string,
@@ -1189,35 +1273,7 @@ export class GitService {
             const statusOutput = await this.spawnGit([...baseArgs, '--name-status', ...revArgs], workspacePath);
             const numstatOutput = await this.spawnGit([...baseArgs, '--numstat', ...revArgs], workspacePath);
 
-            const statsMap = new Map<string, { additions: number; deletions: number }>();
-            for (const line of numstatOutput.split(EOL_REGEX).filter((l) => l.trim())) {
-                const parts = line.split('\t');
-                if (parts.length < 3) continue;
-                const additions = parts[0] === '-' ? 0 : parseInt(parts[0]!, 10);
-                const deletions = parts[1] === '-' ? 0 : parseInt(parts[1]!, 10);
-                const path = parts[parts.length - 1]!.trim();
-                statsMap.set(path, { additions, deletions });
-            }
-
-            const files: GitFileChange[] = [];
-            for (const line of statusOutput.split(EOL_REGEX).filter((l) => l.trim())) {
-                const parts = line.split('\t');
-                if (parts.length < 2) continue;
-
-                const statusRaw = parts[0]!.trim();
-                const status = statusRaw[0] as GitFileChange['status'];
-
-                if (status === 'R' || status === 'C') {
-                    const oldPath = parts[1]?.trim() || '';
-                    const newPath = parts[2]?.trim() || '';
-                    const stats = statsMap.get(newPath) ?? { additions: 0, deletions: 0 };
-                    files.push({ path: newPath, status, oldPath, ...stats });
-                } else {
-                    const path = parts[1]?.trim() || '';
-                    const stats = statsMap.get(path) ?? { additions: 0, deletions: 0 };
-                    files.push({ path, status, ...stats });
-                }
-            }
+            const files = GitService.parseFileChanges(statusOutput, numstatOutput);
 
             log(`Found ${files.length} changed files for commit ${commitHash.substring(0, 7)}`);
             return files;

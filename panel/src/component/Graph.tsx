@@ -1,4 +1,5 @@
 import { CommitItem } from '@/component/CommitItem'
+import { useCompare } from '@/context/CompareContext'
 import { useSearch } from '@/context/SearchContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
@@ -7,6 +8,7 @@ import { useGitBranches, useInfiniteGitCommits, useWorkingChanges } from '@/hook
 import { LIST_PADDING, ROW_HEIGHT, useGitTree } from '@/hook/useGitTree'
 import { faCircleNotch, faCodeBranch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { commitSide, hashSide } from '@/util/compare'
 import { GitBranch } from '@git/gitService'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { FC, RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -202,6 +204,24 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
     setExpandedHash(prev => (prev === hash ? null : hash))
   }, [])
 
+  // The expanded commit is what "compare with selected" starts from, wherever it is invoked
+  const { comparison, selected, setSelected, compare } = useCompare()
+
+  const expandedCommit = expandedRow === undefined ? undefined : commits[expandedRow]
+  useEffect(() => {
+    setSelected(expandedCommit && !expandedCommit.isUncommitted ? commitSide(expandedCommit) : null)
+  }, [expandedCommit, setSelected])
+
+  // Ctrl/Cmd+click a second commit to compare it with the expanded one, rather than expanding it.
+  // Keyed by hash rather than the commit, so a page fetch does not re-render every mounted row.
+  const compareWithExpanded = useCallback(
+    (hash: string) => {
+      if (!selected || selected.hash === hash) return
+      compare(selected, hashSide(hash))
+    },
+    [selected, compare],
+  )
+
   // Consumed once by the newly expanded row: only a click plays the scroll-into-view animation
   const consumeExpandAnimation = useCallback(() => {
     const source = expandAnimationRef.current
@@ -333,6 +353,11 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
               commit={commit}
               isExpanded={expandedHash === commit.hash}
               onToggle={toggleCommit}
+              onCompareWithSelected={compareWithExpanded}
+              canCompare={!!selected && selected.hash !== commit.hash && !commit.isUncommitted}
+              compareRole={
+                comparison?.from.hash === commit.hash ? 'from' : comparison?.to.hash === commit.hash ? 'to' : undefined
+              }
               shouldAnimateIntoView={consumeExpandAnimation}
               selectedBranches={selectedBranches}
               treeWidth={treeWidth}

@@ -1,5 +1,6 @@
 import { AbortOperationButton } from '@/component/AbortOperationButton'
 import { BranchSelector } from '@/component/BranchSelector'
+import { ComparePanel } from '@/component/ComparePanel'
 import { DragOverlay } from '@/component/DragOverlay'
 import { GitActionLoadingToast } from '@/component/GitActionLoadingToast'
 import { Graph } from '@/component/Graph'
@@ -8,6 +9,7 @@ import { RepoSelector } from '@/component/RepoSelector'
 import { SearchInput } from '@/component/SearchInput'
 import { UndoButton } from '@/component/UndoButton'
 import { WorktreeMenu } from '@/component/WorktreeMenu'
+import { CompareProvider } from '@/context/CompareContext'
 import { DragProvider } from '@/context/DragContext'
 import { SearchProvider } from '@/context/SearchContext'
 import { SettingsProvider } from '@/context/SettingsContext'
@@ -66,44 +68,48 @@ const RepoPanel: FC = () => {
 
   return (
     <SearchProvider>
-      <div
-        className={cn([
-          // Position & Layout
-          'flex h-9 max-h-9 min-h-9 w-full items-center justify-between gap-2',
-          // Colors & Background
-          'bg-vsc-editor-bg',
-          // Borders
-          'border-vsc-editor-fg/15 border-b',
-          // Spacing
-          'px-2',
-        ])}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <RepoSelector />
+      <CompareProvider>
+        <div
+          className={cn([
+            // Position & Layout
+            'flex h-9 max-h-9 min-h-9 w-full items-center justify-between gap-2',
+            // Colors & Background
+            'bg-vsc-editor-bg',
+            // Borders
+            'border-vsc-editor-fg/15 border-b',
+            // Spacing
+            'px-2',
+          ])}
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <RepoSelector />
 
-          <BranchSelector onBranchesChange={setSelectedBranches} />
+            <BranchSelector onBranchesChange={setSelectedBranches} />
 
-          <WorktreeMenu />
+            <WorktreeMenu />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <AbortOperationButton />
+
+            <UndoButton />
+
+            <SearchInput value={searchTerm} onChange={setSearchTerm} />
+
+            <RefetchButton />
+
+            <RepoSettings />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <AbortOperationButton />
+        <main ref={scrollRef} className="graph-h relative flex flex-col overflow-y-auto" data-drag-scroll-container>
+          <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} scrollRef={scrollRef} />
+        </main>
 
-          <UndoButton />
+        <DragOverlay />
 
-          <SearchInput value={searchTerm} onChange={setSearchTerm} />
-
-          <RefetchButton />
-
-          <RepoSettings />
-        </div>
-      </div>
-
-      <main ref={scrollRef} className="graph-h relative flex flex-col overflow-y-auto" data-drag-scroll-container>
-        <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} scrollRef={scrollRef} />
-      </main>
-
-      <DragOverlay />
+        <ComparePanel />
+      </CompareProvider>
     </SearchProvider>
   )
 }

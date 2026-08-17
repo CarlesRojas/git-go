@@ -11,11 +11,21 @@ import { useCurrentBranch, useGitBranches, useGitCommitFiles, useTagRemotes } fr
 import { getColor, LIST_PADDING, ROW_HEIGHT } from '@/hook/useGitTree'
 import { buildFileTree } from '@/util/buildFileTree'
 import { cn } from '@/util/cn'
+import { isCompareModifier } from '@/util/compare'
 import { CommitLayout } from '@/util/computeGraphLayout'
 import { groupBranches } from '@/util/groupBranches'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { GitBranch, GitCommit, GitFileChange } from '@git/gitService'
-import { FC, memo, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef } from 'react'
+import {
+  FC,
+  memo,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
 
 interface CommitItemProps {
@@ -38,6 +48,12 @@ interface CommitItemProps {
   dimmed?: boolean
   /** The match prev/next search navigation is currently on, marked so it stands out among matches */
   isCurrentSearchMatch?: boolean
+  /** Compares this commit with the expanded one — a Ctrl/Cmd+click, or the context menu */
+  onCompareWithSelected: (hash: string) => void
+  /** Whether there is another commit expanded to compare this one with */
+  canCompare: boolean
+  /** Which end of the open comparison this commit is, if either */
+  compareRole?: 'from' | 'to'
 }
 
 const CommitItemComponent: FC<CommitItemProps> = ({
@@ -53,8 +69,24 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   uncommitedFiles,
   dimmed,
   isCurrentSearchMatch,
+  onCompareWithSelected,
+  canCompare,
+  compareRole,
 }) => {
-  const onToggle = useCallback(() => onToggleHash(commit.hash), [onToggleHash, commit.hash])
+  // Ctrl/Cmd+click compares with the expanded commit instead of expanding this one. With nothing
+  // to compare against it falls through to a plain toggle, so the modifier is never a dead click.
+  const onToggle = useCallback(
+    (event?: ReactMouseEvent) => {
+      if (event && isCompareModifier(event) && canCompare) {
+        event.preventDefault()
+        onCompareWithSelected(commit.hash)
+        return
+      }
+      onToggleHash(commit.hash)
+    },
+    [onToggleHash, onCompareWithSelected, canCompare, commit.hash],
+  )
+
   const { settings } = useSettings()
 
   const sectionRef = useRef<HTMLElement>(null)
@@ -129,7 +161,11 @@ const CommitItemComponent: FC<CommitItemProps> = ({
   const hasDifferentCommitter =
     !!commit.committer && (commit.committer !== commit.author || commit.committerEmail !== commit.email)
 
-  const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({ commit })
+  const { commitContextMenuWrapper, dialogs: commitDialogs } = useCommitContextMenu({
+    commit,
+    canCompare,
+    onCompare: () => onCompareWithSelected(commit.hash),
+  })
   const { uncommittedChangesContextMenuWrapper, dialogs: uncommittedDialogs } = useUncommittedChangesContextMenu()
 
   const { beginPress } = useDragActions()
@@ -316,6 +352,9 @@ const CommitItemComponent: FC<CommitItemProps> = ({
         {uncommittedChangesContextMenuWrapper(
           <div
             data-drag-row
+            // A commit is a drop target only for another commit, which is the compare gesture.
+            // The dragged row excludes itself, since its drag handle sits inside this element.
+            data-drop-commit={commit.isUncommitted ? undefined : commit.hash}
             className={cn(
               'relative flex h-6 max-h-6 min-h-6 w-full max-w-full',
               // Interactive
@@ -323,6 +362,8 @@ const CommitItemComponent: FC<CommitItemProps> = ({
               'hover:bg-vsc-editor-fg/10 cursor-pointer',
               // Search
               isCurrentSearchMatch && 'bg-vsc-list-highlight-fg/10 ring-vsc-list-highlight-fg/50 ring-1 ring-inset',
+              // Comparison — subtle, since both marked rows stay readable behind the open panel
+              compareRole && 'bg-vsc-list-highlight-fg/5',
             )}
             style={{ paddingLeft: `${treeWidth + 8}px` }}
             onMouseEnter={() => onCommitHover(commit.hash, row)}
@@ -337,6 +378,22 @@ const CommitItemComponent: FC<CommitItemProps> = ({
               data-drag-clip
               className={cn('relative flex h-full w-full overflow-hidden mask-r-from-[calc(100%-1rem)] mask-r-to-100%')}
             >
+              {compareRole && (
+                <div
+                  className={cn(
+                    // Layout & sizing
+                    'mr-2 flex h-4 min-w-4 items-center justify-center self-center px-1',
+                    // Appearance
+                    'rounded-main border-vsc-list-highlight-fg/40 text-vsc-list-highlight-fg border',
+                    // Typography
+                    'text-[0.6rem] leading-none font-bold',
+                  )}
+                  title={compareRole === 'from' ? 'The commit being compared from' : 'The commit being compared to'}
+                >
+                  {compareRole === 'from' ? 'A' : 'B'}
+                </div>
+              )}
+
               {!!hasPills && pills}
 
               {commitContextMenuWrapper(message, !commit.isUncommitted)}

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Compare any two commits or refs, from three entry points: `Ctrl`/`Cmd`+click a second commit while one is expanded, drop one commit onto another, or pick "Compare with selected" in the context menu of a commit, a branch pill or a tag — a branch and a tag compare the commit they point at, and every entry point runs from the expanded commit to the one picked
+- Show the comparison in a panel beside the graph rather than over it, listing the changed files in the same tree the expanded commit uses, with the total additions and deletions, a button to swap the direction, and `Esc` or the close button to dismiss. Both compared rows stay visible in the graph, marked `A` and `B`
+- Open a file's diff between the two compared commits by clicking it in that tree, including files added, deleted or renamed between them
+
 - Edit a commit's message from its context menu or by dragging the commit: the tip of the branch is amended in place, and an older commit is reworded by replaying its descendants onto the amended copy — a rewrite that cannot conflict, since only the message changes. Offered for commits on the current branch that are not pushed to its upstream and whose path to the tip does not cross a merge; the dialog says how many descendants will be rewritten and offers to autostash uncommitted changes. `git-go.reword.allowPushed` offers the action for pushed commits too, with a force-push warning
 - Create a branch from a stash, from its context menu or by dragging it: the branch starts at the commit the stash was made from and is checked out, and the stash is applied onto it and dropped on success. Refused while the working tree has uncommitted changes or an operation is in progress
 - Keep a stash visible in the graph when the commit it was made on is no longer reachable from any ref — rewording, resetting or undoing the commit under a stash used to make the stash disappear from the graph even though it still existed
