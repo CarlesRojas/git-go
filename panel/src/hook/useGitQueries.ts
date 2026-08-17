@@ -104,6 +104,7 @@ export interface ConfigState {
   githubFileLinks: boolean
   githubIssueLinks: boolean
   githubCreatePullRequest: boolean
+  reflogEnabled: boolean
   undoEnabled: boolean
   undoKeyboardShortcut: boolean
   undoShow: Record<GitUndoActionKind, boolean>
@@ -166,6 +167,7 @@ const defaultConfigState: ConfigState = {
   githubFileLinks: true,
   githubIssueLinks: true,
   githubCreatePullRequest: true,
+  reflogEnabled: true,
   undoEnabled: true,
   undoKeyboardShortcut: true,
   undoShow: {

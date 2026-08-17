@@ -231,6 +231,16 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
 
 Each `auto` option runs the action with the values its dialog would have opened with.
 
+### Reflog
+
+```json
+{
+    "git-go.reflog.enabled": true // Show the reflog browser in the toolbar
+}
+```
+
+Turning it off hides the toolbar button, and nothing of the browser is loaded.
+
 ### Undo
 
 ```json

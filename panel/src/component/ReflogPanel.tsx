@@ -10,6 +10,7 @@ import { Button } from '@/component/ui/Button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/component/ui/Select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/component/ui/Sheet'
 import { useCompare } from '@/context/CompareContext'
+import { useSettings } from '@/context/SettingsContext'
 import { useToast } from '@/context/ToastContext'
 import { useBranchDialog } from '@/hook/dialog/useBranchDialog'
 import { useCherryPickDialog } from '@/hook/dialog/useCherryPickDialog'
@@ -208,7 +209,7 @@ const ReflogEntryRow: FC<ReflogEntryRowProps> = ({ entry, blockedReason, onActio
  * points at any more. Opened from the toolbar beside the undo button, which offers the same rescue
  * for the last action alone.
  */
-export const ReflogPanel: FC = () => {
+const ReflogBrowser: FC = () => {
   const [open, setOpen] = useState(false)
   const [selectedRef, setSelectedRef] = useState('HEAD')
   const [pending, setPending] = useState<PendingAction | null>(null)
@@ -383,4 +384,16 @@ export const ReflogPanel: FC = () => {
       )}
     </>
   )
+}
+
+/**
+ * The toolbar's reflog button, left out entirely when `git-go.reflog.enabled` is off — so nothing of
+ * the browser is mounted, and no reflog is read, for anyone who does not want it.
+ */
+export const ReflogPanel: FC = () => {
+  const { settings } = useSettings()
+
+  if (!settings.reflogEnabled) return null
+
+  return <ReflogBrowser />
 }

@@ -463,6 +463,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.reflog.enabled` Extension Setting.
+     */
+    get reflogEnabled(): boolean {
+        return !!this.config.get('reflog.enabled', true);
+    }
+
+    /**
      * Get the value of the `git-go.undo.enabled` Extension Setting.
      */
     get undoEnabled(): boolean {
