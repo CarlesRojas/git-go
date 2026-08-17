@@ -55,7 +55,7 @@ const DialogContent = ({ className, children, ref, ...props }: ComponentProps<ty
           'rounded-main-outer grid gap-3 [&>*]:min-w-0',
           // Sizing: 20rem base, grow to fit longer content up to the viewport minus 4rem
           // of side padding, then wrap (see DialogTitle) so it never overflows.
-          'w-fit min-w-[min(20rem,calc(100vw-4rem))] max-w-[calc(100vw-4rem)]',
+          'w-fit max-w-[calc(100vw-4rem)] min-w-[min(20rem,calc(100vw-4rem))]',
           // Colors & Background
           'border-vsc-editor-fg/15 bg-vsc-editor-bg/80 border',
           // Spacing
