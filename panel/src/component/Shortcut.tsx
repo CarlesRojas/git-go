@@ -19,25 +19,31 @@ const LeftClickIcon: FC<{ className?: string }> = ({ className }) => (
 )
 
 /**
+ * A symbol is drawn at nearly twice the size a spelled-out key is, since it stands in for a whole
+ * word — printed at text size beside the mouse it reads as a smaller, differently padded cap.
+ */
+const symbol = (label: string) => ({ label, isSymbol: true })
+
+/**
  * How each part of a shortcut is printed. Anything absent is printed as written, so a plain
  * letter or a named key needs no entry.
  */
-const GLYPHS: Record<string, string> = {
+const GLYPHS: Record<string, { label: string; isSymbol?: boolean }> = {
   // The one that follows the platform, which is what most shortcuts want
-  mod: IS_MAC ? '⌘' : 'Ctrl',
-  cmd: '⌘',
-  ctrl: IS_MAC ? '⌃' : 'Ctrl',
-  alt: IS_MAC ? '⌥' : 'Alt',
-  shift: '⇧',
-  enter: '↵',
-  esc: 'Esc',
-  escape: 'Esc',
-  tab: '⇥',
-  space: '␣',
-  up: '↑',
-  down: '↓',
-  left: '←',
-  right: '→',
+  mod: IS_MAC ? symbol('⌘') : { label: 'Ctrl' },
+  cmd: symbol('⌘'),
+  ctrl: IS_MAC ? symbol('⌃') : { label: 'Ctrl' },
+  alt: IS_MAC ? symbol('⌥') : { label: 'Alt' },
+  shift: symbol('⇧'),
+  enter: symbol('↵'),
+  esc: { label: 'Esc' },
+  escape: { label: 'Esc' },
+  tab: symbol('⇥'),
+  space: symbol('␣'),
+  up: symbol('↑'),
+  down: symbol('↓'),
+  left: symbol('←'),
+  right: symbol('→'),
 }
 
 /** The parts that are drawn rather than spelled. */
@@ -73,6 +79,7 @@ export const Shortcut: FC<ShortcutProps> = ({ keys, className }) => {
       {parts.map((part, index) => {
         const token = part.toLowerCase()
         const Icon = ICONS[token]
+        const { label, isSymbol } = GLYPHS[token] ?? { label: part.length === 1 ? part.toUpperCase() : part }
 
         return (
           <kbd
@@ -84,7 +91,7 @@ export const Shortcut: FC<ShortcutProps> = ({ keys, className }) => {
               // Appearance
               'rounded-small border-vsc-editor-fg/25 border',
               // Typography
-              'font-inherit text-[0.7rem] leading-none font-medium tracking-normal',
+              'font-inherit leading-none font-medium tracking-normal',
             )}
           >
             {/* Held back a little: a drawn glyph carries more ink than a typeface's, so at equal
@@ -92,7 +99,9 @@ export const Shortcut: FC<ShortcutProps> = ({ keys, className }) => {
             {Icon ? (
               <Icon className="size-4 opacity-80" />
             ) : (
-              (GLYPHS[token] ?? (part.length === 1 ? part.toUpperCase() : part))
+              // A symbol hangs above the centre of its line box, having no descender to balance
+              // it, so it is set at icon size and nudged back down
+              <span className={cn(isSymbol ? 'translate-y-px text-base' : 'text-[0.7rem]')}>{label}</span>
             )}
           </kbd>
         )

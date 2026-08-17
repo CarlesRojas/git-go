@@ -18,9 +18,12 @@ export const CompareBadge: FC<{ role: 'from' | 'to'; className?: string }> = ({ 
       'border-vsc-list-highlight-fg/40 text-vsc-list-highlight-fg border',
       // Typography
       'text-[0.65rem] leading-none font-bold',
+      // A marker, not a control: it must never take a click, a hover or a drop away from the
+      // row underneath it
+      'pointer-events-none',
       className,
     )}
-    title={role === 'from' ? 'The commit being compared from' : 'The commit being compared to'}
+    aria-label={role === 'from' ? 'The commit being compared from' : 'The commit being compared to'}
   >
     <FontAwesomeIcon icon={faCodeCompare} className="size-2.5 shrink-0" />
 
