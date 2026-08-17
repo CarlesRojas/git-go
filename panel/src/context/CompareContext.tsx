@@ -54,17 +54,22 @@ export const useCompare = (): CompareContextType => {
  * since a menu handed its subject per invocation cannot call one.
  */
 export const compareEntryFor = (
-  { pending, pick }: Pick<CompareContextType, 'pending' | 'pick'>,
+  { pending, comparison, pick }: Pick<CompareContextType, 'pending' | 'comparison' | 'pick'>,
   side: CompareSide | null,
 ) => {
   if (side === null) return null
 
-  const isPending = pending !== null && pending.hash === side.hash
+  // Mirrors what `pick` will do with this side, so the entry always names its own effect
+  const label =
+    pending === null
+      ? 'Select to compare'
+      : pending.hash === side.hash
+        ? 'Clear compare selection'
+        : comparison?.to.hash === side.hash
+          ? 'Remove from comparison'
+          : 'Compare with selected'
 
-  return {
-    label: pending === null ? 'Select to compare' : isPending ? 'Clear compare selection' : 'Compare with selected',
-    onSelect: () => pick(side),
-  }
+  return { label, onSelect: () => pick(side) }
 }
 
 export const useCompareEntry = (side: CompareSide | null) => compareEntryFor(useCompare(), side)
@@ -77,6 +82,9 @@ export const CompareProvider = ({ children }: { children: ReactNode }) => {
       if (previous.pending === null) return { pending: side, comparison: null }
       // Picking the armed side again is how a selection is taken back
       if (previous.pending.hash === side.hash) return EMPTY
+      // Picking the compared-to side drops just that side, leaving the baseline armed so the
+      // next pick carries straight on from it
+      if (previous.comparison?.to.hash === side.hash) return { pending: previous.pending, comparison: null }
       return { pending: previous.pending, comparison: { from: previous.pending, to: side } }
     })
   }, [])

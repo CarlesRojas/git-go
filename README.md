@@ -76,7 +76,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Undo the last action** on the current branch - commit, amend, merge, rebase, cherry-pick, revert, reset or pull - from a toolbar button that names what it will undo, or with `Ctrl+Z` / `Cmd+Z`, moving the branch back to where the reflog says it was
 - **Never undo pushed history** by default, since the button and its shortcut are hidden once the branch tip is on its upstream, so an undo cannot leave you needing a force push
 - **Reset the current branch** to any commit, soft, mixed or hard
-- **Compare two commits or refs** by picking a first side - `Ctrl`/`Cmd`+click a commit, or "Select to compare" in the context menu of a commit, branch or tag - and then picking a second the same way, or by dropping one commit onto another. The changed files appear in a panel beside the graph, with the direction swappable and both compared rows marked `A` and `B`. Picking the marked side again takes the selection back
+- **Compare two commits or refs** by picking a first side - `Ctrl`/`Cmd`+click a commit, or "Select to compare" in the context menu of a commit, branch or tag - and then picking a second the same way, or by dropping one commit onto another. The changed files appear in a panel beside the graph, with the direction swappable and both compared rows marked `A` and `B`. Picking a marked side again steps back: `B` drops out and leaves `A` ready for another, `A` clears the selection
 - **View detailed commit information** including:
     - File changes and diffs
     - The full commit message, subject and body

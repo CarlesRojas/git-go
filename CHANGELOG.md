@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Compare any two commits or refs. A comparison is picked in two steps, so it is never tangled up with which commit happens to be expanded: `Ctrl`/`Cmd`+click a commit, or pick "Select to compare" in the context menu of a commit, a branch pill or a tag, and that side is marked `A` in the graph. The same gesture on anything else then compares the two, and repeating it on the marked side takes the selection back. Dropping one commit onto another compares them outright. A branch or a tag compares the commit it points at, keeping its own name in the header
+- Compare any two commits or refs. A comparison is picked in two steps, so it is never tangled up with which commit happens to be expanded: `Ctrl`/`Cmd`+click a commit, or pick "Select to compare" in the context menu of a commit, a branch pill or a tag, and that side is marked `A` in the graph. The same gesture on anything else then compares the two, and repeating it steps back one pick at a time: on the `B` side it drops that side and leaves `A` armed for another, on `A` it clears the selection entirely. Dropping one commit onto another compares them outright. A branch or a tag compares the commit it points at, keeping its own name in the header
 - Show the comparison in a panel beside the graph rather than over it, listing the changed files in the same tree the expanded commit uses, with the total additions and deletions, a button to swap the direction, and `Esc` or the close button to dismiss. Both compared rows stay visible in the graph, marked `A` and `B`
 - Open a file's diff between the two compared commits by clicking it in that tree, including files added, deleted or renamed between them
 
