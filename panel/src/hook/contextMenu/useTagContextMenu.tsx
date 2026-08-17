@@ -96,17 +96,24 @@ const TagContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
-          {gitHubUrls && (
-            <ContextMenuItem onClick={() => openOnGitHub(gitHubUrls.url, gitHubUrls.fallbackUrl)}>
-              <FontAwesomeIcon icon={faGithub} className="size-3" />
-              Open on GitHub
-            </ContextMenuItem>
-          )}
-
           <ContextMenuItem onClick={onDelete} variant="destructive">
             <FontAwesomeIcon icon={faTrash} className="size-3" />
             Delete
           </ContextMenuItem>
+
+          {/* Its own section, and no section at all when the settings leave it nothing to show */}
+          {gitHubUrls && (
+            <>
+              <ContextMenuSeparator />
+
+              <ContextMenuLabel>GitHub</ContextMenuLabel>
+
+              <ContextMenuItem onClick={() => openOnGitHub(gitHubUrls.url, gitHubUrls.fallbackUrl)}>
+                <FontAwesomeIcon icon={faGithub} className="size-3" />
+                Open on GitHub
+              </ContextMenuItem>
+            </>
+          )}
 
           <ContextMenuSeparator />
 

@@ -30,7 +30,10 @@ export const GitHubLink: FC<GitHubLinkProps> = ({ url, fallbackUrl, title, label
       openOnGitHub(url, fallbackUrl)
     }}
     className={cn(
-      'inline-flex cursor-pointer items-center gap-1 align-middle opacity-50 transition-opacity hover:opacity-100',
+      // Aligned the way Font Awesome aligns its own inline icons: a box of one line's height
+      // sunk an eighth of it below the baseline sits on the middle of the letters next to it,
+      // where centring on the baseline's own middle — `align-middle` — leaves it a pixel low
+      'inline-flex cursor-pointer items-center gap-1 align-[-0.125em] opacity-50 transition-opacity hover:opacity-100',
       className,
     )}
   >

@@ -123,13 +123,6 @@ const CommitContextMenuWrapper = memo(
             </ContextMenuItem>
           )}
 
-          {gitHubUrl && (
-            <ContextMenuItem onClick={() => openOnGitHub(gitHubUrl)}>
-              <FontAwesomeIcon icon={faGithub} className="size-3" />
-              Open on GitHub
-            </ContextMenuItem>
-          )}
-
           <ContextMenuItem onClick={onRevertClick} variant="destructive">
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
             Revert
@@ -153,6 +146,20 @@ const CommitContextMenuWrapper = memo(
             <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
             Reset current branch here
           </ContextMenuItem>
+
+          {/* Its own section, and no section at all when the settings leave it nothing to show */}
+          {gitHubUrl && (
+            <>
+              <ContextMenuSeparator />
+
+              <ContextMenuLabel>GitHub</ContextMenuLabel>
+
+              <ContextMenuItem onClick={() => openOnGitHub(gitHubUrl)}>
+                <FontAwesomeIcon icon={faGithub} className="size-3" />
+                Open on GitHub
+              </ContextMenuItem>
+            </>
+          )}
         </ContextMenuContent>
       </ContextMenu>
     )

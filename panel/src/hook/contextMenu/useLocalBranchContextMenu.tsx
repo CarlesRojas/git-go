@@ -170,13 +170,6 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
               </ContextMenuItem>
             )}
 
-            {gitHubPullUrl && (
-              <ContextMenuItem onClick={() => openOnGitHub(gitHubPullUrl)}>
-                <FontAwesomeIcon icon={faGithub} className="size-3" />
-                Create Pull Request
-              </ContextMenuItem>
-            )}
-
             {!branch.current && (
               <>
                 <ContextMenuItem onClick={mergeDialog.openDialog}>
@@ -198,19 +191,35 @@ export const useLocalBranchContextMenu = ({ branch }: UseLocalBranchContextMenuP
               </ContextMenuItem>
             )}
 
-            {gitHubBranchUrl && (
-              <ContextMenuItem onClick={() => openOnGitHub(gitHubBranchUrl)}>
-                <FontAwesomeIcon icon={faGithub} className="size-3" />
-                Open on GitHub
-              </ContextMenuItem>
-            )}
-
             {/* Last before the separator: the destructive entry ends every one of these menus */}
             {!branch.current && (
               <ContextMenuItem onClick={deleteDialog.openDialog} variant="destructive">
                 <FontAwesomeIcon icon={faTrash} className="size-3" />
                 Delete
               </ContextMenuItem>
+            )}
+
+            {/* Its own section, and no section at all when the settings leave it nothing to show */}
+            {(gitHubBranchUrl || gitHubPullUrl) && (
+              <>
+                <ContextMenuSeparator />
+
+                <ContextMenuLabel>GitHub</ContextMenuLabel>
+
+                {gitHubPullUrl && (
+                  <ContextMenuItem onClick={() => openOnGitHub(gitHubPullUrl)}>
+                    <FontAwesomeIcon icon={faGithub} className="size-3" />
+                    Create Pull Request
+                  </ContextMenuItem>
+                )}
+
+                {gitHubBranchUrl && (
+                  <ContextMenuItem onClick={() => openOnGitHub(gitHubBranchUrl)}>
+                    <FontAwesomeIcon icon={faGithub} className="size-3" />
+                    Open on GitHub
+                  </ContextMenuItem>
+                )}
+              </>
             )}
 
             <ContextMenuSeparator />
