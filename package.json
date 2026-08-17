@@ -259,6 +259,18 @@
                 }
             },
             {
+                "title": "Reflog",
+                "order": 4,
+                "properties": {
+                    "git-go.reflog.enabled": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Show the reflog browser in the toolbar, beside the undo button. It lists everywhere `HEAD` or a local branch has been, marking the commits no branch or tag reaches any more so they can be recovered. Turning this off hides the button.",
+                        "order": 1
+                    }
+                }
+            },
+            {
                 "title": "Undo",
                 "order": 5,
                 "properties": {

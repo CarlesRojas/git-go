@@ -128,6 +128,36 @@ export interface GitUndoableAction {
 /** Actions that wrote their result into the working tree, rather than only recording what was in it */
 const WORKING_TREE_UNDO_KINDS: GitUndoActionKind[] = ['merge', 'rebase', 'cherry-pick', 'reset', 'pull', 'other'];
 
+/**
+ * Everything a reflog entry can record, which is the undoable actions plus the ones that only move
+ * a ref into existence or step between refs — nothing an undo could walk back, but plenty a reflog
+ * browser has to name.
+ */
+export type GitReflogActionKind = GitUndoActionKind | 'checkout' | 'branch' | 'clone';
+
+export interface GitReflogEntry {
+    /** Position in the ref's reflog: the `n` of `<ref>@{n}` */
+    index: number;
+    /** How the entry is addressed on the command line, e.g. `HEAD@{3}` */
+    selector: string;
+    /** The commit the ref moved to */
+    hash: string;
+    kind: GitReflogActionKind;
+    /** The whole reflog subject, e.g. 'commit: fix the parser' */
+    description: string;
+    /** The reflog subject without its action prefix, e.g. 'fix the parser' */
+    message: string;
+    /** The subject of the commit the entry points at */
+    subject: string;
+    /** When the entry was written, as an ISO string */
+    date: string;
+    /**
+     * Whether no ref reaches the commit any more, so only the reflog still holds it — the lost
+     * commits a reflog browser exists to rescue.
+     */
+    recoverable: boolean;
+}
+
 export interface GitRewordableCommit {
     hash: string;
     /** Whether the commit is already contained in the current branch's upstream */
@@ -1936,11 +1966,11 @@ export class GitService {
     }
 
     /**
-     * Git has no 'undo' command: what it has is the reflog, a per-ref record of every position a
-     * ref has held. Undoing an action is therefore moving the branch back to the position it held
-     * before that action, which is what this reads out of the reflog.
+     * What a reflog subject says was done: 'commit: fix the parser' is a commit, 'rebase (finish):
+     * returning to refs/heads/main' a rebase. Everything git writes a reflog entry for lands on one
+     * of the kinds, with 'other' for the actions Git Go has no name for.
      */
-    private static parseUndoActionKind(subject: string): GitUndoActionKind | null {
+    private static parseReflogActionKind(subject: string): GitReflogActionKind {
         if (subject.startsWith('commit (amend)')) return 'amend';
         if (subject.startsWith('commit (merge)')) return 'merge';
         if (subject.startsWith('commit (cherry-pick)')) return 'cherry-pick';
@@ -1952,14 +1982,25 @@ export class GitService {
         if (subject.startsWith('pull')) return 'pull';
         if (subject.startsWith('reset')) return 'reset';
         if (subject.startsWith('cherry-pick')) return 'cherry-pick';
-
-        // The branch coming into existence: there is no earlier position to return it to, and
-        // undoing it would mean deleting the branch rather than moving it
-        if (subject.startsWith('branch:') || subject.startsWith('clone:') || subject.startsWith('checkout:')) {
-            return null;
-        }
+        if (subject.startsWith('branch:')) return 'branch';
+        if (subject.startsWith('clone:')) return 'clone';
+        if (subject.startsWith('checkout:')) return 'checkout';
 
         return 'other';
+    }
+
+    /**
+     * Git has no 'undo' command: what it has is the reflog, a per-ref record of every position a
+     * ref has held. Undoing an action is therefore moving the branch back to the position it held
+     * before that action, which is what this reads out of the reflog. Null for the entries that
+     * cannot be walked back: the ref coming into existence, or a checkout, where there is no
+     * earlier position of this ref to return to and undoing would mean deleting it instead.
+     */
+    private static parseUndoActionKind(subject: string): GitUndoActionKind | null {
+        const kind = GitService.parseReflogActionKind(subject);
+        if (kind === 'branch' || kind === 'clone' || kind === 'checkout') return null;
+
+        return kind;
     }
 
     /**
@@ -2115,6 +2156,150 @@ export class GitService {
             return action;
         } catch (error) {
             log(`Error undoing the last action: ${error}`);
+            throw error;
+        }
+    }
+
+    /** As many reflog entries as one page may ask for, so a stray request cannot read a whole reflog */
+    private static readonly REFLOG_PAGE_LIMIT = 500;
+
+    /**
+     * Everything after the action prefix of a reflog subject: 'commit: fix the parser' describes
+     * itself as 'fix the parser'. A subject with no prefix is its own description.
+     */
+    private static parseReflogMessage(subject: string): string {
+        const separator = subject.indexOf(': ');
+        return separator === -1 ? subject : subject.substring(separator + 2).trim();
+    }
+
+    /**
+     * Which of these commits no ref reaches any more — the ones only the reflog still points at, and
+     * so the ones worth rescuing from it. '--no-walk' keeps the answer to the commits themselves
+     * rather than their history, '--not --all' drops the ones any ref reaches, and
+     * '--ignore-missing' tolerates entries whose objects git has already pruned. Best-effort: a
+     * failure treats every commit as reachable rather than claiming commits are lost when they are not.
+     */
+    private async findUnreachableCommits(
+        workspacePath: string,
+        gitPath: string,
+        hashes: string[]
+    ): Promise<Set<string>> {
+        const unique = [...new Set(hashes.filter((hash) => /^[0-9a-f]{40}$/.test(hash)))];
+        if (unique.length === 0) return new Set();
+
+        try {
+            const output = await this.spawnGit(
+                [gitPath, 'rev-list', '--ignore-missing', '--no-walk=unsorted', ...unique, '--not', '--all'],
+                workspacePath
+            );
+
+            return new Set(
+                output
+                    .split(EOL_REGEX)
+                    .map((line) => line.trim())
+                    .filter((line) => line.length > 0)
+            );
+        } catch {
+            return new Set();
+        }
+    }
+
+    /**
+     * A page of a ref's reflog, newest first: HEAD's own — which records checkouts too, so it is the
+     * full history of where the working tree has been — or a local branch's. Each entry carries
+     * whether its commit is still reachable from a ref, which is what tells the lost commits apart
+     * from the ones the graph already shows.
+     */
+    public async getReflog(
+        log: (message: string) => void,
+        ref: string = 'HEAD',
+        maxCount: number = 50,
+        skip: number = 0
+    ): Promise<{ entries: GitReflogEntry[]; hasMore: boolean }> {
+        const workspacePath = this.getRepoPath();
+        const gitExecutable = await this.findGitExecutable();
+
+        // A branch is read through its full ref name, so a branch called 'HEAD' cannot be mistaken
+        // for HEAD itself, and neither can a file of the same name
+        const isHead = ref === 'HEAD';
+        if (!isHead) this.validateRefName(ref);
+        const reflogRef = isHead ? 'HEAD' : `refs/heads/${ref}`;
+
+        const count = Number.isFinite(maxCount)
+            ? Math.min(Math.max(1, Math.floor(maxCount)), GitService.REFLOG_PAGE_LIMIT)
+            : 50;
+        const start = Number.isFinite(skip) ? Math.max(0, Math.floor(skip)) : 0;
+
+        try {
+            // '%gd' holds the index only while no '--date' is given, and the date only once one is,
+            // so the index is counted from the page's own position instead — 'reflog show' always
+            // walks the entries in order, newest first
+            const format = [
+                '%H', // Hash the ref moved to
+                '%gd', // Reflog selector, holding this entry's date
+                '%gs', // Reflog subject, e.g. 'commit: fix the parser'
+                '%s' // Subject of the commit — kept last, as the fields before it cannot contain the separator
+            ].join(GIT_LOG_SEPARATOR);
+
+            const output = await this.spawnGit(
+                [
+                    gitExecutable.path,
+                    'reflog',
+                    'show',
+                    `--format=${format}`,
+                    '--date=unix',
+                    `--max-count=${count + 1}`,
+                    `--skip=${start}`,
+                    reflogRef
+                ],
+                workspacePath
+            );
+
+            let lines = output.split(EOL_REGEX).filter((line) => line.includes(GIT_LOG_SEPARATOR));
+
+            const hasMore = lines.length > count;
+            if (hasMore) lines = lines.slice(0, count);
+
+            const entries: GitReflogEntry[] = [];
+
+            lines.forEach((line, position) => {
+                const parts = line.split(GIT_LOG_SEPARATOR);
+                const hash = (parts[0] ?? '').trim();
+                if (!hash) return;
+
+                const description = (parts[2] ?? '').trim();
+                const index = start + position;
+
+                // '%gd' reads as '<ref>@{<unix timestamp>}' under '--date=unix'
+                const selector = parts[1] ?? '';
+                const timestamp = Number.parseInt(selector.substring(selector.indexOf('@{') + 2), 10);
+
+                entries.push({
+                    index,
+                    selector: `${isHead ? 'HEAD' : ref}@{${index}}`,
+                    hash,
+                    kind: GitService.parseReflogActionKind(description),
+                    description,
+                    message: GitService.parseReflogMessage(description),
+                    subject: parts.slice(3).join(GIT_LOG_SEPARATOR).trim(),
+                    date: Number.isFinite(timestamp) ? new Date(timestamp * 1000).toISOString() : '',
+                    recoverable: false
+                });
+            });
+
+            const unreachable = await this.findUnreachableCommits(
+                workspacePath,
+                gitExecutable.path,
+                entries.map((entry) => entry.hash)
+            );
+            for (const entry of entries) entry.recoverable = unreachable.has(entry.hash);
+
+            log(
+                `Read ${entries.length} reflog entries for ${reflogRef} (skip: ${start}, hasMore: ${hasMore}, ${unreachable.size} unreachable)`
+            );
+            return { entries, hasMore };
+        } catch (error) {
+            log(`Error reading the reflog of ${reflogRef}: ${error}`);
             throw error;
         }
     }

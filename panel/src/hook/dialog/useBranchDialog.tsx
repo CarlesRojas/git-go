@@ -13,10 +13,13 @@ import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 
 interface UseBranchDialogProps {
-  commit: GitCommit
+  /** Only the hash is needed, so a reflog entry can open the same dialog a commit row does */
+  commit: Pick<GitCommit, 'hash'>
+  /** Name the input starts with, for the callers that can suggest one */
+  defaultName?: string
 }
 
-export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
+export const useBranchDialog = ({ commit, defaultName = '' }: UseBranchDialogProps) => {
   const { showToast } = useToast()
   const [showBranchDialog, setShowBranchDialog] = useState(false)
   const createBranchMutation = useCreateBranchFromCommit()
@@ -24,7 +27,7 @@ export const useBranchDialog = ({ commit }: UseBranchDialogProps) => {
 
   const branchForm = useForm({
     defaultValues: {
-      branchName: '',
+      branchName: defaultName,
       checkout: settings.branchCreateCheckout,
     },
     onSubmit: async ({ value }) => {
