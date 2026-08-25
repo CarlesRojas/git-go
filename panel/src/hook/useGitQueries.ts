@@ -115,6 +115,8 @@ export interface ConfigState {
   confirmBranchDelete: boolean
   expandedCommitHeight: number
   joinUncommittedChanges: boolean
+  scrollToTopButton: boolean
+  scrollToCurrentBranchButton: boolean
   showAuthorName: boolean
   theme: string
   customColors: string[]
@@ -189,6 +191,8 @@ const defaultConfigState: ConfigState = {
   confirmBranchDelete: true,
   expandedCommitHeight: 300,
   joinUncommittedChanges: true,
+  scrollToTopButton: true,
+  scrollToCurrentBranchButton: true,
   showAuthorName: true,
   theme: 'vibrant',
   customColors: [],

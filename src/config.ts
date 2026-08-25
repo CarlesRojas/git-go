@@ -557,6 +557,20 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.graph.scrollToTopButton` Extension Setting.
+     */
+    get scrollToTopButton(): boolean {
+        return !!this.config.get('graph.scrollToTopButton', true);
+    }
+
+    /**
+     * Get the value of the `git-go.graph.scrollToCurrentBranchButton` Extension Setting.
+     */
+    get scrollToCurrentBranchButton(): boolean {
+        return !!this.config.get('graph.scrollToCurrentBranchButton', true);
+    }
+
+    /**
      * Get the value of the `git-go.graph.showAuthorName` Extension Setting.
      */
     get showAuthorName(): boolean {

@@ -1,4 +1,5 @@
 import { Toaster } from '@/component/ui/sonner'
+import { useGraphScroll } from '@/context/GraphScrollContext'
 import { cn } from '@/util/cn'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -8,6 +9,8 @@ import { toast } from 'sonner'
 
 const TOAST_DURATION = 4_000
 const MAX_ERROR_TEXT_LENGTH = 300
+/** Clears the graph's floating buttons: their own inset, their height, and a gap of the same inset */
+const FLOATING_ACTIONS_OFFSET = '3.25rem'
 
 let toastCount = 0
 
@@ -36,6 +39,8 @@ interface ToastProviderProps {
 }
 
 export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
+  const { areFloatingActionsVisible } = useGraphScroll()
+
   const showToast = (toastData: Toast) => {
     const { text, type = 'info', icon } = toastData
 
@@ -102,7 +107,11 @@ export const ToastProvider: FC<ToastProviderProps> = ({ children }) => {
   return (
     <ToastContext.Provider value={{ showToast, closeToast }}>
       {children}
-      <Toaster />
+
+      <Toaster
+        offset={areFloatingActionsVisible ? { bottom: FLOATING_ACTIONS_OFFSET } : undefined}
+        mobileOffset={areFloatingActionsVisible ? { bottom: FLOATING_ACTIONS_OFFSET } : undefined}
+      />
     </ToastContext.Provider>
   )
 }

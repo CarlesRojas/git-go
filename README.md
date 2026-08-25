@@ -20,6 +20,7 @@ Git Go provides a comprehensive visual representation of your Git repository wit
 - **Real-time updates** when Git state changes
 - **Infinite scrolling** for large repositories
 - **Keyboard navigation** (↑/↓ arrows when commit is expanded)
+- **Floating jump buttons** over the bottom right corner - back to the top once the graph is scrolled down, and to the checked out branch while its pill is out of sight
 
 ### 🚀 Big Repositories
 
@@ -227,9 +228,14 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
     "git-go.graph.showAuthorName": true, // Show the author's name next to each commit's message
     "git-go.graph.remoteAvatars": true, // Show author pictures from the remote, falling back to Gravatar
     "git-go.graph.expandedCommitHeight": 300, // Height in pixels of an expanded commit (200-800)
-    "git-go.graph.joinUncommittedChanges": true // Join the uncommitted changes to the checked out commit with a line
+    "git-go.graph.joinUncommittedChanges": true, // Join the uncommitted changes to the checked out commit with a line
+    "git-go.graph.scrollToTopButton": true, // Float a button over the graph that takes it back to the top
+    "git-go.graph.scrollToCurrentBranchButton": true // Float a button over the graph that jumps to the checked out branch
 }
 ```
+
+Both floating buttons sit in the bottom right corner of the graph and fade in and out with whether
+they have somewhere to take you. Turning one off hides it.
 
 ### Drag and Drop
 

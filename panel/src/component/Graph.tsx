@@ -1,5 +1,6 @@
 import { CommitItem } from '@/component/CommitItem'
 import { useCompare } from '@/context/CompareContext'
+import { useGraphScroll } from '@/context/GraphScrollContext'
 import { useSearch } from '@/context/SearchContext'
 import { useSettings } from '@/context/SettingsContext'
 import { useCommitHighlight } from '@/hook/useCommitHighlight'
@@ -168,6 +169,59 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   const { onCommitHover } = useCommitHighlight({ enabled: searchTerm.trim() === '' })
 
   const scrollToRow = useCallback((row: number) => virtualizer.scrollToIndex(row, { align: 'center' }), [virtualizer])
+
+  // Where the checked-out branch's pill is, and whether it is on screen, for the button that
+  // jumps back to it. Only a branch the filter keeps has a pill to jump to.
+  const { setIsCurrentBranchOffScreen, registerScrollToCurrentBranch } = useGraphScroll()
+
+  const currentBranchRow = useMemo(() => {
+    const currentBranch = selectedBranches.find(branch => !branch.remote && branch.current)
+    if (!currentBranch) return null
+
+    const row = commits.findIndex(commit => commit.hash === currentBranch.hash)
+    return row === -1 ? null : row
+  }, [selectedBranches, commits])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container || currentBranchRow === null) {
+      setIsCurrentBranchOffScreen(false)
+      return
+    }
+
+    const update = () => {
+      const rowTop =
+        LIST_PADDING +
+        currentBranchRow * ROW_HEIGHT +
+        (expandedRow !== undefined && currentBranchRow > expandedRow ? expandedCommitHeight : 0)
+
+      setIsCurrentBranchOffScreen(
+        rowTop + ROW_HEIGHT <= container.scrollTop || rowTop >= container.scrollTop + container.clientHeight,
+      )
+    }
+    update()
+
+    const resizeObserver = new ResizeObserver(update)
+    resizeObserver.observe(container)
+    container.addEventListener('scroll', update, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', update)
+      resizeObserver.disconnect()
+      setIsCurrentBranchOffScreen(false)
+    }
+  }, [currentBranchRow, expandedRow, expandedCommitHeight, scrollRef, setIsCurrentBranchOffScreen])
+
+  useEffect(() => {
+    if (currentBranchRow === null) return
+
+    // Smooth, unlike the search jumps: this one is a short trip back to a row that is only ever
+    // a screen or so away, and following it keeps track of where the graph landed
+    registerScrollToCurrentBranch(() =>
+      virtualizer.scrollToIndex(currentBranchRow, { align: 'center', behavior: 'smooth' }),
+    )
+    return () => registerScrollToCurrentBranch(null)
+  }, [currentBranchRow, virtualizer, registerScrollToCurrentBranch])
 
   const {
     isMatch,
