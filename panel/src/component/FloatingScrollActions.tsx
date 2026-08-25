@@ -64,11 +64,11 @@ export const FloatingScrollActions: FC<FloatingScrollActionsProps> = ({ scrollRe
           onClick={scrollToCurrentBranch}
           tabIndex={showScrollToBranch ? 0 : -1}
           aria-hidden={!showScrollToBranch}
-          title="Scroll to the current branch"
+          title="Scroll to Current Branch"
           className={cn(floatingButtonClasses, !showScrollToBranch && hiddenButtonClasses)}
         >
           <FontAwesomeIcon icon={faLocationCrosshairs} className="size-3" />
-          Current branch
+          Scroll to Current Branch
         </Button>
       )}
 
@@ -78,11 +78,11 @@ export const FloatingScrollActions: FC<FloatingScrollActionsProps> = ({ scrollRe
           onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
           tabIndex={showScrollToTop ? 0 : -1}
           aria-hidden={!showScrollToTop}
-          title="Scroll to top"
+          title="Scroll to Top"
           className={cn(floatingButtonClasses, !showScrollToTop && hiddenButtonClasses)}
         >
           <FontAwesomeIcon icon={faArrowUp} className="size-3" />
-          Top
+          Scroll to Top
         </Button>
       )}
     </div>
