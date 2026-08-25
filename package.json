@@ -7,7 +7,7 @@
         "email": "carlesrojas@outlook.com"
     },
     "description": "Visual representation of your Git repository, with actions to manage commits, branches, stashes, and tags.",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "engines": {
         "vscode": "^1.116.0"
     },
@@ -91,12 +91,12 @@
                         "order": 4
                     },
                     "git-go.fileTree.folderCounts": {
-        "type": "boolean",
-        "default": true,
-        "markdownDescription": "Show how many changed files each folder holds, next to its name in the file trees. Files in nested folders are counted too.",
-        "order": 5
-      },
-      "git-go.repo.scanDepth": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Show how many changed files each folder holds, next to its name in the file trees. Files in nested folders are counted too.",
+                        "order": 5
+                    },
+                    "git-go.repo.scanDepth": {
                         "type": "number",
                         "default": 3,
                         "minimum": 0,
