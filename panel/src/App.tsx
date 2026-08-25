@@ -7,6 +7,7 @@ import { Graph } from '@/component/Graph'
 import { ReflogPanel } from '@/component/ReflogPanel'
 import { RefetchButton } from '@/component/RefreshButton'
 import { RepoSelector } from '@/component/RepoSelector'
+import { ScrollToTopButton } from '@/component/ScrollToTopButton'
 import { SearchInput } from '@/component/SearchInput'
 import { UndoButton } from '@/component/UndoButton'
 import { WorktreeMenu } from '@/component/WorktreeMenu'
@@ -108,6 +109,8 @@ const RepoPanel: FC = () => {
         <main ref={scrollRef} className="graph-h relative flex flex-col overflow-y-auto" data-drag-scroll-container>
           <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} scrollRef={scrollRef} />
         </main>
+
+        <ScrollToTopButton scrollRef={scrollRef} />
 
         <DragOverlay />
 
