@@ -181,6 +181,18 @@
                         "default": true,
                         "markdownDescription": "Join the uncommitted changes to the checked out commit with a line, kept straight on the leftmost column of the graph. Turn off to show the uncommitted changes as a separate dot.",
                         "order": 7
+                    },
+                    "git-go.graph.scrollToTopButton": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Float a button over the bottom left of the graph that takes it back to the top, shown only once the graph is scrolled down. Turning this off hides the button.",
+                        "order": 8
+                    },
+                    "git-go.graph.scrollToCurrentBranchButton": {
+                        "type": "boolean",
+                        "default": true,
+                        "markdownDescription": "Float a button over the bottom left of the graph that jumps to the checked out branch, shown only while its pill is out of sight. Turning this off hides the button.",
+                        "order": 9
                     }
                 }
             },

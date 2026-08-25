@@ -146,6 +146,8 @@ export function activate(context: vscode.ExtensionContext) {
                             confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
                             joinUncommittedChanges: config.joinUncommittedChanges,
+                            scrollToTopButton: config.scrollToTopButton,
+                            scrollToCurrentBranchButton: config.scrollToCurrentBranchButton,
                             showAuthorName: config.showAuthorName,
                             theme: config.theme,
                             customColors: config.customColors
@@ -896,6 +898,8 @@ export function activate(context: vscode.ExtensionContext) {
                             confirmBranchDelete: config.confirmBranchDelete,
                             expandedCommitHeight: config.expandedCommitHeight,
                             joinUncommittedChanges: config.joinUncommittedChanges,
+                            scrollToTopButton: config.scrollToTopButton,
+                            scrollToCurrentBranchButton: config.scrollToCurrentBranchButton,
                             showAuthorName: config.showAuthorName,
                             theme: config.theme,
                             customColors: config.customColors

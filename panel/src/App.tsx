@@ -2,17 +2,18 @@ import { AbortOperationButton } from '@/component/AbortOperationButton'
 import { BranchSelector } from '@/component/BranchSelector'
 import { ComparePanel } from '@/component/ComparePanel'
 import { DragOverlay } from '@/component/DragOverlay'
+import { FloatingScrollActions } from '@/component/FloatingScrollActions'
 import { GitActionLoadingToast } from '@/component/GitActionLoadingToast'
 import { Graph } from '@/component/Graph'
 import { ReflogPanel } from '@/component/ReflogPanel'
 import { RefetchButton } from '@/component/RefreshButton'
 import { RepoSelector } from '@/component/RepoSelector'
-import { ScrollToTopButton } from '@/component/ScrollToTopButton'
 import { SearchInput } from '@/component/SearchInput'
 import { UndoButton } from '@/component/UndoButton'
 import { WorktreeMenu } from '@/component/WorktreeMenu'
 import { CompareProvider } from '@/context/CompareContext'
 import { DragProvider } from '@/context/DragContext'
+import { GraphScrollProvider } from '@/context/GraphScrollContext'
 import { SearchProvider } from '@/context/SearchContext'
 import { SettingsProvider } from '@/context/SettingsContext'
 import { ToastProvider } from '@/context/ToastContext'
@@ -110,7 +111,7 @@ const RepoPanel: FC = () => {
           <Graph selectedBranches={selectedBranches} searchTerm={searchTerm} scrollRef={scrollRef} />
         </main>
 
-        <ScrollToTopButton scrollRef={scrollRef} />
+        <FloatingScrollActions scrollRef={scrollRef} />
 
         <DragOverlay />
 
@@ -170,11 +171,13 @@ export const App: FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        <ToastProvider>
-          <DragProvider>
-            <Panel />
-          </DragProvider>
-        </ToastProvider>
+        <GraphScrollProvider>
+          <ToastProvider>
+            <DragProvider>
+              <Panel />
+            </DragProvider>
+          </ToastProvider>
+        </GraphScrollProvider>
       </SettingsProvider>
     </QueryClientProvider>
   )
