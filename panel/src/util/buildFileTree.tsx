@@ -82,15 +82,23 @@ export function buildFileTree(
               : undefined,
         })
       } else {
+        const children = collapseTree(toTreeItems(value.__children, fullPath))
+
         items.push({
           id: fullPath,
           name,
-          children: collapseTree(toTreeItems(value.__children, fullPath)),
+          children,
+          fileCount: countFiles(children),
         })
       }
     }
 
     return items
+  }
+
+  /** Files anywhere under these items, so a folder can show how many changes it holds */
+  function countFiles(items: TreeDataItem[]): number {
+    return items.reduce((total, item) => total + (item.children ? countFiles(item.children) : 1), 0)
   }
 
   function collapseTree(items: TreeDataItem[]): TreeDataItem[] {

@@ -32,6 +32,8 @@ interface TreeDataItem {
   selectedIcon?: ComponentType<{ className?: string }>
   openIcon?: ComponentType<{ className?: string }>
   children?: TreeDataItem[]
+  /** Number of files under this folder, including those nested deeper */
+  fileCount?: number
   actions?: ReactNode
   onClick?: () => void
   onOpenDiff?: () => void
@@ -336,7 +338,10 @@ const TreeNode = ({
           ) : (
             <>
               <TreeIcon item={item} isSelected={isSelected} isOpen={isOpen} default={defaultNodeIcon} />
-              <span className="truncate text-xs leading-tight">{item.name}</span>
+              <span className="truncate text-xs leading-tight">
+                {item.name}
+                {item.fileCount !== undefined && <span className="opacity-40"> ({item.fileCount})</span>}
+              </span>
               <TreeActions isSelected={isSelected}>{item.actions}</TreeActions>
             </>
           )}
