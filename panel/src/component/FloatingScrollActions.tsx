@@ -10,16 +10,18 @@ import { FC, RefObject, useEffect, useState } from 'react'
 const SHOW_AFTER = 200
 
 const floatingButtonClasses = cn([
+  // Interactions
+  'pointer-events-auto',
   // Colors & Background
   'bg-vsc-editor-bg/80 backdrop-blur-md',
   // Borders
   'border-vsc-editor-fg/15 border',
   // Animations & Transitions
-  'transition-all transition-discrete duration-200 starting:opacity-0',
+  'transition-all duration-200',
 ])
 
-/** Faded out and out of the layout, so the button beside it keeps the corner to itself */
-const hiddenButtonClasses = 'pointer-events-none hidden opacity-0'
+/** Faded out but still holding its place, so neither button moves when the other comes and goes */
+const hiddenButtonClasses = 'pointer-events-none opacity-0'
 
 interface FloatingScrollActionsProps {
   scrollRef: RefObject<HTMLElement | null>
@@ -57,7 +59,7 @@ export const FloatingScrollActions: FC<FloatingScrollActionsProps> = ({ scrollRe
   if (!settings.scrollToTopButton && !settings.scrollToCurrentBranchButton) return null
 
   return (
-    <div className="fixed right-3 bottom-3 z-30 flex items-center gap-2">
+    <div className="pointer-events-none fixed right-3 bottom-3 z-30 flex items-center gap-2">
       {settings.scrollToCurrentBranchButton && (
         <Button
           variant="secondary"
