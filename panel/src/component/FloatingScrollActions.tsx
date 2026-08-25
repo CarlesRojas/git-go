@@ -11,20 +11,23 @@ const SHOW_AFTER = 200
 
 const floatingButtonClasses = cn([
   // Colors & Background
-  'bg-vsc-editor-bg',
+  'bg-vsc-editor-bg/80 backdrop-blur-md',
   // Borders
-  'border-vsc-editor-fg/25',
-  // Animation
-  'animate-in fade-in slide-in-from-bottom-2 duration-200',
+  'border-vsc-editor-fg/15 border',
+  // Animations & Transitions
+  'transition-all transition-discrete duration-200 starting:opacity-0',
 ])
+
+/** Faded out and out of the layout, so the button beside it keeps the corner to itself */
+const hiddenButtonClasses = 'pointer-events-none hidden opacity-0'
 
 interface FloatingScrollActionsProps {
   scrollRef: RefObject<HTMLElement | null>
 }
 
 /**
- * The buttons floating over the bottom left of the graph: one back to the top, one to the
- * checked-out branch. Each is only there while it has somewhere to take you.
+ * The buttons floating over the bottom right of the graph: one to the checked-out branch, one back
+ * to the top. Each fades in and out with whether it has somewhere to take you.
  */
 export const FloatingScrollActions: FC<FloatingScrollActionsProps> = ({ scrollRef }) => {
   const { settings } = useSettings()
@@ -51,33 +54,35 @@ export const FloatingScrollActions: FC<FloatingScrollActionsProps> = ({ scrollRe
     return () => setAreFloatingActionsVisible(false)
   }, [showScrollToTop, showScrollToBranch, setAreFloatingActionsVisible])
 
-  if (!showScrollToTop && !showScrollToBranch) return null
+  if (!settings.scrollToTopButton && !settings.scrollToCurrentBranchButton) return null
 
   return (
-    <div className="fixed bottom-3 left-3 z-30 flex items-center gap-2">
-      {showScrollToTop && (
+    <div className="fixed right-3 bottom-3 z-30 flex items-center gap-2">
+      {settings.scrollToCurrentBranchButton && (
         <Button
           variant="secondary"
-          size="icon"
-          onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          title="Scroll to top"
-          aria-label="Scroll to top"
-          className={floatingButtonClasses}
+          onClick={scrollToCurrentBranch}
+          tabIndex={showScrollToBranch ? 0 : -1}
+          aria-hidden={!showScrollToBranch}
+          title="Scroll to the current branch"
+          className={cn(floatingButtonClasses, !showScrollToBranch && hiddenButtonClasses)}
         >
-          <FontAwesomeIcon icon={faArrowUp} className="size-3" />
+          <FontAwesomeIcon icon={faLocationCrosshairs} className="size-3" />
+          Current branch
         </Button>
       )}
 
-      {showScrollToBranch && (
+      {settings.scrollToTopButton && (
         <Button
           variant="secondary"
-          size="icon"
-          onClick={scrollToCurrentBranch}
-          title="Scroll to the current branch"
-          aria-label="Scroll to the current branch"
-          className={floatingButtonClasses}
+          onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          tabIndex={showScrollToTop ? 0 : -1}
+          aria-hidden={!showScrollToTop}
+          title="Scroll to top"
+          className={cn(floatingButtonClasses, !showScrollToTop && hiddenButtonClasses)}
         >
-          <FontAwesomeIcon icon={faLocationCrosshairs} className="size-3" />
+          <FontAwesomeIcon icon={faArrowUp} className="size-3" />
+          Top
         </Button>
       )}
     </div>

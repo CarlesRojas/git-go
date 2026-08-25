@@ -215,9 +215,13 @@ export const Graph: FC<GraphProps> = ({ selectedBranches, searchTerm = '', scrol
   useEffect(() => {
     if (currentBranchRow === null) return
 
-    registerScrollToCurrentBranch(() => scrollToRow(currentBranchRow))
+    // Smooth, unlike the search jumps: this one is a short trip back to a row that is only ever
+    // a screen or so away, and following it keeps track of where the graph landed
+    registerScrollToCurrentBranch(() =>
+      virtualizer.scrollToIndex(currentBranchRow, { align: 'center', behavior: 'smooth' }),
+    )
     return () => registerScrollToCurrentBranch(null)
-  }, [currentBranchRow, scrollToRow, registerScrollToCurrentBranch])
+  }, [currentBranchRow, virtualizer, registerScrollToCurrentBranch])
 
   const {
     isMatch,

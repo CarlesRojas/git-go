@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Jump around the graph from two buttons floating over its bottom left corner: one back to the top, shown once the graph is scrolled down, and one to the checked out branch, shown while its pill is out of sight. The notifications move up while either is there, so they never sit over them
+- Jump around the graph from two buttons floating over its bottom right corner: one back to the top, shown once the graph is scrolled down, and one to the checked out branch, shown while its pill is out of sight. Both fade in and out, scroll smoothly, and move the notifications up while either is there, so they are never sat over
 - Add `git-go.graph.scrollToTopButton` and `git-go.graph.scrollToCurrentBranchButton` (both on by default) to hide either floating button
 
 - Count the changed files in every file tree: each folder shows how many files under it the change touches, nested ones included, dimmed beside its name
