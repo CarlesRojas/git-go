@@ -85,6 +85,13 @@ export class Config {
     }
 
     /**
+     * Get the value of the `git-go.fileTree.folderCounts` Extension Setting.
+     */
+    get fileTreeFolderCounts(): boolean {
+        return !!this.config.get('fileTree.folderCounts', true);
+    }
+
+    /**
      * Get the value of the `git-go.repo.scanDepth` Extension Setting.
      */
     get repoScanDepth(): number {

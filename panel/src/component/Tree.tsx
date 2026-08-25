@@ -1,4 +1,5 @@
 import { Button } from '@/component/ui/Button'
+import { useSettings } from '@/context/SettingsContext'
 import { cn } from '@/util/cn'
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faChevronRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
@@ -32,6 +33,8 @@ interface TreeDataItem {
   selectedIcon?: ComponentType<{ className?: string }>
   openIcon?: ComponentType<{ className?: string }>
   children?: TreeDataItem[]
+  /** Number of files under this folder, including those nested deeper */
+  fileCount?: number
   actions?: ReactNode
   onClick?: () => void
   onOpenDiff?: () => void
@@ -272,6 +275,7 @@ const TreeNode = ({
   renderItem?: (params: TreeRenderItemParams) => ReactNode
   level?: number
 }) => {
+  const { settings } = useSettings()
   const [value, setValue] = useState(expandedItemIds.includes(item.id) ? [item.id] : [])
   const [isDragOver, setIsDragOver] = useState(false)
   const hasChildren = !!item.children?.length
@@ -336,7 +340,12 @@ const TreeNode = ({
           ) : (
             <>
               <TreeIcon item={item} isSelected={isSelected} isOpen={isOpen} default={defaultNodeIcon} />
-              <span className="truncate text-xs leading-tight">{item.name}</span>
+              <span className="truncate text-xs leading-tight">
+                {item.name}
+                {settings.fileTreeFolderCounts && item.fileCount !== undefined && (
+                  <span className="opacity-40"> ({item.fileCount})</span>
+                )}
+              </span>
               <TreeActions isSelected={isSelected}>{item.actions}</TreeActions>
             </>
           )}
