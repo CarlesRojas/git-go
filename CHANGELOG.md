@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Count the changed files in every file tree: each folder shows how many files under it the change touches, nested ones included, dimmed beside its name
+- Add `git-go.fileTree.folderCounts` (on by default) to turn those counts off
 
 - Browse the reflog from a new toolbar button beside the undo button: a panel beside the graph listing everywhere a ref has been, newest first, with a selector to switch between `HEAD` — which records checkouts too — and any local branch, loading further entries a page at a time. Each entry names the action it recorded (commit, amend, merge, rebase, cherry-pick, revert, reset, pull, checkout, branch, clone), with its `HEAD@{n}` index, short hash and how long ago it was
 - Mark the reflog entries no branch or tag reaches any more as **Recoverable** — the commits an amend, a reset or a rebase left behind, which the graph no longer shows and only the reflog still points at

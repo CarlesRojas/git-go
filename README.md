@@ -212,6 +212,7 @@ settings panel, or search for `git-go` in the Settings editor, where every optio
     "git-go.autoOpen.pinTab": true, // Pin the Git Go tab when it opens
     "git-go.statusBar.enabled": true, // Show a status bar item that opens Git Go when clicked
     "git-go.file.openInSplitView": true, // Open files and diffs in a split view next to Git Go
+    "git-go.fileTree.folderCounts": true, // Show how many changed files each folder holds in the file trees
     "git-go.repo.scanDepth": 3 // How many folder levels below the open folders to look in for repositories
 }
 ```

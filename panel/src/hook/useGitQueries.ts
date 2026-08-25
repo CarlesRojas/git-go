@@ -60,6 +60,7 @@ export interface ConfigState {
   rounded: boolean
   autoOpenEnabled: boolean
   pinTabEnabled: boolean
+  fileTreeFolderCounts: boolean
   dragAndDropEnabled: boolean
   dragAndDropBranchDefaultAction: 'merge' | 'rebase' | 'none'
   dragAndDropHoldDelay: number
@@ -123,6 +124,7 @@ const defaultConfigState: ConfigState = {
   rounded: true,
   autoOpenEnabled: false,
   pinTabEnabled: true,
+  fileTreeFolderCounts: true,
   dragAndDropEnabled: true,
   dragAndDropBranchDefaultAction: 'merge',
   dragAndDropHoldDelay: 300,

@@ -90,7 +90,13 @@
                         "markdownDescription": "Open files and diffs in a split view next to Git Go, reusing an existing split view when there is one.",
                         "order": 4
                     },
-                    "git-go.repo.scanDepth": {
+                    "git-go.fileTree.folderCounts": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "Show how many changed files each folder holds, next to its name in the file trees. Files in nested folders are counted too.",
+        "order": 5
+      },
+      "git-go.repo.scanDepth": {
                         "type": "number",
                         "default": 3,
                         "minimum": 0,
