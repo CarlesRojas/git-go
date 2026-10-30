@@ -30,7 +30,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Check out main
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                   ref: main
                   fetch-depth: 0
@@ -39,7 +39,7 @@ jobs:
               uses: pnpm/action-setup@v4
 
             - name: Set up Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   node-version: 22
                   cache: pnpm
@@ -62,7 +62,13 @@ jobs:
                   if [ -n "$EXPLICIT" ]; then
                       next="${EXPLICIT#v}"
                   else
-                      next=$(npx --yes semver@7 -i "$BUMP" "$current")
+                      next=$(node -e '
+                          const [major, minor, patch] = process.argv[1].split(".").map(Number)
+                          const bump = process.argv[2]
+                          if (bump === "major") console.log(`${major + 1}.0.0`)
+                          else if (bump === "minor") console.log(`${major}.${minor + 1}.0`)
+                          else console.log(`${major}.${minor}.${patch + 1}`)
+                      ' "$current" "$BUMP")
                   fi
                   if ! echo "$next" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
                       echo "::error::'$next' is not a valid x.y.z version"
