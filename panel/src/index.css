@@ -219,3 +219,12 @@
 [data-dragging] * {
   cursor: grabbing !important;
 }
+
+/*
+ * Windows webviews draw `backdrop-filter` as nothing at all, which leaves the translucent popups
+ * see-through. There the blurred surfaces fall back to the solid editor background.
+ */
+[data-no-backdrop-blur] [class*='backdrop-blur'] {
+  background-color: var(--vscode-editor-background) !important;
+  backdrop-filter: none !important;
+}
