@@ -1,0 +1,129 @@
+name: release
+
+on:
+    workflow_dispatch:
+        inputs:
+            bump:
+                description: Which part of the version to bump
+                type: choice
+                options:
+                    - patch
+                    - minor
+                    - major
+                default: patch
+            version:
+                description: Exact version to release instead (e.g. 1.2.0). Overrides the bump when set
+                type: string
+                required: false
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+permissions:
+    contents: write
+    # Lets vsce publish through the Marketplace's Trusted Publishing, so no PAT is stored
+    id-token: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out main
+              uses: actions/checkout@v4
+              with:
+                  ref: main
+                  fetch-depth: 0
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Set up Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+                  cache-dependency-path: |
+                      pnpm-lock.yaml
+                      panel/pnpm-lock.yaml
+
+            - name: Install dependencies
+              run: |
+                  pnpm install --frozen-lockfile
+                  pnpm --dir panel install --frozen-lockfile
+
+            - name: Work out the new version
+              id: version
+              env:
+                  BUMP: ${{ inputs.bump }}
+                  EXPLICIT: ${{ inputs.version }}
+              run: |
+                  current=$(node -p "require('./package.json').version")
+                  if [ -n "$EXPLICIT" ]; then
+                      next="${EXPLICIT#v}"
+                  else
+                      next=$(npx --yes semver@7 -i "$BUMP" "$current")
+                  fi
+                  if ! echo "$next" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+                      echo "::error::'$next' is not a valid x.y.z version"
+                      exit 1
+                  fi
+                  if git rev-parse -q --verify "refs/tags/$next" >/dev/null; then
+                      echo "::error::Tag $next already exists"
+                      exit 1
+                  fi
+                  echo "Releasing $current -> $next"
+                  echo "current=$current" >> "$GITHUB_OUTPUT"
+                  echo "next=$next" >> "$GITHUB_OUTPUT"
+
+            - name: Bump the version in package.json and the README badge
+              env:
+                  CURRENT: ${{ steps.version.outputs.current }}
+                  NEXT: ${{ steps.version.outputs.next }}
+              run: |
+                  sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEXT\"/" package.json
+                  sed -i "s/badge\/version-$CURRENT-blue/badge\/version-$NEXT-blue/" README.md
+                  grep -q "\"version\": \"$NEXT\"" package.json
+                  grep -q "badge/version-$NEXT-blue" README.md
+
+            - name: Build
+              run: pnpm run build
+
+            - name: Package the extension
+              env:
+                  NEXT: ${{ steps.version.outputs.next }}
+              run: pnpm dlx @vscode/vsce package --no-dependencies --out "git-go-$NEXT.vsix"
+
+            - name: Commit and tag the release
+              env:
+                  NEXT: ${{ steps.version.outputs.next }}
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add package.json README.md media
+                  git commit -m "$NEXT"
+                  git tag "$NEXT"
+                  git push origin HEAD:main
+                  git push origin "refs/tags/$NEXT"
+
+            - name: Publish to the VS Code Marketplace
+              env:
+                  NEXT: ${{ steps.version.outputs.next }}
+              run: pnpm dlx @vscode/vsce publish --oidc --no-dependencies --packagePath "git-go-$NEXT.vsix"
+
+            - name: Publish to Open VSX
+              env:
+                  OVSX_PAT: ${{ secrets.OVSX_PAT }}
+                  NEXT: ${{ steps.version.outputs.next }}
+              run: |
+                  if [ -z "$OVSX_PAT" ]; then
+                      echo "OVSX_PAT is not set, skipping Open VSX"
+                      exit 0
+                  fi
+                  pnpm dlx ovsx publish "git-go-$NEXT.vsix" --pat "$OVSX_PAT"
+
+            - name: Create the GitHub release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  NEXT: ${{ steps.version.outputs.next }}
+              run: gh release create "$NEXT" "git-go-$NEXT.vsix" --title "$NEXT" --generate-notes --verify-tag
