@@ -14,6 +14,9 @@ const floatingButtonClasses = cn([
   'pointer-events-auto',
   // Colors & Background
   'bg-vsc-editor-bg/80 backdrop-blur-md',
+  // The hover tint is a gradient over the surface, not a new background colour, so the solid
+  // fallback Windows gives blurred surfaces does not erase it
+  'hover:bg-vsc-editor-bg/80 hover:from-vsc-editor-fg/10 hover:to-vsc-editor-fg/10 hover:bg-linear-to-r',
   // Borders
   'border-vsc-editor-fg/15 border',
   // Animations & Transitions
