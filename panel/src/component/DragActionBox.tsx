@@ -37,10 +37,12 @@ export const DragActionBox: FC<Props> = ({ action, hovered, isFirst, isLast }) =
         // State — highlight is background only, exactly as menu items do it, so the border
         // never changes and nothing inside can shift. Disabled fades the contents rather than
         // the box, so the surface never thins and lets the graph through.
-        hovered && !disabled && 'bg-vsc-editor-fg/8',
+        // The tint is a gradient laid over the surface rather than a new background colour: the
+        // Windows fallback forces the colour of every blurred surface, which would erase it.
+        hovered && !disabled && 'from-vsc-editor-fg/8 to-vsc-editor-fg/8 bg-linear-to-r',
         // Destructive keeps its accent when disabled; the shared opacity is what softens it
         action.destructive && 'text-vsc-error-fg',
-        action.destructive && hovered && !disabled && 'bg-vsc-error-fg/10',
+        action.destructive && hovered && !disabled && 'from-vsc-error-fg/10 to-vsc-error-fg/10',
         disabled && '[&>*]:opacity-50',
       )}
     >
