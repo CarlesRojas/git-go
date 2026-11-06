@@ -27,3 +27,6 @@ git-go-graph.png
 
 # Pattern-based exclusions for demo content
 *demo*
+
+# T3 Code project icon
+assets/**
